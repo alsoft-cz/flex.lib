@@ -60,10 +60,11 @@ class {%%TODO(ABSTRACT) abstract} public c_namespace =
     ------------------------------------------------------------------------------------------------
     virtual {%%TODO(ABSTRACT) abstract} decompose_name (
         text_name  : in t_text_name;             -- the actual plain-text name to be decomposed
-        name_type  : in t_name_type;             -- the type of the name in respect of its relativity
+        proposed_nt: in t_name_type;             -- proposed type of the name 
+        detected_nt: out t_name_type;            -- detected type of the name
         components : out c_list;                 -- list of components
         ns_data    : out p_namespace_specific);  -- namespace-specific data
-    -- Decomposes a plain-text name [text_name] into a list of components [components]
+    -- Decomposes a plain-text name [text_name] into a list of components [components].
     ------------------------------------------------------------------------------------------------
     virtual {%%TODO(ABSTRACT) abstract} compose_name (
         components : in c_list;                  -- list of components
@@ -124,6 +125,7 @@ class public c_name = extend c_list_item;
 ----------------------------------------------------------------------------------------------------
 
     var
+      name_type    : protected t_name_type;      -- the type of the name in respect of its relativity
       components   : protected c_list;           -- list of components
 
     ------------------------------------------------------------------------------------------------
@@ -286,83 +288,4 @@ class public c_name_subcomponent_extension = extend c_name_subcomponent;
 
 
 
-
-
-
-
-
-
-
-
-
-
-{
-
-----------------------------------------------------------------------------------------------------
--- Seznam dostupnych namespace
-----------------------------------------------------------------------------------------------------
-class c_namespace_system;
--- Parser sytemoveho jmena souboru
-----------------------------------------------------------------------------------------------------
-
-
-
-----------------------------------------------------------------------------------------------------
--- Seznam dostupnych slozek komponenty jmena odvozenych od c_name_subcomponent
-----------------------------------------------------------------------------------------------------
-class c_name_subcomponent_name;
--- Jmeno
-----------------------------------------------------------------------------------------------------
-class c_name_subcomponent_extension;
--- Pripona
-----------------------------------------------------------------------------------------------------
-
-----------------------------------------------------------------------------------------------------
--- Seznam dostupnych komponent jmena odvozenychod c_name_component
-----------------------------------------------------------------------------------------------------
-class c_name_component_file;
--- Jmeno souboru.
-----------------------------------------------------------------------------------------------------
-class c_name_component_directory;
--- Jmeno adresare.
-----------------------------------------------------------------------------------------------------
-class c_name_component_drive;
--- Jmeno disku.
-----------------------------------------------------------------------------------------------------
-class c_name_component_server;
--- Jmeno serveru.
-----------------------------------------------------------------------------------------------------
-class c_name_component_share;
--- Jmeno sharu.
-----------------------------------------------------------------------------------------------------
-
-
-
-----------------------------------------------------------------------------------------------------
-class public c_name =
--- Jmeno.
-----------------------------------------------------------------------------------------------------
-
-  #if #declared radekr_newfs; #and then; radekr_newfs then;
-    var
-      xname        : t_char32str;
-  #end if;
-
-    ------------------------------------------------------------------------------------------------
-    static init;
-    -- Inicializace tridy c_name.
-    ------------------------------------------------------------------------------------------------
-    static assign (
-        _name      : in t_char32ustr;
-        _namespace : in t_tag;
-        _type      : in t_name_type:=tnt_unspecified) 
-        return t_logical;
-    -- Prirazeni retece do c_name. Parametr [_name] obsahuje retezec se jmenem, [_namespace] pak 
-    -- urcuje typ jmena. Pokud [_name] vyhovuje danemu [_namespace], vrati metoda assign TRUE.
-    ------------------------------------------------------------------------------------------------
-    static to_string return p_char32ustr;
-    -- Prevede jmeno na retezec.
-    ------------------------------------------------------------------------------------------------
-    end c_name;
-}
 end names;

@@ -53,7 +53,6 @@ class public c_list = extend c_container;
       last         : protected p_list_item;      -- last item in the list
       circular     : protected t_logical;        -- T-the list shall be circular
 
-
     ------------------------------------------------------------------------------------------------
     static init (
         item_type  : in t_tag;                   -- (root) type of its items
@@ -118,7 +117,7 @@ class public c_list = extend c_container;
     -- Removes and discards the first item from the list;
     ------------------------------------------------------------------------------------------------
     static delete_last;
-    -- Removes and discards the last  item from the list;
+    -- Removes and discards the last item from the list;
     ------------------------------------------------------------------------------------------------
     static get_first return p_list_item;
     -- Returns the first item of the list, or NIL if empty.

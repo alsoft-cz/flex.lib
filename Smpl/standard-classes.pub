@@ -75,6 +75,9 @@ class {%%TODO(ABSTRACT)} public c_container = extend c_trigger_container;
     virtual {%%TODO(ABSTRACT)} delete_all;
     -- Removes and discards all items in the container.
     ------------------------------------------------------------------------------------------------
+    static is_empty return t_logical;
+    -- Returns [true] if the container is empty (contains no items), and [false] otherwise.
+    ------------------------------------------------------------------------------------------------
 
     end c_container;
 

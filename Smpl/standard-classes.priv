@@ -65,6 +65,21 @@ class private c_container =
       raise feature_not_implemented;
       end delete_all;
 
+
+
+    ------------------------------------------------------------------------------------------------
+    static is_empty =
+    -- Returns [true] if the container is empty (contains no items), and [false] otherwise.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      result:=count=0;
+
+    leave
+      execute(event_after);
+      end is_empty;
+
     end c_container;
 
 
