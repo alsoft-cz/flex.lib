@@ -364,14 +364,15 @@ wcProvChar      : array 0..0 of WCHAR;
 -- 
 type
   _COMSTAT          = record
-fCtsHold        : DWORD {:1};
+  flags         : DWORD;
+{fCtsHold        : DWORD {:1};
 fDsrHold        : DWORD {:1};
 fRlsdHold       : DWORD {:1};
 fXoffHold       : DWORD {:1};
 fXoffSent       : DWORD {:1};
 fEof            : DWORD {:1};
 fTxim           : DWORD {:1};
-fReserved       : DWORD {:25};
+fReserved       : DWORD {:25};}
 cbInQue         : DWORD;
 cbOutQue        : DWORD;
   end record;
@@ -409,20 +410,25 @@ type
   _DCB              = record
 DCBlength       : DWORD;
 BaudRate        : DWORD;
-fBinary         : DWORD {:1};
+
+Flags1          : BYTE;
+{fBinary         : DWORD {:1};
 fParity         : DWORD {:1};
 fOutxCtsFlow    : DWORD {:1};
 fOutxDsrFlow    : DWORD {:1};
 fDtrControl     : DWORD {:2};
 fDsrSensitivity : DWORD {:1};
-fTXContinueOnXoff : DWORD {:1};
-fOutX           : DWORD {:1};
+fTXContinueOnXoff : DWORD {:1};}
+
+Flags2          : BYTE;
+Dummy2          : WORD;
+{fOutX           : DWORD {:1};
 fInX            : DWORD {:1};
 fErrorChar      : DWORD {:1};
 fNull           : DWORD {:1};
 fRtsControl     : DWORD {:2};
 fAbortOnError   : DWORD {:1};
-fDummy2         : DWORD {:17};
+fDummy2         : DWORD {:17};}
 wReserved       : WORD;
 XonLim          : WORD;
 XoffLim         : WORD;
@@ -3054,14 +3060,14 @@ procedure SetCommMask(
 
 procedure SetCommState(
     hFile           : in t_HANDLE; 
-    lpDCB           : in p_DCB)
+    lpDCB           : in ref _DCB)
                       return BOOL;
 #pragma convention(SetCommState,system);
 #pragma import(SetCommState,'SetCommState','kernel32.dll');
 
 procedure SetCommTimeouts(
     hFile           : in t_HANDLE; 
-    lpCommTimeouts  : in p_COMMTIMEOUTS)
+    lpCommTimeouts  : in ref _COMMTIMEOUTS)
                       return BOOL;
 #pragma convention(SetCommTimeouts,system);
 #pragma import(SetCommTimeouts,'SetCommTimeouts','kernel32.dll');

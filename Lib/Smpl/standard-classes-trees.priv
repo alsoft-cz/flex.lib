@@ -51,8 +51,6 @@ class private abstract c_binary_tree =
       avl          : t_logical;                  -- T-vyvažovat
       unique_key   : t_logical;                  -- T-pouze uzly se stejnými klíči
 
-
-    -- dopředné deklarace pomocných metod
     ------------------------------------------------------------------------------------------------
     static has_node_rec (
         i_current_node : in p_binary_tree_node;  -- aktuální uzel
@@ -129,7 +127,7 @@ class private abstract c_binary_tree =
     -- Rekurzivně vkládá nový uzel [new_node] do stromu, jako potomka uzlu [node]. Pokud klíč
     -- vkládaného uzlu [new_node] již ve stromě existuje a je povoleno více výskytů téhož klíče
     -- ve stromě, pak nový uzel [new_node] uzložíme jako pravého potomka. Pokud není povolen
-    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [tree_error].
+    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     static remove_node (
         node       : in out p_binary_tree_node;  -- pointer na uzel stromu
@@ -211,17 +209,17 @@ class private abstract c_binary_tree =
       -- porovnat klíče uzlů
       case compare(i_current_node,node)
         -- je aktuální uzel větší než hledaný uzel?
-        when cr_bigger do
+        when tcr_bigger do
             -- jdi doleva
             result:=has_node_rec(i_current_node^.left,node);
 
         -- je aktuální uzel menší než hledaný uzel?
-        when cr_smaller do
+        when tcr_smaller do
             -- jdi doprava
             result:=has_node_rec(i_current_node^.right,node);
 
         -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
-        when cr_equal do
+        when tcr_equal do
             -- jedná se o avl strom s možností mít více stejných klíčů?
             if avl and not unique_key then
               -- ano, prohledat celý podstrom, nejříve pravý, pokud uzel nebude nalezen, prohledat levý
@@ -555,10 +553,10 @@ class private abstract c_binary_tree =
     -- Rekurzivně vkládá nový uzel [new_node] do stromu, jako potomka uzlu [node]. Pokud klíč
     -- vkládaného uzlu [new_node] již ve stromě existuje a je povoleno více výskytů téhož klíče
     -- ve stromě, pak nový uzel [new_node] uzložíme jako pravého potomka. Pokud není povolen
-    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [tree_error].
+    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     var
-      cmp          : t_compare_result;           -- výsledek porovnávání dvou uzlů
+      cmp          : t_comparison_result;        -- výsledek porovnávání dvou uzlů
 
     begin
       -- porovnáme uzlu [new_node] a [node]
@@ -568,35 +566,34 @@ class private abstract c_binary_tree =
       case cmp
 
         -- klíč nového uzlu [new_node] je menší než klíč uzelu [node] => vkládáme do levého potomka
-        when cr_smaller do
-          -- obsahuje uzel [node] levého potomka?
-          if node^.left<>nil
+        when tcr_smaller do
+            -- obsahuje uzel [node] levého potomka?
+            if node^.left<>nil
 
-            -- ano => posuneme se do levého podstromu uzlu [node]
-            then insert_node(node^.left,new_node);
+              -- ano => posuneme se do levého podstromu uzlu [node]
+              then insert_node(node^.left,new_node);
 
-            -- ne => nový uzel [new_node] se stane levým potomkem uzlu [node]
-            else insert_left(node,new_node);
-            end if;
+              -- ne => nový uzel [new_node] se stane levým potomkem uzlu [node]
+              else insert_left(node,new_node);
+              end if;
 
         -- klíč nového uzlu [new_node] je větší nebo roven klíči uzlu [node] => vkládáme do pravého potomka
-        when cr_bigger, cr_equal do
-          -- pokud je klíč stejný a není povolen vícenásobný výskyt téhož klíče ve stromě, generujeme
-          -- výjimku [tree_error]
-          if cmp=cr_equal and unique_key then
-            execute(event_error);
-            raise tree_error;
-            end if;
+        when tcr_bigger, tcr_equal do
+            -- pokud je klíč stejný a není povolen vícenásobný výskyt téhož klíče ve stromě, generujeme
+            -- výjimku [duplicate_item_error]
+            if cmp=tcr_equal and unique_key then
+              raise duplicate_item_error;
+              end if;
 
-          -- obsahuje uzel [node] pravého potomka?
-          if node^.right<>nil
+            -- obsahuje uzel [node] pravého potomka?
+            if node^.right<>nil
 
-            -- ano => posuneme se do pravého podstromu uzlu [node]
-            then insert_node(node^.right,new_node);
+              -- ano => posuneme se do pravého podstromu uzlu [node]
+              then insert_node(node^.right,new_node);
 
-            -- ne => nový uzel [new_node] se stane pravým potomkem uzlu [node]
-            else insert_right(node,new_node);
-            end if;
+              -- ne => nový uzel [new_node] se stane pravým potomkem uzlu [node]
+              else insert_right(node,new_node);
+              end if;
         end case;
 
       -- přepočteme výhu a hloubku uzlu [node]
@@ -643,17 +640,17 @@ class private abstract c_binary_tree =
       -- porovnat klíče uzlů
       case compare(tree,node)
         -- je aktuální uzel větší než hledaný uzel?
-        when cr_bigger do
+        when tcr_bigger do
             -- jdi doleva
             result:=find_rec(tree^.left,node);
 
         -- je aktuální uzel menší než hledaný uzel?
-        when cr_smaller do
+        when tcr_smaller do
             -- jdi doprava
             result:=find_rec(tree^.right,node);
 
         -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
-        when cr_equal do
+        when tcr_equal do
             result:=tree;
         end case;
       end find_rec;
@@ -675,7 +672,6 @@ class private abstract c_binary_tree =
       -- uzel musí být ve stromě nalezen
       if not has_node(node) then
         -- není nalezen, chyba
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -736,12 +732,12 @@ class private abstract c_binary_tree =
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
     --   Pokud je [unique_key] nastaven na true, ve stromě nemohou být uzly se stejným klíčem.
     --   Pokud je [avl] nastaven na true, strom bude se bude vyvažovat.
+    --   Pokud inicializujeme strom, který není prázdný, generuje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- pokud je již strom definován
       if this.root<>nil then
         -- inicializace neproběhne
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -757,11 +753,12 @@ class private abstract c_binary_tree =
     ------------------------------------------------------------------------------------------------
     static has_node =
     -- Vrací [true], pokud je [node] prvkem stromu.
+    -- Pokud není uzel [node] definovaný, generuje metoda výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- hledaný uzel musí být definovaný
       if node=nil then
-        return;
+        raise parameter_error;
         end if;
 
       -- hledat uzel
@@ -774,7 +771,7 @@ class private abstract c_binary_tree =
     override insert =
     -- Vloží uzel [node] do binárního stromu. Pokud se má vložit uzel s klíčem, který se již ve
     -- stromě vyskytuje a je povolen vícenásobný výskyt klíče ve stromě, je uzel vložen vpravo.
-    -- Pokud vícenásobný výskyt není povolen, generuje metoda výjimku [tree_error].
+    -- Pokud vícenásobný výskyt není povolen, generuje metoda výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     var
       node         : p_binary_tree_node;         -- vkládaný uzel
@@ -788,8 +785,7 @@ class private abstract c_binary_tree =
 
       -- přidávaný uzel musí existovat
       if node=nil then
-        execute(event_error);
-        raise tree_error;
+        raise duplicate_item_error;
         end if;
 
       -- je uzel prázdný?
@@ -838,7 +834,7 @@ class private abstract c_binary_tree =
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy. Pokud uxistují dva uzly se stejným klíčem, je uzel 
     -- do stromu vložen v závislosti na parametru [unique_key] - v případě [unique_key]=[true] je
-    -- generována výjimka [tree_error].
+    -- generována výjimka [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- spojit stromy
@@ -865,7 +861,7 @@ class private abstract c_binary_tree =
     -- prohledávání levého podstromu uzlu při identických klíčích je použita logická proměnná [equal].
     ------------------------------------------------------------------------------------------------
     var
-      cmp          : t_compare_result;           -- výsledek porovnávání klíčů dvou uzlů
+      cmp          : t_comparison_result;        -- výsledek porovnávání klíčů dvou uzlů
 
     begin
       -- uzel [rem_node] jsme ve stromě nenalezli
@@ -876,9 +872,7 @@ class private abstract c_binary_tree =
           then return;
 
           -- ne => uzel [rem_node] se ve stromě nevyskytuje => generujeme výjimku [tree_error]
-          else
-            execute(event_error);
-            raise tree_error;
+          else raise tree_error;
             end if;
         end if;
 
@@ -886,7 +880,7 @@ class private abstract c_binary_tree =
       cmp:=compare(rem_node,node);
 
       -- je klíč uzlu [rem_node] menší než klíč uzlu [node]? Ano => posuneme se do jeho levého podstromu
-      if cmp=cr_smaller then
+      if cmp=tcr_smaller then
         remove_node(node^.left,rem_node,removed,original,equal);
 
         -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
@@ -898,7 +892,7 @@ class private abstract c_binary_tree =
           end if;
 
       -- je klíč uzlu [rem_node] větší než klíč uzlu [node]? Ano => posuneme se do jeho pravého podstromu
-      elsif cmp=cr_bigger then
+      elsif cmp=tcr_bigger then
         remove_node(node^.right,rem_node,removed,original,equal);
 
         -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
@@ -911,7 +905,7 @@ class private abstract c_binary_tree =
 
       -- je klíč uzlu [rem_node] stejný jako klíč uzlu [node]? Ano => posuneme se do jeho pravého podstromu
       -- a pokud v něm uzel nenalezneme, pak se ještě posuneme do jeho levého podstromu
-      elsif cmp=cr_equal and node<>rem_node then
+      elsif cmp=tcr_equal and node<>rem_node then
         -- je povolen vícenásobný výskyt klíče ve stromě?
         if not unique_key
 
@@ -926,10 +920,8 @@ class private abstract c_binary_tree =
               remove_node(node^.left,rem_node,removed,original,true);
               end if;
 
-          -- ne => chyba, neboť není povolen vícenásobný výskyt klíče
-          else
-            execute(event_error);
-            raise tree_error;
+          -- ne => chyba, neboť není povolen vícenásobný výskyt klíče => uzel nenalezen
+          else raise tree_error;
             end if;
 
         -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
@@ -941,7 +933,7 @@ class private abstract c_binary_tree =
           end if;
 
       -- nalezli jsme uzel, který má být odstraněn
-      elsif cmp=cr_equal and node=rem_node then
+      elsif cmp=tcr_equal and node=rem_node then
         -- neexistuje pravý potomek uzlu [node]? Ne => uzel [node] posuneme na levého potomka
         if node^.right=nil then
 	  if node^.left<>nil then node^.left^.up:=node^.up; end if;
@@ -986,8 +978,7 @@ class private abstract c_binary_tree =
         pred count;
 
       -- uzel [rem_node] jsme ve stromě nenalezli => generujeme výjimku [tree_error]
-      else
-        execute(event_error);
+      else 
         raise tree_error;
         end if;
       end remove_node;
@@ -1035,7 +1026,8 @@ class private abstract c_binary_tree =
     -- "nejpravějším" uzlem jeho levého potomka - pointer na něj je uložen v [del]. Musíme provést
     -- "přesměrování", kdy uzel [node] se stane uzelem [del], přičemž zůstanou zachovány původní
     -- ukazatele, tj. dojde ke změně jen datové části uzlu.
-    -- Pokud uzel [rem_node] nebyl ve stromě nalezen, genereje metoda výjimku [tree_error].
+    -- Pokud uzel [node] nebyl ve stromě nalezen, genereje metoda výjimku [tree_error].
+    -- Pokud uzel [node] není definován, generuje metoda výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     var
       removed      : t_logical:=false;           -- [true], pokud byl uzel [node] vyjmut ze stromu
@@ -1048,8 +1040,7 @@ class private abstract c_binary_tree =
 
       -- rušený uzel musí být definovaný
       if node=nil then
-        execute(event_error);
-        raise tree_error;
+        raise parameter_error;
         end if;
 
       -- odstraníme uzel [node] ze stromu
@@ -1058,7 +1049,6 @@ class private abstract c_binary_tree =
       -- uzel [rem_node] nebyl ve stromu nalezen (případ identických klíčů) => generujeme výjimku
       -- [tree_error]
       if not removed then
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -1222,7 +1212,7 @@ class private c_binary_tree_iterator =
           -- nic nedělat - kořen je první
 
         -- inverzní prefix
-        when ttwd_inv_prefix do 
+        when ttwd_inverted_prefix do 
           -- nic nedělat - kořen je první
 
         -- postfix
@@ -1237,7 +1227,7 @@ class private c_binary_tree_iterator =
             end loop;
 
         -- inverzní postfix
-        when ttwd_inv_postfix do 
+        when ttwd_inverted_postfix do 
           -- najít potomka
           loop
             -- nejdříve zkusit pravý podstrom, když není zadán, tak levý
@@ -1255,7 +1245,7 @@ class private c_binary_tree_iterator =
             end loop;
 
         -- inverzní infix
-        when ttwd_inv_infix do
+        when ttwd_inverted_infix do
           -- jít co nejvíce doprava
           while current_node^.right<>nil loop
             current_node:=current_node^.right;
@@ -1299,7 +1289,7 @@ class private c_binary_tree_iterator =
             end if;
 
         -- inverzní prefix
-        when ttwd_inv_prefix do
+        when ttwd_inverted_prefix do
           -- pokud to jde doprava, jít do pravého podstromu
           if current_node^.right<>nil then
             current_node:=current_node^.right;
@@ -1343,7 +1333,7 @@ class private c_binary_tree_iterator =
             end if;
 
         -- inverzní postfix
-        when ttwd_inv_postfix do
+        when ttwd_inverted_postfix do
           -- pokud to jde, jít doleva na stejnou úroveň a pak co nejvíce dolů
           if current_node^.up<>nil and then current_node^.up^.right=current_node and then current_node^.up^.left<>nil then
             current_node:=current_node^.up^.left;
@@ -1383,7 +1373,7 @@ class private c_binary_tree_iterator =
             end if;
 
         -- inverzní infix
-        when ttwd_inv_infix do
+        when ttwd_inverted_infix do
           -- když to jde doleva, tak doleva
           if current_node^.left<>nil then
             current_node:=current_node^.left;
@@ -1462,12 +1452,12 @@ class private c_tree =
     static init =
     -- Inicializace stromu.
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
+    --   Pokud inicializujeme strom, který není prázdný, generuje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- pokud je již strom definován
       if this.root<>nil then
         -- inicializace neproběhne
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -1548,13 +1538,12 @@ class private c_tree =
     ------------------------------------------------------------------------------------------------
     static has_node =
     -- Vrací logickou hodnotu, zda je uzel nalezen ve stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
+    -- Pokud není uzel [node] definovaný, generuje metoda výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- pokud [node] není definovaný, hlásí chybu
       if node=nil then
-        execute(event_error);
-        raise tree_error;
+        raise parameter_error;
         end if;
 
       -- hledat uzel
@@ -1584,7 +1573,7 @@ class private c_tree =
                             homogenní data}
 
       -- pokusit se do stromu vložit uzel na místo kořenu
-      insert_node(p_tree_node(item),nil,id_add);
+      insert_node(p_tree_node(item),nil,ttrp_first_sibling);
       end insert;
 
 
@@ -1593,26 +1582,25 @@ class private c_tree =
     static do_insert (
         node         : in p_tree_node;           -- vkládaný uzel
         current_node : in p_tree_node;           -- aktuální uzel
-        direction    : in t_insert_direction)    -- pozice vložení
+        placement    : in t_tree_relative_placement) -- pozice vložení
         return t_logical =
     -- Vloží uzel do stromu.
     -- Interní metoda, neprovádí kontroly.
     -- Vrátí, zda vložení bylo úspěšné
+    -- Generuje výjimku [tree_error], pokud není možné uzel na požadovanou pozici vložit.
     ------------------------------------------------------------------------------------------------
     begin
       -- na začátku předpokládáme chybu
       result:=false;
 
       -- dle směru vložení:
-      case direction
+      case placement
         -- vloží jako posledního souseda
-        when id_add do
+        when ttrp_last_sibling do
             -- pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
             if current_node=root 
               -- chyba
-              then
-                execute(event_error);
-                raise tree_error;
+              then raise tree_error;
               
               -- vložit uzel
               else
@@ -1621,13 +1609,11 @@ class private c_tree =
                 end if;
 
         -- vloží jako prvního souseda
-        when id_add_first do
+        when ttrp_first_sibling do
             -- pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
             if current_node=root 
               -- chyba
-              then
-                execute(event_error);
-                raise tree_error;
+              then raise tree_error;
               
               -- vložit uzel
               else
@@ -1636,23 +1622,21 @@ class private c_tree =
                 end if;
 
         -- vloží jako posledního potomka
-        when id_add_child do
+        when ttrp_last_child do
             current_node^.down.insert_last(node);
             node^.up:=current_node;
 
         -- vloží jako prvního potomka
-        when id_first_child do
+        when ttrp_first_child do
             current_node^.down.insert_first(node);
             node^.up:=current_node;
 
         -- vloží hned před referenční uzel
-        when id_insert_before do
+        when ttrp_left_sibling do
             -- pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
             if current_node=root 
               -- chyba
-              then
-                execute(event_error);
-                raise tree_error;
+              then raise tree_error;
               
               -- vložit uzel
               else
@@ -1661,13 +1645,11 @@ class private c_tree =
                 end if;
 
         -- vloží hned za referenční uzel
-        when id_insert_after do
+        when ttrp_right_sibling do
             -- pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
             if current_node=root 
               -- chyba
-              then
-                execute(event_error);
-                raise tree_error;
+              then raise tree_error;
               
               -- vložit uzel
               else
@@ -1685,10 +1667,10 @@ class private c_tree =
     ------------------------------------------------------------------------------------------------
     static insert_node =
     -- Vloží uzel do stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud [node] je ve stromu nalezen, hlásí chybu.
-    --   Pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
+    --   Pokud [node]=NIL, generuje výjimku [parameter_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], generuje výjimku
+    --   [tree_error].
     ------------------------------------------------------------------------------------------------
     begin
       {%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
@@ -1696,8 +1678,7 @@ class private c_tree =
 
       -- pokud [node]=NIL, hlásí chybu
       if node=nil then
-        execute(event_error);
-        raise tree_error;
+        raise parameter_error;
         end if;
 
       -- má se nový uzel vložit na místo kořenu?
@@ -1721,18 +1702,16 @@ class private c_tree =
 
       -- pokud [current_node] není ve stromu nalezen, hlásí chybu
       if not has_node(current_node) then
-        execute(event_error);
         raise tree_error;
         end if;
 
       -- pokud [node] je ve stromu nalezen, hlásí chybu.
       if has_node(node) then
-        execute(event_error);
         raise tree_error;
         end if;
 
     -- vlastní vložení, pokud při něm nastala chyba, konec
-    if not do_insert(node,current_node,direction) then return end if;
+    if not do_insert(node,current_node,placement) then return end if;
 
     -- zvýšit počet uzlů ve stromu
     count+get_node_count(node);
@@ -1744,11 +1723,12 @@ class private c_tree =
     static merge_subtree =
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy.
-    --   Pokud připojovaný strom je prázdný, hlásí chybu.
-    --   Pokud [current_node]=NIL, zkusí se vložit kořen, pokud je kořen definován, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud libovoný uzel v [tree] je ve stromu nalezen, hlásí chybu.
-    --   Pokud se má nový strom vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
+    --   Pokud připojovaný strom je prázdný, generuje výjimku [tree_error].
+    --   Pokud [current_node]=NIL, zkusí se vložit kořen, pokud je kořen definován, generuje [tree_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud libovoný uzel v [tree] je ve stromu nalezen, generuje výjimku [duplicate_item_error].
+    --   Pokud se má nový strom vložit jako sousední uzel, ale [current_node]=[root], generuje výjimku
+    --   [tree_error].
     ------------------------------------------------------------------------------------------------
     var 
       node_found   : t_logical:=false;           -- T-uzel nalezen
@@ -1756,21 +1736,18 @@ class private c_tree =
     begin
       -- pokud [tree.root]=NIL, hlásí chybu
       if tree.root=nil then
-        execute(event_error);
         raise tree_error;
         end if;
 
       -- pokud libovoný uzel v [tree] je ve stromu nalezen, hlásí chybu
       if has_node(tree.root) or has_node_rec(tree.root,root) then
-        execute(event_error);
-        raise tree_error;
+        raise duplicate_item_error;
         end if;
 
       -- pokud [current_node]=NIL, zkusí se vložit kořen, pokud je kořen definován, hlásí chybu
       if current_node=nil then
         -- pokud je kořen definován, hlásí chybu
         if root<>nil then
-          execute(event_error);
           raise tree_error;
           end if;
 
@@ -1786,12 +1763,11 @@ class private c_tree =
 
       -- pokud [current_node] není ve stromu nalezen, hlásí chybu
       if not has_node(current_node) then
-        execute(event_error);
         raise tree_error;
         end if;
 
       -- vlastní vložení, pokud při něm nastala chyba, konec
-      if not do_insert(tree.root,current_node,direction) then return end if;
+      if not do_insert(tree.root,current_node,placement) then return end if;
 
       -- zvýšit počet uzlů ve stromu o tree^.count
       count+tree.count;
@@ -1840,8 +1816,8 @@ class private c_tree =
     ------------------------------------------------------------------------------------------------
     override remove =
     -- Vyjme uzel ze stromu, pokud má uzlem následníky, vyjme se celý podstrom.
-    --   Pokud [item]=nil, hlásí se chyba.
-    --   Pokud [item] není ve stromu nalezen, hlásí se chyba.
+    --   Pokud [item]=nil, generuje výjimku [parameter_error].
+    --   Pokud [item] není ve stromu nalezen, generuje výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     var 
       node         : p_tree_node;                -- uzel pro vyjmutí ze stromu
@@ -1852,13 +1828,11 @@ class private c_tree =
 
       -- rušený uzel musí být definovaný
       if node=nil then
-        execute(event_error);
-        raise tree_error;
+        raise parameter_error;
         end if;
 
       -- pokud [node] není ve stromu nalezen, hlásí se chyba
       if not has_node(node) then
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -1882,7 +1856,7 @@ class private c_tree =
     static split_subtree =
     -- Vyjme ze stromu podstrom včetně uzlu [node] a vytvoří a inicializuje novou instance 
     -- trídy [c_tree]. 
-    --   Pokud uzel není nalezen, hlásí chybu.
+    --   Pokud uzel není nalezen, generuje výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     var
       lnode        : p_tree_node;                -- kořen nového stromu
@@ -1893,8 +1867,7 @@ class private c_tree =
 
       -- pokud není [lnode] ve stromu nalezen, hlásí chybu
       if not has_node(lnode) then
-        execute(event_error);
-        return;
+        raise tree_error;
         end if;
 
       -- má se vyjmout kořen?
@@ -1976,12 +1949,13 @@ class private c_tree =
     ------------------------------------------------------------------------------------------------
     static move_subtree =
     -- Přesune podstrom z jednoho místa na jiné místo v tom samém stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
-    --   Pokud [node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud se má uzel vložit vedle kořenového uzlu a má potomky, hlásí chybu.
-    --   Pokud [current_node] je poduzlem [node], hlásí chybu.
-    --   Pokud se má uzel podstromu vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu.
+    --   Pokud [node]=NIL, generuje výjimku [parameter_error].
+    --   Pokud [node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud se má uzel vložit vedle kořenového uzlu a má potomky, generuje výjimku [tree_error].
+    --   Pokud [current_node] je poduzlem [node], generuje výjimku [tree_error].
+    --   Pokud se má uzel podstromu vložit jako sousední uzel, ale [current_node]=[root], generuje
+    --   výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     var
       sub          : p_tree;                     -- podstrom, pomocná instance
@@ -1992,7 +1966,6 @@ class private c_tree =
 
       -- [current_node] je obsaženo v přesouvaném podstromě [node] => chyba
       if has_node_rec(node,current_node) then
-        execute(event_error);
         raise tree_error;
         end if;
 
@@ -2000,7 +1973,7 @@ class private c_tree =
       split_subtree(node,sub^);
 
       -- dočasný podstrom vložit na požadované místo
-      merge_subtree(sub^,current_node,direction);
+      merge_subtree(sub^,current_node,placement);
 
     leave
       -- uvolnit dočasný podstrom
@@ -2027,6 +2000,7 @@ class private c_tree_iterator =
     ------------------------------------------------------------------------------------------------
     static init =
     -- Inicializuje iterator používaný pro průchod stromem.
+    -- Při použití nesprávného směru iterování je vyvolána výjimka [parameter_error].
     ------------------------------------------------------------------------------------------------   
     begin
       -- inicializece řídících proměnných
@@ -2034,8 +2008,8 @@ class private c_tree_iterator =
       this.tree:=^tree;
 
       -- chybný směr procházení
-      if direction not in t_tree_walking_direction_set:[ttwd_prefix,ttwd_inv_prefix,ttwd_postfix,ttwd_inv_postfix] then
-        raise tree_error;
+      if direction not in t_tree_walking_direction_set:[ttwd_prefix,ttwd_inverted_prefix,ttwd_postfix,ttwd_inverted_postfix] then
+        raise parameter_error;
         end if;
 
       -- resetování
@@ -2061,7 +2035,7 @@ class private c_tree_iterator =
           -- nic nedělat - kořen je první
 
         -- inverzní prefix
-        when ttwd_inv_prefix do 
+        when ttwd_inverted_prefix do 
           -- nic nedělat - kořen je první
 
         -- postfix
@@ -2077,7 +2051,7 @@ class private c_tree_iterator =
             end loop;
 
         -- inverzní postfix
-        when ttwd_inv_postfix do 
+        when ttwd_inverted_postfix do 
           -- najít potomka
           loop
             -- sejít dolů, při rozhodování se vydat vždy nejpravější cestou
@@ -2090,7 +2064,7 @@ class private c_tree_iterator =
 
         when others do raise feature_not_implemented;
         -- %%TODO(LIB) ttwd_infix;                                -- levý -> uzel -> pravý, jen pro binární strom
-        -- %%TODO(LIB) ttwd_inv_infix;                            -- pravý -> uzel -> levý, jen pro binární strom
+        -- %%TODO(LIB) ttwd_inverted_infix;                            -- pravý -> uzel -> levý, jen pro binární strom
         end case;
       end reset;
 
@@ -2125,7 +2099,7 @@ class private c_tree_iterator =
             end if;
 
         -- inverzní prefix
-        when ttwd_inv_prefix do
+        when ttwd_inverted_prefix do
           -- pokud to jde, jdeme dolů co nejvíce doprava
           if current_node^.down.get_last<>nil then
             current_node:=current_node^.down.get_last;
@@ -2166,7 +2140,7 @@ class private c_tree_iterator =
             end if;
 
         -- inverzní postfix
-        when ttwd_inv_postfix do
+        when ttwd_inverted_postfix do
           -- pokud to jde, jít dolevana stejnou úroveň a pak co nejvíce dolů
           if current_node^.up<>nil and then current_node^.up^.down.get_prev(current_node)<>nil then
             current_node:=current_node^.up^.down.get_prev(current_node);

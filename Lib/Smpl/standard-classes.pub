@@ -17,7 +17,25 @@ class abstract c_item;      type p_item      = ^class c_item;
 class abstract c_container; type p_container = ^class c_container;
 class c_iterator;           type p_iterator  = ^class c_iterator;
 
+type
+  -- exception type for all container-related errors
+  t_container_exception = t_library_exception;
 
+message
+  -- general container error exception
+  container_error  : t_container_exception;
+
+  -- raised when an item is to be inserted into a container multiple times or (if applicable) its 
+  -- key is the same as of any other item already present in the container
+  duplicate_item_error extend container_error;
+
+type
+  -- výsledek operace porovnání dvou klíčů uzlů, složek, atd...
+  t_comparison_result = enum
+      tcr_equal;                                 -- klíče si jsou rovny
+      tcr_bigger;                                -- klíč je větší
+      tcr_smaller;                               -- klíč je menší
+      end enum;
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_item = extend c_trigger_container;

@@ -1,14 +1,13 @@
 ﻿----------------------------------------------------------------------------------------------------
-module private common =
--- Common utility declarations reused in different parts of the SMPL.
--- Flex Standard Multi-Platform Library
+module public program_control =
+-- General program execution control.
+-- Flex Advanced Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
-#separate private structures;
--- Common definitions for standars structeres and classes
+#separate public command_line_parser;
+-- Universal command line parser
 ----------------------------------------------------------------------------------------------------
 
-
-end common;
+end program_control;

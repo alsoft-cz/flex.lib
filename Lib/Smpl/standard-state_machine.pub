@@ -21,6 +21,14 @@ type
       return t_logical;                          -- T-transition allowed
   p_transition_check = ^t_transition_check;
 
+type
+  -- exception type for all state-machine-related errors
+  t_state_machine_exception = t_library_exception;
+
+message
+  -- general state-machine error exception
+  state_machine_error : t_state_machine_exception;
+
 ----------------------------------------------------------------------------------------------------
 class public c_state = extend c_trigger_container;
 -- A single state of the state machine.
@@ -59,8 +67,8 @@ class public c_state_machine = extend c_trigger_container;
 --
 -- Typicaly, states are added to the state machine during an initialization phase 
 -- via [add_state]. However, states as well as transitions can be added or removed at any time.
---   If the state machine was about to reach a state that was not added to it before, [event_error]
--- is signaled.
+--   If the state machine was about to reach a state that was not added to it before, [state_machine_error]
+-- exception is raised.
 --   The first state has to be specified via the [set_first_state]. The first state can be 
 -- specified only once.
 --
@@ -70,8 +78,8 @@ class public c_state_machine = extend c_trigger_container;
 -- Typicaly, transitions are added to the state machine during an initialization phase 
 -- via [add_transition]. However, states as well as transitions can be added or removed at
 -- any time.
--- If the state machine was about to reach a state that was not added to it before, [event_error]
--- is signaled.
+-- If the state machine was about to reach a state that was not added to it before, [state_machine_error]
+-- exception is raised.
 --
 -- Event signaling
 -- ---------------
@@ -134,33 +142,35 @@ class public c_state_machine = extend c_trigger_container;
     -- The transition can be performed only when then transition allowance check [check] returns 
     -- True, otherwise it is forbidden to perform the transition.
     -- When a transition from this state to [to_state] was already defined (regardless of the
-    -- transition allowance check), [event_error] is signaled.
+    -- transition allowance check), [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     static remove_transition (
         from_state : in p_state;                 -- počátek přechodu
         to_state   : in p_state);                -- konec přechodu
     -- Removes a transition from [from_state] to another state [to_state].
     -- The transition have had to be defined via the [add_transition] method before, otherwise
-    -- [event_error] is signaled.
+    -- [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     static add_state (
         state      : in p_state);                -- state to be added to the state machine
     -- Adds a state [state] to the state machine.
-    -- If the state have been already added to the state machine, [event_error] is signaled.
+    -- If the state have been already added to the state machine, [state_machine_error] exception
+    -- is raised.
     ------------------------------------------------------------------------------------------------
     static remove_state (
         state      : in p_state);                -- state to be removed from the state machine
     -- Smaže stav z KA a všechny přechody, které jsou s ním spojeny. Pokud se má smazat aktivní stav
-    -- KA [current_state], je signalizován [event_error].
+    -- KA [current_state], je vyvolaná výjimka [state_machine_error].
     -- The state have had to be added to the state machine via the [add_state] method before, 
-    -- otherwise [event_error] is signaled.
+    -- otherwise [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     static set_first_state (
         state      : in p_state);
     -- Sets the first state of the state machine. 
     -- The state have had to be added to the state machine via the [add_state] method before, 
-    -- otherwise [event_error] is signaled. The first state of the state machine can be specified 
-    -- only once. If a current state is already determined, [event_error] is signaled.
+    -- otherwise [state_machine_error] exception is raised. The first state of the state machine can
+    -- be specified only once. If a current state is already determined, [state_machine_error]
+    -- exception is raised.
     --   Before entering the first state [event_first_state] is signaled. After that, normal event 
     -- signalig takes place, when the first state is set. That is, all events starting from 
     -- [event_before_enter_state] are signaled.
@@ -173,8 +183,7 @@ class public c_state_machine = extend c_trigger_container;
     static is_final_state return t_logical;
     -- Checks if the current state is the final state of the state machine. 
     -- A final state is such a state, from which no transition to another state is defined.
-    -- When no current state is selected, [event_error] is signaled and the subprogram returns 
-    -- False.
+    -- When no current state is selected, [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     virtual can_transition return t_logical;
     -- Checks if a transition to some next state can be performed.
@@ -187,8 +196,8 @@ class public c_state_machine = extend c_trigger_container;
     -- The destination state is selected based on the return values of the trasition allowance 
     -- checks of all defined transitions (in order of definition via calls to the 
     -- [c_state.add_transition] method). There shall be exactly one transition passing the 
-    -- transition allowance check. This transition is then performed, otherwise [event_error] is 
-    -- signaled.
+    -- transition allowance check. This transition is then performed, otherwise [state_machine_error]
+    -- exception is raised.
     --   This concludes, that when there is no transition defined for the current state, it is
     -- treated as an error condition. It is up to the user to ensure by calling the [is_final_state]
     -- that the current state is not the final state so allowing [do_transition] to be called.
@@ -229,8 +238,8 @@ class public c_state_machine = extend c_trigger_container;
     ------------------------------------------------------------------------------------------------
     static check_state (
         state      : in p_state);                -- stav v KA
-    -- Ensures that the given [state] was added to this state machine. If not, [event_error] is
-    -- signaled, otherwise no action is taken.
+    -- Ensures that the given [state] was added to this state machine. If not, [state_machine_error]
+    -- exception is raised, otherwise no action is taken.
     ------------------------------------------------------------------------------------------------
     static find_state (
         state      : in p_state)                 -- stav v KA

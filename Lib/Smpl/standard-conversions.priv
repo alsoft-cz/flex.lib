@@ -27,24 +27,22 @@ var
   -- Pozor, některé hodnoty NEG vypočtené přímo procesorem se o 1 bit liší
   -- (nejsou zaokrouhlené, jen odříznuté).
   expansion   : const t_expansion := [
-    [ 0001, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$A0,$02,$40], [{$CC,}$CD{CC},$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]],
-    [ 0002, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$C8,$05,$40], [{$3D,}$0A{0A},$D7,$A3,$70,$3D,$0A,$D7,$A3,$F8,$3F]],
-    [ 0004, [{$00,}$00{00},$00,$00,$00,$00,$00,$40,$9C,$0C,$40], [{$D3,}$2C{2B},$65,$19,$E2,$58,$17,$B7,$D1,$F1,$3F]],
-    [ 0008, [{$00,}$00{00},$00,$00,$00,$00,$20,$BC,$BE,$19,$40], [{$FD,}$FD{FC},$CE,$61,$84,$11,$77,$CC,$AB,$E4,$3F]],
-    [ 0016, [{$00,}$00{00},$00,$00,$04,$BF,$C9,$1B,$8E,$34,$40], [{$4C,}$5B{5B},$E1,$4D,$C4,$BE,$94,$95,$E6,$C9,$3F]],
-    [ 0032, [{$F0,}$9E{9D},$B5,$70,$2B,$A8,$AD,$C5,$9D,$69,$40], [{$67,}$BA{BA},$94,$39,$45,$AD,$1E,$B1,$CF,$94,$3F]],
-    [ 0064, [{$3C,}$D5{D5},$A6,$CF,$FF,$49,$1F,$78,$C2,$D3,$40], [{$3F,}$A5{A5},$E9,$39,$A5,$27,$EA,$7F,$A8,$2A,$3F]],
-    [ 0128, [{$C6,}$E0{DF},$8C,$E9,$80,$C9,$47,$BA,$93,$A8,$41], [{$AC,}$A1{A0},$E4,$BC,$64,$7C,$46,$D0,$DD,$55,$3E]],
-    [ 0256, [{$DD,}$8E{8D},$DE,$F9,$9D,$FB,$EB,$7E,$AA,$51,$43], [{$FA,}$3A{39},$19,$7A,$63,$25,$43,$31,$C0,$AC,$3C]],
-    [ 0512, [{$CC,}$C7{C6},$91,$0E,$A6,$AE,$A0,$19,$E3,$A3,$46], [{$71,}$1D{1C},$D2,$23,$DB,$32,$EE,$49,$90,$5A,$39]],
-    [ 1024, [{$65,}$17{17},$0C,$75,$81,$86,$75,$76,$C9,$48,$4D], [{$87,}$BE{BD},$C0,$57,$DA,$A5,$82,$A6,$A2,$B5,$32]],
-    [ 2048, [{$A7,}$E5{E4},$5D,$3D,$C5,$5D,$3B,$8B,$9E,$92,$5A], [{$49,}$E4{E4},$2D,$36,$34,$4F,$53,$AE,$CE,$6B,$25]],
-    [ 4096, [{$C9,}$9B{9A},$97,$20,$8A,$02,$52,$60,$C4,$25,$75], [{$2D,}$DE{DE},$9F,$CE,$D2,$C8,$04,$DD,$A6,$D8,$0A]]];
-
+    [0001, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$A0,$02,$40], [{$CC,}$CD{CC},$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]],
+    [0002, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$C8,$05,$40], [{$3D,}$0A{0A},$D7,$A3,$70,$3D,$0A,$D7,$A3,$F8,$3F]],
+    [0004, [{$00,}$00{00},$00,$00,$00,$00,$00,$40,$9C,$0C,$40], [{$D3,}$2C{2B},$65,$19,$E2,$58,$17,$B7,$D1,$F1,$3F]],
+    [0008, [{$00,}$00{00},$00,$00,$00,$00,$20,$BC,$BE,$19,$40], [{$FD,}$FD{FC},$CE,$61,$84,$11,$77,$CC,$AB,$E4,$3F]],
+    [0016, [{$00,}$00{00},$00,$00,$04,$BF,$C9,$1B,$8E,$34,$40], [{$4C,}$5B{5B},$E1,$4D,$C4,$BE,$94,$95,$E6,$C9,$3F]],
+    [0032, [{$F0,}$9E{9D},$B5,$70,$2B,$A8,$AD,$C5,$9D,$69,$40], [{$67,}$BA{BA},$94,$39,$45,$AD,$1E,$B1,$CF,$94,$3F]],
+    [0064, [{$3C,}$D5{D5},$A6,$CF,$FF,$49,$1F,$78,$C2,$D3,$40], [{$3F,}$A5{A5},$E9,$39,$A5,$27,$EA,$7F,$A8,$2A,$3F]],
+    [0128, [{$C6,}$E0{DF},$8C,$E9,$80,$C9,$47,$BA,$93,$A8,$41], [{$AC,}$A1{A0},$E4,$BC,$64,$7C,$46,$D0,$DD,$55,$3E]],
+    [0256, [{$DD,}$8E{8D},$DE,$F9,$9D,$FB,$EB,$7E,$AA,$51,$43], [{$FA,}$3A{39},$19,$7A,$63,$25,$43,$31,$C0,$AC,$3C]],
+    [0512, [{$CC,}$C7{C6},$91,$0E,$A6,$AE,$A0,$19,$E3,$A3,$46], [{$71,}$1D{1C},$D2,$23,$DB,$32,$EE,$49,$90,$5A,$39]],
+    [1024, [{$65,}$17{17},$0C,$75,$81,$86,$75,$76,$C9,$48,$4D], [{$87,}$BE{BD},$C0,$57,$DA,$A5,$82,$A6,$A2,$B5,$32]],
+    [2048, [{$A7,}$E5{E4},$5D,$3D,$C5,$5D,$3B,$8B,$9E,$92,$5A], [{$49,}$E4{E4},$2D,$36,$34,$4F,$53,$AE,$CE,$6B,$25]],
+    [4096, [{$C9,}$9B{9A},$97,$20,$8A,$02,$52,$60,$C4,$25,$75], [{$2D,}$DE{DE},$9F,$CE,$D2,$C8,$04,$DD,$A6,$D8,$0A]]];
 
 type
   t_BCDmantissa    = array 0..17 of t_char32;
-
 
 
 
@@ -76,8 +74,6 @@ begin
 @0:     
   #end asm;  
   end addx;
-
-
 
 
 
@@ -114,7 +110,6 @@ begin
 
 
 
-
 ----------------------------------------------------------------------------------------------------
 procedure divx (
     bin            : in out unchecked;           -- binary number
@@ -146,8 +141,7 @@ begin
   #end asm;  
   end divx;
 
-
-  
+ 
 
 ----------------------------------------------------------------------------------------------------
 procedure is_zero (
@@ -169,7 +163,6 @@ begin
 @0:     
   #end asm;  
   end is_zero;
-
 
 
 
@@ -221,7 +214,6 @@ begin
 
 
 
-
 ----------------------------------------------------------------------------------------------------
 procedure unsigned_to_string_primitive =
 --  num            : in t_unsigned;              -- number to convert
@@ -251,7 +243,6 @@ begin
 
 
 
-
 ----------------------------------------------------------------------------------------------------
 procedure signed_to_string_primitive =
 --  num            : in t_signed;                -- number to convert
@@ -271,7 +262,6 @@ begin
       unsigned_to_string_primitive(t_unsigned(-num),radix,s,code);
     end if;
   end signed_to_string_primitive;
-
 
 
 
@@ -329,9 +319,7 @@ begin
     -- next character
     succ i;
     end loop;
-
   end string_to_unsigned_primitive; 
-
 
 
 
@@ -362,7 +350,6 @@ begin
 
 
 
-
 ----------------------------------------------------------------------------------------------------
 procedure mantissa_to_BCD (
     num            : in t_extended;              -- číslo které převést
@@ -370,7 +357,7 @@ procedure mantissa_to_BCD (
 -- Převede zaokrouhlenou hodnotu NUM na řetězec v rozsahu 0 až + 10e18-1.
 ----------------------------------------------------------------------------------------------------
 use 
-    flex.numerics.floating_point;
+  flex.numerics.floating_point;
 
 var
   z                : mod unsigned 8;                -- zpracovávaný nibble (BCD číslice)
@@ -379,7 +366,6 @@ var
   x                : t_unsigned;                 -- index znaku v BCD
 
 begin
-
   FP:=num;
 
   -- převést float na packed BCD
@@ -478,7 +464,6 @@ begin
   flex.numerics.floating_point.fp_evaluate_exception;
 
   num:=FP;
-
   end BCD_to_mantissa;
 
 
@@ -508,7 +493,6 @@ begin
   -- exponent snižuju na nulu (líp se to programuje) a ne na jedničku, jak by se 
   -- dalo čekat. Tedy celkem se musí odečíst 18.
   wexp:=exp-18;
-
 
   if wexp>=0
     -- vynásobit koeficientem podle exponentu (pro nezáporné exponenty)
@@ -560,7 +544,6 @@ var
   wexp             : t_signed;                   -- pracovní exponent
   i                : t_unsigned;
 
-
 begin
   -- číslo se bude průběžně modifikovat
   wnum:=num;
@@ -569,9 +552,7 @@ begin
   sign:=wnum>=fp_p_0;
   abs wnum;
 
-
   if wnum<>fp_p_0 then
- 
 
     -- příliš velká čísla normalizovat do intervalu <1, 10)
     i:=expansion:last;
@@ -601,7 +582,6 @@ begin
       wnum*fp_p_10;
       wexp-1;
       end if;
- 
     end if;
 
 
@@ -699,7 +679,6 @@ var
   
 begin
   unsigned_to_string_primitive(num,format.radix,s,code);
-
   if code<>tcres_ok then
     raise conversion_error;
     end if;
@@ -740,7 +719,6 @@ begin
     for i in 1..w_before loop 
       s:=format.fill & s;
       end loop;
-
     end if;
 
   -- přidat znaménko
@@ -757,11 +735,9 @@ begin
     for i in 1..w_after loop 
       s:=format.fill & s;
       end loop;
-
     end if;
 
   result:=s;
-
   end unsigned_to_string;
 
 
@@ -783,7 +759,6 @@ var
   
 begin
   signed_to_string_primitive(num,format.radix,s,minus,code);
-
   if code<>tcres_ok then
     raise conversion_error;
     end if;
@@ -824,14 +799,12 @@ begin
     for i in 1..w_before loop 
       s:=format.fill & s;
       end loop;
-
     end if;
 
   -- přidat znaménko
   result:=s;
   if minus
-    then 
-      s:='-' & s
+    then s:='-' & s
     else 
       case format.sign 
         when tsm_empty do ;
@@ -847,7 +820,6 @@ begin
     for i in 1..w_after loop 
       s:=format.fill & s;
       end loop;
-
     end if;
 
   result:=s;
@@ -877,7 +849,6 @@ begin
 
   -- převést 
   string_to_unsigned_primitive(wstr,parse.radix,num,code);
-
   if code<>tcres_ok then
     raise conversion_error;
     end if;

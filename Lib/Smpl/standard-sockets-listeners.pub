@@ -9,7 +9,7 @@ with
   standard.streams;
 
 const
-    so_waiting_connections = 5;
+  so_waiting_connections = 5;
 
 ----------------------------------------------------------------------------------------------------
 class public c_socket_listener =

@@ -23,9 +23,6 @@ with
   standard.streams,
   standard.characters;  
   
-message
-    file_error;                                  --%%TODO extend message types
-
 -- forward declarations
 class c_filesystem_object; type p_filesystem_object                                 = ^class c_filesystem_object;
 class c_file;              type p_file              #option required_security(100); = ^class c_file;
@@ -34,7 +31,13 @@ class c_drive;             type p_drive                                         
 class c_drives;            type p_drives                                            = ^class c_drives;
 class c_file_manager;      type p_file_manager      #option required_security(100); = ^class c_file_manager;
 
+type
+  -- exception type for all file-system-object-related errors
+  t_file_exception = t_library_exception;
 
+message
+  -- general file error exception
+  file_error       : t_file_exception;
 
 type
   -- file open mode
@@ -142,16 +145,12 @@ class public c_filesystem_object = extend c_trigger_container;
       res          : protected t_fs_object_error;-- result of the last operation
   
     ------------------------------------------------------------------------------------------------
-    virtual set_exception_mode(
-      disable      : t_logical); 
-    ------------------------------------------------------------------------------------------------
     virtual set_ok; 
     -- Clears [this.res] error flag.
     ------------------------------------------------------------------------------------------------
     virtual set_error (
         res        : in t_fs_object_error);     -- error code
-    -- Sets [this.res] to [res], retrieves the error code from the operating system  and executes 
-    -- the [event_error] trigger.
+    -- Sets [this.res] to [res], retrieves the error code from the operating system.
     ------------------------------------------------------------------------------------------------
     virtual get_datetime (
         kind       : in t_file_datim_kind)       -- what datim to return

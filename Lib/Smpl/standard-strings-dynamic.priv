@@ -56,7 +56,7 @@ class private abstract c_abstract_string =
       
       -- check that we are assigning the same string type
       if source:tag<>this:tag then
-        raise string_error;
+        raise invalid_type_error;
         end if;
 
       -- clear current contents
@@ -92,7 +92,7 @@ class private abstract c_abstract_string =
       
       -- Check range
       if position<1 or position+count-1>get_length then
-        raise string_error;
+        raise argument_out_of_range_error;
         end if;
 
       -- In this generic (unoptimized) version, just [remove] and [insert]
@@ -227,7 +227,6 @@ class private abstract c_abstract_string =
     begin
       result:=str_hash(data^);
       end get_hash;
-
 
   #end basic_extend_string_private;
 

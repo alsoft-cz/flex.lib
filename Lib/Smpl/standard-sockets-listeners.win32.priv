@@ -52,7 +52,7 @@ var
       raise socket_connection_error;
       end if;
 
-    -- start listning
+    -- start listening
     if system.windows.winsock2.listen(listen_handle,s_long(waiting_count))<>0 then
       raise socket_connection_error;
       end if;

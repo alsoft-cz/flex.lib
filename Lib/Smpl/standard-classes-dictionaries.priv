@@ -42,7 +42,7 @@ class c_dictionary_tree_node = extend c_binary_tree_node;
         key        : in p_dictionary_key;
         value      : in p_dictionary_value) =
     -- Inicializace uzlu (nastaví klíč a hodnotu). Pokud klíč není definován (je [nil]), vyvolá výjimku
-    -- [dictionary_error].
+    -- [parameter_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- inicializace
@@ -51,7 +51,7 @@ class c_dictionary_tree_node = extend c_binary_tree_node;
 
       -- kontrola, zda je definován klíč
       if key=nil then
-        raise dictionary_error;
+        raise parameter_error;
         end if;
       end init;
 
@@ -121,8 +121,8 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static insert_value =
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
-    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     var
       node         : p_dictionary_tree_node;     -- vkládaný uzel stromu
@@ -130,7 +130,7 @@ class private c_dictionary =
     begin
       -- pokud už klíč ve stromě existuje, skončit na výjimku
       if exist_key(key) then
-        raise dictionary_error;
+        raise duplicate_item_error;
         end if;
 
       -- vyvořit a inicializovat uzel
@@ -146,7 +146,7 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static set_value =
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
     ------------------------------------------------------------------------------------------------
     var
@@ -171,7 +171,7 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static delete_value =
     -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
     ------------------------------------------------------------------------------------------------
     var
@@ -208,7 +208,7 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static remove_value =
     -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
     ------------------------------------------------------------------------------------------------
     var
@@ -239,7 +239,7 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static get_value =
     -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     var
       tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
@@ -252,7 +252,7 @@ class private c_dictionary =
       -- najít výslednou hodnotu
       tmp_res:=tree^.find(^tmp_item);
 
-      -- pokud byl nalezen správný uzel, zjístit výsledek, jinak vyvoláme výjimku [dictionary_error]
+      -- pokud byl nalezen správný uzel, zjístit výsledek, jinak vyvoláme výjimku [unknown_item_erro]
       if tmp_res<>nil
         then result:=tmp_res^.value;
         else raise dictionary_error;
@@ -264,7 +264,7 @@ class private c_dictionary =
     ------------------------------------------------------------------------------------------------
     static exist_key =
     -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     var
       tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
@@ -295,7 +295,7 @@ class private c_dictionary =
 
     begin
       -- zrušit všechny klíče a hodnoty
-      iterator.init(tree^,ttwd_inv_infix); 
+      iterator.init(tree^,ttwd_inverted_infix); 
       while iterator.get(item) loop
         p_dictionary_tree_node(item)^.discard_fields;
         end loop;
@@ -375,18 +375,16 @@ class c_string_dictionary_key = extend c_dictionary_key;
     begin
       -- porovnání řetězců
       if p_string_dictionary_key(other)^.value^<value^ then 
-        result:=cr_smaller;
-        return;
-        end if;
+        result:=tcr_smaller;
 
       -- porovnání řetězců
-      if p_string_dictionary_key(other)^.value^>value^ then 
-        result:=cr_bigger;
-        return;
-        end if;
+      elsif p_string_dictionary_key(other)^.value^>value^ then 
+        result:=tcr_bigger;
 
       -- řetězce jsou si rovny
-      result:=cr_equal;
+      else
+        result:=tcr_equal;
+        end if;
       end compare;
 
 
@@ -412,7 +410,7 @@ class private c_string_dictionary =
     ------------------------------------------------------------------------------------------------
     static insert_value =
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     var
       sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
@@ -503,7 +501,8 @@ class private c_string_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static get_value =
-    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku
+    -- [dictionary_error].
     ------------------------------------------------------------------------------------------------
     var
       sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
@@ -604,7 +603,7 @@ class private c_string_string_dictionary =
     ------------------------------------------------------------------------------------------------
     static insert_value =
     -- Přidá do slovníku dvojici [key,value]
-    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     var
       val          : p_string_dictionary_value;  -- hodnota
@@ -647,7 +646,8 @@ class private c_string_string_dictionary =
     
     ------------------------------------------------------------------------------------------------
     static get_value =
-    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku
+    -- [dictionary_error].
     ------------------------------------------------------------------------------------------------
     var
       res          : p_string_dictionary_value;  -- výslená hodnota

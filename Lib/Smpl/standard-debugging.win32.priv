@@ -1,0 +1,27 @@
+﻿----------------------------------------------------------------------------------------------------
+module private debugging =
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure output_debug_string =
+----------------------------------------------------------------------------------------------------
+with
+  system,
+  system.windows.windef.winnt,
+  system.windows.winbase;
+
+var
+  crlf             : static const string 2 of t_char32 := \$0d\$0a;
+  sys_str          : PWSTR;
+
+begin
+  to_system_string(msg,sys_str);
+  OutputDebugStringW(sys_str);
+  if output_eol then
+    output_debug_string(crlf,false);
+    end if;
+leave
+  discard sys_str;
+  end output_debug_string;
+
+end debugging;

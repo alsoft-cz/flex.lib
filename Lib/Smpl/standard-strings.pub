@@ -13,8 +13,16 @@ module public strings =
 ----------------------------------------------------------------------------------------------------
 
 with
-  standard.common.structures;
+  standard.classes,
+  standard.classes.hash_tables;
 
+type
+  -- exception type for all string-related errors
+  t_string_exception = t_library_exception;
+
+message
+  -- general string error exception
+  string_error     : t_string_exception;
 
 type
 {
@@ -32,7 +40,7 @@ type
   t_str_trim         = enum
       st_no;                                     -- never trim
       st_yes;                                    -- trim if necessary
-      st_error;                                  -- raise {Parameter_Error} when trimmig
+      st_error;                                  -- raise [string_error] when trimmig
       end enum;
 
   -- string of strings
@@ -56,13 +64,13 @@ procedure str_adjust (
 --   When the length of [str] is greater than [length] and [trim_policy] is {st_yes} the extraneous 
 -- characters on the sides specified in [trim_ends] are removed. When [length] is odd, the extra 
 -- character is removed from the right side of the string (if {se_rigth} is present in [trim_ends]). 
--- When [trim_policy] is {st_error}, the subprogram fails and {Parameter_Error} is raised.
+-- When [trim_policy] is {st_error}, the subprogram fails and [string_error] is raised.
 --   In all other cases, unless in the error conditions described below, the exact string [str] is 
 -- returned without any modifications. 
 --
 -- Parameters:
---   pad_ends      May not be an empty set, otherwise {Parameter_Error} is raised.
---   trim_ends     May not be an empty set, otherwise {Parameter_Error} is raised even when 
+--   pad_ends      May not be an empty set, otherwise [argument_out_of_range_error] is raised.
+--   trim_ends     May not be an empty set, otherwise [argument_out_of_range_error] is raised even when 
 --                 [trim_policy] is False.
 --
 -- Result:
@@ -176,7 +184,7 @@ procedure str_count_substring (
 --     this special case is count as there is only one occurance of substring 'aa'
 --
 -- Parameters:
---   substr        May not be an empty string, otherwise {Parameter_Error} is raised.
+--   substr        May not be an empty string, otherwise [argument_out_of_range_error] is raised.
 --
 -- Result:
 --   When the subprogram fails, the return value is undefined.

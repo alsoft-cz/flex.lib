@@ -10,19 +10,15 @@ module public hash_tables =
 --   -- implement delete_all
 ----------------------------------------------------------------------------------------------------
 
-with
-  standard.common;
-
-extend
-  standard.common.structures;
-
 -- forward declarations
 class abstract c_hash_table;    type p_hash_table             = ^class c_hash_table;
 class c_hash_table_item;        type p_hash_table_item        = ^class c_hash_table_item;
 class c_incremental_hash_table; type p_incremental_hash_table = ^class p_incremental_hash_table;
 class c_hash_table_iterator;    type p_hash_table_iterator    = ^class c_hash_table_iterator;
 
-
+type
+  -- hash ID of an item (hash code; synthetic item ID used for locating an item in a hash table)
+  t_hash_item_id   = protected t_unsigned;
 
 ----------------------------------------------------------------------------------------------------
 class public c_hash_table_item = extend c_item;
@@ -55,7 +51,7 @@ class public abstract c_hash_table = extend c_container;
     -- Initializes the hash table.
     --   When [homogenous] is set to True, then only items of type [item_type] are permitted in the 
     -- hash table, otherwise only items of type [item_type] and all its descendants. All hash table
-    -- manipulation procedures raise [list_error] when the type of an item violates this rule.
+    -- manipulation procedures raise [invalid_type_error] when the type of an item violates this rule.
     ------------------------------------------------------------------------------------------------
     static store (
         item       : in p_hash_table_item);      -- item to be stored into the hash table

@@ -7,8 +7,13 @@ module public program_control =
 
 #option required_security(100);
 
+type
+  -- exception type for all program-control-related errors
+  t_program_control_exception = t_library_exception;
+
 message
-  process_start_error;
+  -- general program-control error exception
+  program_control_error : t_program_control_exception;
 
 type
   -- sigle environment variable
@@ -130,7 +135,7 @@ procedure run_external_program (
 -- completion.
 --   The first parameter of the [cmd_line] block of parameters shall shall be a name of an 
 -- executable file. This is determined by the operating system. However, the block of command line
--- parameters may not be empty, otherswise [process_start_error] is raised.
+-- parameters may not be empty, otherswise [parameter_error] is raised.
 --   When [directory] is not NIL, the process is created with the specified current directory; 
 -- otherwise the child process inherits the current directory of this process. When [env_vars] is 
 -- not NIL, the process is created with the specified set of environment variable; otherwise the 
@@ -139,7 +144,7 @@ procedure run_external_program (
 -- code is passed to [exit_code^].
 --
 -- Result:
---   Raises [process_start_error] when the program didn't start succesfuly.
+--   Raises [parameter_error] or [program_control_error] when the program didn't start succesfuly.
 --   Raises [tasking_error] when waiting for the program to terminate failed.
 ----------------------------------------------------------------------------------------------------
 procedure set_task_exit_code (

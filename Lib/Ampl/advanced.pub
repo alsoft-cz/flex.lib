@@ -41,6 +41,9 @@ const
 #separate public characters;
 -- Additional tools to standard.characters.
 ----------------------------------------------------------------------------------------------------
+#separate public program_control;
+-- Additional program execution control.
+----------------------------------------------------------------------------------------------------
 --#end if;
 
 end advanced;

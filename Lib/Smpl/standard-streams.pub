@@ -29,7 +29,7 @@ kodovani a [c_text_reader] je zase prevadi zpet. Tyto nadstavbove formatery vyst
 specializovane rozhrani a konzumuji obecne packetove rozhrani. Díky tomu je mozne snadno zretezit 
 zapisovac textu a obecny zapisovaci stream. Instance streamu muze byt urcena k zapisu na libovolne zarizeni.
 
-Filtry jsou zaroven poskytovately i konzumenty streamoveho rozhrani. Jsou navrzeny jako meziblok mezi 
+Filtry jsou zaroven poskytovateli i konzumenty streamoveho rozhrani. Jsou navrzeny jako meziblok mezi 
 konzumentem stream intefacu a jeho primarnim poskytovatelem. Tyto mezibloky mohou byt razene do 
 retezu a implementovat rozmanite transformace dat. Napriklad bufferovani, sifrovani, kompresi, 
 filtrovani. Kazdy filter musi pro sve potreby znat format dat, ktere jim prochazeji.
@@ -106,15 +106,21 @@ with
   standard.tasks,
   standard.synchronization;
 
+type
+  -- exception type for all stream-related errors
+  t_stream_exception = t_library_exception;
+
 message
-  stream_exception : exception;                  -- obecná výjimka při práci se streamy
-  stream_error extend stream_exception;          -- obecná chyba při práci se streamy
+  -- general stream error exception
+  stream_error     : t_stream_exception;
+
+  -- %%TODO(REFACTOR)
   stream_internal_error extend stream_error;     -- interní chyba
   stream_read_error extend stream_error;         -- chyba při čtení
-  stream_end_of_data extend stream_exception;    -- výjimka - čtení přes konec dat
-  stream_other_side extend stream_exception;     -- druha strana prestala cist data
-  stream_already_closed extend stream_exception; -- jiz bylo zavreno
-  stream_invalid_data extend stream_exception;   -- vadne data
+  stream_end_of_data extend stream_error;        -- výjimka - čtení přes konec dat
+  stream_other_side extend stream_error;         -- druha strana prestala cist data
+  stream_already_closed extend stream_error;     -- jiz bylo zavreno
+  stream_invalid_data extend stream_error;       -- vadne data
 
 
 -- ultimatni predek streamovych interfacu

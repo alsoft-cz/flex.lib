@@ -15,8 +15,13 @@ with
   standard.characters,
   standard.streams;
 
+type
+  -- exception type for all console-related errors
+  t_console_exception = t_library_exception;
+
 message
-  console_error;
+  -- general console error exception
+  console_error    : t_console_exception;
 
 type
   -- position of the cursor on the console

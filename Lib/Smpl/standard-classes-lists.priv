@@ -27,7 +27,7 @@ class private c_list =
     -- Initializes the list.
     --   When [homogenous] is set to True, then only items of type [item_type] are permitted on the 
     -- list, otherwise only items of type [item_type] and all its descendants. All list manipulation 
-    -- procedures raise [list_error] when the type of an item violates this rule.
+    -- procedures raise [invalid_type_error] when the type of an item violates this rule.
     ------------------------------------------------------------------------------------------------
     begin
       this.item_type:=item_type;
@@ -45,15 +45,12 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
-
-      raise feature_not_implemented;
-    {%%TODO(TAG)
+   
       -- create a new item
       new item tag item_type;
 
       -- insert to the beginning of the list
       insert_first(item);
-    }
 
     leave
       execute(event_after);
@@ -69,14 +66,11 @@ class private c_list =
     begin
       execute(event_before);
 
-      raise feature_not_implemented;
-    {%%TODO(TAG)
       -- create a new item
-      new item tag list.item_type;
+      new item tag item_type;
 
       -- insert to the end of the list
       insert_last(item);
-    }
 
     leave
       execute(event_after);
@@ -87,20 +81,18 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     static new_before =
     -- Creates a new item and places it before the specified [refitem].
-    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- Raises [parameter_error] if [refitem] is NIL.
+    -- Raises [list_error] if [refitem] is not found.
     -- The type of the item is according to the type of the real parameter (item:tag:base).
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
 
-      raise feature_not_implemented;
-    {%%TODO(TAG)
       -- create a new item
-      new item tag list.item_type;
+      new item tag item_type;
 
       -- insert before the specified [refitem]
       insert_before(item,refitem);
-    }
 
     leave
       execute(event_after);
@@ -111,20 +103,18 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     static new_after =
     -- Creates a new item and places it after the specified [refitem].
-    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- Raises [parameter_error] if [refitem] is NIL.
+    -- Raises [list_error] if [refitem] is not found.
     -- The type of the item is according to the type of the real parameter (item:tag:base).
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
 
-      raise feature_not_implemented;
-    {%%TODO(TAG)
       -- create a new item
-      new item tag list.item_type;
+      new item tag item_type;
 
       -- insert after the specified [refitem]
       insert_after(item,refitem);
-    }
 
     leave
       execute(event_after);
@@ -192,15 +182,14 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     static insert_before =
     -- Places the given item to before the specified [refitem].
+    -- Raises [list_error] if [refitem] is not found.
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
 
-      -- check whether REFITEM is in the list
+      -- check whether [refitem] is in the list
       if not has_item(refitem) then
-        -- %%TODO do something in case of error 
-        raise feature_not_implemented;
-        return;
+        raise list_error;
         end if;
       
       -- insert item
@@ -222,15 +211,14 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     static insert_after =
     -- Places the given item to after the specified [refitem].
+    -- Raises [list_error] if [refitem] is not found.
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
 
-      -- check whether REFITEM is in the list
+      -- check whether [refitem] is in the list
       if not has_item(refitem) then
-        -- %%TODO do something in case of error 
-        raise feature_not_implemented;
-        return;
+        raise list_error;
         end if;
       
       -- insert item
@@ -316,6 +304,7 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     override remove =
     -- Removes the [item] from the list.
+    -- Raises [list_error] if [refitem] is not found.
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
@@ -428,6 +417,7 @@ class private c_list =
     ------------------------------------------------------------------------------------------------
     override delete =
     -- Removes and discards the [item] from the list.
+    -- Raises [list_error] if [refitem] is not found.
     ------------------------------------------------------------------------------------------------
     begin
       execute(event_before);
@@ -752,14 +742,14 @@ class private c_stack =
     -- Pushes [item] on top of the stack.
     -- 
     -- Result:
-    --   If we try po push in a nil an error contition occures.
+    --   If we try po push in a nil, [parameter_error] is raised.
     ------------------------------------------------------------------------------------------------
     begin
       -- trigger the 'before' event
       execute(event_before);
 
       if item=nil then
-        execute(event_error);
+        raise parameter_error;
         end if;
 
       -- clear links to item
@@ -791,7 +781,7 @@ class private c_stack =
     -- Pop [item] that is on the top of the stack
     --
     -- Result:
-    --   If there is no item in the stack an error condiotion occures and output parametr [item] is
+    --   If there is no item in the stack output parametr [item] is
     --   set to nil.
     ------------------------------------------------------------------------------------------------
     begin
@@ -799,7 +789,6 @@ class private c_stack =
       execute(event_before);
 
       if current_item=nil then
-        execute(event_error);
         return;
         end if;
 
@@ -830,9 +819,6 @@ class private c_stack =
     ------------------------------------------------------------------------------------------------
     static peek =
     -- Returns item currently on top of the stack.
-    -- 
-    -- Result:
-    --   If we try po push in a nil an error contition occures.
     ------------------------------------------------------------------------------------------------
     begin
       -- trigger the 'before' event

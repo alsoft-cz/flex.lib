@@ -1,0 +1,261 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+program test =
+
+with
+  standard,
+  standard.console,
+  standard.classes.lists,
+  standard.classes.dictionaries,
+  standard.conversions,
+  standard.program_control,
+  advanced.program_control.command_line_parser;
+
+----------------------------------------------------------------------------------------------------
+procedure print_result (
+    command        : p_command) =
+-- Vypíše kolekci parsovaných objektů v následujícím formátu:
+--   Command:           name
+--    - param1:         value
+--    - param2:         value
+--    - param3:         value
+--    ...
+--
+--    - option1:        name
+--        - param1:     value
+--        - param2:     value
+--        ...
+--
+--    - option2:        name
+--        - param1:     value
+--        - param2:     value
+--        ...
+--    ...
+----------------------------------------------------------------------------------------------------
+var
+  option           : p_option;
+  param_iter       : c_string_string_dictionary_iterator;
+  opt_iter         : c_list_iterator;
+  param_id         : t_char32str;
+  param_val        : t_char32str;  
+
+begin
+  write_line('');
+  write_line('------------------- Results --------------');
+  write('cmd: ');
+
+  -- zobrazíme jméno příkazu
+  if command^.command_name=''
+    then write_line('Empty command');
+    else write_line(command^.command_name);
+      end if;
+
+  -- iterujeme seznam parametrů příkazu a zobrazíme jednotlivé příkazy
+  param_iter.init(command^.parameters);
+  write_line(' Parameters:');
+  while param_iter.get_value(param_id,param_val) loop
+   write('  ');
+   write(param_id);
+   write(': ');
+   write_line(param_val);
+   end loop;
+
+  -- iterujeme seznam optionů a zobrazíme jejich jméno a parametry
+  opt_iter.init(command^.options);
+  while opt_iter.get(option) loop
+   write(' ');
+   write_line(option^.option_name);
+
+   -- iterujeme seznam parametrů optionu
+   param_iter.init(option^.parameters);
+   while param_iter.get_value(param_id,param_val) loop
+     write('   ');
+     write(param_id);
+     write(': ');
+     write_line(param_val);
+     end loop;
+   end loop;
+  end print_result;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure empty_command_line: t_execute_command_proc =
+-- Obslužná procedura pro prázdný příkazový řádek.
+----------------------------------------------------------------------------------------------------
+begin
+  write_line('This is empty command line and it is not error - empty_command_line procedure is called');
+  end empty_command_line;
+
+
+----------------------------------------------------------------------------------------------------
+procedure reset: t_execute_command_proc =
+-- Obslužná procedura příkazu "reset" - zobrazí parametry a optiony příkazu "reset"
+----------------------------------------------------------------------------------------------------
+var
+  parameter        : t_char32str;
+  option           : p_option;     
+
+begin
+  write_line('');
+  write_line('Call of callback procedure Reset:');
+
+  -- parametry příkazu "reset"
+  write(' Path and file: ');
+  write(collection^.get_parameter('1'));
+  write('\');
+  write_line(collection^.get_parameter('1'));
+  
+  -- option Time: 
+  write(' Time: ');
+  option:=collection^.get_option('time');
+  if option=nil
+    then write_line('No');
+    else write_line(option^.get_parameter('1'));
+    end if;
+
+  -- option Rows:
+  write(' Rows: ');
+  option:=collection^.get_option('rows');
+  if option=nil
+    then write_line('No');
+    else
+      write(option^.get_parameter('1'));
+      write(', ');
+      write_line(option^.get_parameter('2'));
+      end if;
+  end reset;
+
+
+var
+  parser           : c_command_line_parser;      -- parser
+  command          : p_command_label;            -- popis vytvářeného příkazu
+
+  cmd              : p_char32ustr;               -- načtená příkazová řádka (včetně jména programu "test")
+  cmd_line         : t_char32str;                -- příkazový řádka předávaná parseru
+  i                : t_unsigned:=1;              -- pomocná proměnná pro manipulaci s příkazovou řádkou [cmd]
+
+  cmd_res          : p_command;                  -- kolekce výsledku parseru
+begin
+  -- zjistíme příkazovou řádku:
+  get_command_line(cmd);
+  i:=1;
+  cmd_line:='';
+  while i<=cmd^:length and then cmd^[i]=" " loop
+    i+1;
+    end loop;
+
+  while i<=cmd^:length and then cmd^[i]<>" " loop
+    i+1;
+    end loop;
+
+  while i<=cmd^:length and then cmd^[i]=" " loop
+    i+1;
+    end loop;
+
+  while i<=cmd^:length loop
+    cmd_line & cmd^[i];
+    i+1;
+    end loop;
+
+  discard cmd;
+
+  write_line(cmd_line);
+
+
+  -- registrace příkazů
+  begin
+    -- reset {file} {directory} {-t: {unsigned value}} [-r {par1} |par2|]
+    command:=create_command('reset',^reset,
+               create_string_parameter(o_forced_once,
+               create_string_parameter(o_optional_once,
+                 create_option("i",'time',o_optional_once,
+                 create_unsigned_parameter(0,100,o_forced_once,
+                   create_option("t",'t-t',o_optional_repeat,
+                   create_string_parameter(o_forced_once,
+                   create_string_parameter(o_optional_repeat))))))));
+
+    -- registrujeme příkaz
+    parser.register_command(command);
+
+    -- get {parameter}
+    command:=create_command('get',nil,
+               create_string_parameter(o_forced_once));
+
+    -- registrujeme příkaz
+    parser.register_command(command);
+
+    -- get all [parameter]
+    command:=create_command('get all',nil,
+               create_string_parameter(o_optional_once));
+
+    -- registrujeme příkaz
+    parser.register_command(command);
+
+    -- delete {file} {directory} [-t: {file} {directory}] [-f]
+    command:=create_command('delete',nil,
+               create_string_parameter(o_forced_once,
+               create_string_parameter(o_forced_once,
+                 create_option("t",'trash',o_optional_once,
+                   create_string_parameter(o_forced_once,
+                   create_string_parameter(o_forced_once,
+                     create_option("f",'force',o_optional_once)))))));
+
+    -- registrujeme příkaz
+    parser.register_command(command);
+
+    -- nulový příkaz - obsahuje libovolný počet argumentů
+    command:=create_command('',nil,
+                create_string_parameter(o_optional_repeat));
+
+    -- registrujeme příkaz
+    parser.register_command(command);
+         
+  catch
+    when cmd_command_error do
+      write_line('Chyba v prikazu!!!');
+      return;
+
+    when cmd_duplicity_error do
+      write_line('Duplicitni definicie prikazu nebo optionu');
+      return;
+
+    when cmd_option_error do
+      write_line('Chyba v optionu');
+      return;
+    when cmd_parameter_error do
+      write_line('Chyba v prikazu');
+      return;
+    end;
+
+
+    -- parsujeme
+    begin
+      parser.set_empty_cmd_line(true,^empty_command_line);
+      cmd_res:=parser.process(cmd_line);
+      if cmd_res=nil then
+        write_line('Neznamy prikaz');
+        return;
+        end if;
+
+    catch
+      when cmd_empty_error do
+        write_line('Chyba!! Prazdny prikazovy radek');
+        return;
+      when cmd_command_error do
+        write_line('Chyba!! Neznamy prikaz');
+        return;
+      when cmd_parameter_error do
+        write_line('Chyba v parametru!!!');
+        return;
+      when cmd_option_error do
+        write_line('Chyba v optionu!!!');
+        return;
+      end;
+
+  -- zobrazíme výsledky
+  print_result(cmd_res);
+
+  discard cmd_res;
+  end test;

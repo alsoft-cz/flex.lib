@@ -18,7 +18,8 @@ with
   standard.conversions,
   standard.files,
   standard.streams,
-  standard.datetime;
+  standard.datetime,
+  system.exceptions;
 
 ----------------------------------------------------------------------------------------------------
 #separate public performance;
@@ -29,8 +30,8 @@ type
   t_test_loop_count = t_unsigned range 1..t_unsigned:last; -- typ pro počet opakování testu
 
 message
-  test_error       : exception;                  -- výjimka, která vznikne při chybě v testu
-  testlib_error    : exception;                  -- generuje se v případě neúspěšného volání některé
+  test_error       extend flex_error;            -- výjimka, která vznikne při chybě v testu
+  testlib_error    extend flex_error;            -- generuje se v případě neúspěšného volání některé
                                                  -- z metod poskytovaných třídami modulu (např.
                                                  -- chyba při zápisu výsledků tesů do souboru)
 

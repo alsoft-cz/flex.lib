@@ -162,10 +162,8 @@ class private c_julian_calendar =
     ------------------------------------------------------------------------------------------------
     override decompose_datetime =
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že:
-    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
-    --    maximální datum.
-    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že při dekompozici dojde k přetečení nebo
+    -- podtečení.
     -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
@@ -197,11 +195,7 @@ class private c_julian_calendar =
       -- letním a zimním časem. Je-li výsledek větší než maximální hodnota, generujeme výjimku
       -- [calendar_error]
       if daylight then
-        begin
-          datim_h+t_datetime(daylight_shift)*t_dtl_minute;
-        catch
-          when constraint_error do raise calendar_error;
-          end;
+        datim_h+t_datetime(daylight_shift)*t_dtl_minute;
         end if;
 
       -- Určíme počet dnů od počátku
@@ -248,7 +242,10 @@ class private c_julian_calendar =
       datim_out.time_zone:=time_zone;
 
       -- nastavíme indikátor letního času
-      datim_out.daylight:=true;
+      datim_out.daylight:=daylight;
+
+    catch
+      when constraint_error do raise calendar_error;
       end decompose_datetime;
 
 
@@ -256,10 +253,9 @@ class private c_julian_calendar =
     ------------------------------------------------------------------------------------------------    
     override compose_datetime =
     -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out]
-    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
-    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
-    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
-    -- tj. např. 30.2. nebo 31.4., atd...
+    -- Metoda generuje výjimku [calendar_error] v případě že vstupní datum není korektní, tj. např.
+    -- 30.2. nebo 31.4. ... Metoda generuje výjimku [calendar_error] v případě, že při kompozici
+    -- dojde k přetečení nebo podtečení.
     --
     -- Princip:
     -- Pracujeme s pomocnou proměnnou [year], do níž ukládáme rok. Tato proměnná je se znaménkem a
@@ -291,12 +287,6 @@ class private c_julian_calendar =
 
       -- Určíme znaménkový rok
       year:=get_signed_year(datim_in);
-
-      -- Je-li vstupní rok [datim_in.year] menší než počáteční rok, pak generujeme výjimku
-      -- [calendar_error]
-      if year<t_zero_year then
-        raise calendar_error;
-        end if;
 
       -- Určíme počet přestupných roků od počátku do roku [datim_in.year] za předpokladu, že
       -- přestupným rokem je každý rok dělitelný 4
@@ -336,8 +326,7 @@ class private c_julian_calendar =
     override add_decomposed_timespan =
     -- Vrací součet nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem sčítání datumu s časovým
-    -- intervalem je datum větší než maximální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     --
     -- Interval [timespan] je nejprve normován dle Normovacího pravidla a výsledek je uložen do
     -- [timespan_h]. Čas [datim] dekomponujeme a přičteme k němu příslušný počet let z intervalu 
@@ -415,8 +404,7 @@ class private c_julian_calendar =
     override substract_decomposed_timespan =
     -- Vrací rozdíl nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem odečítání časového inter-
-    -- valu od datumu je datum menší než minimální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     --
     -- Interval [timespan] je nejprve normován dle Normovacího pravidla a výsledek je uložen do
     -- [timespan_h]. Čas [datim] dekomponujeme a odečteme od něj příslušný počet let z intervalu 
@@ -504,7 +492,8 @@ class private c_julian_calendar =
       return t_decomposed_timespan =
     -- Vrací dekomponovaný časový interval dvou zadaných dekomponovaných datumů [decomp_a] a
     -- [decomp_b], přičemž předpokládáme, že [decomp_a]<=[decomp_b] a největší složkou dekomponova-
-    -- ného intervalu jsou roky.
+    -- ného intervalu jsou roky. Není-li tento předpoklad splněn, generuje metoda výjimku
+    -- [parameter_error].
     -- Dále vynuluje všechny menší složky výsledného intervalu než je složka udaná v parametru
     -- [smallest], přičemž při nulování použijeme typ zaokrouhlování určený v [rounding].
     --
@@ -624,7 +613,7 @@ class private c_julian_calendar =
 
       -- je-li rozdíl záporný, pak není splěno [decomp_a]<=[decomp_b] a generujeme výjimku
       -- [calendar_error]
-      if diff<0 then raise calendar_error;
+      if diff<0 then raise parameter_error;
         end if;
 
       -- určíme výsledný rozdíl v rokách
@@ -684,9 +673,9 @@ class private c_julian_calendar =
     --
     -- V případě, že se ve výsledku vyskytuje nenulová složka menší než daná parametrem [smallest]
     -- [largest], a zaokrouhlování je nastaveno na hodnotu [t_tsr_none], generuje metoda výjimku
-    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Ta je generovaná i v
-    -- i v případě, že [largest]<[smallest]. Dekomponovaný rozdíl je v absolutní hodnotě,
-    -- tj. |[a]-[b]| = |[b]-[a]|
+    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Pokud je [largest]<[smallest]
+    -- generuje metoda výjimku [parameter_error].
+    -- Dekomponovaný rozdíl je v absolutní hodnotě, tj. |[a]-[b]| = |[b]-[a]|
     --
     -- Postup dekompozice: Nejprve určíme, který ze vstupních datumů [a] a [b] je menší a dekomponu-
     -- jeme je (menší vložíme do [decomp_a], větší do [decomp_b]). Dále určíme dekomponovaný časový
@@ -705,7 +694,7 @@ class private c_julian_calendar =
       -- paremetr [largest] nesmí být menší než parametr [smallest], jinak generujeme výjimku
       -- [calendar_error]
       if largest<smallest then
-        raise calendar_error
+        raise parameter_error;
         end if;
 
       -- určíme rozdíl vstupních datumů [a] a [b] v tickách, ktré následně dekomponujeme, přičemž
@@ -1258,7 +1247,8 @@ class private c_julian_calendar =
     -- ného výsledného datumu vynulovat. V případě 32b architektury je nejnižší složkou dekomponova-
     -- ného datumu sekunda, proto tento parametr výsledek neovlivňuje.
     -- V případě, že výsledný datum není omezen nejnižší a nejvyšší hodnotou datumu, generuje
-    -- metoda výjimku [calendar_error].
+    -- metoda výjimku [calendar_error]. Je-li [second]=[t_sec_in_min], generuje metoda výjimku
+    -- [parameter_error].
     --
     -- Metoda volá metodu [find_element] s potřebnými parametry
     ------------------------------------------------------------------------------------------------
@@ -1266,7 +1256,7 @@ class private c_julian_calendar =
       -- pokud je zadána 60. sekunda, pak generujeme výjimku [calendar_error], neboť ta se v
       -- Juliánském kalndáři nevyskytuje
       if second=t_sec_in_min then
-        raise calendar_error;
+        raise parameter_error;
         end if;
 
       result:=find_element(datim,second,t_tsd_seconds,direction,reset_lower);
@@ -1783,7 +1773,8 @@ class private c_julian_calendar =
     override set_tick =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- tick hodnotou [tick]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1813,7 +1804,8 @@ class private c_julian_calendar =
     override set_second =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- sekunda hodnotou [second]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud [second]=[t_sec_in_min], generuje metoda výjimku [parameter_error].
+    -- Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1821,8 +1813,8 @@ class private c_julian_calendar =
     begin
       -- je-li hodnota sekundy 60, pak generujeme výjimku [calendar_error], neboť Juliánský kalendář
       -- neobsahuje přestupné sekundy
-      if second=60 then
-        raise calendar_error;
+      if second=t_sec_in_min then
+        raise parameter_error;
         end if;
 
       -- dekomponujeme vstupní datum [datim]
@@ -1842,7 +1834,8 @@ class private c_julian_calendar =
     override set_minute =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- minuta hodnotou [minute]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1865,7 +1858,8 @@ class private c_julian_calendar =
     override set_hour =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- hodina hodnotou [hour]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].  
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1888,7 +1882,8 @@ class private c_julian_calendar =
     override set_day =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- den v měsíci hodnotou [day]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1911,6 +1906,7 @@ class private c_julian_calendar =
     override set_month =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- měsíc v roce hodnotou [month]. Pokud výsledný datum neodpovídá skutečnosti, generujeme
+    -- výjimku [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
     -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
@@ -1934,7 +1930,8 @@ class private c_julian_calendar =
     override set_year =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- rok hodnotou [year]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -1957,7 +1954,8 @@ class private c_julian_calendar =
     override set_era =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- epocha hodnotou [era]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]

@@ -398,7 +398,7 @@ var
 begin
   -- the command line has to be supplied
   if cmd_line=nil then
-    raise process_start_error;
+    raise parameter_error;
     end if;
 
   -- convert the command line into a system string representation
@@ -421,7 +421,7 @@ begin
 
   -- create process
   if not windows.winbase.CreateProcessW(nil,ps_params,nil,nil,false,windows.winbase.NORMAL_PRIORITY_CLASS,ps_eviron,ps_directory,^s_st_info,s_pr_info) then
-    raise process_start_error;
+    raise program_control_error;
     end if;
 
   -- wait for child process termination, if requested
@@ -433,7 +433,7 @@ begin
     
     -- retrieve exit code
     if not windows.winbase.GetExitCodeProcess(s_pr_info.hProcess,windows.windef.DWORD(exit_code^:unchecked)) then
-      raise process_start_error;
+      raise program_control_error;
       end if;
     end if;
 
@@ -441,10 +441,10 @@ leave
   -- close all handles
   if s_pr_info.hProcess<>nil then
     if not windows.winbase.CloseHandle(s_pr_info.hProcess) then
-      raise process_start_error;
+      raise program_control_error;
       end if;
     if not windows.winbase.CloseHandle(s_pr_info.hThread) then
-      raise process_start_error;
+      raise program_control_error;
       end if;
     end if;
 

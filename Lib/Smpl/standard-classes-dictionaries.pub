@@ -22,15 +22,16 @@ module public dictionaries =
 with
   standard.classes.trees;
 
-message
-  dictionary_error;
-
 -- dopředné deklarace
 class abstract c_dictionary_key;   type p_dictionary_key           = ^class c_dictionary_key;
 class abstract c_dictionary_value; type p_dictionary_value         = ^class c_dictionary_value;
 class c_dictionary;                type p_dictionary               = ^class c_dictionary;
 class c_string_dictionary;         type p_string_dictionary        = ^class c_string_dictionary;
 class c_string_string_dictionary;  type p_string_string_dictionary = ^class c_string_string_dictionary;
+
+message
+  -- general dictionary error exception
+  dictionary_error extend container_error;
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_dictionary_key =
@@ -40,7 +41,7 @@ class public abstract c_dictionary_key =
     ------------------------------------------------------------------------------------------------
     virtual abstract compare (
         other      : p_dictionary_key)           -- porovnávaný klíč
-        return t_compare_result;
+        return t_comparison_result;
     -- Abstraktní metoda pro porovnání klíče [this] a [other].
     ------------------------------------------------------------------------------------------------
 
@@ -68,39 +69,39 @@ class public c_dictionary =
         key        : in p_dictionary_key;        -- klíč
         value      : in p_dictionary_value);     -- hodnota
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
-    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     static set_value (
         key        : in p_dictionary_key;        -- klíč
         value      : in p_dictionary_value);     -- hodnota
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
     ------------------------------------------------------------------------------------------------
     static delete_value (
         key        : in p_dictionary_key);       -- klíč
     -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
     ------------------------------------------------------------------------------------------------
     static remove_value (
         key        : in p_dictionary_key);       -- klíč
     -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
     ------------------------------------------------------------------------------------------------
     static get_value (
         key        : in p_dictionary_key)        -- klíč
         return p_dictionary_value;
     -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     static exist_key (
         key        : in p_dictionary_key)        -- klíč
         return t_logical;
     -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     static delete_all;
     -- Vymaže všechny položky slovníku.
@@ -128,7 +129,7 @@ class public c_string_dictionary = extend c_dictionary;
         key        : in t_char32ustr;            -- klíč
         value      : in p_dictionary_value);     -- hodnota
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [duplicate_item_error].
     ------------------------------------------------------------------------------------------------
     static set_value (
         key        : in t_char32ustr;            -- klíč
@@ -171,7 +172,7 @@ class public c_string_string_dictionary = extend c_string_dictionary;
         key        : in t_char32ustr;            -- klíč
         value      : in t_char32ustr);           -- hodnota
     -- Přidá do slovníku dvojici [key,value].
-    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     static set_value (
         key        : in t_char32ustr;            -- klíč

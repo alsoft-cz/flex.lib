@@ -15,20 +15,10 @@ module public dynamic =
 --     tokenizer (strtok) ??
 ----------------------------------------------------------------------------------------------------
 
-with
-  standard.common.structures;
-
-
-message
-  string_error: exception;                       -- exception signalling invalid operation with strings
-
-
 -- forward declarations
 class abstract c_abstract_string;        type p_abstract_string        = ^class c_abstract_string;
 class abstract c_abstract_char32_string; type p_abstract_char32_string = ^class c_abstract_char32_string;
 class          c_string;                 type p_string                 = ^class c_string;
-
-
 
 type
   t_string_compare_result = enum                 -- result of a string comparison
@@ -38,8 +28,6 @@ type
       scr_unordered;                             -- the given strings cannot be ordered
       end enum;
   t_string_compare_result_set = set of t_string_compare_result;
-
-
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_abstract_string =
@@ -205,30 +193,30 @@ class public abstract c_abstract_string =
 
 
 ----------------------------------------------------------------------------------------------------
-#template extend_string_public(class_name,item_type,public_declarations,protected_declarations);
+#template extend_string_public(class_name,item_type,_t_string,_p_string,public_declarations,protected_declarations);
 ----------------------------------------------------------------------------------------------------
   class public abstract class_name = extend c_abstract_string;
 
     type
       t_item_type  = item_type;                  -- the type of the items in this string
-      t_string     = string of item_type;        -- the corresponding string type
-      p_string     = ^t_string;                  -- pointer to the corresponding string type
+      t_string     = _t_string;                  -- the corresponding string type
+      p_string     = _p_string;                  -- pointer to the corresponding string type
 
     -- further declarations from the template parameters
     public_declarations
     --
 
     ------------------------------------------------------------------------------------------------
-    virtual get_string_copy return p_string;
+    virtual get_string_copy return _p_string;
     -- Create a plain string with the contents of this string.
     -- The caller is responsible for freeing the memory.
     ------------------------------------------------------------------------------------------------
     virtual assign_to (
-        str        : in out t_string);           -- the string to be assigned to
+        str        : in out _t_string);          -- the string to be assigned to
     -- Assigns this string to a plain string.
     ------------------------------------------------------------------------------------------------
     virtual append_to_plain_str (
-        str        : in out t_string);           -- the string to be appended to
+        str        : in out _t_string);           -- the string to be appended to
     -- Appends this string to a plain string.
     ------------------------------------------------------------------------------------------------
     virtual abstract get_item (
@@ -261,7 +249,7 @@ class public abstract c_abstract_string =
     -- Counts the number of occurrences of the given [item].
     ------------------------------------------------------------------------------------------------
     virtual assign_from (
-        source     : in t_string);               -- the string to be assigned to this instance
+        source     : in _t_string);         -- the string to be assigned to this instance
     -- Assign the [source] string to this instance.
     ------------------------------------------------------------------------------------------------
     virtual create_from_item (
@@ -274,7 +262,7 @@ class public abstract c_abstract_string =
     -- Appends the specified [item] to this string.
     ------------------------------------------------------------------------------------------------
     virtual append_plain_str (
-        str2       : in t_string);               -- the string to be appended
+        str2       : in _t_string);         -- the string to be appended
     -- Appends a plain string to this string.
     ------------------------------------------------------------------------------------------------
     virtual abstract insert_item (
@@ -330,18 +318,18 @@ class public abstract c_abstract_string =
     -- left:=right
     ------------------------------------------------------------------------------------------------
     procedure op_assign_str_cstr (
-        left       : in out class t_string;
+        left       : in out class _t_string;
         right      : in class class_name);
     -- left:=right
     ------------------------------------------------------------------------------------------------
     procedure op_assign_cstr_str (
         left       : in out class class_name;
-        right      : in t_string);
+        right      : in _t_string);
     -- left:=right
     ------------------------------------------------------------------------------------------------
     procedure op_assign_cstr_item (
         left       : in out class class_name;
-        right      : in item_type);
+        right      : in {class} item_type);
     -- left:=right
     ------------------------------------------------------------------------------------------------
     procedure op_append_cstr_cstr (
@@ -350,18 +338,18 @@ class public abstract c_abstract_string =
     -- left & right
     ------------------------------------------------------------------------------------------------
     procedure op_append_str_cstr (
-        left       : in out t_string;
+        left       : in out _t_string;
         right      : in class class_name);
     -- left & right
     ------------------------------------------------------------------------------------------------
     procedure op_append_cstr_str (
         left       : in out class class_name;
-        right      : in t_string);
+        right      : in {class} _t_string);
     -- left & right
     ------------------------------------------------------------------------------------------------
     procedure op_append_cstr_item (
         left       : in out class class_name;
-        right      : in item_type);
+        right      : in {class} item_type);
     -- left & right
     ------------------------------------------------------------------------------------------------
 
@@ -432,7 +420,7 @@ class public abstract c_abstract_string =
     begin
       -- check range
       if from<1 or from+count-1>get_length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- create the result and reserve enough space
@@ -924,7 +912,7 @@ class public abstract c_abstract_string =
     begin
       -- Check range
       if position<1 or position>get_length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- In this generic (unoptimized) version, just [remove] and [insert]
@@ -1188,7 +1176,7 @@ class public abstract c_abstract_string =
     begin
       -- check range
       if from<1 or from+count-1>get_length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- reserve enough space for the result
@@ -1340,7 +1328,7 @@ class public abstract c_abstract_string =
 
       -- check range
       if position<1 or position>curr_len then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- get a properly typed version of [str]
@@ -1380,7 +1368,7 @@ class public abstract c_abstract_string =
     begin
       -- check the range
       if from<1 or from+count-1>data^:length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- shift the data down the proper number of positions, removing the chosen items
@@ -1416,7 +1404,7 @@ class public abstract c_abstract_string =
 
       -- check range
       if position<1 or position+count-1>data^:length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- get a properly typed [str]
@@ -1663,7 +1651,7 @@ class public abstract c_abstract_string =
     begin
       -- check range
       if position<1 or position>data^:length then
-        raise string_error;
+        raise parameter_error;
         end if;
 
       -- replace
@@ -1729,6 +1717,8 @@ class public abstract c_abstract_string =
 
   #for class_name use; c_abstract_char32_string
   #for item_type  use; t_char32
+  #for _t_string  use; t_char32ustr
+  #for _p_string  use; p_char32ustr
 
   #end extend_string_public;
 

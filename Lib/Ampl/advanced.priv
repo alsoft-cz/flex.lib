@@ -34,6 +34,9 @@ module private advanced =
 #separate private characters;
 -- Additional tools to standard.characters.
 ----------------------------------------------------------------------------------------------------
+#separate private program_control;
+-- Additional program execution control.
+----------------------------------------------------------------------------------------------------
 --#end if;
 
 end advanced;

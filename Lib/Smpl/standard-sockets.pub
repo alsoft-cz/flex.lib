@@ -8,33 +8,39 @@ module public sockets =
 #option required_security(100);
 
 type
-    t_socket = protected t_unsigned;
-    t_ip_address = record
-      a            : t_unsigned8;
-      b            : t_unsigned8;
-      c            : t_unsigned8;
-      d            : t_unsigned8;
-      end record;
+  t_socket         = protected t_unsigned;
+  t_ip_address     = record
+    a              : t_unsigned8;
+    b              : t_unsigned8;
+    c              : t_unsigned8;
+    d              : t_unsigned8;
+    end record;
 
-    t_tcp_port = protected t_unsigned16;
+  t_tcp_port       = protected t_unsigned16;
 
-    t_tcp_endpoint = record
-      address      : t_ip_address;
-      port         : t_tcp_port;
-      end record;
+  t_tcp_endpoint   = record
+    address        : t_ip_address;
+    port           : t_tcp_port;
+    end record;
 
 const
-    ip_localhost      : t_ip_address = [127,0,0,1];
-    ip_loopback       : t_ip_address = [1,0,0,127];
-    ip_any            : t_ip_address = [0,0,0,0];
+  ip_localhost     : t_ip_address = [127,0,0,1];
+  ip_loopback      : t_ip_address = [1,0,0,127];
+  ip_any           : t_ip_address = [0,0,0,0];
 
+type
+  -- exception type for all socket-related errors
+  t_socket_exception = t_library_exception;
 
 message
-  socket_exception;                                      -- obecná výjimka při práci se sockety
-  socket_initialization_error extend socket_exception;   -- nemuze inicializovat podporu os
-  socket_connection_error extend socket_exception;
-  socket_shutdown_error extend socket_exception;
-  socket_data_lost extend socket_exception;
+  -- general socket error exception
+  socket_error     : t_socket_exception;
+
+  -- %%TODO Rozhodnout, jestli je nutné chybu v [socket] hlásit jako [socket_initialization_error]
+  socket_initialization_error extend socket_error;
+  socket_connection_error     extend socket_error;
+  socket_shutdown_error       extend socket_error;
+  socket_data_lost            extend socket_error;
 
 
 ----------------------------------------------------------------------------------------------------

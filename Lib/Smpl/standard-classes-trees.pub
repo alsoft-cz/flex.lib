@@ -11,7 +11,6 @@ module public trees =
 extend           
   standard.classes.lists;
 
-
 -- forward declarations
 class abstract c_binary_tree_node; type p_binary_tree_node     = ^class c_binary_tree_node;
 class abstract c_binary_tree;      type p_binary_tree          = ^class c_binary_tree;
@@ -20,18 +19,40 @@ class c_tree_node;                 type p_tree_node            = ^class c_tree_n
 class c_tree;                      type p_tree                 = ^class c_tree;
 class c_tree_iterator;             type p_tree_iterator        = ^class c_tree_iterator;
 
+type
+  -- the direction of walking through a tree
+  t_tree_walking_direction = enum
+      ttwd_prefix;                               -- uzel -> levý -> pravý
+      ttwd_inverted_prefix;                      -- uzel -> pravý -> levý
+      ttwd_postfix;                              -- levý -> pravý -> uzel
+      ttwd_inverted_postfix;                     -- pravý -> levý -> uzel
+      ttwd_infix;                                -- levý -> uzel -> pravý, jen pro binární strom
+      ttwd_inverted_infix;                       -- pravý -> uzel -> levý, jen pro binární strom
+      end enum;
+  t_tree_walking_direction_set = set of t_tree_walking_direction;
 
 type
-
-  -- výsledek operace porovnání dvou uzlů
-  t_insert_direction = enum
+  -- placement of new nodes being inserted into an n-ary tree relative to a reference node
+  t_tree_relative_placement = enum
+      ttrp_first_child;                          -- insert as first child node 
+      ttrp_last_child;                           -- insert as last child node
+      ttrp_first_sibling;                        -- insert as first (left-most) sibling node
+      ttrp_last_sibling;                         -- insert as last (right-most) sibling node
+      ttrp_left_sibling;                         -- insert as (nearest) left sibling node
+      ttrp_right_sibling;                        -- insert as (nearest) right sibling node
+{      
       id_add;                                    -- vloží jako posledního souseda
       id_add_first;                              -- vloží jako prvního souseda
       id_add_child;                              -- vloží jako posledního potomka
       id_first_child;                            -- vloží jako prvního potomka
       id_insert_before;                          -- vloží hned před referenční uzel
       id_insert_after;                           -- vloží hned za referenční uzel
+} 
       end enum;
+
+message
+  -- general tree error exception
+  tree_error       extend container_error;
 
 
 
@@ -43,12 +64,11 @@ class public abstract c_binary_tree_node = extend c_item;
   supervised
 
     var
-
-      left         : p_binary_tree_node:=nil;    -- levý uzel
-      right        : p_binary_tree_node:=nil;    -- pravý uzel
-      weight       : t_signed:=0;                -- váha uzlu
-      depth        : t_unsigned:=0;              -- hlubka uzlu
-      up           : p_binary_tree_node:=nil;    -- předek
+      left         : p_binary_tree_node := nil;  -- left subtree
+      right        : p_binary_tree_node := nil;  -- right subtree
+      up           : p_binary_tree_node := nil;  -- root node
+      weight       : t_signed := 0;              -- this node's weight (for AVL-balanced trees)
+      depth        : t_unsigned := 0;            -- this node's depth
 
     end c_binary_tree_node;
 
@@ -69,11 +89,13 @@ class public abstract c_binary_tree = extend c_container;
     --   Pokud je [avl] nastaven na true, strom bude se bude vyvažovat.
     --   Pokud je [unique_key] nastaven na true, ve stromě nemohou být uzly se stejným klíčem.
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
+    --   Pokud inicializujeme strom, který není prázdný, generuje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     static has_node (
         node       : in p_binary_tree_node)      -- hledaný uzel
         return t_logical;                        -- T-uzel nalezen
     -- Vrací [true], pokud je [node] prvkem stromu.
+    -- Pokud není uzel [node] definovaný, generuje metoda výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     static get_root return p_binary_tree_node;
     -- Vrátí kořenový uzel. Pokud uzel není definován, vrací NIL.
@@ -114,13 +136,13 @@ class public abstract c_binary_tree = extend c_container;
   protected
 
     var
-      root         : p_binary_tree_node:=nil;           -- kořenový uzel stromu
+      root         : p_binary_tree_node := nil;  -- kořenový uzel stromu
 
     ------------------------------------------------------------------------------------------------
     virtual abstract compare (
-        node_a     : in p_binary_tree_node;             -- uzel 1 pro porovnání klíčů
-        node_b     : in p_binary_tree_node)             -- uzel 2 pro porovnání klíčů
-        return t_compare_result;                   -- výsledek porovnání uzlů
+        node_a     : in p_binary_tree_node;      -- uzel 1 pro porovnání klíčů
+        node_b     : in p_binary_tree_node)      -- uzel 2 pro porovnání klíčů
+        return t_comparison_result;              -- výsledek porovnání uzlů
     -- Vrátí výsledek porovnání dvou uzlů.
     ------------------------------------------------------------------------------------------------
 
@@ -171,6 +193,7 @@ class public c_tree = extend c_container;
         homogenous : in t_logical:=true);        -- T-stejný typ uzlů
     -- Inicializace stromu.
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
+    --   Pokud inicializujeme strom, který není prázdný, generuje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     static get_node_count (
         node       : in p_tree_node)             -- podstrom
@@ -181,7 +204,7 @@ class public c_tree = extend c_container;
         node       : in p_tree_node)             -- hledaný uzel
         return t_logical;                        -- T-uzel nalezen
     -- Vrací logickou hodnotu, zda je uzel nalezen ve stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
+    -- Pokud není uzel [node] definovaný, generuje metoda výjimku [parameter_error].
     ------------------------------------------------------------------------------------------------
     static get_root return p_tree_node;
     -- Vrací kořenový uzel.
@@ -190,43 +213,45 @@ class public c_tree = extend c_container;
     static insert_node (
         node         : in p_tree_node;           -- vkládaný uzel
         current_node : in p_tree_node;           -- aktuální uzel
-        direction    : in t_insert_direction);   -- pozice vložení
+        placement    : in t_tree_relative_placement); -- pozice vložení
     -- Vloží uzel do stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu.
-    --   Pokud [node] je ve stromu nalezen, hlásí chybu.
+    --   Pokud [node]=NIL, generuje výjimku [parameter_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], generuje výjimku
+    --   [tree_error].
     ------------------------------------------------------------------------------------------------
     static merge_subtree (
         tree         : in out c_tree;            -- přidávané uzly stromu
         current_node : in p_tree_node:=nil;      -- aktuální uzel
-        direction    : in t_insert_direction);   -- pozice vložení
+        placement    : in t_tree_relative_placement); -- pozice vložení
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy. Po provedení této operace bude [tree] prázdný.
-    --   Pokud připojovaný strom je prázdný, hlásí chybu.
-    --   Pokud [current_node]=NIL, zkusí se vložit kořen, pokud je kořen definován, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud libovoný uzel v [tree] je ve stromu nalezen, hlásí chybu.
-    --   Pokud se má nový strom vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu.
+    --   Pokud připojovaný strom je prázdný, generuje výjimku [tree_error].
+    --   Pokud [current_node]=NIL, zkusí se vložit kořen, pokud je kořen definován, generuje [tree_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud libovoný uzel v [tree] je ve stromu nalezen, generuje výjimku [duplicate_item_error].
+    --   Pokud se má nový strom vložit jako sousední uzel, ale [current_node]=[root], generuje výjimku
+    --   [tree_error].
     ------------------------------------------------------------------------------------------------
     static split_subtree (
         node       : in p_tree_node;             -- rušená větev
         subtree    : out c_tree);                -- nový strom
     -- Vyjme ze stromu podstrom včetně uzlu [node] a vytvoří a inicializuje novou instanci
     -- třídy [c_tree].
-    --   Pokud uzel není nalezen, hlásí chybu.
+    --   Pokud uzel není nalezen, generuje výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     static move_subtree (
         node         : in p_tree_node;           -- přesouvající se podstrom
         current_node : in p_tree_node;           -- aktuální uzel pro vložení
-        direction    : in t_insert_direction);   -- pozice vložení
+        placement    : in t_tree_relative_placement); -- pozice vložení
     -- Přesune podstrom z jednoho místa na jiné místo v tom samém stromu.
-    --   Pokud [node]=NIL, hlásí chybu.
-    --   Pokud [node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud [current_node] není ve stromu nalezen, hlásí chybu.
-    --   Pokud se má uzel vložit vedle kořenového uzlu a má potomky, hlásí chybu.
-    --   Pokud [current_node] je poduzlem [node], hlásí chybu.
-    --   Pokud se má uzel podstromu vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu.
+    --   Pokud [node]=NIL, generuje výjimku [parameter_error].
+    --   Pokud [node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud [current_node] není ve stromu nalezen, generuje výjimku [tree_error].
+    --   Pokud se má uzel vložit vedle kořenového uzlu a má potomky, generuje výjimku [tree_error].
+    --   Pokud [current_node] je poduzlem [node], generuje výjimku [tree_error].
+    --   Pokud se má uzel podstromu vložit jako sousední uzel, ale [current_node]=[root], generuje
+    --   výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
 
   protected
@@ -249,7 +274,7 @@ class public c_tree_iterator = extend c_iterator;
         direction  : in t_tree_walking_direction -- řízení směru procházení stromem
                    := ttwd_prefix);
     -- Inicializuje iterator používaný pro průchod stromem.
-    -- Při použití nesprávného směru iterování je vyvolána výjimka [tree_error]
+    -- Při použití nesprávného směru iterování je vyvolána výjimka [parameter_error].
     ------------------------------------------------------------------------------------------------   
 
     end c_tree_iterator;

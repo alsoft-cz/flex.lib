@@ -31,8 +31,13 @@ type
   t_datetime       = t_timebasic;                -- pocet ticku od ct. 1. ledna 1970 AD 00:00:00.0
   p_datetime       = ^t_datetime;
 
+type
+  -- exception type for all console-related errors
+  t_calendar_exception = t_library_exception;
+
 message
-  calendar_error   : exception;
+  -- general console error exception
+  calendar_error   : t_calendar_exception;
 
 ----------------------------------------------------------------------------------------------------
 procedure get_timespan (
@@ -46,13 +51,15 @@ procedure add_timespan (
     a              : in t_datetime;              -- nedekomponovaný datum
     span           : in t_timespan)              -- nedekomponovaný časový interval
     return t_datetime;
--- K časovému údaji [a] přičte interval [span]
+-- K časovému údaji [a] přičte interval [span].
+-- Dojde-li během sčítání k přetečení, generuje procedura výjimku [calendar_error].
 ----------------------------------------------------------------------------------------------------
 procedure substract_timespan (
     a              : in t_datetime;              -- nedekomponovaný datum
     span           : in t_timespan)              -- nedekomponovaný časový interval
     return t_datetime;
--- Od časového údaje [a] odečte interval [span]
+-- Od časového údaje [a] odečte interval [span].
+-- Dojde-li během odečítání k podtečení, generuje procedura výjimku [calendar_error].
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
@@ -219,10 +226,9 @@ class public abstract c_earth_calendar = extend c_calendar;
         datim_in   : in t_decomposed_datetime;   -- vstupní dekomponovaný datum
         datim_out  : out t_datetime);            -- výstupní nedekomponovaný datum 
     -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out]
-    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
-    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
-    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
-    -- tj. např. 30.2. nebo 31.4., atd...
+    -- Metoda generuje výjimku [calendar_error] v případě že vstupní datum není korektní, tj. např.
+    -- 30.2. nebo 31.4. ... Metoda generuje výjimku [calendar_error] v případě, že při kompozici
+    -- dojde k přetečení nebo podtečení.
     ------------------------------------------------------------------------------------------------
     virtual add_decomposed_timespan (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -230,8 +236,7 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací součet nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem sčítání datumu s časovým
-    -- intervalem je datum větší než maximální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
     -- postupujeme od největších složek k nejmenším.
     ------------------------------------------------------------------------------------------------
@@ -241,8 +246,7 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací rozdíl nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výslekdem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem odečítání časového inter-
-    -- valu od datumu je datum menší než minimální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
     -- postupujeme od největších složek k nejmenším.
     ------------------------------------------------------------------------------------------------
@@ -264,9 +268,9 @@ class public abstract c_earth_calendar = extend c_calendar;
     --
     -- V případě, že se ve výsledku vyskytuje nenulová složka menší než daná parametrem [smallest]
     -- [largest], a zaokrouhlování je nastaveno na hodnotu [t_tsr_none], generuje metoda výjimku
-    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Ta je generovaná i v
-    -- i v případě, že [largest]<[smallest]. Dekomponovaný rozdíl je v absolutní hodnotě,
-    -- tj. |[a]-[b]| = |[b]-[a]|
+    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Pokud je [largest]<[smallest]
+    -- generuje metoda výjimku [parameter_error].
+    -- Dekomponovaný rozdíl je v absolutní hodnotě, tj. |[a]-[b]| = |[b]-[a]|
     ------------------------------------------------------------------------------------------------
     virtual get_tick (
         datim      : in t_datetime)              -- nedekomponovaný datum
@@ -536,7 +540,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- tick hodnotou [tick]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_second (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -544,7 +549,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- sekunda hodnotou [second]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud [second]=[t_sec_in_min], generuje metoda výjimku [parameter_error].
+    -- Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_minute (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -552,7 +558,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- minuta hodnotou [minute]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_hour (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -560,7 +567,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- hodina hodnotou [hour]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_day (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -568,7 +576,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- den v měsíci hodnotou [day]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_month (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -576,6 +585,7 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- měsíc v roce hodnotou [month]. Pokud výsledný datum neodpovídá skutečnosti, generujeme
+    -- výjimku [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
     -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_year (
@@ -584,7 +594,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- rok hodnotou [year]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     virtual set_era (
         datim      : in t_datetime;              -- nedekomponovaný datum
@@ -592,7 +603,8 @@ class public abstract c_earth_calendar = extend c_calendar;
         return t_datetime;
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- epocha hodnotou [era]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
 
     end c_earth_calendar;
@@ -750,10 +762,8 @@ class public c_common_calendar = extend c_earth_calendar;
         time_zone  : in t_time_zones:=tz_utc;    -- časová zóna
         daylight   : in t_logical:=false);       -- indikátor letního času        
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že:
-    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
-    --    maximální datum.
-    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že při dekompozici dojde k přetečení nebo
+    -- podtečení.
     -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
@@ -781,12 +791,9 @@ class public c_common_calendar = extend c_earth_calendar;
         datim_out  : out t_datetime);            -- výstupní nedekomponovaný datum 
     -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out], přičemž zohled-
     -- ňujeme časovou zónu udanou parametrem [time_zone].
-    -- Metoda generuje výjimku [calendar_error] v případě že:
-    --  * vstupní datum [datim_in] obsahuje rok, který je menší než počáteční rok 
-    --  * vstupní datum je větší než horní hranice datumu
-    --  * den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti, tj. např. 30.2. nebo 31.4., atd...
-    --  * vstupní dekomponovaný datum [datim_in] nelze s ohledem na časovou zónu komponovat
-    --  * vstupní dekomponovaný datum [datim_in] obsahuje letní čas a nelze ho komponovat
+    -- Metoda generuje výjimku [calendar_error] v případě že vstupní datum není korektní, tj. např.
+    -- 30.2. nebo 31.4. ... Metoda generuje výjimku [calendar_error] v případě, že při kompozici
+    -- dojde k přetečení nebo podtečení.
     --
     -- Nejprve určíme komponovaný datum za předpokladu, že každá minuta obsahuje 60 sekund - viz
     -- metoda [normal_compose_datetime]. Poté u komponovaného datumu provedeme korekci vhledem k
@@ -874,8 +881,7 @@ class public c_common_calendar = extend c_earth_calendar;
       return t_datetime;
     -- Provede přičtení resp. odečtení příslušného počtu minut při převádění komponovaného UTC času
     -- [datim] na komponovaný čas v časové zóně [time_zone].
-    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
-    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    -- Metoda generuje výjimku [calendar_error] v případě, přetečení nebo podtečení.
     ------------------------------------------------------------------------------------------------
     static time_zone_to_utc (
       datim        : in t_datetime;              -- vstupní komponovaný datum
@@ -883,8 +889,7 @@ class public c_common_calendar = extend c_earth_calendar;
       return t_datetime;
     -- Provede odečtení resp. přičtení příslušného počtu minut při převádění komponovaného času
     -- [datim] v časové zóně [time_zone] na komponovaný čas v UTC.
-    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
-    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    -- Metoda generuje výjimku [calendar_error] v případě, přetečení nebo podtečení.
     ------------------------------------------------------------------------------------------------
     static round_func (
         what       : in out t_timebasic;         -- hodnota, kterou chceme zaokrouhlit
@@ -1227,7 +1232,7 @@ type
                                                  --                   -1 = odebrat přest. sekundu
     -- Přidá ([second] = 1) resp. odebere ([second] = -1) jednu přestupnou sekundu v roce [year]
     -- buď do měsíce června nebo prosince (podle hodnoty parametru [month]).
-    -- Generuje výjimku [calendar_error] v případě, že parametr [second] není jednou z hodnot
+    -- Generuje výjimku [parameter_error v případě, že parametr [second] není jednou z hodnot
     -- -1, 0, 1, nebo v případě, že zadaný rok [year] je menší než rok, v němž byla použita první
     -- přestupná sekunda nebo větší než maximální rok [t_last_year].
     ------------------------------------------------------------------------------------------------

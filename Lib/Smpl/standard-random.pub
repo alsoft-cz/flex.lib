@@ -5,8 +5,13 @@ module public random =
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+type
+  -- exception type for all random-generator-related errors
+  t_random_generator_exception = t_library_exception;
+
 message
-  random_generator_error extend numeric_error;
+  -- general random-generator error exception
+  random_generator_error       : t_random_generator_exception;
 
 ----------------------------------------------------------------------------------------------------
 procedure random_unsigned return t_unsigned;

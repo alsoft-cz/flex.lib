@@ -7,10 +7,10 @@ module private streams =
 
 with
   system.windows.windef,
-  system.windows.winbase.winerror,
   system.windows.winsock;
 
 use
+  system.windows.winbase.winerror,
   system.windows.winsock2;
 
 
@@ -170,17 +170,21 @@ var
     buff.buf:unchecked:=_data;
     buff.len:=u_long(size);
 
-    if system.windows.winsock2.WSARecv(sockethandle,buff,1,readen,flags,nil,nil)=SOCKET_ERROR then
+    if system.windows.winsock2.WSARecv(sockethandle,buff,1,readen,flags,nil,nil)=system.windows.winsock.SOCKET_ERROR then
       case (system.windows.winsock2.WSAGetLastError())
-        when WSAENETRESET,WSAESHUTDOWN,WSAECONNABORTED,WSAETIMEDOUT,WSAECONNRESET do
+        when system.windows.winbase.winerror.WSAENETRESET,
+             system.windows.winbase.winerror.WSAESHUTDOWN,
+             system.windows.winbase.winerror.WSAECONNABORTED,
+             system.windows.winbase.winerror.WSAETIMEDOUT,
+             system.windows.winbase.winerror.WSAECONNRESET do
           discard _data;
           raise stream_other_side;
-        when WSAEMSGSIZE do
+        when system.windows.winbase.winerror.WSAEMSGSIZE do
           discard _data;
           raise socket_data_lost;
         when others do
           discard _data;
-          raise socket_exception;
+          raise standard.sockets.socket_error;
         end case;
     else
       size:=readen;
@@ -235,14 +239,17 @@ var
       if _size>0 then
         buff.buf:unchecked:=_data;
         buff.len:=_size;
-        if system.windows.winsock2.WSASend(sockethandle,^buff,1,writen,flags,nil,nil)= SOCKET_ERROR then
+        if system.windows.winsock2.WSASend(sockethandle,^buff,1,writen,flags,nil,nil)=system.windows.winsock.SOCKET_ERROR then
           case (system.windows.winsock2.WSAGetLastError())
-            when WSAENETRESET,WSAESHUTDOWN,WSAECONNABORTED,WSAECONNRESET  do
+            when system.windows.winbase.winerror.WSAENETRESET,
+                 system.windows.winbase.winerror.WSAESHUTDOWN,
+                 system.windows.winbase.winerror.WSAECONNABORTED,
+                 system.windows.winbase.winerror.WSAECONNRESET  do
               raise stream_other_side;
-            when WSAEMSGSIZE do
+            when system.windows.winbase.winerror.WSAEMSGSIZE do
               raise socket_data_lost;
             when others do
-              raise socket_exception;
+              raise standard.sockets.socket_error;
             end case;
           end if;
         end if;
@@ -257,12 +264,14 @@ var
   entry =
   ------------------------------------------------------------------------------------------------
   var
-      start        : WSADATA;
+    start          : WSADATA;
 
   begin
     if system.windows.winsock2.WSAStartup($0202,start)<>0 then
       raise socket_initialization_error;
       end if;
     end entry;
+
   end c_socket_stream;
+
 end streams;

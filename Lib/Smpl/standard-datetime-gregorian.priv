@@ -676,8 +676,9 @@ class private c_gregorian_calendar =
       return t_datetime =
     -- Vrací nedekomponovaný datum vstupního dekomponovaného datumu [datim] za předpokaldu, že
     -- každá minuta obsahuje 60 sekund. Přitom je brán ohled na časovou zónu.
-    -- Metoda generuje výjimku [callender_error] v případě, že vstupní datum [datim] obsahuje letní
-    -- čas, který nelze převést na UTC.
+    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim] není korektní.
+    -- Metoda generuje výjimku [calendar_error] v případě, že při kompozici dojde k přetečení nebo
+    -- podtečení.
     --
     -- Princip:
     -- Pracujeme s pomocnou proměnnou [year], do níž ukládáme rok. Tato proměnná je se znaménkem a
@@ -707,12 +708,6 @@ class private c_gregorian_calendar =
       -- Určíme znaménkový rok
       year:=get_signed_year(datim);
 
-      -- Je-li vstupní rok [datim.year] menší než počáteční rok, pak generujeme výjimku
-      -- [calendar_error]
-      if year<t_zero_year then
-        raise calendar_error;
-        end if;
-
       -- Určíme počet přestupných roků od počátku do roku [datim.year]
       lyears:=get_lyears(datim);
 
@@ -737,11 +732,11 @@ class private c_gregorian_calendar =
 
       -- pokud je čas [datim] letní, pak výslednému datumu odebereme posun mezi letním a zimním časem
       if datim.daylight then
-        if result>=t_datetime(daylight_shift)*t_dtl_minute
-          then result-(t_datetime(daylight_shift)*t_dtl_minute);
-          else raise calendar_error;
-            end if;
+        result-(t_datetime(daylight_shift)*t_dtl_minute);
         end if;
+
+    catch
+      when constraint_error do raise calendar_error;
       end normal_compose_datetime;
 
 
@@ -1143,10 +1138,8 @@ class private c_gregorian_calendar =
     ------------------------------------------------------------------------------------------------
     override decompose_datetime =
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že:
-    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
-    --    maximální datum.
-    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že při dekompozici dojde k přetečení nebo
+    -- podtečení.
     -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
@@ -1182,12 +1175,9 @@ class private c_gregorian_calendar =
     override compose_datetime =
     -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out], přičemž zohled-
     -- ňujeme časovou zónu udanou parametrem [time_zone].
-    -- Metoda generuje výjimku [calendar_error] v případě že:
-    --  * vstupní datum [datim_in] obsahuje rok, který je menší než počáteční rok 
-    --  * vstupní datum je větší než horní hranice datumu
-    --  * den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti, tj. např. 30.2. nebo 31.4., atd...
-    --  * vstupní dekomponovaný datum [datim_in] nelze s ohledem na časovou zónu komponovat
-    --  * vstupní dekomponovaný datum [datim_in] obsahuje letní čas a nelze ho komponovat
+    -- Metoda generuje výjimku [calendar_error] v případě že vstupní datum není korektní, tj. např.
+    -- 30.2. nebo 31.4. ... Metoda generuje výjimku [calendar_error] v případě, že při kompozici
+    -- dojde k přetečení nebo podtečení.
     --
     -- Nejprve určíme komponovaný datum za předpokladu, že každá minuta obsahuje 60 sekund - viz
     -- metoda [normal_compose_datetime]. Poté u komponovaného datumu provedeme korekci vhledem k
@@ -1233,8 +1223,7 @@ class private c_gregorian_calendar =
     override add_decomposed_timespan =
     -- Vrací součet nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem sčítání datumu s časovým
-    -- intervalem je datum větší než maximální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
     -- postupujeme od největších složek k nejmenším.
     --
@@ -1332,11 +1321,9 @@ class private c_gregorian_calendar =
         else result-t_timebasic(-lsecs);
         end if;
 
-      catch
-
-        -- Překročili jsme horní hranici datumu => generujeme výjimku [calendar_error]
-        when constraint_error do
-          raise calendar_error;
+    catch
+      -- Překročili jsme horní hranici datumu => generujeme výjimku [calendar_error]
+      when constraint_error do raise calendar_error;
       end add_decomposed_timespan;
 
 
@@ -1345,8 +1332,7 @@ class private c_gregorian_calendar =
     override substract_decomposed_timespan =
     -- Vrací rozdíl nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
     -- nedekomponovaný datum.
-    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem odečítání časového inter-
-    -- valu od datumu je datum menší než minimální hodnota.
+    -- Metoda generuje výjimku [calendar_error] v případě přetečení nebo podtečení.
     -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
     -- postupujeme od největších složek k nejmenším.
     --
@@ -1453,7 +1439,6 @@ class private c_gregorian_calendar =
         end if;
 
     catch
-
       -- Překročili jsme dolní hranici datumu => generujeme výjimku [calendar_error]
       when constraint_error do raise calendar_error;
       end substract_decomposed_timespan;
@@ -1469,7 +1454,8 @@ class private c_gregorian_calendar =
       return t_decomposed_timespan =
     -- Vrací dekomponovaný časový interval dvou zadaných dekomponovaných datumů [decomp_a] a
     -- [decomp_b], přičemž předpokládáme, že [decomp_a]<=[decomp_b] a největší složkou dekomponova-
-    -- ného intervalu jsou roky.
+    -- ného intervalu jsou roky. Není-li tento předpoklad splněn, generuje metoda výjimku
+    -- [parameter_error].
     -- Dále vynuluje všechny menší složky výsledného intervalu než je složka udaná v parametru
     -- [smallest], přičemž při nulování použijeme typ zaokrouhlování určený v [rounding].
     --
@@ -1603,7 +1589,8 @@ class private c_gregorian_calendar =
 
       -- je-li rozdíl záporný, pak není splěno [decomp_a]<=[decomp_b] a generujeme výjimku
       -- [calendar_error]
-      if diff<0 then raise calendar_error;
+      if diff<0 then 
+        raise parameter_error;
         end if;
 
       -- určíme výsledný rozdíl v rokách
@@ -1663,9 +1650,9 @@ class private c_gregorian_calendar =
     --
     -- V případě, že se ve výsledku vyskytuje nenulová složka menší než daná parametrem [smallest]
     -- [largest], a zaokrouhlování je nastaveno na hodnotu [t_tsr_none], generuje metoda výjimku
-    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Ta je generovaná i v
-    -- i v případě, že [largest]<[smallest]. Dekomponovaný rozdíl je v absolutní hodnotě,
-    -- tj. |[a]-[b]| = |[b]-[a]|
+    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Pokud je [largest]<[smallest]
+    -- generuje metoda výjimku [parameter_error].
+    -- Dekomponovaný rozdíl je v absolutní hodnotě, tj. |[a]-[b]| = |[b]-[a]|
     --
     -- Postup dekompozice: Nejprve určíme, který ze vstupních datumů [a] a [b] je menší a dekomponu-
     -- jeme je (menší vložíme do [decomp_a], větší do [decomp_b]). Dále určíme dekomponovaný časový
@@ -1688,7 +1675,7 @@ class private c_gregorian_calendar =
       -- paremetr [largest] nesmí být menší než parametr [smallest], jinak generujeme výjimku
       -- [calendar_error]
       if largest<smallest then
-        raise calendar_error
+        raise parameter_error;
         end if;
 
       -- určíme rozdíl vstupních datumů [a] a [b] v tickách, ktré následně dekomponujeme, přičemž
@@ -2216,11 +2203,10 @@ class private c_gregorian_calendar =
           end case;
 
       catch
-
-         -- Jsme mimo rozsah horní a dloní hranice datumu v [result]
+        -- Jsme mimo rozsah horní a dloní hranice datumu v [result]
         when constraint_error do
-          result:=0;
-          raise calendar_error;
+            result:=0;
+            raise calendar_error;
         end;
       end find_element;
 
@@ -2300,29 +2286,37 @@ class private c_gregorian_calendar =
           begin
             -- podle směru [direction] vypočteme 59. sekundu (ta se v konkrétní minutě nemusí
             -- nacházet, byla-li v minutě jedna sekunda odebraná. Máme ale jistotu, že v předchozí
-            -- ani v následující minutě odebraná nebyla, protože nedojde k odebrání polední sekundy
+            -- ani v následující minutě odebraná nebyla, protože nedojde k odebrání poslední sekundy
             -- ve dvou po sobě jdoucích minutách).
             case direction
               -- nejbližší vyšší nebo stejná 59. sekunda
               when t_dtf_next, t_dtf_next_or_same do
-                -- nalezneme vyšší 59. sekundu pomocí metody [find_element]
-                result:=find_element(datim,second,t_tsd_seconds,direction,reset_lower);
+                begin
+                  -- nalezneme vyšší 59. sekundu pomocí metody [find_element]
+                  result:=find_element(datim,second,t_tsd_seconds,direction,reset_lower);
+                  if get_second(result)=0 then result+59; end if;
+                catch
+                  -- pokud sekunda není 59., pak minuta obsahovala jen 58. sekund a hledaná sekunda
+                  -- je v následující sekundě (musíme přičíst 59 sekund)
+                  when calendar_error do
+                    result:=find_element(datim+59,second,t_tsd_seconds,direction,reset_lower);
+                  end;
+                  if get_second(result)<>59 then result+59; end if;
 
-                -- pokud sekunda není 59., pak minuta obsahovala jen 58. sekund a hledaná sekunda
-                -- je v následující sekundě (musíme přičíst 59 sekund)
-                if get_second(result)<>59 then result+59;
-                  end if;
-
-              -- nejbližší nižšší nebo stejná 59. sekunda
+              -- nejbližší nižší nebo stejná 59. sekunda
               when t_dtf_prev, t_dtf_prev_or_same do
-                -- je sekunda v minut2 v datumu [datim] aspoň 59?
+                -- je sekunda v minutě v datumu [datim] aspoň 59?
                 if sec_in_min>=59
 
                   -- ano => nalezneme nižší 59. sekundu pomocí metody [find_element]
                   then
-                    result:=find_element(datim,second,t_tsd_seconds,direction,reset_lower);
-                    if get_second(result)<>59 then result-60;
-                      end if;
+                    begin
+                      result:=find_element(datim,second,t_tsd_seconds,direction,reset_lower);
+                      if get_second(result)<>60 then result-60; end if;
+                    catch
+                      when calendar_error do
+                        result:=find_element(datim-59,second,t_tsd_seconds,direction,reset_lower);
+                      end;
 
                   -- ne => 59. sekunda je v předchozí minutě
                   else
@@ -2628,7 +2622,6 @@ class private c_gregorian_calendar =
           end case;
 
       catch
-
         -- Případ, že výsledný datum [result] není mezi horní a dolní hranicí datumu
         when constraint_error do
           result:=0;
@@ -2713,7 +2706,6 @@ class private c_gregorian_calendar =
           end case;
 
       catch
-
         -- Případ, že výsledný datum [result] není mezi horní a dolní hranicí datumu
         when constraint_error do
           result:=0;
@@ -2860,7 +2852,6 @@ class private c_gregorian_calendar =
             end case;
 
       catch
-
         -- Případ, že výsledný datum [result] není mezi horní a dolní hranicí datumu
         when constraint_error do
           result:=0;
@@ -2997,7 +2988,8 @@ class private c_gregorian_calendar =
     override set_tick =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- tick hodnotou [tick]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3027,7 +3019,8 @@ class private c_gregorian_calendar =
     override set_second =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- sekunda hodnotou [second]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3050,7 +3043,9 @@ class private c_gregorian_calendar =
     override set_minute =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- minuta hodnotou [minute]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error]. Pokud [second]=[t_sec_in_min], generuje metoda výjimku [parameter_error].
+    -- Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3073,7 +3068,8 @@ class private c_gregorian_calendar =
     override set_hour =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- hodina hodnotou [hour]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3096,7 +3092,8 @@ class private c_gregorian_calendar =
     override set_day =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- den v měsíci hodnotou [day]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3119,6 +3116,7 @@ class private c_gregorian_calendar =
     override set_month =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- měsíc v roce hodnotou [month]. Pokud výsledný datum neodpovídá skutečnosti, generujeme
+    -- výjimku [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
     -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
@@ -3142,7 +3140,8 @@ class private c_gregorian_calendar =
     override set_year =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
     -- rok hodnotou [year]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3165,7 +3164,8 @@ class private c_gregorian_calendar =
     override set_era =
     -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
     -- epocha hodnotou [era]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
-    -- [calendar_error].
+    -- [calendar_error]. Pokud při nastavení dojde k přetečení nebo podtečení, generuje metoda
+    -- výjimku [calendar_error].
     ------------------------------------------------------------------------------------------------
     var
       decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
@@ -3304,7 +3304,7 @@ class private c_gregorian_calendar =
     static add_leap_second =
     -- Přidá ([second] = 1) resp. odebere ([second] = -1) jednu přestupnou sekundu v roce [year]
     -- buď do měsíce června nebo prosince (podle hodnoty parametru [month]).
-    -- Generuje výjimku [calendar_error] v případě, že parametr [second] není jednou z hodnot
+    -- Generuje výjimku [parameter_error v případě, že parametr [second] není jednou z hodnot
     -- -1, 0, 1, nebo v případě, že zadaný rok [year] je menší než rok, v němž byla použita první
     -- přestupná sekunda nebo větší než maximální rok [t_last_year].
     --
@@ -3315,7 +3315,7 @@ class private c_gregorian_calendar =
       -- Je hodnota přidané/odebrané sekundy mimo povolený rozsah nebo rok [year] mimo povolený
       -- rozsah? Ano => generujeme výjimku [calendar_error]
       if second<-1 or second>1 or year<t_leap_sec_year or year>t_last_year then
-        raise calendar_error;
+        raise parameter_error;
         end if;
 
       -- podle hodnoty měsíce [month] změníme histogram červnových nebo prosincových přestupných

@@ -1,0 +1,1477 @@
+﻿----------------------------------------------------------------------------------------------------
+module private command_line_parser =
+-- Command line parser.
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Termíny:
+--  Identifikátor jména příkadu - posloupnost písmen, číslic a podtržítek začínající písmenem nebo
+--    podtržítkem.
+--  Identifikátor dlouhého jména optionu - posloupnost písmen a pomlček začínající písmenem. Posledním
+--  znakem identifikátoru nesmí být pomlčka. V identifikátoru se nesmí vedle sebe objevit 2 a více
+--  pomlček, př:
+--                      --dlouhe-jmeno                    - jeden identifikátor
+--                      --dlouhe--jmeno                   - dva identifikátory
+--                      --d-l-o-u-h-e-j-m-e-n-o           - jeden identifikátor
+--  Bílý znak - mezera nebo tabulátor.
+--  Jméno příkazu - skládá se z několika (1 a více) identifikátoru oddělených bílými znaky
+--  Jméno optionu - skládá se z několika identifikátorů oddělených pomlčkami ("-"), bez bílých znaků
+--  Zkrácené jméno optionu - velké nebo malé písmeno
+--  Slovo - libovolná posloupnost znaků oddělená bílými znaky.
+--  Nulový příkaz - bezejmenný příkaz obsahující vždy aspoň jeden option nebo aspoň jeden parametr
+--    nebo obojí
+--
+-- Parser příkazové řádky.
+--   Pro parsování příkazové řádky je zapotřebí vytvořit popisy příkazů a jejich parametrů a optionů
+-- pomocí procedur [create_command], [create_option] a [create_<typ>_parameter] a tyto popisy příkazů
+-- následně registrovat pomocí metody [register_command].
+--   Vstupem parsovací metody [process] je řetězec příkazové řádky, výstupem kolekce rozparsované
+-- příkazo vé řádky, což je instance třídy [c_command], která obsahuje:
+--    * název identifikovaného příkazu (prázdný řetězec v případě nulového příkazu)
+--    * slovník obsahující parametry příkazu (klíčem je řetězec obsahující číslo (pořadí) příkazu,
+--      jeho hodnotou vlatní parametr)
+--    * seznam obsahující optiony 
+--
+-- Politika výskytů nově vytvářených optionů a parametrů:
+--  Výskyt optionů a parametrů je možné vybírat z následujících:
+--    [o_forced_once]           - povinný výskyt 1x
+--    [o_optional_once]         - volitelný výskyt 1x
+--    [o_forced_repeat]         - povinný výskyt, 1x a více
+--    [o_optional_repeat]       - volitelný výskyt, 0x a více,
+--   přičemž pro parametry platí následující Omezení výskytu:
+--    opakovaný výskyt, tj. [o_optional_repeat] nebo [o_forced_repeat], může být použit pouze u
+--    posledního parametru příkazu nebo optionu. Volitelný výskyt [o_optional_once] nesmý být použit
+--    před povinným výskytem. Př.:
+--      [o_forced_once], [o_forced_once], [o_optional_once], [o_optional_repeat]     -- OK
+--      [o_forced_once], [o_optional_once], [o_forced_once], [o_optional_repeat]     -- špatně
+--      [o_forced_once], [o_forced_once], [o_optional_once], [o_forced_repeat]       -- špatně
+--
+-- Poznámky:
+--  * parser je case-sensitivní.
+--  * jména příkazů mohou být víceslovná (mohou se skládat z libovolného počtu identifikátorů), přičemž
+--    v případě definice dvou různých příkazů, kdy jeden je prefixem druhého, je vždy parserem iden-
+--    tifikován nejdelší možný příklad
+--    Př.: Uvažujeme, že byly registrovány dva příkazy CREATE a CREATE TAB, pak:
+--                      CREATE c:\dir\file.xxx                  bude detekován jako příkaz CREATE s
+--                                                               jedním parametrem
+--              a       CREATE TAB --col: 10 -r: 20             bude detekován jako příkaz CREATE TAB,
+--                                                               se dvěma optiony
+--  * politika výskytu může být u optionu libovolná, u parametrů je opakovatelný výskyt ([o_forced_repeat]
+--    resp. [o_optional_repeat]) možné použít pouze u posledního parametru.
+--  * parametry optionů je možné zapisovat třemi způsoby: "-o: parametr" resp. "-o parametr" resp.
+--    "o:parametr".
+--  * optiony je možné zadávat pomocí krátkého nebo dlouhého jména. Krátké jméno je vždy uvozeno
+--    pomlčkou "-" nebo lomítkem "/", dlouhé jméno vždy dvěma pomlčkami "--". V případě uvození
+--    jednou pomlčkou může následovat libovolný počet krátkých jmen, tj: "-abcd" má stejný význam
+--    jako "-a -b -c -d".
+--  * při vytváření příkazu je možné zadat pointer na callback proceduru, která reaguje na příkaz.
+--    Jejím parametrem je pointer na kolekci parsované příkazové řádky.
+--  * prázdný příkazový řádek lze metodou [set_empty_cmd_line] označit za chybný resp. bezchybný
+--    proces parsování. Rovněž lze v případě bezchybového stavu pomocí téže metody určit callback
+--    proceduru, která bude volána v případě prázdného příkazového řádku.
+--
+--  Příklad standardního použití:
+--
+--        -- deklarace procedury obsluhujici prikaz (její argument je pointer na kolekci parsovaného
+--        -- příkazového řádku (viz [c_command]):
+--        procedure reset : t_execute_command_proc =
+--        begin
+--          -- vlastní obsluha
+--          end reset;
+--        ----
+--
+--        -- vytvoření popisu příkazu "reset", s obslužnou prcedurou [reset]. Příkaz má dva 
+--        -- parametry, z toho jeden povinný a dva optiony, oba volitelné, z toho druhý option se
+--        -- může opakovat. Option "time" obsahuje povinný číselný parametr, option "t-t" povinný
+--        -- řetězcový parametr a libovolný počet řetězcových parametrů
+--        cmd_label:=create_command("reset",^reset,
+--                     create_string_parameter(o_forced_once,
+--                     create_string_parameter(o_optional_once,
+--                       create_option("i",'time',o_optional_once,
+--                       create_unsigned_parameter(0,100,o_forced_once,
+--                         create_option("t",'t-t',o_optional_repeat,
+--                         create_string_parameter(o_forced_once,
+--                         create_string_parameter(o_optional_repeat))))))));
+--
+--        -- vytvořený popis příkazu je zapotřebí v parseru zaregistrovat
+--        parser.register_command(cmd_label);
+--
+--        -- parsujeme příkazový řádek (v tomto případě obsah argumentu)
+--        collection:=parser.process('reset param1 param2 --t-t:param1 -i 10');
+--        
+--        -- v případě uvedení pointer na proceduru zpracovávající konkrétní příkaz můžeme kolekci
+--        -- [collection] zahodit
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.conversions,
+  standard.strings,
+  standard.characters.iso10646;
+
+----------------------------------------------------------------------------------------------------
+procedure is_white_space (
+    char           : in t_char32)                -- znak
+    return t_logical =
+-- Vrací [true] v případě, že znak [char] je bílý znak.
+----------------------------------------------------------------------------------------------------
+begin
+  -- jedná se o bílý znak?
+  if char=" " or char=\9 then result:=true; end if;
+  end is_white_space;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure skip_whitespace (
+    str            : in t_char32ustr;            -- znakový řetězec
+    pos            : in out t_unsigned) =        -- pozice v řetězci [str]
+-- Prochází řetězec [str] od pozice [pos], kterou nastaví na pozici prvního nebílého znaku.
+-- V případě, že řetězec obsahuje samé bílé znaky, nastaví pozici [pos] na hodnotu [length]+1, kde
+-- [length] je atribut udávající délku řetězce [str].
+----------------------------------------------------------------------------------------------------
+begin
+  -- přeskočéme všechny bílé znaky v řetězci [str]
+  while pos<=str:length and then is_white_space(str[pos]) loop
+    pos+1;
+    end loop;
+  end skip_whitespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_word (
+    str            : in t_char32ustr;            -- znakový řetězec
+    pos            : in out t_unsigned;          -- pozice v řetězci [str]
+    word           : out t_char32ustr) =         -- nalezené slovo
+-- Z řetězce [str] od pozice [pos] vrací jedno slovo [word] a nastavuje novou pozicici [pos].
+--
+-- Princip: nejprve přeskočíme všechny bílé znaky. Pokud jsou v řetězci ještě nějaké znaky, zřetězu-
+-- jeme je do výsledku až do okamžiku, kdy narazíme na konec řetězce nebo na první bílý znak. Proce-
+-- dura modifikuje parametr [pos] - udává pozici nového bílého znaku nebo pozici o 1 větší než délka
+-- řetězce [str].
+----------------------------------------------------------------------------------------------------
+begin
+  -- přeskočíme všechny bílé znaky
+  skip_whitespace(str,pos);
+
+  -- dokud nenarazíme na bílý znak nebo konec řetězce [str], procházíme řetězec [str] od pozice [pos]
+  -- a všechny znaky zřetězujeme do výsledku
+  while pos<=str:length and then not is_white_space(str[pos]) loop
+    word & str[pos];
+    pos+1;
+    end loop;
+  end get_word;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_identifier (
+    str            : in t_char32ustr;            -- znakový řetězec
+    pos            : in out t_unsigned;          -- pozice v řetězci [str]
+    identifier     : out t_char32ustr) =         -- nalezený identifikátor
+-- Z řetězce [str] od pozice [pos] vrací identifikátor [identifier] jména příkazu a nastavuje novou
+-- pozici [pos].
+--
+-- Princip: nejprve přeskočíme všechny bílé znaky. Pokud se v řetězci vyskytují ještě nějaké znaky,
+-- pak čteme první znak. Jde-li o písmeno nebo podtržítko, pak čteme další znaky až do okamžiku vý-
+-- skytu prvního bílého znaku nebo konce souboru. Pokud některý ze znaků neodpovídá písmenu, číslici
+-- nebo podtržítku, vracíme prázdný řetězec.
+----------------------------------------------------------------------------------------------------
+begin
+  identifier:='';
+
+  -- přeskočíme všechny bílé znaky
+  skip_whitespace(str,pos);
+
+  -- pokud je pozice větší než délk řetězce [cmd_line], ukončmíme proceduru
+  if pos>str:length then return; end if;
+
+  -- je první znak písmeno nebo podtržítko?
+  if iso_char_is_letter(str[pos]) or str[pos]="_" then
+    -- přidáme znak do výsledku a inkremetujeme pozici
+    identifier & str[pos];
+    pos+1;
+
+    -- dokud nenarazíme na konec řetězce nebo první bílý znak
+    while pos<=str:length and then not is_white_space(str[pos]) loop
+      -- pokud znak není ani písmeno, ani číslice ani podtržítko, vracíme prázdný řetězec a ukončíme
+      -- proceduru
+      if not iso_char_is_letter(str[pos]) and not iso_char_is_digit(str[pos]) and str[pos]<>"_" then
+        identifier:='';
+        return;
+        end if;
+
+      -- přidáme znak do výsledku a inkrementujeme pozici
+      identifier & str[pos];
+      pos+1;
+      end loop;
+    end if;  
+  end get_identifier;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_option_identifier (
+    str            : in t_char32ustr;            -- znakový řetězec
+    pos            : in out t_unsigned;          -- pozice v řetězci [str]
+    identifier     : out t_char32ustr) =         -- nalezený identifikátor
+-- Z řetězce [str] od pozice [pos] vrací identifikátor [identifier] dlouhého jména optionu a nastavuje
+-- novou pozici [pos].
+--
+-- Princip: nejprve přeskočíme všechny bílé znaky. Pokud se v řetězci vyskytují ještě nějaké znaky,
+-- pak čteme první znak. Jde-li o písmeno, pak čteme další znaky až do okamžiku výskytu prvního
+-- bílého znaku nebo konce souboru nebo dvojité pomlčky ("--", signalizující výskyt nové optionu).
+-- Pokud některý ze znaků neodpovídá definici identifikátoru dlouhého jména optionu, vracíme prázdný
+-- řetězec.
+----------------------------------------------------------------------------------------------------
+begin
+  -- přeskočíme všechny bílé znaky
+  skip_whitespace(str,pos);
+
+  -- pokud je pozice větší než délk řetězce [cmd_line], ukončmíme proceduru
+  if pos>str:length then return; end if;
+
+  -- je první znak písmeno?
+  if iso_char_is_letter(str[pos]) then
+    -- přidáme znak do výsledku a inkremetujeme pozici
+    identifier & str[pos];
+    pos+1;
+
+    -- dokud nenarazíme na konec řetězce nebo první bílý znak
+    while pos<=str:length and then (not is_white_space(str[pos]) and str[pos]<>":") loop
+      -- pokud znak není ani písmeno, ani pomlčka vracíme prázdný řetězec a ukončíme proceduru
+      if not iso_char_is_letter(str[pos]) and str[pos]<>"-" then
+        identifier:='';
+        return;
+
+      -- pokud znak je pomlčka a následující znak rovněž pomlčka, pak jsme narazili na další option
+      -- => vracíme identifikátor a ukončíme proceduru
+      elsif str[pos]="-" and (pos<str:length and then str[pos+1]="-") then
+        return;
+        end if;
+
+      -- přidáme znak do výsledku a inkrementujeme pozici
+      identifier & str[pos];
+      pos+1;
+      end loop;
+
+    -- pokud je poslední znak identifikátoru pomlčka "-" => chyba => vracíme prázdný řetězec a
+    -- ukončíme proceduru
+    if str[pos-1]="-" then
+      identifier:='';
+      return;
+      end if;
+    end if;
+  end get_option_identifier;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_command =
+-- Vytvoří popis příkazu jehož jméno udává parametr [name]. Parametr [proc] udává pointer na callback
+-- funkci, která zpracovává daný příkaz. Parametr [next] obsahuje pointer na první složku seznamu
+-- popisující parametry příkazu nebo optionu příkazu (zpravidla se zde rekurentně volají funkce
+-- [create_option] nebo [create_<type>_parameter]).
+-- V případě, že:
+--   * jméno [name] příkazu neodpovídá pravidlu (viz jméno příkazu), vyvolá procedura výjimku
+--     [cmd_command_error].
+--   * seznam popisu optionů obsahuje jméno, které neodpovídá identifikátoru dlouhého nebo krátkého
+--     jména, vyvolá procedura výjimku [cmd_option_error].
+--   * seznam popisu parametrů příkazu není definován dle Omezení výskytu, vyvolá procedura výjimku
+--     [cmd_parameter_error].
+--   * parametr [name] obsahuje prázdný řetězec '', pak se jedná o Nulový příkaz
+--   * se v seznamu popisů optionů vyskytují diplicitní jména resp. zkrácená jména optionů vyvolá
+--     procedura výjimku [cmd_duplicate_error].
+--
+-- Vrací instanci třídy [c_command_label], což je složka seznamu popisu příkazů.
+----------------------------------------------------------------------------------------------------
+begin
+  -- vytvoříme instanci popisu příkazu a inicializujeme ji. Pokud se inicializace nezdaří, odstraníme
+  -- objekt z paměti a šíříme výjimku dál
+  new result;
+  result^.init(name,proc,next);
+
+rollback
+  discard result;
+  end create_command;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_option =
+-- Vytvoří popis optionu příkazu. Jméno optionu udává parametr [name] a parametr [short_name]
+-- udává jeho zkrácené (jednoznakový) jméno. Politiku výskytu optionu udává parametr [occur].
+-- Parametr [next] obsahuje pointer na další složku seznamu popisující parametry optionu nebo další
+-- option příkazu.
+-- Pointer na další option nastavíme voláním metody [get_next_option], pointer na první složku
+-- popisu parametrů určíme z [next].
+--
+-- Vrací instanci třídy [c_option_label], což je složka seznamu popisu optionů příkazu.
+----------------------------------------------------------------------------------------------------
+begin
+ -- vytvoříme instanci popisu optionu a inicializujeme ji
+  new result;
+  result^.init(short_name,name,occur,next);
+  end create_option;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_string_parameter =
+-- Vytvoří popis řetězcového parametru příkazu nebo optionu. Politiku výskytu udává parametr [occur].
+-- Parametr [next] obsahuje pointer na další složku seznamu popisující parametry příkazu nebo optionu,
+-- nebo první resp. další složku popisující option příkazu.
+--
+-- Vrací instanci třídy [c_string_parameter_label], což je složka seznamu popisu parametrů příkazu nebo
+-- optionu.
+----------------------------------------------------------------------------------------------------
+begin
+  -- vytvoříme instanci popisu parametru a inicializujeme ji
+  new result;
+  result^.init(occur,next);
+  end create_string_parameter;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_unsigned_parameter =
+-- Vytvoří popis číselného parametru příkazu nebo optionu. Politiku výskytu udává parametr [occur].
+-- Parametr [next] obsahuje pointer na další složku seznamu popisující parametry příkazu nebo optionu,
+-- nebo první resp. další složku popisující option příkazu.
+--
+-- Vrací instanci třídy [c_unsigned_parameter_label], což je složka seznamu popisu parametrů příkazu nebo
+-- optionu.
+----------------------------------------------------------------------------------------------------
+begin
+  -- vytvoříme instanci popisu parametru a inicializujeme ji
+  new result;
+  result^.init(min,max,occur,next);
+  end create_unsigned_parameter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_command_label =
+-- Popis příkazu.
+-- Poznámka: jméno příkazu bez bílých znaků ([no_white_name]) je jméno [name], ve kterém byly
+-- jednotlivé bílé znaky oddělující identifikátory nahrazeny procentem "%".
+----------------------------------------------------------------------------------------------------
+
+use
+  supervised c_option_label,
+  supervised c_common_label;
+
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje popis příkazu jehož jméno udává parametr [name]. Parametr [proc] udává pointer
+    -- na callback funkci, která zpracovává daný příkaz. Parametr [next] obsahuje pointer na první
+    -- složku seznamu popisující parametry příkazu nebo optionu příkazu (zpravidla se zde rekurentně
+    -- volají funkce [create_option] nebo [create_<type>_parameter]).
+    -- V případě, že:
+    --   * jméno [name] příkazu neodpovídá pravidlu (viz jméno příkazu), vyvolá procedura výjimku
+    --     [cmd_command_error].
+    --   * seznam popisu optionů obsahuje jméno, které neodpovídá identifikátoru dlouhého nebo krátkého
+    --     jména, vyvolá procedura výjimku [cmd_option_error].
+    --   * seznam popisu parametrů příkazu není definován dle Omezení výskytu, vyvolá procedura výjimku
+    --     [cmd_parameter_error].
+    --   * parametr [name] obsahuje prázdný řetězec '', pak se jedná o Nulový příkaz
+    --   * se v seznamu popisů optionů vyskytují diplicitní jména resp. zkrácená jména optionů vyvolá
+    --     procedura výjimku [cmd_duplicate_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      pos              : t_unsigned:=1;              -- pozice v řetězci jména příkazu
+      identifier       : t_char32str;                -- identifkátor jména příkazu
+      tmp              : p_parameter_label;          -- pomocný pointer na popis parametru
+
+    begin
+      -- přiřadíme jméno příkazu
+      this.name:=name;
+
+      -- callback procedura zpracovávající příkaz
+      this.callback_proc:=proc;
+
+      -- určíme první složku seznamu popisů optionů
+      if next<>nil then this.options:=next^.get_next_option; end if;
+
+      -- určíme první složku seznamu parametrů (pokud existuje) a nastavíme minimální a maximální počet
+      -- parametrů příkazu
+      if next<>nil and then next^:tag<>c_option_label:tag then
+        this.parameters:=next;
+        this.parameters^.set_limit(this.min_param,this.max_param);
+        end if;
+
+      -- přiřadíme jméno bez bílých znaků:
+      -- pokud je prvním znakem jména příkazu bílý znak, generujeme výjimku [cmd_command_error]
+      if name<>'' and then is_white_space(name[pos]) then
+        raise cmd_command_error;
+        end if;
+
+      -- určíme identifikátory příkazu z nichž složíme jméno příkazu bez bílých znaků (oddělené procenty "%").
+      -- Pokud jméno neodpovídá pravidlu, generujeme výjimku [cmd_command_error].
+      while pos<=name:length loop
+        -- zjistíme identifikátor jména
+        get_identifier(name,pos,identifier);
+
+        -- pokud se nejedná o identifikátor, vyvoláme výjimku [cmd_command_error]
+        if identifier='' then
+          raise cmd_command_error;
+          end if;
+
+        -- přidáme identifikátor do jména bez bílých znaků a pokud ještě nejsme na posledním znaku,
+        -- přidáme procento "%" pro odlišení
+        this.no_white_name & identifier;
+        if pos<name:length then
+          this.no_white_name & "%";
+          end if;
+        end loop;
+
+      -- zkontrolujeme politiku výskytů parametrů příkazu. Pokud není v pořádku dojde ke generování
+      -- výjimky [cmd_parameter_error]
+      if this.parameters<>nil then
+        this.parameters^.check_policy;
+        end if;
+
+      -- zkontrolujeme optiony. V případě:
+      --  * duplicitního výskytu dlouhého nebo krátkého jména optionu je vyvolána výjimka [cmd_duplicity_error]
+      --  * nekorektního názvu dlouhého nebo krátkého jména je vyvolána výjimka [cmd_option_error]
+      --  * špatné politiky výskytu parametru optionu je vyvolána výjimka [cmd_parameter_error]
+      if this.options<>nil then
+        this.options^.check;
+        end if;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní z paměti alokovaný prostor.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smažeme seznam parametrů a seznam optionů
+      discard parameters;
+      discard options;
+      end exit;
+
+    end c_command_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_common_label =
+-- Abstraktní předek složek příkazu - popis optionu nebo popis parametru.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static get_next_option =
+    -- Vrací pointer na první popis optionu v seznamu jehož první složkou je [this]. Pokud je [this]
+    -- popis parametru, projde seznamem až na složku popisující první option nebo celý seznam a
+    -- poslední popis parametru před popisem optionu označí za poslední složku seznamu parametrů,
+    -- tj. jeho člen [next] nastaví na [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      last_param   : p_common_label;             -- pointer obsahující poslední popis parametru
+      tmp          : p_common_label;             -- pomocný pointer pro průchod seznamu optionů a parametrů
+
+    begin
+      -- je-li [start] popis optionu, vracíme [start] a ukončíme proceduru
+      if this:tag=c_option_label:tag then
+        result:=^this;
+        return;
+        end if;
+
+      -- interní setup
+      tmp:=this.next;
+      last_param:=^this;
+
+      -- dokud neprojdeme seznam nebo nenarazíme na popis optionu
+      while tmp<>nil and then tmp^:tag<>c_option_label:tag loop
+        -- uchováme si poslední popis parametru a nastavíme se na další složku seznamu
+        last_param:=tmp;
+        tmp:=tmp^.next;
+        end loop;
+
+      -- parametr [last_param] je poslední, nastavíme jeho složku [next] na [nil]
+      last_param^.next:=nil;
+
+      -- vracíme pointer na popis dalšího optionu nebo [nil]
+      result:=tmp;
+      end get_next_option;
+
+    end c_common_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_option_label =
+-- Popis optionu.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje popis optionu příkazu. Jméno optionu udává parametr [name] a parametr [short_name]
+    -- udává jeho zkrácené (jednoznakový) jméno. Politiku výskytu optionu udává parametr [occur].
+    -- Parametr [next] obsahuje pointer na další složku seznamu popisující parametry optionu nebo další
+    -- option příkazu.
+    -- Pointer na další option nastavíme voláním procedury [get_next_option], pointer na první složku
+    -- popisu parametrů určíme z [next].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- přiřadíme dlouhé a krátké jméno optionu a jeho politiku výskytu
+      this.name:=name;
+      this.short_name:=short_name;
+      this.occurrence:=occur;
+
+      -- je [next] popis parametru?
+      if next<>nil and then next^:tag<>c_option_label:tag
+        -- ano => přiřadíme pointer na další option a popis parametrů optionu
+        then
+          -- přiřadíme odkaz na další popis optionu nebo [nil]
+          if next<>nil then this.next:=next^.get_next_option; end if;
+
+          -- nastavíme pointer na popis prvního parametru
+          this.parameters:=next;
+
+          -- nastavíme minimální a maximální počet parametrů optionu
+          this.parameters^.set_limit(this.min_param,this.max_param);
+
+        -- ne => složka [next] ukazuje na další popis optionu nebo [nil]
+        else this.next:=next;
+          end if;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check =
+    -- Kontroluje seznam popisů optionů začínající složkou [this]. V případě:
+    --  * duplicitního výskytu dlouhého nebo krátkého jména optionu je vyvolána výjimka [cmd_duplicity_error]
+    --  * nekorektního názvu dlouhého nebo krátkého jména je vyvolána výjimka [cmd_option_error]
+    --  * špatné politiky výskytu parametru optionu je vyvolána výjimka [cmd_parameter_error]
+    ------------------------------------------------------------------------------------------------
+    var
+      opt          : p_option_label;             -- pointer na aktuální popis optionu
+      tmp          : p_option_label;             -- pomocný pointer na popis optionu
+      pos          : t_unsigned:=1;              -- pozice v řetězci jména optionu
+      identifier   : t_char32str;                -- identifikátor dlouhého jména optionu
+
+    begin
+      -- inicializujeme začátek seznamu
+      opt:=^this;
+
+      -- projdeme seznam popisů optionů
+      while opt<>nil loop
+        -- má-li option [opt] parametry, zkontrolujeme jejich politiku výskytu. V případě, že je
+        -- špatná, je generovaná výjimka [cmd_parameter_error]
+        if opt^.parameters<>nil then
+          opt^.parameters^.check_policy;
+          end if;
+
+        -- zkontrolujeme duplicitu optionu [opt]
+        tmp:=opt^.next;
+        while tmp<>nil loop
+          -- našli jsme duplicitní option? ano => generujeme výjimku [cmd_parameter_error]
+          if opt^.name=tmp^.name or opt^.short_name=tmp^.short_name then
+            raise cmd_duplicity_error;
+            end if;
+
+          -- posun na další option
+          tmp:=tmp^.next;
+          end loop;
+
+        -- zkontrolujeme dlouhé a krátké jméno optionu. Pokud neodpovídají pravidlu, genereujeme
+        -- výjimku [cmd_parameter_error]
+        pos:=1;
+        get_option_identifier(opt^.name,pos,identifier);
+        if identifier='' or not iso_char_is_letter(opt^.short_name) then
+          raise cmd_option_error;
+          end if;
+
+        -- posun na další popis optionu
+        opt:=opt^.next;
+        end loop;
+      end check;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní dlaší složku seznamu parametrů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud obsahuje popis optionu popis parametrů, pak je odstraníme
+      if parameters<>nil then discard parameters; end if;
+
+      -- pokud není další složka [nil], pak ji smažeme
+      if next<>nil then
+        discard next;
+        end if;
+      end exit;
+
+    end c_option_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_parameter_label =
+-- Abstraktní předek popisu parametru.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static set_limit =
+    -- Určí minimální ([min]) a maximální ([max]) počet parametrů příkazu resp. optionu.
+    --
+    -- Princip: Postupně procházíme seznam parametrů (počáteční parametr udává [tHIS]). U každého
+    -- parametru identifikujeme politiku jeho výskytu ([occurrence]), podle které upravujeme
+    -- minimální a maximální počet.
+    --
+    -- Poznámka: Maximální počet výskytů je ohraničen hodnotou 0xffffffff, přičemž tato hodnota
+    -- vyjadřuje skutečnost, že se v seznamu parametrů vyskytuje parametr, jehož počet výskytů není
+    -- nikterak omezen.
+    ----------------------------------------------------------------------------------------------------
+    var
+      param            : p_parameter_label;          -- instance pro průchod seznamem parametrů
+
+    begin
+      -- postupně projdeme celým seznamem parametrů
+      param:=^this;
+      while param<>nil loop
+
+        -- podle politiky výskytu [occurrence] parametru rozhodneme 
+        case param^.occurrence
+          -- parametr se musí vyskytnout jednou => inkrementujeme minimální a maximální počet
+          when o_forced_once do
+            if min<t_unsigned:last then min+1; end if;
+            if max<t_unsigned:last then max+1;  end if;
+
+          -- parametr se může vyskytnout jednou => inkrementujeme maximální počet
+          when o_optional_once do max+1;
+
+          -- parametr se musí vyskytnout, může být použit vícekrát => inkrementujeme minimální počet a
+          -- maximální nastavíme na 0xffffffff
+          when o_forced_repeat do
+            if min<t_unsigned:last then min+1; end if;
+            max:=t_unsigned:last;
+
+          -- parametr se může vyskytnout, může být použit vícekrát => maximální počet nastavíme na 0xffffffff
+          when o_optional_repeat do
+            max:=t_unsigned:last;
+            end case;
+
+        -- posuneme se na další parametr
+        param:=param^.next;
+        end loop;
+      end set_limit;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_policy =
+    -- Kontroluje politiku výskytu seznamu popisů parametrů začínající složkou [this].
+    -- V případě, že výskyt parametru není korektní, generuje výjimku [cmd_parameter_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp          : p_parameter_label;          -- pointer na složku seznamu popisu parametrů
+
+    begin
+      -- inicializujeme začátek seznamu
+      tmp:=^this;
+
+      -- projdeme seznam parametrů
+      while tmp<>nil loop
+        -- pokud není parametr, který se může libovolně opakovat, definován jako poslední
+        -- parametr nebo pokud definujeme parametr jako volitelný před povinným parametrem, pak
+        -- generujeme výjimku [cmd_parameter_error]
+        if (tmp^.next<>nil and (tmp^.occurrence=o_forced_repeat or tmp^.occurrence=o_optional_repeat))
+        or (tmp^.occurrence=o_optional_once and (tmp^.next<>nil and then
+           (tmp^.next^.occurrence=o_forced_repeat or tmp^.next^.occurrence=o_forced_once))) then
+           raise cmd_parameter_error;
+          end if;
+
+        -- posun na další složku
+        tmp:=tmp^.next;
+        end loop;
+      end check_policy;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_next =
+    -- Pokud politika výskytu parametru je [o_forced_once] nebo [o_optional_once], vrací pointer na
+    -- další složku, jinak vrací tutéž složku.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nejde-li o opakovatelný parametr, pak se posuneme na další popis parametru
+      if occurrence=o_forced_once or occurrence=o_optional_once
+        then result:=next;
+        else result:=^this;
+          end if;
+      end get_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní dlaší složku seznamu parametrů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud není další složka [nil], pak ji smažeme
+      if next<>nil then
+        discard next;
+        end if;
+      end exit;
+
+    end c_parameter_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_unsigned_parameter_label =
+-- Popis číselného parametru.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje datové členy třídy.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- přiřadíme politiku výskytu, meze a pointer na další popis optionu nebo parametru
+      this.occurrence:=occur;
+      this.min:=min;
+      this.max:=max;
+      this.next:=next;
+      end init;
+
+    end c_unsigned_parameter_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_string_parameter_label =
+-- Popis řetězcového parametru.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje datové členy třídy.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- přiřadíme politiku výskytu a pointer na další popis optionu nebo parametru
+      this.occurrence:=occur;
+      this.next:=next;
+      end init;
+
+    end c_string_parameter_label;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_command =
+-- Kolekce parametrů a optionů parsovaného příkazu.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static get_option =
+    -- Vrací pointer na kolekci optionu, jehož dlouhé jméno je [name]. V případě, že se option
+    -- v kolekci příkazu nevyskytuje, vrací [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- iterátor pro průchod seznamem optionů
+      item         : p_option;
+
+    begin
+      -- inicializace iterátoru
+      iter.init(options);
+
+      -- projdeme seznamem optionů
+      while iter.get(item) loop
+        -- pokud se jméno optionu shoduje se jménem [name], vracíme pointer na tento option a
+        -- ukončíme metodu
+        if item^.option_name=name then
+          result:=item;
+          return;
+          end if;
+        end loop;
+      end get_option;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_parameter =
+    -- Vrací hodnotu parametru [id]. Pokud parametr [id] neexistuje, vrací [nil].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud parametr existuje, pak vrátíme jeho hodnotu
+      if parameters.exist_key(id) then
+        parameters.get_value(id,result);
+        end if;
+      end get_parameter;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní z paměti alokovaný prostor.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smažeme kolekci parametrů a optionů
+      parameters.delete_all;
+      options.delete_all;
+      end exit;
+
+    end c_command;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_option =
+-- Kolekce parametrů parsovaného optionu.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static get_parameter =
+    -- Vrací hodnotu parametru [id]. Pokud parametr [id] neexistuje, vrací [nil].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud parametr existuje, pak vrátíme jeho hodnotu
+      if parameters.exist_key(id) then
+        parameters.get_value(id,result);
+        end if;
+      end get_parameter;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní z paměti alokovaný prostor.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smažeme kolekci parametrů
+      parameters.delete_all;
+      end exit;
+
+    end c_option;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_command_line_parser =
+-- Parser příkazové řádky.
+----------------------------------------------------------------------------------------------------
+
+  use
+    supervised c_command_label,
+    supervised c_string_parameter_label,
+    supervised c_unsigned_parameter_label,
+    supervised c_option_label;
+
+    ------------------------------------------------------------------------------------------------
+    static find_command (
+        name       : in t_char32ustr)            -- jméno příkazu
+        return p_command_label =
+    -- Projde seznam popisů příkazů [commands] a vyhledá v něm příkaz jehož jméno bez bílých znaků
+    -- odpovídá řetězci [name]. Pokud je příkaz nalezen, vrací pointer na jeho popis, v opačném
+    -- případě vrací [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- itrátor pro průchod seznamem příkazů
+      command_item : p_command_label;            -- složka seznamu popisů příkazů
+
+    begin
+      -- porovnáme všechny příkazy v seznamu [commands] se jménem [name]
+      iter.init(commands);
+      while iter.get(command_item) loop
+        -- byl příkaz v seznamu popisů nalezen? ano => vracíme ho a ukončíme metodu
+         if command_item^.no_white_name=name then
+          result:=command_item;
+          return;
+          end if;
+        end loop;
+      end find_command;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static identify_command (
+        cmd_line   : in t_char32ustr;            -- příkazová řádka
+        pos        : in out t_unsigned;          -- pozice v řetězci [cmd_line] odkud čteme
+        cmd_label  : out p_command_label) =      -- popis identifikovaného příkazu
+    -- Identifikuje v příkazové řádce [cmd_line] od pozice [pos] příkaz. V případě nalezení příkazu
+    -- vrací popis příkazu (instanci třídy [c_command_label]), v opačném případě vrací [nil].
+    --
+    -- Princip: Z příkazové řádky čteme identifikátory [cmd_id], vkládáme je do řetězce [cmd_name]
+    -- a oddělujeme procenty "%". Po každém přidaném identifikátoru testujeme, zda se jedná o jméno
+    -- registrovaného příkazu v [commands]. Pokud ano, pak si uchováme popis identifikovaného příkazu
+    -- včetně pozice koncového znaku posledního identifikátoru jména. Na závěr testujeme, zda byl
+    -- nějaký příkaz identifikován, pokud ne, pak se pokusíme najít v seznamu příkazů popis Nulového
+    -- příkazu. Pokud ani ten nenalezneme, vrací metoda [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      cmd_id       : t_char32str;                -- identifikátor příkazu
+      cmd_name     : t_char32lstr;               -- jméno příkazu (může se skládat z několika identifikátorů)
+      stop_pos     : t_unsigned;                 -- koncová pozice posledního detekovaného příkazu
+      cmd          : p_command_label;            -- popis identifikovaného příkazu     
+
+    begin
+      -- z příkazové řádky se pokoušíme určit identifikátor
+      get_identifier(cmd_line,pos,cmd_id);
+
+      -- dokuď identifikátor není prázdný řetězec...
+      while cmd_id<>'' loop
+        -- přidej identifikátor ke jménu příkazu
+        cmd_name & cmd_id;
+
+        -- pokusíme se vyhledat příkaz v seznamu popisů příkazů
+        cmd:=find_command(cmd_name);
+
+        -- pokud byl identifikován příkaz, uložíme ho do výsledku a uchováme si koncovou pozici [pos]
+        if cmd<>nil then
+          cmd_label:=cmd;
+          stop_pos:=pos;
+          end if;
+
+        -- z příkazové řádky se pokusíme vybrat další identifikátor
+        get_identifier(cmd_line,pos,cmd_id);
+        
+        -- ke jménu příkazu přidáme procento "%" pro rozličení víceslovného jména příkazu
+        cmd_name & "%";
+        end loop;
+
+      -- bykl vyhledán nějaký příkaz?
+      if cmd_label<>nil
+        -- ano => nastavíme pozici na konec posledního identifikátoru příkazu
+        then pos:=stop_pos;
+
+        -- ne => pak předpokládáme, že se jedná o Nulový příkaz a zjiostíme, zda byl registrován
+        else cmd_label:=find_command('');
+          end if;
+      end identify_command;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static identify_option (
+        command    : in p_command_label;         -- ukazatel na příkaz, jehož optiony zpracováváme
+        cmd_line   : in t_char32ustr;            -- příkazová řádka
+        pos        : in out t_unsigned;          -- pozice v řetězci [cmd_line] odkud čteme
+        cmd        : in p_command;               -- pointer na kolekci příkazu
+        opt_label  : out p_option_label) =       -- popis identifikovaného optionu
+    -- Identifikuje v příkazové řádce identifikátor optionu (např. -f, --force, --new-opt, /f, at...).
+    -- Přitom identifikátor optionu se nemusí vyskytovat přímo za prefixem (-, --, /), ale může být
+    -- oddělen bílými znaky.
+    -- Vrací popis [c_option_label] optionu. V případě, že identifikuje více zkrácených optionů uvedených
+    -- za jednou pomlčkou "-", vrací popis posledního z nich. Dále vkládá do kolekce příkazu
+    -- [cmd] kolekci identifikovaných optionů.
+    -- V případě, že se nepodaří provést identifikaci optionu (konec příkazové řádky, neznámý option,
+    -- syntaktická chyba, atd...), vrací metoda [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      short_name   : t_logical:=true;            -- je-li [true], pak je podporován krátký tvar optionu
+      name         : t_char32str;                -- dlouhé jméno optionu
+      option_item  : p_option_label;             -- složka seznamu optionů příkazu [command]
+      option       : p_option;                   -- složka identifikovaného optionu
+      found        : t_logical;                  -- [true], pokud byl identifikován option
+
+    begin
+      -- inkrementujeme aktuální pozici a konrolujeme, zda jsou k dispozici ještě nějaké znaky.
+      -- pokud ne, vracíme [nil] a ukončíme metodu
+      pos+1;
+      if pos>cmd_line:length then return; end if;
+
+      -- jedná se o dlouhé jméno optionu?
+      if cmd_line[pos-1]="-" and cmd_line[pos]="-" then
+        short_name:=false;
+        pos+1;
+        end if;
+
+      -- přeskočíme všechny bílé znaky
+      skip_whitespace(cmd_line,pos);
+
+      -- máme k dispozici ještě nějaké znaky příkazového řádku?
+      if pos>cmd_line:length then
+        -- ne => option je bez identifikátoru, vracíme [nil] a ukončíme metodu
+        opt_label:=nil;
+        return;
+        end if;
+
+      -- parsujeme krátké jméno optionu?
+      if short_name
+        -- ano
+        then          
+          -- dokud jsou k dispozici písmena, identifikujeme jednotlové optiony
+          while pos<=cmd_line:length and iso_char_is_letter(cmd_line[pos]) loop
+            -- projdeme všechny optiony definované v příkazu a porovnáváme jejich krátké jméno s
+            -- aktuálním znakem příkazové řádky
+            option_item:=command^.options;
+            while option_item<>nil loop
+              -- shoduje se krátké jméno s akutálním znakem?
+              if option_item^.short_name=cmd_line[pos] then
+                -- vracíme popis optionu
+                opt_label:=option_item;
+
+                -- vytvoříme novou kolekci optionu
+                new option;
+                option^.option_name:=option_item^.name;
+                cmd^.options.insert_last(option);
+
+                -- identifikovali jsme option => nastavíme proměnnou [found]
+                found:=true;
+
+                -- identifikovali jsme option => vyskočíme z cyklu
+                break;
+                end if;
+
+              -- posun na další popis optonů v příkladu
+              option_item:=option_item^.next;
+              end loop;
+
+            -- option nebyl identifikován => vracíme [nil] a ukončíme metodu
+            if not found then
+              opt_label:=nil;
+              return;
+              end if;
+            found:=false;
+
+            -- inkrementujeme aktuální pozici
+            pos+1;
+            end loop;
+
+        -- ne
+        else
+          -- určíme jméno optionu
+          get_option_identifier(cmd_line,pos,name);
+
+          -- pokud jméno optionu není korektní, vracíme [nil] a ukončíme metodu
+          if name='' then return;  end if;
+
+          -- projedeme seznam popisů optionů příkazu a identifikujeme jméno optionu
+          option_item:=command^.options;
+          while option_item<>nil loop
+            -- shoduje se jméno optionu s nějakým jménem v seznamu popisu optionů příkazu?
+            if option_item^.name=name then
+              -- vracíme popis optionu
+              opt_label:=option_item;
+
+              -- vytvoříme novou kolekci optionu
+              new option;
+              option^.option_name:=option_item^.name;
+              cmd^.options.insert_last(option);
+              break;
+              end if;
+
+            -- posun na další složku seznamu popisů optionů
+            option_item:=option_item^.next;
+            end loop;
+          end if;
+
+      -- pokud nebyl identifikován žádná option, vracíme [nil]
+      if opt_label=nil then return; end if;
+
+      -- pokud nebyl(y) option(y) zakončen(y) standardním způsobem (konec příkazového řádku,
+      -- dvojtečka ":" nebo bílý znak), pak vracíme [nil] a ukončíme metodu
+      if pos<=cmd_line:length and then (cmd_line[pos]<>":" and not is_white_space(cmd_line[pos])) then
+        opt_label:=nil;
+        return;
+        end if;
+
+      -- je-li aktuální znak dvojtečka ":", pak posuneme aktuální pozici o jeden znak
+      if pos<=cmd_line:length and then cmd_line[pos]=":" then
+        pos+1;
+        end if;
+      end identify_option;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_parameter_value(
+        parameter  : in t_char32ustr;            -- parametr jako řetězec
+        par_label  : in p_parameter_label)       -- popis parametru     
+        return t_logical =
+    -- Kontroluje rozsah hodnoty parametru [parameter] podle jeho popisu [par_label]. Vrací [true],
+    -- je-li rozsah v pořádku, v opačném případě vrací [false].
+    ------------------------------------------------------------------------------------------------
+    var
+      value        : t_unsigned;                 -- číselná hodnota unsigned parametru
+
+    begin
+      -- jde o číselný parametr?
+      if par_label^:tag=c_unsigned_parameter_label:tag then
+        begin
+          -- převedeme hodnotu parametru na číslo a kontrolujeme jeho rozsah
+          value:=string_to_unsigned(parameter);
+
+        catch
+          when conversion_error do raise parser_error;
+          end;
+
+        -- pokud je hodnota parametru mezi povolenými mezemi, vracíme [true] a končíme metodu
+        if value>=p_unsigned_parameter_label(par_label)^.min and value<=p_unsigned_parameter_label(par_label)^.max then
+          result:=true;
+          return;
+          end if;
+
+      -- jde o řetězcový parametr?
+      elsif par_label^:tag=c_string_parameter_label:tag then
+        -- ten je vždý OK
+        result:=true;
+        end if;
+      end check_parameter_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_parameters (
+        parameters : in p_string_string_dictionary; -- pointer na slovník obsahující parametry
+        param_label: in p_parameter_label;       -- pointer na první složku seznamu obsahující popis parametrů
+        count      : in t_unsigned;              -- počet parsovaných parametrů
+        min        : in t_unsigned;              -- minimální počet parametrů
+        max        : in t_unsigned)              -- maximální počet parametrů
+        return t_logical =
+    -- Kontroluje parametry [parameters] příkazu nebo optionu, jejichž popis udává [param_label].
+    -- Počet parametrů ve slovníku [parameters] udává [count]. [min] a [max] obsahují minimální
+    -- a maximální počet parametrů optionu nebo příkazu.
+    -- Pokud je počet parametrů v pořádku, i jejich hodnoty, vrací metoda [true], v opačném případě
+    -- [false].
+    ------------------------------------------------------------------------------------------------
+    var
+      parameter    : t_char32str;                -- parametr příkazu nebo optionu (jako řetězec)
+      par_label    : p_parameter_label;          -- složka seznamu popisů parametrů
+      value        : t_char32str;                -- identifikátor parametru (číslo pořadí parametru)
+      dict_iter    : c_string_string_dictionary_iterator; -- iterátor pro průchod slovíkem obsahující parametry
+
+    begin
+      -- inicializace iterátoru [dict_iter]
+      dict_iter.init(parameters^);
+      par_label:=param_label;
+
+      -- pokud počet parametrů není mezi minimálním a maximálním početm parametrů, vracíme [false]
+      -- a ukončíme metodu
+      if count>max or count<min then return; end if;
+
+
+      -- projdeme všechny parametry a kontrolujeme jejich rozsah
+      while dict_iter.get_value(value,parameter) loop
+        -- pokud rozsah hodnoty parametru není korektní, vracíme [false] a ukončíme metodu
+        if not check_parameter_value(parameter,par_label) then return; end if;
+
+        -- nejde-li o opakovatelný parametr, pak se posuneme na další popis parametru
+        par_label:=par_label^.get_next;
+        end loop;
+
+      -- parametry byly v pořádku => vracíme [true]
+      result:=true;
+      end check_parameters;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_cmd_occur_policy (
+        command    : in out p_command;           -- kolekce příkazu
+        cmd_label  : in p_command_label) =       -- popis příkazu
+    -- Kontroluje výskyt parametrů a optionů v příkazu [command] jehož popis udává [cmd_label].
+    -- Pokud:
+    --  * neodpovídá výskyt parametrů a jejich hodnoty definované politice, generuje metoda vý-
+    --    jimku [cmd_parameter_error].
+    --  * politika výskytu optionů neodpovídá definici, generuje metoda výjimku [cmd_option_error]
+    ------------------------------------------------------------------------------------------------
+    var
+      option       : p_option;                   -- kolekce optionu
+      opt_label    : p_option_label;             -- složka seznamu popisů optionů
+      opt_iter     : c_list_iterator;            -- iterátor pro průchod seznamem popisů optionů
+      occur_cnt    : t_unsigned;                 -- počet výskytů konkrétního optionu v příkazu
+
+    begin
+      -- kontrolujeme parametry příkazu:
+      if not check_parameters(^command^.parameters,cmd_label^.parameters,command^.param_count,
+                              cmd_label^.min_param,cmd_label^.max_param) then
+        -- chyba v parametrech => generujeme výjimku [cmd_parameter_error]
+        discard command;
+        commands.delete_all;
+        raise cmd_parameter_error;
+        end if;
+
+      -- kontrola optionů:
+      -- dokud jsou k dispozici popisy optionů příkazu
+      opt_label:=cmd_label^.options;
+      while opt_label<>nil loop
+        occur_cnt:=0;
+
+        -- dokud neprojdeme všechny optiony příkazu
+        opt_iter.init(command^.options);
+        while opt_iter.get(option) loop
+          -- shodují se jména optionů?
+          if opt_label^.name=option^.option_name then
+            -- inkrementujeme počet optionu
+            occur_cnt+1;
+
+            -- kontrolujeme parametry optionu
+            if not check_parameters(^option^.parameters,opt_label^.parameters,option^.param_count,
+                                    opt_label^.min_param,opt_label^.max_param) then
+              -- chyba v parametrech optionů => generujeme výjimku [cmd_parameter_error]
+              discard command;
+              commands.delete_all;
+              raise cmd_parameter_error;
+              end if;
+            end if;  
+          end loop;
+
+        -- v případě nesprávné politiky výskytu generujeme výjimku [cmd_parameter_error]
+        if (opt_label^.occurrence=o_forced_once and occur_cnt<>1) or
+           (opt_label^.occurrence=o_forced_repeat and occur_cnt=0) or
+           (opt_label^.occurrence=o_optional_once and occur_cnt>1) then
+          discard command;
+          commands.delete_all;
+          raise cmd_option_error;
+          end if;
+
+        -- posuneme se na další složku popisu optionů
+        opt_label:=opt_label^.next;
+        end loop;
+      end check_cmd_occur_policy;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_command_parameter (
+        command    : in out p_command;
+        max        : in t_unsigned;
+        parameter  : in t_char32ustr) =
+    -- Vloží do kolekce příkazu [command] jeho parametr [parameter]. Pokud by počet parametrů pře-
+    -- výšil jeho maximální počet, generuje metoda výjimku [cmd_parameter_error].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- je možné příkazu přiřadit ještě nějaký parametr? ne => generujeme výjimku [cmd_parameter_error]
+      if max<=command^.param_count then
+        discard command;
+        commands.delete_all;
+        raise cmd_parameter_error;
+        end if;
+
+      -- inkrementujeme počítadlo parametrů a vložíme parametr do kolekce příkazu
+      command^.param_count+1;
+      command^.parameters.insert_value(unsigned_to_string(command^.param_count),parameter);
+      end insert_command_parameter;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static register_command =
+    -- Registruje příkaz příkazové řádky [command] - ten je obvykle určen procedurou [create_command].
+    -- V případě, že se jméno registrovaného příkazu shoduje se jmeném některého dříve registrovaného
+    -- příkazu, generuje metoda výjimku [cmd_duplicate_error].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- je v parseru již registrován příkaz mající jméno [command^.name]? ano => generujeme výjimku
+      -- [cmd_duplicate_error]
+      if find_command(command^.name)<>nil then
+        commands.delete_all;
+        raise cmd_duplicity_error;
+        end if;
+
+      -- přidáme popis příkazu do seznamu popisů
+      commands.insert_last(command);
+      end register_command;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_empty_cmd_line =
+    -- Nastavuje reakci chování parseru na prázdný příkazový řádek. V případě, že je parametr [ok]
+    -- nastaven na [true], není prázdný příkazový řádek chyba. V opačném případě ano. Parametr
+    -- [proc] obsahuje pointer na callback funkci, která je volána v případě bezchybového prázdného
+    -- příkazového řádku (není-li ovšem [nil]).
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavíme interní proměnnou [empty_cmd] a [empty_command_proc]
+      empty_cmd:=ok;
+      empty_command_proc:=proc;
+      end set_empty_cmd_line;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static process =
+    -- Parsuje příkazovou řádku.
+    -- Vrací instanci třídy [c_command] obsahující jméno příkazu, seznam jeho parametrů a optionů.
+    -- Poznámka: Volající je zodpovědný za její uvolnění.
+    -- 
+    -- Přitom seznamy optionů mohou obsahovat seznamy parametrů.
+    -- V případě, že:
+    --   * parser neidentifikoval žádný příkaz, vrací metoda [nil].
+    --   * při zpracování parametru, který začíná uvozovkami, nebudou uvedeny druhé uvozovku ukončující
+    --     parametr, vyvolá metoda výjimku [cmd_parameter_error].
+    --   * parser identifikoval příkaz, ale příkazová řádka obsahovala syntakticky chybně zapsaný
+    --     nebo neznámý option => metoda vyvolá výjimku [cmd_option_error].
+    --   * parser identifikoval příkaz, ale počet jeho argumentů resp. počet argumentů jeho optionů
+    --     neodpovídá definované politice výskytu => metoda vyvolá výjimku [cmd_parameter_error].
+    --   * parser identifikoval příkaz, ale počet jeho jeho optionů neodpovídá definované politice
+    --     výskytu => metoda vyvolá výjimku [cmd_option_error].
+    --   * příkazová řádka je prázdná a proměnná [empty_cmd] je nastavena na [true], vyvolá metoda
+    --     výjimku [cmd_empty_error].
+    --
+    -- Pokud byla při vytváření popisu příkazu definovaná callback procedura zpracovávající příkaz a
+    -- pokud bylo parsování úspěšné, volá metoda na závěr tuto callback proceduru.
+    -- Pokud byl parsován prázdný příkazový řádek a nejedná se o chybová stav a byla-li definovaná
+    -- callback procedura reagující na prázdný příkazový řádek, pak je vyvolána.
+    ------------------------------------------------------------------------------------------------
+    var
+      cmd_item     : p_command_label;            -- popis příkazu
+      opt_item     : p_option_label;             -- popis optionu příkazu
+      option       : p_option;                   -- složka identifikovaného optionu
+      parameter    : t_char32lstr;               -- parametr příkazu nebo optionu (reprezentovaný jako řetězec)
+      pos          : t_unsigned:=1;              -- aktuální pozice v příkazové řádce      
+
+    begin
+      -- je příkazová řádka prázdná a je to chyba? ano => generujeme výjimku [cmd_empty_error]
+      if cmd_line='' and not empty_cmd then
+        commands.delete_all;
+        raise cmd_empty_error;
+
+      -- je příkazová řádka prázdná, nejedná se o chybu a byla definovaná callback procedura
+      -- [empty_command_proc]? ano => zavoláme jí
+      elsif cmd_line='' and empty_cmd and empty_command_proc<>nil then
+        empty_command_proc^();
+        end if;
+
+      -- identifikujeme příkaz
+      identify_command(cmd_line,pos,cmd_item);
+
+      -- pokud se jedná o nulový příkaz, pak nastavíme aktuální pozici zpět na 1
+      if cmd_item^.name='' then
+        pos:=1;
+        end if;
+
+      -- pokud příkaz nebyl identifikován vracíme [nil] a ukončíme metodu
+      if cmd_item=nil then
+        commands.delete_all;
+        return;
+        end if;
+
+      -- alokujeme instanci kolekcí + počáteční set up
+      new result;
+      result^.options.init(c_option:tag);
+      result^.command_name:=cmd_item^.name;
+
+      -- dokud jsou v příkazové řádce nepřečtené znaky
+      while pos<=cmd_line:length loop
+        -- přeskočíme bílé znaky
+        skip_whitespace(cmd_line,pos);
+
+        -- jsou k dispozici ještě nějaké znaky?
+        if pos>cmd_line:length then break; end if;
+
+        -- rozhodneme podle aktuálně zpracovávaného znaku příkazové řádky:
+        case cmd_line[pos]
+          -- parametr oddělený bílými znaky uzavřený mezi uvozovky
+          when """ do
+            -- inkrementujeme aktuální pozici
+            pos+1;
+
+            -- dokud nenarazíme na další uvozovku a nejsme na konci příkazové řádky, přidáváme znaky
+            -- do parametru [parameter]
+            while pos<=cmd_line:length and then cmd_line[pos]<>""" loop
+              parameter & cmd_line[pos];
+              pos+1;
+              end loop;
+
+            -- narazili jsme na druhou uvozovku?
+            if pos<=cmd_line:length and then cmd_line[pos]=""" 
+              -- ano => posuneme aktuální pozici [pos] o 1
+              then pos+1;
+
+              -- ne => jsme, na konci příkazové řádky => chyba => generujeme výjimku [cmd_parameter_error]
+              else
+                discard result;
+                commands.delete_all;
+                raise cmd_parameter_error;
+                end if;
+
+          -- option
+          when "-","/" do
+            -- identifikujeme option
+            identify_option(cmd_item,cmd_line,pos,result,opt_item);
+
+            -- pokud nebyl identifikován žádný option, generujeme výjimku [cmd_option_error]
+            if opt_item=nil then
+              discard result;
+              commands.delete_all;
+              raise cmd_option_error;
+              end if;
+
+            -- určíme poslední kolekci v optionu
+            option:=result^.options.get_last;
+
+          -- parametr => vložíme slovo do [parameter]
+          when others do
+            get_word(cmd_line,pos,parameter);
+            end case;
+
+        -- byl přečten parametr z příkazové řádky?
+        if parameter<>'' then
+          -- patří parametr [parameter] příkazu?
+          if opt_item=nil or opt_item^.max_param<=option^.param_count
+
+            -- ano => vložíme parametr kolekci příkazu
+            then
+              insert_command_parameter(result,cmd_item^.max_param,parameter);
+              opt_item:=nil;
+              option:=nil;
+
+            -- ne => vložíme parametr kolekci optionu
+            else
+              -- inkrementujeme počet parametrů optionu a vložíme parametr optionu
+              option^.param_count+1;
+              option^.parameters.insert_value(unsigned_to_string(option^.param_count),parameter);
+
+              -- pokud počet parametrů optionu dosáhl jeho maximálního počtu, nastavíme proměnné
+              -- [option] a [opt_item] na [nil], což signalizuje, že následující parametry budou
+              -- patřit příkazu nebo dalšímu optionu
+              if opt_item^.max_param=option^.param_count then
+                option:=nil;
+                opt_item:=nil;
+                end if;
+              end if;
+
+          -- vyprázdníme parametr
+          parameter:='';
+          end if;
+        end loop;
+
+      -- zkonstrolujeme politiky výskytů (parametrů v příkazu, optionů v příkazu a parametrů v optionech)
+      check_cmd_occur_policy(result,cmd_item);
+
+      -- příkazový řádek byl úspěšně parsovaný => voláme callback proceduru zpracovávající příkaz
+      -- (pokud byla definovaná)
+      if cmd_item^.callback_proc<>nil then
+        cmd_item^.callback_proc^(result);
+        end if;
+      end process;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - set up interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace seznamu popisů příkazů
+      commands.init(c_command_label:tag);
+
+      -- nastvení implicitních hodnot interních proměnných:
+      empty_cmd:=true;
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - dealokace alokovaného interního paměťového prostoru.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smažeme popisy příkazů a jejich parametrů a optionů
+      commands.delete_all;
+      end exit;
+
+    end c_command_line_parser;
+
+end command_line_parser;

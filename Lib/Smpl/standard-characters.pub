@@ -15,6 +15,14 @@ with
   standard.streams;
 
 type
+  -- exception type for all characeter-manipulation-related errors
+  t_character_exception = t_library_exception;
+
+message
+  -- general character-manipulation error exception
+  character_error  : t_character_exception;
+
+type
   -- code-page table for translation of 8bit characters to 32bit ISO 10646
   t_code_page        = array t_char8 of t_char32;
   p_code_page        = ^t_code_page;
@@ -72,7 +80,7 @@ class public abstract c_character_decoder =
 
     message
       -- invalid input
-      character_decoder_error : exception;
+      character_decoder_error extend character_error;
 
     ------------------------------------------------------------------------------------------------
     virtual abstract put_byte (
@@ -180,8 +188,8 @@ class public abstract c_character_encoder =
 ----------------------------------------------------------------------------------------------------
 
     message
-      -- invalid charcater
-      character_encoder_error : exception;
+      -- invalid character
+      character_encoder_error extend character_error;
 
     ------------------------------------------------------------------------------------------------
     virtual abstract put_character (
@@ -355,7 +363,7 @@ class public abstract c_text_reader =
       eod          : out t_logical);             
   -- cte radek do konce (LF)
   -- zahazuje znaky CR a LF
-  -- pri kratkem bufferu vyhodi vyjimku string_buffer_overflow
+  -- pri kratkem bufferu vyhodi vyjimku [buffer_overflow_error]
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------

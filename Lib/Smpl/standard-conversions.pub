@@ -14,10 +14,16 @@ module public conversions =
 -- dodělat různé varianty formátování.
 ----------------------------------------------------------------------------------------------------
 
-with standard.strings;
+with
+  standard.strings;
   
+type
+  -- exception type for all conversion-related errors
+  t_conversion_exception = t_library_exception;
+
 message
-  conversion_error extend numeric_error;         -- exception
+  -- general conversion error exception
+  conversion_error : t_conversion_exception;
 
 type
   t_radix          = t_unsigned range 2..36;     -- základ číselné soustavy 
@@ -35,9 +41,9 @@ type
       end enum;
 
   t_oversize_mode  = enum
-      tom_error;                               -- vyhlásí se výjimka
-      tom_full;                                -- číslo se zobrazí na plný počet platných míst
-      tom_asterisk;                            -- zobrazí se pole hvězdiček
+      tom_error;                                 -- vyhlásí se výjimka
+      tom_full;                                  -- číslo se zobrazí na plný počet platných míst
+      tom_asterisk;                              -- zobrazí se pole hvězdiček
       end enum;
 
   t_float_conversion = enum

@@ -25,14 +25,6 @@ const
   smpl_version     = 1;
   smpl_revision    = 1;
 
-message
-  feature_not_implemented : exception;
-
-message
-  -- raised when disallowed parameter value or combination 
-  -- of parameter values is passed to a subprogram
-  parameter_error  : exception;
-
 type
   -- integer types
   t_signed8        = signed 8;
@@ -166,36 +158,42 @@ type
   -- file and stream offset
   t_offset         = protected t_unsigned;       --%%TODO change to double native unsigned (64bit on windows)
 
+type
+  -- exception type for all library-related errors
+  t_library_exception = exception;
+
+message
+  -- indication of an unimplemented feature, shall never be raised in a full implementation of SMPL
+  feature_not_implemented : t_library_exception;
+
+  -- raised when invalid parameter value or combination 
+  -- of parameter values is passed to a subprogram
+  parameter_error  : t_library_exception;
+
 ----------------------------------------------------------------------------------------------------
 #separate templates;
 -- Miscellaneous #templates.
-----------------------------------------------------------------------------------------------------
-#separate public common;
--- 
 ----------------------------------------------------------------------------------------------------
 #separate public triggers;
 -- Event triggers.
 ----------------------------------------------------------------------------------------------------
 #separate public synchronization;
--- synchronization
+-- Temporary module: Synchronization.
 ----------------------------------------------------------------------------------------------------
 #separate public tasks;
--- Tasks.
+-- Temporary module: Tasks.
 ----------------------------------------------------------------------------------------------------
 #separate public streams;
 -- Data streams.
+----------------------------------------------------------------------------------------------------
+#separate public classes;
+-- Object data structers
 ----------------------------------------------------------------------------------------------------
 #separate public characters;
 -- Support for different character coding schemes (ASCII/UNICODE/ISO 10646).
 ----------------------------------------------------------------------------------------------------
 #separate public strings;
 -- Character strings' manipulation.
-----------------------------------------------------------------------------------------------------
-#separate public structures;
--- Data structures (lists, trees).
-----------------------------------------------------------------------------------------------------
-#separate public classes;
--- Object data structers
 ----------------------------------------------------------------------------------------------------
 #separate public input;
 -- Input operations routines.
@@ -229,11 +227,6 @@ type
 ----------------------------------------------------------------------------------------------------
 #separate public state_machine;
 -- State machine.
-----------------------------------------------------------------------------------------------------
-#if #declared radekr_text; #and then; radekr_text then;
-#separate public text;
-#end if;
--- Text processing.
 ----------------------------------------------------------------------------------------------------
 
 end standard;

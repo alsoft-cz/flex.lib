@@ -5,10 +5,8 @@ module transformers =
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-
--- Forward declarations
+-- forward declarations
 class abstract c_character_transformer; type p_character_transformer = ^class c_character_transformer;
-
 
 ----------------------------------------------------------------------------------------------------
 class abstract c_character_transformer =
@@ -18,43 +16,41 @@ class abstract c_character_transformer =
 -- between unicode normalization forms will have about 20 characters long. 
 ----------------------------------------------------------------------------------------------------
 
-  message
-      -- transform error
-      character_transformer_error : exception;
-      -- it is not possible to insert another character into the buffer, please use get_character
+    message
+      -- general character-transformer error exception
+      character_transformer_error extend character_error;
+
+      -- raised when it's impossible to insert another character into a buffer
       character_transformer_buffer_full_error extend character_transformer_error;
-      -- it is not possible to get character from buffer, it is not completed yet
+
+      -- raised when it's impossible to get a character from a buffer
       character_transformer_buffer_empty_error extend character_transformer_error;
-
-
 
     ------------------------------------------------------------------------------------------------
     virtual abstract put_character (
         c          : in t_char32;                -- inserted character
         output_ready: out t_logical);            -- character completed flag
-    -- Put one base or combining character <par>c</par> into internal buffer. The function sets
-    -- output parameter <par>output_ready</par> to true when character is completed and is ready
-    -- for <ent>get_character</par>. If there is a complete character in a buffer before inserting
-    -- this character, fuction raises <ent>character_transformer_buffer_full_error</ent> exception.
+    -- Put one base or combining character [c] into internal buffer. The function sets output
+    -- parameter [output_ready] to true when character is completed and is ready for 
+    -- [get_character]. If there is a complete character in a buffer before inserting this 
+    -- character, fuction raises [character_transformer_buffer_full_error] exception.
     ------------------------------------------------------------------------------------------------
     virtual abstract get_character (
         c          : out t_char32;               -- output character
         more_output: out t_logical);             -- whole character wasn't picked up yet
-    -- Get another base or combining character <par>c</par> from internal buffer. Function 
-    -- sets parameter <par>more_output</par> to true when whole character wasn't read yet,
-    -- and object have prepared more combining characters. If function sets <par>more_output</par>
-    -- to flase, internal buffer is ready for another <ent>put_character</ent> operation. 
-    -- If buffer is empty or contains only unfinished character on calling this function, it raises
-    -- <ent>character_transformer_buffer_empty_error</ent> exception.
+    -- Get another base or combining character [c] from internal buffer. Function sets parameter 
+    -- [more_output] to true when whole character wasn't read yet, and object have prepared more 
+    -- combining characters. If function sets [more_output] to flase, internal buffer is ready for 
+    -- another [put_character] operation. If buffer is empty or contains only unfinished character 
+    -- on calling this function, it raises [character_transformer_buffer_empty_error] exception.
     ------------------------------------------------------------------------------------------------
-    virtual abstract finalize_input 
-        return t_logical;                        -- COMMENT
-    -- Finalizes input. Tells to object, that the last inserted character was the last one of
-    -- combining character sequence. <par>result</par> true means than another character is prepared
-    -- for <ent>get_character</ent>. If there is a complete character in a buffer before finalizing,
-    -- fuction raises <ent>character_transformer_buffer_full_error</ent> exception.
+    virtual abstract finalize_input return t_logical;
+    -- Finalizes input. Tells the transformer, that the last inserted character was the last one of
+    -- a combining character sequence. [result] true means than another character is prepared
+    -- for [get_character]. If there is a complete character in a buffer before finalizing,
+    -- fuction raises [character_transformer_buffer_full_error] exception.
     ------------------------------------------------------------------------------------------------
-    end c_character_transformer;
 
+    end c_character_transformer;
 
 end transformers;

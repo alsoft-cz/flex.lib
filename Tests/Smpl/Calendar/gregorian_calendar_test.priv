@@ -362,24 +362,14 @@ class private c_gregorian_addition_case =
                   elsif time_span.days<>0 then smallest:=cal.t_tsd_days;
                   elsif time_span.months<>0 then smallest:=cal.t_tsd_months;
                   elsif time_span.years<>0 then smallest:=cal.t_tsd_years;
-                  else
-                    largest:=cal.t_tsd_ticks;
+                  else largest:=cal.t_tsd_ticks;
                     end if;
                
                   -- vlastní test
-                  begin
-                    datim:=cal.add_decomposed_timespan(date,time_span);
-                    span:=cal.get_decomposed_timespan(datim,date,smallest,largest);
-                    expected:=cal.add_decomposed_timespan(date,span);
-                    fail_if_false(datim=expected,'Expected value is not equal');
-
-                  catch
-                    -- OK (výjimka, kterou v případě chyby generuje modul [datetime])
-                    when calendar_error do
-
-                    -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-                    when test_error do raise test_error;
-                    end;
+                  datim:=cal.add_decomposed_timespan(date,time_span);
+                  span:=cal.get_decomposed_timespan(datim,date,smallest,largest);
+                  expected:=cal.add_decomposed_timespan(date,span);
+                  fail_if_false(datim=expected,'Expected value is not equal');
                   end loop;
                 end loop;
               end loop;
@@ -419,9 +409,6 @@ class private c_gregorian_addition_case =
 
       -- test kolem 28. února 2100 (první nepřestupné století)
       single_test(feb_2100);
-
-      -- test kolem 30. června 2105
-{      single_test(jun_2105);}
       end run_test;
 
 
@@ -497,8 +484,6 @@ class private c_gregorian_find_second_of_minute_case =
     -- minutě)) - viz [datim_old] a pro každou jeho hodnotu datumu dochází ke všem možným (61)
     -- vyhledáním nejbližší vyšší sekundy v minutě - viz [j], čemuž odpovídá datum [datim_new].
     -- Poté kontrolujeme, zda sekunda v minutě v datumu [datim_new] skutečně odpovídá [j]-té sekundě.
-    -- Dojde-li při hledání nejbližší vyšší sekundy ke generování [calendar_error], je vše OK, neboť
-    -- hledaná sekunda neexistuje.
     ------------------------------------------------------------------------------------------------
     var
       datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší sekundu v minutě
@@ -511,17 +496,8 @@ class private c_gregorian_find_second_of_minute_case =
 
         -- vyhledáme všechny možné nejbližší vyšší sekundy (tj. 0..60)
         for j in 0..cal.t_dt_second:last loop
-          begin
-            datim_new:=cal.find_second_of_minute(datim_old,cal.t_dt_second(j),cal.t_dtf_next);
-            fail_if_false(cal.get_second(datim_new)=cal.t_dt_second(j),'Expected value is not equal');
-
-          catch
-            -- OK
-            when calendar_error do
-
-            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-            when test_error do raise test_error;
-            end;         
+          datim_new:=cal.find_second_of_minute(datim_old,cal.t_dt_second(j),cal.t_dtf_next);
+          fail_if_false(cal.get_second(datim_new)=cal.t_dt_second(j),'Expected value is not equal');
           end loop;
         end loop;
       end single_test;
@@ -550,6 +526,9 @@ class private c_gregorian_find_second_of_minute_case =
 
       -- test 15.11.1995 15:45:15.0
       single_test(nov_15_1995);
+
+      -- přidáme přestupnou sekundu v prosinci 2101
+      cal.add_leap_second(2101,cal.ls_december,1);
 
       -- test 31.12.1999 23:59:30.0
       single_test(dec_31_1999);
@@ -647,26 +626,17 @@ class private c_gregorian_find_minute_of_hour_case =
 
         -- nalezneme všechny možné nejbližší větší minuty v hodině
         for min_to_find in 0..minute_of_hour:last loop
-          begin
-            -- nalezneme nejbližší vyšší minutu [min_to_find] k datumu [datim_old]
-            datim_new:=cal.find_minute_of_hour(datim_old,cal.t_dt_minute(min_to_find),cal.t_dtf_next);
+          -- nalezneme nejbližší vyšší minutu [min_to_find] k datumu [datim_old]
+          datim_new:=cal.find_minute_of_hour(datim_old,cal.t_dt_minute(min_to_find),cal.t_dtf_next);
 
-            -- nalezneme nejbližší nižší minutu [minute_of_hour] k datumu [datim_new]
-            expected:=cal.find_minute_of_hour(datim_new,minute_of_hour,cal.t_dtf_prev);
+          -- nalezneme nejbližší nižší minutu [minute_of_hour] k datumu [datim_new]
+          expected:=cal.find_minute_of_hour(datim_new,minute_of_hour,cal.t_dtf_prev);
 
-            -- nulujeme nižší složky než minuty u [datim_old]
-            datim_old:=cal.set_second(datim_old,0);
+          -- nulujeme nižší složky než minuty u [datim_old]
+          datim_old:=cal.set_second(datim_old,0);
 
-            -- test shodnosti
-            fail_if_false(datim_old=expected,'Expected date/time is not equal');
-
-          catch
-            -- OK
-            when calendar_error do
-
-            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-            when test_error do raise test_error;
-            end;
+          -- test shodnosti
+          fail_if_false(datim_old=expected,'Expected date/time is not equal');
           end loop;
         end loop;
       end single_test;
@@ -792,27 +762,18 @@ class private c_gregorian_find_hour_of_day_case =
 
         -- nalezneme všechny možné nejbližší větší hodiny ve dni
         for hour_to_find in 0..hour_of_day:last loop
-          begin
-            -- nalezneme nejbližší vyšší hodinu [hour_to_find] k datumu [datim_old]
-            datim_new:=cal.find_hour_of_day(datim_old,cal.t_dt_hour(hour_to_find),cal.t_dtf_next);
+          -- nalezneme nejbližší vyšší hodinu [hour_to_find] k datumu [datim_old]
+          datim_new:=cal.find_hour_of_day(datim_old,cal.t_dt_hour(hour_to_find),cal.t_dtf_next);
 
-            -- nalezneme nejbližší nižší hodinu [hour_of_hour] k datumu [datim_new]
-            expected:=cal.find_hour_of_day(datim_new,hour_of_day,cal.t_dtf_prev);
+          -- nalezneme nejbližší nižší hodinu [hour_of_hour] k datumu [datim_new]
+          expected:=cal.find_hour_of_day(datim_new,hour_of_day,cal.t_dtf_prev);
 
-            -- nulujeme nižší složky než hodiny u [datim_old]
-            datim_old:=cal.set_second(datim_old,0);
-            datim_old:=cal.set_minute(datim_old,0);
+          -- nulujeme nižší složky než hodiny u [datim_old]
+          datim_old:=cal.set_second(datim_old,0);
+          datim_old:=cal.set_minute(datim_old,0);
 
-            -- test shodnosti
-            fail_if_false(datim_old=expected,'Expected date/time is not equal');
-
-          catch
-            -- OK
-            when calendar_error do
-
-            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-            when test_error do raise test_error;
-            end;
+          -- test shodnosti
+          fail_if_false(datim_old=expected,'Expected date/time is not equal');
           end loop;
         end loop;
       end single_test;
@@ -937,35 +898,24 @@ class private c_gregorian_find_day_of_week_case =
 
       -- celkem 53x (maximální počet týdnů v roce) testujeme každý týden
       while weeks<weeks:last loop
-        begin
-          -- Od datumu [datim_old] nalezneme nejbližší vyšší den [week_day] v týdnu a nalezený datum
-          -- uložíme do [datim_new]. Obdobně od datumu [datim_new] nalezneme nejbližší nižší den
-          -- [week_day] v týdnu a nalezený datum vložíme do [expected]. Pokud se oba datumy shodují,
-          -- je test OK.
-          datim_new:=cal.find_day_of_week(datim_old,week_day,cal.t_dtf_next);
-          expected_date:=cal.find_day_of_week(datim_new,week_day,cal.t_dtf_prev);
-          datim_old:=cal.set_second(datim_old,0);
-          datim_old:=cal.set_minute(datim_old,0);
-          datim_old:=cal.set_hour(datim_old,0);
-          fail_if_false(datim_old=expected_date,'Expected date/time is not equal');
+        -- Od datumu [datim_old] nalezneme nejbližší vyšší den [week_day] v týdnu a nalezený datum
+        -- uložíme do [datim_new]. Obdobně od datumu [datim_new] nalezneme nejbližší nižší den
+        -- [week_day] v týdnu a nalezený datum vložíme do [expected]. Pokud se oba datumy shodují,
+        -- je test OK.
+        datim_new:=cal.find_day_of_week(datim_old,week_day,cal.t_dtf_next);
+        expected_date:=cal.find_day_of_week(datim_new,week_day,cal.t_dtf_prev);
+        datim_old:=cal.set_second(datim_old,0);
+        datim_old:=cal.set_minute(datim_old,0);
+        datim_old:=cal.set_hour(datim_old,0);
+        fail_if_false(datim_old=expected_date,'Expected date/time is not equal');
 
-          -- Pokud rozdíl (zjištěný voláním [get_decomposed_timespan] datumů [datim_old] a [datim_new]
-          -- je sedm dní (jeden týden), je test OK.
-          span:=cal.get_decomposed_timespan(datim_old,datim_new);
-          fail_if_false(span=expected_span,'Expected timespan is not equal');
+        -- Pokud rozdíl (zjištěný voláním [get_decomposed_timespan] datumů [datim_old] a [datim_new]
+        -- je sedm dní (jeden týden), je test OK.
+        span:=cal.get_decomposed_timespan(datim_old,datim_new);
+        fail_if_false(span=expected_span,'Expected timespan is not equal');
 
-          datim_old:=datim_new;
-
-        catch
-          -- OK
-          when calendar_error do
-
-          -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-          when test_error do raise test_error;
-
-        leave
-          weeks+1;
-          end;
+        datim_old:=datim_new;
+        weeks+1;
         end loop;
       end single_test;
 
@@ -1079,33 +1029,24 @@ class private c_gregorian_find_day_of_month_case =
 
         -- nalezneme všechny možné nejbližší větší dny v měsíci
         for day_to_find in 1..day_of_month:last loop
-          begin
-            -- nalezneme nejbližší vyšší den [day_to_find] k datumu [datim_old]
-            datim_new:=cal.find_day_of_month(datim_old,cal.t_dt_month_day(day_to_find),cal.t_dtf_next);
+          -- nalezneme nejbližší vyšší den [day_to_find] k datumu [datim_old]
+          datim_new:=cal.find_day_of_month(datim_old,cal.t_dt_month_day(day_to_find),cal.t_dtf_next);
 
-            -- dokud se nebudou shodovat měsíce datumů [datim_old] a [expected]
-            loop
-              -- nalezneme nejbližší nižší den [day_of_hour] k datumu [datim_new], přičemž aspoň
-              -- jednou musíme tímto cyklem projít
-              expected:=cal.find_day_of_month(datim_new,day_of_month,cal.t_dtf_prev);
-              datim_new:=expected;
-            until cal.get_month(datim_old)>=cal.get_month(expected);
+          -- dokud se nebudou shodovat měsíce datumů [datim_old] a [expected]
+          loop
+            -- nalezneme nejbližší nižší den [day_of_hour] k datumu [datim_new], přičemž aspoň
+            -- jednou musíme tímto cyklem projít
+            expected:=cal.find_day_of_month(datim_new,day_of_month,cal.t_dtf_prev);
+            datim_new:=expected;
+          until cal.get_month(datim_old)>=cal.get_month(expected);
 
-            -- nulujeme nižší složky než dny u [datim_old]
-            datim_old:=cal.set_second(datim_old,0);
-            datim_old:=cal.set_minute(datim_old,0);
-            datim_old:=cal.set_hour(datim_old,0);
+          -- nulujeme nižší složky než dny u [datim_old]
+          datim_old:=cal.set_second(datim_old,0);
+          datim_old:=cal.set_minute(datim_old,0);
+          datim_old:=cal.set_hour(datim_old,0);
 
-            -- test shodnosti
-            fail_if_false(datim_old=expected,'Expected date/time is not equal');
-
-          catch
-            -- OK
-            when calendar_error do
-
-            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-            when test_error do raise test_error;
-            end;
+          -- test shodnosti
+          fail_if_false(datim_old=expected,'Expected date/time is not equal');
           end loop;
         end loop;
       end single_test;
@@ -1234,35 +1175,26 @@ class private c_gregorian_find_day_of_year_case =
 
         -- nalezneme všechny možné nejbližší větší dny v roce
         for day_to_find in 1..day_of_year:last loop
-          begin
-            -- nalezneme nejbližší vyšší den [day_to_find] v roce k datumu [datim_old]
-            datim_new:=cal.find_day_of_year(datim_old,cal.t_dt_year_day(day_to_find),cal.t_dtf_next);
+          -- nalezneme nejbližší vyšší den [day_to_find] v roce k datumu [datim_old]
+          datim_new:=cal.find_day_of_year(datim_old,cal.t_dt_year_day(day_to_find),cal.t_dtf_next);
 
-            cal.decompose_datetime(datim_new,yy);
+          cal.decompose_datetime(datim_new,yy);
 
-            -- dokud se nebudou shodovat roky datumů [datim_old] a [expected]
-            loop
-              -- nalezneme nejbližší nižší den [day_of_hour] v roce k datumu [datim_new], přičemž aspoň
-              -- jednou musíme tímto cyklem projít
-              expected:=cal.find_day_of_year(datim_new,day_of_year,cal.t_dtf_prev);
-              datim_new:=expected;
-            until cal.get_year(datim_old)>=cal.get_year(expected);
+          -- dokud se nebudou shodovat roky datumů [datim_old] a [expected]
+          loop
+            -- nalezneme nejbližší nižší den [day_of_hour] v roce k datumu [datim_new], přičemž aspoň
+            -- jednou musíme tímto cyklem projít
+            expected:=cal.find_day_of_year(datim_new,day_of_year,cal.t_dtf_prev);
+            datim_new:=expected;
+          until cal.get_year(datim_old)>=cal.get_year(expected);
 
-            -- nulujeme nižší složky než dny u [datim_old]
-            datim_old:=cal.set_second(datim_old,0);
-            datim_old:=cal.set_minute(datim_old,0);
-            datim_old:=cal.set_hour(datim_old,0);
+          -- nulujeme nižší složky než dny u [datim_old]
+          datim_old:=cal.set_second(datim_old,0);
+          datim_old:=cal.set_minute(datim_old,0);
+          datim_old:=cal.set_hour(datim_old,0);
 
-            -- test shodnosti
-            fail_if_false(datim_old=expected,'Expected date/time is not equal');
-
-          catch
-            -- OK
-            when calendar_error do
-
-            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
-            when test_error do raise test_error;
-            end;
+          -- test shodnosti
+          fail_if_false(datim_old=expected,'Expected date/time is not equal');
           end loop;
         end loop;
       end single_test;

@@ -5,7 +5,6 @@ module public normalizer =
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-
 type
   -- normalization forms defined in unicode 3.2
   t_normalization_form = enum
@@ -52,7 +51,7 @@ class public c_character_normalizer =
 
     message
       -- input overflow
-      character_normalizer_error : exception;
+      character_normalizer_error extend smpl_error;
 
     
     ------------------------------------------------------------------------------------------------

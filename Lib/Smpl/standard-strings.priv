@@ -106,7 +106,7 @@ begin
       when st_no do result:=str;
 
       -- trimming disallowed
-      when st_error do raise parameter_error;
+      when st_error do raise string_error;
       end case;
 
   -- in all other cases return the original string
@@ -411,7 +411,7 @@ var
   xsubstr          : t_char32str;                -- temporary to be replaced
 
 begin
-  -- an empty substring needs not to be count
+  -- the substring may not be empty
   if substr='' then
     raise parameter_error;
     return;

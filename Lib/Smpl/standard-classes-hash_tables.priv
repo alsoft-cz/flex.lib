@@ -27,7 +27,7 @@ class private abstract c_hash_table =
     -- Initializes the hash table.
     --   When [homogenous] is set to True, then only items of type [item_type] are permitted in the 
     -- hash table, otherwise only items of type [item_type] and all its descendants. All hash table
-    -- manipulation procedures raise [list_error] when the type of an item violates this rule.
+    -- manipulation procedures raise [invalid_type_error] when the type of an item violates this rule.
     ------------------------------------------------------------------------------------------------
     begin
       -- set up basic parameters

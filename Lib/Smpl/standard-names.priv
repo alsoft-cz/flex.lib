@@ -504,7 +504,7 @@ class private c_name =
           return;
           end if;
 
-        if c_name_component_operator_not_equal(comp_1^, comp_2^) then
+        if c_name_component_operator_not_equal(comp_1^,comp_2^) then
         --if comp_1^<>comp_2^ then
           -- components not identical=>not equal
           result:=false;
@@ -644,7 +644,7 @@ class private abstract c_name_component =
           return;
           end if;
 
-        if c_name_subcomponent_operator_not_equal(subc_1^, subc_2^) then
+        if c_name_subcomponent_operator_not_equal(subc_1^,subc_2^) then
         --if subc_1^<>subc_2^ then
           -- subcomponents not identical=>not equal
           result:=false;

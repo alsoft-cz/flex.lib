@@ -65,10 +65,13 @@ with
   standard.classes,
   standard.classes.lists;
 
+type
+  -- exception type for all name-related errors
+  t_name_exception = t_library_exception;
 
 message
-  -- Error signalling an invalid operation on a name (e.g. invalid name syntax).
-  name_error       : exception;
+  -- general name error exception
+  name_error       : t_name_exception;
 
 type
   -- plain-text name of an object
@@ -351,8 +354,8 @@ class public abstract c_name_component = extend c_list_item;
     -- Makes a deep copy of this component.
     ------------------------------------------------------------------------------------------------
     procedure operator_equal (
-        comp_1     : in c_name_component;
-        comp_2     : in c_name_component)
+        comp_1     : in class c_name_component;
+        comp_2     : in class c_name_component)
         return t_logical;
     -- Compares two name components. Returns true when the components are equal.
     ------------------------------------------------------------------------------------------------
@@ -384,8 +387,8 @@ class public abstract c_name_subcomponent = extend c_list_item;
     -- Assigns a plain-text name of this subcomponent.
     ------------------------------------------------------------------------------------------------
     procedure operator_equal (
-        subc_1     : in c_name_subcomponent;
-        subc_2     : in c_name_subcomponent)
+        subc_1     : in class c_name_subcomponent;
+        subc_2     : in class c_name_subcomponent)
         return t_logical;
     -- Compares two name components. Returns true when the components are equal.
     ------------------------------------------------------------------------------------------------
@@ -616,14 +619,14 @@ procedure c_name_operator_equal (
 -- left=right
 ----------------------------------------------------------------------------------------------------
 procedure c_name_component_operator_equal (
-    left           : in c_name_component;
-    right          : in c_name_component)
+    left           : in class c_name_component;
+    right          : in class c_name_component)
     return t_logical;
 -- left=right
 ----------------------------------------------------------------------------------------------------
 procedure c_name_subcomponent_operator_equal (
-    left           : in c_name_subcomponent;
-    right          : in c_name_subcomponent)
+    left           : in class c_name_subcomponent;
+    right          : in class c_name_subcomponent)
     return t_logical;
 -- left=right
 ----------------------------------------------------------------------------------------------------
@@ -632,6 +635,22 @@ procedure c_name_operator_not_equal (
     right          : in c_name)
     return t_logical;
 -- left<>right
+----------------------------------------------------------------------------------------------------
+#if #environment compiler_version;='4.0.5.3' then;
+----------------------------------------------------------------------------------------------------
+procedure c_name_component_operator_not_equal (
+    left           : in class c_name_component;
+    right          : in class c_name_component)
+    return t_logical;
+-- left<>right
+----------------------------------------------------------------------------------------------------
+procedure c_name_subcomponent_operator_not_equal (
+    left           : in class c_name_subcomponent;
+    right          : in class c_name_subcomponent)
+    return t_logical;
+-- left<>right
+----------------------------------------------------------------------------------------------------
+#else;
 ----------------------------------------------------------------------------------------------------
 procedure c_name_component_operator_not_equal (
     left           : in c_name_component;
@@ -644,6 +663,8 @@ procedure c_name_subcomponent_operator_not_equal (
     right          : in c_name_subcomponent)
     return t_logical;
 -- left<>right
+----------------------------------------------------------------------------------------------------
+#end if;
 ----------------------------------------------------------------------------------------------------
 overload = :
     c_name_operator_equal,

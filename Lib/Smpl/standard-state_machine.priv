@@ -50,7 +50,7 @@ class private c_state_machine =
     ------------------------------------------------------------------------------------------------
     static add_state =
     -- Adds a state [state] to the state machine.
-    -- If the state have been already added to the state machine, [event_error] is signaled.
+    -- If the state have been already added to the state machine, [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     var
       new_state    : t_state;                    -- pro přidání stavu
@@ -58,14 +58,12 @@ class private c_state_machine =
     begin
       -- [state] musí existovat
       if state=nil then
-        execute(event_error);
-        return;
+        raise parameter_error;
         end if;
 
       -- stejný stav nesmí být přidán do KA dvakrát
       if find_state(state)<>0 then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- test, zda je pořeba realokovat pameť pro další stavy
@@ -92,9 +90,9 @@ class private c_state_machine =
     ------------------------------------------------------------------------------------------------
     static remove_state =
     -- Smaže stav z KA a všechny přechody, které jsou s ním spojeny. Pokud se má smazat aktivní stav
-    -- KA [current_state], je signalizován [event_error].
+    -- KA [current_state], je generovana výjimka [state_machine_error].
     -- The state have had to be added to the state machine via the [add_state] method before, 
-    -- otherwise [event_error] is signaled.
+    -- otherwise [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     var
       i_state          : t_unsigned;             -- pozice stavu v řetězci stavů
@@ -103,8 +101,7 @@ class private c_state_machine =
     begin
       -- [current_state] nesmí být smazán
       if state=current_state then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- vyhledat pozici stavu pro vymazání
@@ -112,8 +109,7 @@ class private c_state_machine =
 
       -- neexistuje stav pro vymazání
       if i_state=0 then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- najít a smazat všechy přechody ve všech stavech vedoucí k nekonzistenci
@@ -167,7 +163,7 @@ class private c_state_machine =
     -- The transition can be performed only when then transition allowance check [check] returns 
     -- True, otherwise it is forbidden to perform the transition.
     -- When a transition from this state to [to_state] was already defined (regardless of the
-    -- transition allowance check), [event_error] is signaled.
+    -- transition allowance check), [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     var 
       _new_transition : t_transition;            -- pomocná proměnná k navázání recordu na string
@@ -176,8 +172,7 @@ class private c_state_machine =
     begin
       -- [from_state], [to_state] a [transition_check] musí existovat, jinak error
       if from_state=nil or to_state=nil or check=nil then
-        execute(event_error);
-        return;
+        raise parameter_error;
         end if;
 
       -- najít index stavu, ve kterém bude začínat přechod
@@ -185,15 +180,13 @@ class private c_state_machine =
 
       -- počáteční stav nebo koncový stav přechodu neexistuje
       if i_state=0 or find_state(to_state)=0 then 
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- testovat na duplicitu přechodu
       if find_transition(i_state,to_state)>0 then
         -- přechod je již definován
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- pokud pamět pro další přechod není k dispozici, realokovat větší pamět
@@ -222,7 +215,7 @@ class private c_state_machine =
     static remove_transition =
     -- Removes a transition from [from_state] to another state [to_state].
     -- The transition have had to be defined via the [add_transition] method before, otherwise
-    -- [event_error] is signaled.
+    -- [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     var
       i_state      : t_unsigned;                 -- pozice stavu v řetězci stavů
@@ -231,8 +224,7 @@ class private c_state_machine =
     begin
       -- [from_state] a [to_state] i [states] musí existovat, jinak error
       if from_state=nil or to_state=nil then
-        execute(event_error);
-        return;
+        raise parameter_error;
         end if;
 
       -- najít stav, ve kterém bude začínat přechod
@@ -243,8 +235,7 @@ class private c_state_machine =
 
       -- nebyl nalezen přechod pro vyjmutí z tohoto stavu
       if i_transition=0 then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- odstranit přechod
@@ -270,8 +261,9 @@ class private c_state_machine =
     static set_first_state =
     -- Sets the first state of the state machine. 
     -- The state have had to be added to the state machine via the [add_state] method before, 
-    -- otherwise [event_error] is signaled. The first state of the state machine can be specified 
-    -- only once. If a current state is already determined, [event_error] is signaled.
+    -- otherwise [state_machine_error] exception is raised. The first state of the state machine
+    -- can be specified only once. If a current state is already determined, [state_machine_error]
+    -- exception is raised.
     --   Before entering the first state [event_first_state] is signaled. After that, normal event 
     -- signalig takes place, when the first state is set. That is, all events starting from 
     -- [event_before_enter_state] are signaled.
@@ -280,8 +272,7 @@ class private c_state_machine =
     begin
       -- [state] není definován nebo [current_state] již existuje nebo [state] je mimo KA
       if state=nil or current_state<>nil or find_state(state)=0 then 
-        execute(event_error);
-        return;
+        raise parameter_error;
         end if;
       
       -- vyvolání událostí spojené se vstupem do počátečního stavu
@@ -312,15 +303,12 @@ class private c_state_machine =
     static is_final_state =
     -- Checks if the current state is the final state of the state machine. 
     -- A final state is such a state, from which no transition to another state is defined.
-    -- When no current state is selected, [event_error] is signaled and the subprogram returns 
-    -- False.
+    -- When no current state is selected, [state_machine_error] exception is raised.
     ------------------------------------------------------------------------------------------------
     begin
       -- [current_state] musí existovat
       if current_state=nil then
-        result:=false;
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- je konečný stav, pokud počet přechodů z tohoto stavu je 0
@@ -349,8 +337,8 @@ class private c_state_machine =
     -- The destination state is selected based on the return values of the trasition allowance 
     -- checks of all defined transitions (in order of definition via calls to the 
     -- [c_state.add_transition] method). There shall be exactly one transition passing the 
-    -- transition allowance check. This transition is then performed, otherwise [event_error] is 
-    -- signaled.
+    -- transition allowance check. This transition is then performed, otherwise [state_machine_error]
+    -- exception is raised.
     --   This concludes, that when there is no transition defined for the current state, it is
     -- treated as an error condition. It is up to the user to ensure by calling the [is_final_state]
     -- that the current state is not the final state so allowing [do_transition] to be called.
@@ -364,8 +352,7 @@ class private c_state_machine =
     begin
       -- jestliže KA nemá nastaven počáteční stav, pak error
       if current_state=nil then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- najít index stavu v řetězci
@@ -377,8 +364,7 @@ class private c_state_machine =
       -- test, zda je přechod nalezen
       if i_transition=0 then
         -- přechod není nalezen
-        execute(event_error);  
-        return;
+        raise state_machine_error;
         end if;
 
       -- vykonat přechod
@@ -414,8 +400,7 @@ class private c_state_machine =
     begin
       -- [current_state] musí existovat
       if current_state=nil then
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
 
       -- vykonávaní přechodů, dokud není konečný stav
@@ -428,15 +413,14 @@ class private c_state_machine =
 
     ------------------------------------------------------------------------------------------------
     static check_state =
-    -- Ensures that the given [state] was added to this state machine. If not, [event_error] is
-    -- signaled, otherwise no action is taken.
+    -- Ensures that the given [state] was added to this state machine. If not, [state_machine_error]
+    -- exception is raised, otherwise no action is taken.
     ------------------------------------------------------------------------------------------------
     begin
       -- stav musí být definován
       if find_state(state)=0 then
         -- stav neexistuje..
-        execute(event_error);
-        return;
+        raise state_machine_error;
         end if;
       end check_state;
 

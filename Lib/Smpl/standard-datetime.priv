@@ -16,33 +16,37 @@ begin
     then result:=t_timespan(a-b);
     else result:=t_timespan(b-a);
     end if;
- end get_timespan;
+  end get_timespan;
 
 
 
 ----------------------------------------------------------------------------------------------------
 procedure add_timespan =
--- K časovému údaji [a] přičte interval [span]
+-- K časovému údaji [a] přičte interval [span].
+-- Dojde-li během sčítání k přetečení, generuje procedura výjimku [calendar_error].
 ----------------------------------------------------------------------------------------------------
 begin
   result:=t_datetime(a+span);
+
+catch
+  when constraint_error do raise calendar_error;
   end add_timespan;
 
 
 
 ----------------------------------------------------------------------------------------------------
 procedure substract_timespan =
--- Od časového údaje [a] odečte interval [span]
+-- Od časového údaje [a] odečte interval [span].
+-- Dojde-li během odečítání k podtečení, generuje procedura výjimku [calendar_error].
 ----------------------------------------------------------------------------------------------------
 begin
-  -- Má smysl odečítat jen takový časový interval [span], která je menší než datum [a]. V opačném
-  -- případě se generuje výjimka.
-  if a>span
-    then result:=t_timespan(a-span);
-    else raise calendar_error;
-    end if;
+  result:=t_timespan(a-span);
+
+catch
+  when constraint_error do raise calendar_error;
   end substract_timespan;
-----------------------------------------------------------------------------------------------------
+
+
 
 ----------------------------------------------------------------------------------------------------
 class private abstract c_calendar =
@@ -881,8 +885,7 @@ class private c_common_calendar =
     static utc_to_time_zone =
     -- Provede přičtení resp. odečtení příslušného počtu minut při převádění komponovaného UTC času
     -- [datim] na komponovaný čas v časové zóně [time_zone].
-    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
-    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    -- Metoda generuje výjimku [calendar_error] v případě, přetečení nebo podtečení.
     ------------------------------------------------------------------------------------------------
     var
       time_shift   : t_timebasic_s;              -- posun (v tickách) oproti UTC v časové zóně
@@ -896,26 +899,14 @@ class private c_common_calendar =
       if time_shift<0
 
         -- Ano => určíme komponovaný čas s ohledem na časovou zónu (odečtení posunu [time_shift])
-        then
-          -- pokud by výsledek odečítání byl záporný => generujeme výjimku [calendar_error]
-          if datim<t_datetime(-time_shift) then
-            raise calendar_error;
-            end if;
-
-          -- určíme čas s ohledem na časovou zónu
-          result:=datim-t_timebasic(-time_shift);
+        then result:=datim-t_timebasic(-time_shift);
 
         -- Ne  => určíme komponovaný čas s ohledem na časovou zónu (přičtení posunu [time_shift])
-        else
-          -- pokud by výsledek sčítání byl větší než maximální hodnota => generujeme výjimku
-          -- [calendar_error]
-          if datim>t_timebasic:last-t_timebasic(time_shift) then
-            raise calendar_error;
-            end if;
-
-          -- určíme čas s ohledem na časovou zónu
-          result:=datim+t_timebasic(time_shift);
+        else result:=datim+t_timebasic(time_shift);
         end if;
+
+    catch
+      when constraint_error do raise calendar_error;
       end utc_to_time_zone;
 
 
@@ -924,8 +915,7 @@ class private c_common_calendar =
     static time_zone_to_utc =
     -- Provede odečtení resp. přičtení příslušného počtu minut při převádění komponovaného času
     -- [datim] v časové zóně [time_zone] na komponovaný čas v UTC.
-    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
-    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    -- Metoda generuje výjimku [calendar_error] v případě, přetečení nebo podtečení.
     ------------------------------------------------------------------------------------------------
     var
       time_shift   : t_timebasic_s;              -- posun (v tickách) oproti UTC v časové zóně
@@ -939,26 +929,14 @@ class private c_common_calendar =
       if time_shift<0
 
         -- Ano => určíme dekomponovaný čas s ohledem na časovou zónu (přičtení posunu [time_shift])
-        then
-          -- pokud by výsledek sčítání byl větší než maximální hodnota => generujeme výjimku
-          -- [calendar_error]
-          if datim>t_timebasic:last-t_timebasic(-time_shift) then
-            raise calendar_error;
-            end if;
-
-          -- určíme komponovaný čas s ohledem na časovou zónu
-          result:=datim+t_timebasic(-time_shift);
+        then result:=datim+t_timebasic(-time_shift);
 
         -- Ne  => určíme komponovaný čas s ohledem na časovou zónu (odečtení posunu [time_shift])
-        else
-          -- pokud by výsledek odčítání byl záporný => generujeme výjimku [calendar_error]
-          if datim<t_timebasic(time_shift) then
-            raise calendar_error;
-            end if;
-
-          -- určíme komponovaný čas s ohledem na časovou zónu
-          result:=datim-t_timebasic(time_shift);
+        else result:=datim-t_timebasic(time_shift);
         end if;
+
+    catch
+      when constraint_error do raise calendar_error;
       end time_zone_to_utc;
                      
 

@@ -57,19 +57,9 @@ class   private c_filesystem_object =
 
     var 
       sys_error    : protected windows.windef.dword;  -- system error code
-      disable_exceptions : t_logical;
-
     
 
-    ------------------------------------------------------------------------------------------------
-    virtual set_exception_mode =
-    ------------------------------------------------------------------------------------------------
-    begin
-      disable_exceptions:=disable;
-      end set_exception_mode;
-    
 
-    
     ------------------------------------------------------------------------------------------------
     virtual set_ok =
     -- Clears [this.res] error flag.
@@ -83,8 +73,7 @@ class   private c_filesystem_object =
 
     ------------------------------------------------------------------------------------------------
     virtual set_error =
-    -- Sets [this.res] to [res], retrieves the error code from the operating system  and executes 
-    -- the [event_error] trigger.
+    -- Sets [this.res] to [res], retrieves the error code from the operating system.
     ------------------------------------------------------------------------------------------------
     begin
       -- set result
@@ -93,11 +82,8 @@ class   private c_filesystem_object =
       -- get error code from the operating system
       sys_error:=windows.winbase.getlasterror;
 
-      -- trigger the error event
-      execute(event_error);
-      if not disable_exceptions then
-        raise file_error;
-        end if;
+      -- raise [file_error] exception
+      raise file_error;
       end set_error;
 
 

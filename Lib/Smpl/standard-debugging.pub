@@ -1,13 +1,13 @@
 ﻿----------------------------------------------------------------------------------------------------
-module public common =
--- Common utility declarations reused in different parts of the SMPL.
--- Flex Standard Multi-Platform Library
--- Copyright (C) 1999-2004 A && L soft
+module public debugging =
 ----------------------------------------------------------------------------------------------------
 
+#option required_security(100);
+
 ----------------------------------------------------------------------------------------------------
-#separate public structures;
--- Common definitions for standars structeres and classes
+procedure output_debug_string (
+    msg            : in t_char32ustr;
+    output_eol     : in t_logical:=true);
 ----------------------------------------------------------------------------------------------------
 
-end common;
+end debugging;

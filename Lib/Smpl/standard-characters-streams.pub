@@ -3,12 +3,6 @@
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-
-message
-  -- short buffer
-  string_buffer_overflow : exception;
-
-
 ----------------------------------------------------------------------------------------------------
 class public c_stream_text_writer = extend c_stream_generic_writer; expose c_text_writer;
 -- implementace zapisovace textu do streamu pomoci interface [c_text_writer]
