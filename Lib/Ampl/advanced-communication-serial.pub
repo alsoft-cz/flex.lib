@@ -1,0 +1,180 @@
+﻿----------------------------------------------------------------------------------------------------
+module public serial =
+-- Serial communication tools.
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.streams;
+
+
+type
+  -- exception type for all serial-communication-related errors
+  t_serial_communication_exception = t_library_exception;
+  	 
+message
+  serial_communication_error: t_serial_communication_exception;
+
+type
+  -- Number of stop bits
+  t_stop_bit_count = enum
+    tsbc_1;        -- 1 stop bit
+    tsbc_1_5;      -- 1.5 stop bits
+    tsbc_2;        -- 2 stop bits
+    end enum;
+
+  -- Parity scheme
+  t_parity_scheme = enum
+    tps_even;
+    tps_mark;
+    tps_none;
+    tps_odd;
+    tps_space;
+    end enum;
+
+  -- DTR control
+  t_dtr_control = enum
+    tdtrc_disable;
+    tdtrc_enable;
+    tdtrc_handshake;
+    end enum;
+
+  -- RTS control
+  t_rts_control = enum
+    trtsc_disable;
+    trtsc_enable;
+    trtsc_handshake;
+    trtsc_toggle;
+    end enum;
+
+  -- Modem control registers
+  t_control_register = enum
+    tcr_cts;
+    tcr_dsr;
+    tcr_ring;
+    tcr_rlsd;
+    end enum;
+  t_control_registers = set of t_control_register;
+
+  -- Communication events
+  t_communication_event = enum
+    tce_break;
+    tce_cts;
+    tce_dsr;
+    tce_err;
+    tce_ring;
+    tce_rlsd;
+    tce_rxchar;
+    tce_rxflag;
+    tce_txempty;
+    end enum;
+  t_communication_events = set of t_communication_event;
+
+  -- Action to do on purge request
+  t_serial_purge_action = enum
+    tspa_abort_tx;
+    tspa_abort_rx;
+    tspa_clear_tx_buffer;
+    tspa_clear_rx_buffer;
+    end enum;
+  t_serial_purge_actions = set of t_serial_purge_action;
+
+-- signalling packets
+type
+  m_dpss_serial_oob_char    = m_dpss_important;            -- Send OOB (immediate) character (important)
+  m_dpss_serial_purge       = m_data_packet_stream_signal; -- Purge communication (important)
+  m_dpss_serial_clear_dtr   = m_dpss_important;            -- Clear DTR (important)
+  m_dpss_serial_clear_rts   = m_dpss_important;            -- Clear RTS (important)
+  m_dpss_serial_set_dtr     = m_dpss_important;            -- Set DTR (important)
+  m_dpss_serial_set_rts     = m_dpss_important;            -- Set RTS (important)
+  m_dpss_serial_xon         = m_dpss_important;            -- Act as after XON (important)
+  m_dpss_serial_xoff        = m_dpss_important;            -- Act as after XOFF (important)
+  m_dpss_serial_set_break   = m_dpss_important;            -- Set break condition (important)
+  m_dpss_serial_clear_break = m_dpss_important;            -- Clear break condition (important)
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_serial_port_stream = expose c_output_stream,c_input_stream;
+-- Serial port stream.
+----------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  static open (
+    port_number    : in t_unsigned;              -- Port number (1, 2, ...)
+    in_queue       : in t_unsigned := 1600;      -- Recommended size of input queue
+    out_queue      : in t_unsigned := 1600);     -- Recommended size of output queue
+  -- Open and set up the specified serial port.
+  --------------------------------------------------------------------------------------------------
+  static close;
+  -- Close the communication.
+  --------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  static set_rate_and_mode (
+    rate           : in t_unsigned;              -- Communication rate [baud]
+    data_bits      : in t_unsigned;              -- Number of data bits (5, 6, 7, 8)
+    stop_bits      : in t_stop_bit_count);       -- Number of stop bits
+  -- Configure communication rate and data parameters.
+  --------------------------------------------------------------------------------------------------
+  static set_parity (
+    enabled        : in t_logical;                 -- T-Parity is enabled
+    scheme         : in t_parity_scheme:=tps_even; -- Parity scheme
+    replace_bad    : in t_logical:=false;          -- T-Replace bytes detected as bad with [replace_char].
+    replace_char   : in t_unsigned8:=63);          -- Replacement character (default: '?').
+  -- Configure parity checking.
+  --------------------------------------------------------------------------------------------------
+  static set_flow_control (
+    out_cts        : in t_logical;               -- Watch CTS for output flow control?
+    out_dsr        : in t_logical;               -- Watch DSR for output flow control?
+    dtr            : in t_dtr_control;           -- DTR flow control mode
+    in_dsr         : in t_logical;               -- Watch DSR for incoming data
+    rts            : in t_rts_control;           -- RTS flow control mode
+    continue_xoff  : in t_logical;               -- Continue transmission even with full input buffer and after XOFF?
+    out_x          : in t_logical;               -- Use XON/XOFF flow control for transmission
+    in_x           : in t_logical;               -- Use XON/XOFF flow control for reception
+    xon_limit      : in t_unsigned;              -- Bytes in input buffer to send XON
+    xoff_limit     : in t_unsigned;              -- Remaining space in output buffer to send XOFF
+    xon_char       : in t_unsigned8 := 17;       -- XON character (default: XON = DC1)
+    xoff_char      : in t_unsigned8 := 19);      -- XOFF character (default: XOFF = DC3)
+  -- Configure flow control parameters.
+  --------------------------------------------------------------------------------------------------
+  static set_special_characters (
+    discard_null   : in t_logical;               -- T-NUL bytes are discarded when received
+    --abort_on_error : in t_logical;
+    eof_char       : in t_unsigned8;             -- end of data character
+    signal_char    : in t_unsigned8);            -- event signalling character
+  -- Configure handling of special characters.
+  --------------------------------------------------------------------------------------------------
+  static set_timeouts(
+    read_interval  : in t_unsigned;              -- Max. interval between incoming bytes [ms]
+    read_total_mul : in t_unsigned;              -- Read timeout multiplier [ms/byte]
+    read_total_c   : in t_unsigned;              -- Read timeout constant [ms]
+    write_total_mul: in t_unsigned;              -- Write timeout multiplier [ms/byte]
+    write_total_c  : in t_unsigned);             -- Write timeout constant [ms]
+  -- Configure read/write timeouts.
+  --------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  static wait(
+    events         : t_communication_events)     -- Which events to wait for?
+    return t_communication_events;               -- Which events have occurred?
+  -- Wait for a communication event.
+  --------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  static get_modem_status return t_control_registers;
+  -- Read the state of modem registers.
+  --------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  virtual get_flow (
+    bytes          : out t_offset);
+  -- Get number of transmitted bytes
+  --------------------------------------------------------------------------------------------------
+
+  end c_serial_port_stream;
+
+end serial;

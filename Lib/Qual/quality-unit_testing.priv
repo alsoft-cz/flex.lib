@@ -1,0 +1,540 @@
+﻿----------------------------------------------------------------------------------------------------
+module private unit_testing =
+-- Quality Assurance Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+{%%TODO(persistence of context of tests)}
+{%%TODO(XML formatter)}
+
+with
+  standard,
+  standard.console;
+
+type
+
+  -- výčet pro konkretizaci seznamu výsledků, do něhož bude vložen nový záznam metodou [add_result] 
+  t_result_kind = enum
+      t_success_list;                            -- seznam úspěšně provedených testů
+      t_failure_list;                            -- seznam neúspěšně provedených testů
+      t_error_list;                              -- seznam chybných testů
+      end enum;
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_test_case =
+-- Předek všech testovacích metod.
+-- Třída posktyje metody:
+--   metody pro otestování hodnoty výsledku [fail_if_false] a [fail_if_true],
+--   metodu pro provedení testu ([test_run]).
+----------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------
+    virtual fail_if_false =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Pokud není splněna podmínka [condition], pak generujeme výjimku [test_error]
+      if not condition then
+        raise test_error;
+        end if;
+      end fail_if_false;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual fail_if_true =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Pokud je splněna podmínka [condition], pak generujeme výjimku [test_error]
+      if condition then
+        raise test_error;
+        end if;
+      end fail_if_true;
+
+    ------------------------------------------------------------------------------------------------
+    virtual run_test =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Tady bude vlastní test ve všech odvozených třídách
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_stop_after_fail =
+    -- Vrací hodnotu interní proměnné [stop_after_fail]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- varcíme hodnotu
+      result:=stop_after_fail;
+      end get_stop_after_fail;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_stop_after_error =
+    -- Vrací hodnotu interní proměnné [stop_after_error]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- varcíme hodnotu
+      result:=stop_after_error;
+      end get_stop_after_error;
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- implicitní natavení proměnných [stop_after_fail] (ukončit cyklus testování po prvním neúspěš-
+    -- ném testu) a [stop_after_error] (ukončit cyklus testování po prvním chybném testu) na [true].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení interních proměnných
+      stop_after_fail:=true;
+      stop_after_error:=true;
+      end entry;
+
+  end c_test_case;
+
+
+
+------------------------------------------------------------------------------------------------
+class private c_test_item =
+-- Složka seznamu testů [test_list] (viz [c_test_suite])
+------------------------------------------------------------------------------------------------
+    end c_test_item;
+
+
+   
+------------------------------------------------------------------------------------------------
+class private c_result_item =
+-- Složka seznamu výsledků testů [success_list] resp. [failure_list] resp. [error_list]
+-- (viz [c_test_suite])
+------------------------------------------------------------------------------------------------
+    end c_result_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_test_suite =
+-- Kolektor testů.
+-- Třída umožňuje:
+--   vkládat nové testy - viz [add_test]
+--   provést všechny testy - viz [run_all_tests]
+--   provést jeden konkrétní test - viz [run_signgle_test]
+--   vypsat výsledky testování na standardní výstup - viz [test_results_std_output]
+--   určit počet registrovaných testů - viz [get_registerd_test_count]
+--   určit počet testů, které proběhly - viz [get_run_test_count]
+----------------------------------------------------------------------------------------------------
+
+    with
+      debugging,
+      performance;
+
+    ------------------------------------------------------------------------------------------------
+    static add_result (
+        result_kind: in t_result_kind;           -- typ výsledku
+        test_name  : in t_char32str;             -- jméno testu
+        datim      : in t_datetime;              -- datum a čas začátku testu
+        duration   : in t_timespan;              -- doba trvání provádění testu
+        loop_failed: in t_unsigned) =            -- krok cyklu, v němž byl test neúspěšný
+    -- Přidá do seznamu výsledků provedených testů [success_list] resp. [failure_list] resp.
+    -- [error_list] (na základě parametru [result_kind]) informace o:
+    --   názvu provedeného testu,                (pro všechny)
+    --   datumu a času začátku provední testu,   (pro všechny)
+    --   dobu trvání provádění testu,            (pro úspěšně provedený test [success_list]
+    --   krok cyklu, v němž byl test neúspěšný.  (pro neúspěšnmý nebo chybný test [failure_list] resp. [error_list])
+         {%%TODO(add_fail) - dořešit vložení zprávy}       
+    --   dořešit vložení zprávy udávající příčinu selhání testu (pro neúspěšnmý test [failure_list])
+         {%%TODO(add_error) - dořešit vložení názvu generované výjimky}
+    --   dořešit vložení názvu generované výjimky (pro chybný test [error_list])
+
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_result_item;              -- složka seznamu výsledku testů
+    
+    begin
+      -- vytvoříme novou složku [item] seznamu testů [list] a vyplníme společné složky
+      new item;
+      item^.test_name:=test_name;
+      item^.time:=datim;
+
+      -- podle hodnoty parametru [result_kind] vyplníme ostatní složky
+      case result_kind
+        -- vkládáme do seznamu úspěšně provedených testů [success_list]
+        when t_success_list do
+          -- vyplníme zbylé složky záznamu
+          item^.duration:=duration;
+
+          -- vložíme novou složku [item] do seznamu [success_list]
+          success_list.insert_last(item);
+
+          -- inkrementujeme počítadlo úspěšně provedených testů
+          success_count+1;
+
+        -- vkládáme do seznamu neúspěšně provedených testů [faulure_list]
+        when t_failure_list do
+          -- vyplníme zbylé složky záznamu
+          item^.loop_failed:=loop_failed;
+          {%%TODO(add_fail) - dořešit vložení zprávy}       
+          -- dořešit vložení zprávy udávající příčinu selhání testu
+
+          -- vložíme novou složku [item] do seznamu [failure_list]
+          failure_list.insert_last(item);
+
+          -- inkrementujeme počítadlo neúspěšně provedených testů
+          fail_count+1;
+
+        -- vkládáme do seznamu chybných testů [error_list]
+        when t_error_list do
+          -- vyplníme zbylé složky záznamu
+          item^.loop_failed:=loop_failed;
+          {%%TODO(add_error) - dořešit vložení názvu generované výjimky}
+          -- dořešit vložení názvu generované výjimky
+
+          -- vložíme novou složku [item] do seznamu [error_list]
+          error_list.insert_last(item);
+
+          -- inkrementujeme počítadlo chybných testů
+          error_count+1;
+        end case;
+      end add_result;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static test_it (
+        item       : p_test_item;                -- test
+        logging    : t_logical) =                -- povoleno logování?          
+    -- Provede test daný parametrem [item^.test_tag], přičemž zjistí datum a čas zahájení testu a
+    -- v případě úspěšného provedení testu i dobu jeho provádění.
+    ------------------------------------------------------------------------------------------------
+    var
+      timer        : c_elapsed_time_meter;       -- časovač pro zjištění doby provádění testu
+      time_begin   : t_datetime;                 -- datum a čas začátku provádění testu
+      time_provider: c_system_datetime_provider; -- systémový provider datumu a času
+      test         : p_test_case;                -- instance konkrétního testu
+      i            : t_unsigned32:=1;            -- indexová proměnná pro cyklus
+
+    begin
+      -- test provádíme [loop_count] krát
+      while i<=loop_count loop
+        -- vytvoříme instanci testu
+        new test tag item^.test_tag;
+
+        -- inkrementujeme počítadlo spuštěných testů
+        run_test_count+1;
+
+        -- zjistíme datum začátku provádění testu a inicializujeme hodnotu stavu interního počítadla
+        time_begin:=time_provider.get_datetime;
+        timer.start;
+
+        begin
+          -- vypíšeme info o spouštěném testu
+          if logging then
+            write_start_test_name(formatter,item^.test_name);
+            end if;
+
+          -- spustíme test
+          test^.run_test;
+
+          -- byl-li test úspěšný, vložíme výsledek testu do seznamu úspěšných testů [success_list]
+          add_result(t_success_list,item^.test_name,time_begin,timer.get_elapsed_time,0);
+
+          -- vypíšeme výsledek o ukončení testu (test byl úspěšný)
+          if logging then
+            write_result_OK(formatter);
+            end if;
+
+        catch
+          -- test nebyl úspěšný (nebyla vrácena očekávaná hodnota) => vložíme výsledek do seznamu
+          -- neúspěšných testů [pfailure_list]
+          when test_error do
+            {%%TODO(add_fail) - dořešit vložení zprávy}
+            --add_fail(item^.test_name,time_begin,i);
+            add_result(t_failure_list,item^.test_name,time_begin,0,i);
+
+            -- vypíšeme výsledek o ukončení testu (test nebyl úspěšný)
+            if logging then
+              write_result_failed(formatter);
+              end if;
+
+            -- máme skončit po prvním neúspěšném testu?
+            if test^.get_stop_after_fail then
+              break;
+              end if;
+      
+          -- test nebyl úspěšný (došlo ke generování výjimky uvnitř testovaného kódu) => vložíme
+          -- výsledek do seznamu chybných testů [error_list]
+          when others       do
+            {%%TODO(add_error) - dořešit vložení názvu generované výjimky}
+            --add_error(item^.test_name,time_begin,i);
+            add_result(t_error_list,item^.test_name,time_begin,0,i);
+
+            -- vypíšeme výsledek o ukončení testu (test byl chybný)
+            if logging then
+              write_result_error(formatter);
+              end if;
+
+            -- máme skončit po prvním chybném testu?
+            if test^.get_stop_after_error then
+              break;
+              end if;
+        leave
+          -- instanci testu [test] odstraníme z paměti
+          discard test;
+
+          -- inkrementujeme počítadlo
+          i+1;
+          end;
+        end loop;
+      end test_it;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual reset_results =
+    -- Vyprázdní seznamy výsledků [success_list], [failure_list] a [error_list] a příslušné počty
+    -- provedených testů.
+    ------------------------------------------------------------------------------------------------
+    var
+      xx           : p_list;
+      cislo        : integer;
+
+    begin
+      -- nastavení inetrních počítadel na nulu
+      run_test_count:=0;
+      success_count:=0;
+      fail_count:=0;
+      error_count:=0;
+
+      -- odstranění (vyprázdnění) jednotlivých složek interních seznamů
+      success_list.delete_all;
+      failure_list.delete_all;
+      error_list.delete_all;
+      end reset_results;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_registerd_test_count =
+    -- Vrací počet vložených testů v sadě testů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vracíme počet registrovaných testů v sadě
+      result:=reg_test_count;
+      end get_registerd_test_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_run_test_count =
+    -- Vrací počet testů v sadě testů, které byly spuštěny
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vracíme počet testů v sadě, které byly spuštěny
+      result:=run_test_count;
+      end get_run_test_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_success_count =
+    -- Vrací počet úspěšně provedených testů v sadě testů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vracíme počet úspěšně provedených testů
+      result:=success_count;
+      end get_success_count;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    virtual get_failure_count =
+    -- Vrací počet neúspěšně provedených testů v sadě testů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vracíme počet neúspěšně provedených testů
+      result:=fail_count;
+      end get_failure_count;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    virtual get_error_count =
+    -- Vrací počet chybných testů v sadě testů
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vracíme počet chybných testů
+      result:=error_count;
+      end get_error_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_loop_count =
+    -- Vrací počet opkaování testů
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=loop_count;
+      end get_loop_count;
+
+
+                      
+    ------------------------------------------------------------------------------------------------
+    virtual get_results =
+    -- Provádí výstup výsledků jednotlivých testů do výstupního formateru [formatter].
+    -- V případě, že se výstup nezdaří, generuje metoda výjimku [testlib_error].}
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- provedeme výstup výsledků jednotlivých testů
+      write_results(formatter,^success_list,^failure_list,^error_list,run_test_count,success_count,
+                    fail_count,error_count);
+      end get_results;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual init =
+    -- Nastaví výstupní formater
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení výstupního formatteru
+      formatter:=_formatter;
+      end init;
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual register_test =
+    -- Registruje (přidá do sady testů) nový test , jehož [tag] je [test_tag] a název.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_test_item;                -- složka seznamu [test_list] obsahující testy
+
+    begin
+      -- alokujeme novou složku seznamu a přiřadíme ji jednotlivé hodnoty ze vstupních parametrů
+      new item;
+      item^.test_tag:=test_tag;
+      item^.test_name:=test_name;
+
+      -- vložíme složku [item] do seznamu [test_list]
+      test_list.insert_last(item);
+
+      -- inkremetnujeme počet testů v sadě
+      reg_test_count+1;
+      end register_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual run_all_tests =
+    -- Provede všechny testy, které obsahuje seznam testů [test_list]. Je-li parametr [remove]
+    -- nastaven na hodnotu [true], pak se každý konkrétní test před svým provedením odstraní z
+    -- interního seznamu testů.
+    ------------------------------------------------------------------------------------------------
+    var
+      item_new     : p_test_item;                -- test ze seznamu testů [test_list]
+      item_old     : p_test_item;                -- test ze seznamu testů [test_list]
+      time_provider: c_system_datetime_provider; -- systémový provider datumu a času
+      test_start   : t_datetime;                 -- začátek testů (při volání [run_all_tests])
+
+    begin
+      -- uložíme počet opakování testu
+      loop_count:=_loop_count;
+
+      -- nastavíme počet spuštěných testů na nulu
+      run_test_count:=0;
+
+      -- je-li povoleno logování, pošleme do výstupního formatteru setupu celého testsuitu
+      if logging then
+        write_setup_before_all_tests(formatter,^test_list, loop_count);
+        write_testing(formatter);
+        end if;
+
+      -- zjistíme čas začátku provádění testů
+      test_start:=time_provider.get_datetime;
+
+      -- vybereme první test
+      item_new:=test_list.get_first;
+
+      -- dokud se v sadě testů nacházejí nějaké testy, provádíme je
+      while item_new<>nil loop
+        -- spustíme konkrétní test [item_new]
+        test_it(item_new,logging);
+ 
+        -- zapamatujeme si složku [item_new]
+        item_old:=item_new;
+
+        -- ze seznamu testů [ptest_list] vybereme další test
+        item_new:=test_list.get_next(item_new);
+
+        -- pokud je parametr [remove] nastaven na [true], pak vyjmeme test [item_old] ze seznamu
+        -- testů [test_list]
+        if remove then
+          test_list.delete(item_old);
+          end if;
+        end loop;
+
+      -- je-li povoleno logování, zpracujeme dobu trvání a pošleme ji do výstupního formatteru
+      if logging then
+        write_results_after_all_tests(formatter,test_start,time_provider.get_datetime);
+        end if;
+
+      end run_all_tests;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual run_single_test =
+    -- Provede konkrétní test, jehož tag je [test_tag] pod názvem [test_name]. Test je proveden
+    -- [loop_count] krát.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_test_item;                -- test
+      time_provider: c_system_datetime_provider; -- systémový provider datumu a času
+      test_start   : t_datetime;                 -- začátek testů (při volání [run_all_tests])
+
+    begin
+      -- zjistíme počet opakování testu
+      loop_count:=_loop_count;
+
+      -- alokujeme novou složku pro test
+      new item;
+      item^.test_tag:=test_tag;
+      item^.test_name:=test_name;
+
+      -- je-li povoleno logování, pošleme do výstupního formatteru "začátek testování"
+      if logging then
+        write_testing(formatter);
+        end if;
+
+      -- zjistíme čas začátku provádění testů
+      test_start:=time_provider.get_datetime;
+
+      -- spustíme test
+      test_it(item,logging);
+
+      -- je-li povoleno logování, zpracujeme dobu trvání a pošleme ji do výstupního formatteru
+      if logging then
+        write_results_after_all_tests(formatter,test_start,time_provider.get_datetime);
+        end if;
+
+      -- dealokujeme test
+      discard item;
+      end run_single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda. Dealokuje seznam testů [test_list] a seznamy výsledků provedených
+    -- testů [success_list], [failure_list] a [error_list] včetně jejich jednotlivých složek
+    -- voláním metody [delete_items_of_list].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- dealokace jednotlivých složek seznamů
+      test_list.delete_all;
+      success_list.delete_all;
+      failure_list.delete_all;
+      error_list.delete_all;
+      end exit;
+
+    end c_test_suite;
+
+  end unit_testing;

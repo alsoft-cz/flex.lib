@@ -336,7 +336,7 @@ var
 
   begin
     _data:unchecked:=^data;
-    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+    if packet.style=t_dps_signal and then packet.signal=m_dpss_eod:tag then
       raise stream_end_of_data;
       end if;
     while (sizebytes>readbytes) loop
@@ -360,7 +360,7 @@ var
       -- pokud je to signal
       else
         -- end of data
-        if packet.signal=t_dpss_eod then
+        if packet.signal=m_dpss_eod:tag then
           eod:=true;
           return;
         -- je to jiny packet ktery neumim zpracovat

@@ -159,6 +159,19 @@ type
   p_data_array_char32= ^t_data_array_char32 for machine_pointer use true;
   p_data_string     = ^t_data_string     for machine_pointer use true;
 
+-- druhy signalnich packetu
+type
+  -- exception type for all library-related errors
+  m_data_packet_stream_signal = message;         -- Superclass of stream signals
+
+  m_dpss_important = m_data_packet_stream_signal;-- Superclass of important stream signals
+
+  m_dpss_invalid   = m_data_packet_stream_signal;-- no signal
+  m_dpss_eod       = m_dpss_important;           -- end of data signal (important)
+  m_dpss_flush     = m_data_packet_stream_signal;-- flush signal
+  m_dpss_bad_data  = m_dpss_important;           -- invalid data signal (important)
+  m_dpss_seek      = m_dpss_important;           -- seek (important);
+
 type
   t_data_packet;
   p_data_packet  = ^t_data_packet for machine_pointer use true;
@@ -210,7 +223,7 @@ type
     style          : t_data_packet_style         for position use 0;
     phint          : t_data_packet_hint          for position use 2;
     data           : p_data_array                for position use 4;
-    signal         : t_unsigned                  for position use 4;
+    signal         : t_tag                       for position use 4;
     other          : p_data_packet_other         for position use 8;
     size           : t_offset                    for position use 8;
     signal_data    : p_data_array                for position use 8;
@@ -227,13 +240,7 @@ const
     dp_optimal_packet_size = 65536;              -- optimalni defaultni velikost packetu
     dp_maximal_size = t_offset:last;             -- maximalni velikost packetu na systemu
 
--- druhy signalnich packetu
-const
-    t_dpss_invalid : t_unsigned = 0;             -- no signal
-    t_dpss_eod     : t_unsigned = 1;             -- end of data signal
-    t_dpss_flush   : t_unsigned = 2;             -- flush signal
-    t_dpss_bad_data: t_unsigned = 3;             -- invalid data signal
-    t_dpss_seek    : t_unsigned = 4;             -- seek
+
 
 const
     t_ro_default   : t_read_options = [dp_maximal_size];
@@ -257,7 +264,7 @@ procedure create_bad_data(
 ----------------------------------------------------------------------------------------------------
 procedure create_signal(
     packet         : out t_data_packet;
-    signal         : in t_unsigned;
+    signal         : in t_tag;
     userdata       : in p_data_array:=nil);
 -- create user signal
 -- userdata on heap, auto discard by receiver

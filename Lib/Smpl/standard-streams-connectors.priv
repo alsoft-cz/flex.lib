@@ -112,9 +112,9 @@ var
 
       -- zjistim jestli uz byl posledni
       if data.style=t_dps_signal then 
-        if data.signal=t_dpss_eod then
+        if data.signal=m_dpss_eod:tag then
           eod:=true;
-        elsif data.signal=t_dpss_bad_data then
+        elsif data.signal=m_dpss_bad_data:tag then
           raise stream_invalid_data;
           end if;
         end if;
@@ -185,7 +185,7 @@ var
     que.append_msg(packet);
 
     -- pokud je to flush packet, cekam az ve fronte nebude zadny packet
-    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+    if data.style=t_dps_signal and then data.signal=m_dpss_flush:tag then
       que.wait_empty;
       end if;
     

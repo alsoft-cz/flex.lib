@@ -636,8 +636,6 @@ procedure c_name_operator_not_equal (
     return t_logical;
 -- left<>right
 ----------------------------------------------------------------------------------------------------
-#if #environment compiler_version;='4.0.5.3' then;
-----------------------------------------------------------------------------------------------------
 procedure c_name_component_operator_not_equal (
     left           : in class c_name_component;
     right          : in class c_name_component)
@@ -649,22 +647,6 @@ procedure c_name_subcomponent_operator_not_equal (
     right          : in class c_name_subcomponent)
     return t_logical;
 -- left<>right
-----------------------------------------------------------------------------------------------------
-#else;
-----------------------------------------------------------------------------------------------------
-procedure c_name_component_operator_not_equal (
-    left           : in c_name_component;
-    right          : in c_name_component)
-    return t_logical;
--- left<>right
-----------------------------------------------------------------------------------------------------
-procedure c_name_subcomponent_operator_not_equal (
-    left           : in c_name_subcomponent;
-    right          : in c_name_subcomponent)
-    return t_logical;
--- left<>right
-----------------------------------------------------------------------------------------------------
-#end if;
 ----------------------------------------------------------------------------------------------------
 overload = :
     c_name_operator_equal,

@@ -47,13 +47,19 @@ module public debugging =
 ----------------------------------------------------------------------------------------------------
 
 with
-  standard.datetime;
+  standard.datetime,
+  quality.unit_testing;
 
 -- dopředné deklarace
 class abstract c_quality_formatter;     type p_quality_formatter = ^class c_quality_formatter;
 class c_console_quality_formatter;      type p_console_quality_formatter = ^class c_console_quality_formatter;
 class c_file_quality_formatter;         type p_file_quality_formatter = ^class c_file_quality_formatter;
 
+----------------------------------------------------------------------------------------------------
+procedure output_debug_string (
+    msg            : in t_char32ustr;            -- text k výpisu
+    output_eol     : in t_logical:=true);        -- T-přidat za text konec řádky
+-- Vypíše daný text do okna debuggeru (či jiného podobného výstupu).
 ----------------------------------------------------------------------------------------------------
 procedure write_setup_before_all_tests (
     formatter      : in p_quality_formatter;     -- výstupní formatter

@@ -77,7 +77,7 @@ module windows =
 #separate winbase;
 #separate wingdi;
 #separate winuser;
---#separate winnls;
+#separate winnls;
 #separate wincon;
 --#separate winver;
 --#separate winreg;

@@ -6,10 +6,10 @@ module private files =
 ----------------------------------------------------------------------------------------------------
 
 with
+  system.windows,
   classes.lists;
 
 use 
-  system.windows,
   system.windows.windef,
   system.windows.windef.winnt,
   system.windows.winbase,
@@ -98,7 +98,8 @@ class   private c_filesystem_object =
       procedure win32_filetime_to_flex_datetime (
           filetime : in class windows.windef.t_FILETIME)
           return t_datetime =
-      -- Festival of B&D!
+      -- Convert Win32 FILETIME to Flex t_datetime
+      -- (Festival of B&D.)
       ----------------------------------------------------------------------------------------------
       -- %%TODO(DATETIME) prejit na [c_gregorian_calendar]
       -- %%TODO presunout tuhle funkci nekam jinam?
@@ -569,7 +570,7 @@ class private c_file =
     -- File must be open with the read (read/write) access.
     ------------------------------------------------------------------------------------------------
     var
-      read         : windows.windef.dword;       -- number of bytes actualy read
+      read         : aliased windows.windef.dword;      -- number of bytes actualy read
 
     begin
       -- trigger the 'before' event
@@ -582,12 +583,12 @@ class private c_file =
         end if;
 
       -- read data
-      if windows.winbase.readfile(handle,buffer,len,read,nil)
+      if windows.winbase.readfile(handle,buffer,windows.windef.dword(len),^read,nil)
 
         -- read operation succeeded
         then
           -- not enough data read ?
-          if read<len
+          if t_unsigned(read)<len
 
             -- yes => error
             then set_error(tfe_read);
@@ -614,7 +615,7 @@ class private c_file =
     -- File must be opened for write (or read/write) access.
     ------------------------------------------------------------------------------------------------
     var
-      written      : windows.windef.dword;       -- number of bytes actually written
+      written      : aliased windows.windef.dword;       -- number of bytes actually written
 
     begin
       -- trigger the 'before' event
@@ -627,12 +628,12 @@ class private c_file =
         end if;
 
       -- write data
-      if windows.winbase.writefile(handle,^buffer,len,written,nil)
+      if windows.winbase.writefile(handle,^buffer,windows.windef.dword(len),^written,nil)
 
         -- write operation succeeded
         then
           -- not all data written ?
-          if written<len
+          if t_unsigned(written)<len
 
             -- yes => error
             then set_error(tfe_write);
@@ -660,7 +661,7 @@ class private c_file =
     -- [tfe_write].
     ------------------------------------------------------------------------------------------------
     var
-      written      : windows.windef.dword;       -- number of bytes actually written
+      written      : aliased windows.windef.dword;       -- number of bytes actually written
 
     begin
       -- trigger the 'before' event
@@ -673,12 +674,12 @@ class private c_file =
         end if;
 
       -- write data
-      if windows.winbase.writefile(handle,^buffer,len,written,nil)
+      if windows.winbase.writefile(handle,^buffer,windows.windef.dword(len),^written,nil)
 
         -- write operation succeeded
         then
           -- not all data written ?
-          if written<len
+          if t_unsigned(written)<len
 
             -- yes => error
             then set_error(tfe_write);

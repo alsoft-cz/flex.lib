@@ -1070,6 +1070,12 @@ const
 -- 
 --  Modem Status Flags
 -- 
+const
+  MS_CTS_ON         = DWORD($0010);
+  MS_DSR_ON         = DWORD($0020);
+  MS_RING_ON        = DWORD($0040);
+  MS_RLSD_ON        = DWORD($0080);
+
 -- 
 --  WaitSoundState() Constants
 -- 
@@ -2337,7 +2343,7 @@ procedure SetLastError(
 -- #if _WIN32_WINNT >= 0x0501 || defined(WINBASE_DECLARE_RESTORE_LAST_ERROR)
 procedure GetOverlappedResult(
     hFile           : in t_HANDLE; 
-    lpOverlapped    : in p_OVERLAPPED; 
+    lpOverlapped    : in ref _OVERLAPPED; 
     lpNumberOfBytesTransferred : out DWORD ; 
     bWait           : in BOOL)
                       return BOOL;
@@ -2755,7 +2761,7 @@ procedure WriteFile(
     hFile           : in t_HANDLE; 
     lpBuffer        : in LPCVOID; 
     nNumberOfBytesToWrite : in DWORD; 
-    lpNumberOfBytesWritten : out DWORD ; 
+    lpNumberOfBytesWritten : in LPDWORD ; 
     lpOverlapped    : in p_OVERLAPPED)
                       return BOOL;
 #pragma convention(WriteFile,system);
@@ -2765,7 +2771,7 @@ procedure ReadFile(
     hFile           : in t_HANDLE; 
     lpBuffer        : out unchecked ; 
     nNumberOfBytesToRead : in DWORD; 
-    lpNumberOfBytesRead : out DWORD ; 
+    lpNumberOfBytesWritten : in LPDWORD ; 
     lpOverlapped    : in p_OVERLAPPED)
                       return BOOL;
 #pragma convention(ReadFile,system);
@@ -2967,7 +2973,7 @@ procedure ClearCommBreak(
 procedure ClearCommError(
     hFile           : in t_HANDLE; 
     lpErrors        : out DWORD ; 
-    lpStat          : out _COMSTAT)
+    lpStat          : in LPCOMSTAT)
                       return BOOL;
 #pragma convention(ClearCommError,system);
 #pragma import(ClearCommError,'ClearCommError','kernel32.dll');

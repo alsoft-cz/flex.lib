@@ -317,6 +317,32 @@ procedure str_hash (
 ----------------------------------------------------------------------------------------------------
 
 
+
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_unicode (
+    isostr         : in t_char32ustr;
+    unistr         : out p_char16ustr);
+-- Convert 32-bit ISO string to 16-bit Unicode string.
+-- Non-convertable characters (characters>=U+10000) will be replaced with U+FFFD (REPLACEMENT CHARACTER)
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_utf16 (
+    isostr         : in t_char32ustr;
+    unistr         : out p_char16ustr);
+-- Convert 32-bit ISO string to 16-bit Unicode string with surrogate pairs (UTF-16LE).
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_ascii (
+    isostr         : in t_char32ustr;
+    ascstr         : out p_char8ustr);
+-- Convert 32-bit ISO string to 8-bit ASCII string.
+----------------------------------------------------------------------------------------------------
+procedure str_unicode_to_iso (
+    unistr         : in t_char16ustr;
+    isostr         : out p_char32ustr);
+-- Convert 16-bit Unicode string (in UTF-16LE) to 32-bit ISO string.
+----------------------------------------------------------------------------------------------------
+
+
+
 ----------------------------------------------------------------------------------------------------
 #separate public dynamic;
 ----------------------------------------------------------------------------------------------------

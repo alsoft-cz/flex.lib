@@ -4,6 +4,8 @@ module public quality =
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+#option required_security(100);
+
 {%%TODO(persistence of context of tests)}
 {%%TODO(XML formatter)}
 
@@ -18,149 +20,14 @@ with
   standard.conversions,
   standard.files,
   standard.streams,
-  standard.datetime,
-  system.exceptions;
+  standard.datetime;
 
 ----------------------------------------------------------------------------------------------------
 #separate public performance;
 -- Časovač
 ----------------------------------------------------------------------------------------------------
-
-type
-  t_test_loop_count = t_unsigned range 1..t_unsigned:last; -- typ pro počet opakování testu
-
-message
-  test_error       extend flex_error;            -- výjimka, která vznikne při chybě v testu
-  testlib_error    extend flex_error;            -- generuje se v případě neúspěšného volání některé
-                                                 -- z metod poskytovaných třídami modulu (např.
-                                                 -- chyba při zápisu výsledků tesů do souboru)
-
--- dopředné deklarace
-class abstract c_test_case;             type p_test_case = ^class c_test_case;
-
-----------------------------------------------------------------------------------------------------
-class public abstract c_test_case =
--- Předek všech testovacích metod.
--- Třída posktyje metody:
---   metody pro otestování hodnoty výsledku [fail_if_false] a [fail_if_true],
---   metodu pro provedení testu ([test_run]).
-----------------------------------------------------------------------------------------------------
-
-    ------------------------------------------------------------------------------------------------
-    virtual fail_if_false (
-        condition  : in t_logical;               -- podmínka
-        msg        : in t_char32str);            -- textová zpráva, která se šíří s výjimkou
-    -- Generuje výjimku [test_error] v případě, že není splněna podmínka [condition].
-    {%%TODO(msg)} -- [msg] má význam v případě, kdy se s výjimkou bude šířit i zpráva
-    ------------------------------------------------------------------------------------------------
-    virtual fail_if_true (
-        condition  : in t_logical;               -- podmínka
-        msg        : in t_char32str);            -- textová zpráva, která se šíří s výjimkou
-    -- Generuje výjimku [test_error] v případě, že je splněna podmínka [condition].
-    {%%TODO(msg)} -- [msg] má význam v případě, kdy se s výjimkou bude šířit i zpráva
-    ------------------------------------------------------------------------------------------------
-    virtual run_test;
-    -- Provádí konkrétní test
-    ------------------------------------------------------------------------------------------------
-    virtual get_stop_after_fail return t_logical;
-    -- Vrací hodnotu interní proměnné [stop_after_fail]
-    ------------------------------------------------------------------------------------------------
-    virtual get_stop_after_error return t_logical;
-    -- Vrací hodnotu interní proměnné [stop_after_error]
-    ------------------------------------------------------------------------------------------------
-
-  protected
-    var
-      stop_after_fail: t_logical;                -- má dojít k přerušení opakování testu, po prvním neúspěšném testu?
-      stop_after_error: t_logical;               -- má dojít k přerušení opakování testu, po prvním chybném testu?
-
-    end c_test_case;
-
-class c_test_suite;             type p_test_suite = ^class c_test_suite;
-
-----------------------------------------------------------------------------------------------------
-class public c_test_suite = extend c_test_case;
--- Kolektor testů.
--- Třída umožňuje:
---   registrovat nové testy - viz [register_test], přičmž je možné zadat počet opakování konkrétního
---     testu                                                 
---   provést všechny testy - viz [run_all_tests]
---   provést jeden konkrétní test - viz [run_signgle_test]
---   vypsat výsledky testování na standardní výstup - viz [test_results_std_output]
---   určit počet registrovaných testů - viz [get_registerd_test_count]
---   určit počet testů, které proběhly - viz [get_run_test_count]
-----------------------------------------------------------------------------------------------------
-
-    ------------------------------------------------------------------------------------------------
-    virtual reset_results;
-    -- Vyprázdní seznamy výsledků [success_list], [failure_list] a [error_list] a příslušné počty
-    -- provedených testů.
-    ------------------------------------------------------------------------------------------------
-    virtual get_registerd_test_count return t_unsigned;
-    -- Vrací počet vložených testů v sadě testů
-    ------------------------------------------------------------------------------------------------
-    virtual get_run_test_count return t_unsigned;
-    -- Vrací počet testů v sadě testů, které byly spuštěny
-    ------------------------------------------------------------------------------------------------
-    virtual get_success_count return t_unsigned;
-    -- Vrací počet úspěšně provedených testů v sadě testů
-    ------------------------------------------------------------------------------------------------
-    virtual get_failure_count return t_unsigned;
-    -- Vrací počet neúspěšně provedených testů v sadě testů
-    ------------------------------------------------------------------------------------------------
-    virtual get_error_count return t_unsigned;
-    -- Vrací počet chybných testů v sadě testů
-    ------------------------------------------------------------------------------------------------
-    virtual get_loop_count return t_test_loop_count;
-    -- Vrací počet opkaování testů
-    ------------------------------------------------------------------------------------------------
-    virtual get_results;
-    -- Provádí výstup výsledků jednotlivých testů do výstupního formateru [formatter].
-    -- V případě, že se výstup nezdaří, generuje metoda výjimku [testlib_error].}
-    ------------------------------------------------------------------------------------------------
-    virtual init (
-        _formatter : p_stream_text_writer);      -- výstupní formater
-    -- Nastaví výstupní formater
-    ------------------------------------------------------------------------------------------------
-    virtual register_test (
-        test_tag   : t_tag;                      -- [tag] vkládané testovací třídy
-        test_name  : in t_char32str);             -- název registrovaného testu
-    -- Registruje (přidá do sady testů) nový test , jehož [tag] je [test_tag] a název.
-    ------------------------------------------------------------------------------------------------
-    virtual run_all_tests (
-        _loop_count:t_test_loop_count:=1;        -- počet opakování každého testu
-        remove     : t_logical:=true;            -- signalizuje vyjmutí testu z interního seznamu
-        logging    : t_logical:=true);           -- logování výpisů?
-    -- Provede všechny testy, které obsahuje seznam testů [test_list]. Je-li parametr [remove]
-    -- nastaven na hodnotu [true], pak se každý konkrétní test před svým provedením odstraní z
-    -- interního seznamu testů.
-    ------------------------------------------------------------------------------------------------
-    virtual run_single_test (
-        test_tag   : in t_tag;                   -- tag třídy, který provádí konkrétní test
-        test_name  : in t_char32str;             -- jméno testu
-        _loop_count: in t_test_loop_count:=1;    -- počet opakování testu
-        logging    : in t_logical:=true);        -- povolit logování výpisů?
-    -- Provede konkrétní test, jehož tag je [test_tag] pod názvem [test_name]. Test je proveden
-    -- [loop_count] krát.
-    ------------------------------------------------------------------------------------------------
-
-  protected
-
-    var
-      reg_test_count: t_unsigned;                -- počet vložených testů
-      run_test_count: t_unsigned;                -- počet testů, které již proběly
-      success_count : t_unsigned;                -- počet úspěšně provedených testů
-      fail_count   : t_unsigned;                 -- počet neúspěšně provedených testů
-      error_count  : t_unsigned;                 -- počet chybných testů
-      loop_count   : t_test_loop_count;          -- počet opakování testu
-      test_list    : aliased c_list;             -- seznam testů
-      success_list : aliased c_list;             -- seznam úspěšně provedených testů
-      failure_list : aliased c_list;             -- seznam neúspěšně provedených testů (skončily generováním [test_error])
-      error_list   : aliased c_list;             -- seznam chybných testů (skončily generováním ostatních výjimek)
-      formatter    : p_stream_text_writer;       -- výstupní formatter
-
-    end c_test_suite;
-
+#separate public unit_testing;
+-- Unit testing
 ----------------------------------------------------------------------------------------------------
 #separate public debugging;
 -- Ladící výpisy - low-level logování

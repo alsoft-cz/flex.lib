@@ -9,7 +9,7 @@ procedure create_eod =
 ----------------------------------------------------------------------------------------------------
 begin
   packet.style:=t_dps_signal;
-  packet.signal:=t_dpss_eod;
+  packet.signal:=m_dpss_eod:tag;
   end create_eod;
 
 
@@ -19,7 +19,7 @@ procedure create_flush =
 ----------------------------------------------------------------------------------------------------
 begin
   packet.style:=t_dps_signal;
-  packet.signal:=t_dpss_flush;
+  packet.signal:=m_dpss_flush:tag;
   end create_flush;
 
 
@@ -29,7 +29,7 @@ procedure create_bad_data =
 ----------------------------------------------------------------------------------------------------
 begin
   packet.style:=t_dps_signal;
-  packet.signal:=t_dpss_bad_data;
+  packet.signal:=m_dpss_bad_data:tag;
   end create_bad_data;
 
 

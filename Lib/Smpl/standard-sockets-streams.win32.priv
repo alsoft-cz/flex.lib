@@ -187,7 +187,7 @@ var
           raise standard.sockets.socket_error;
         end case;
     else
-      size:=readen;
+      size:=t_offset(readen);
       if size>0 then
         create_packet(data,_data,size,t_dps_dynamic);
         c_input_stream:(this).add_flow(data);
@@ -224,21 +224,23 @@ var
       {
       --%%TODO ?
       -- flush packet
-      if data.signal=t_dpss_flush then
+      if data.signal=m_dpss_flush:tag then
         end if;
       }
       -- eod
-      if data.signal=t_dpss_eod then
+      if data.signal=m_dpss_eod:tag then
         if system.windows.winsock2.shutdown(sockethandle,system.windows.winsock2.SD_SEND)<>0 then
           raise socket_shutdown_error;
           end if;
         out_eod:=true;
+      elsif data.signal>=m_dpss_important:tag then
+        raise stream_invalid_data;
         end if;
     else
       read_packet(data,_data,_size);
       if _size>0 then
         buff.buf:unchecked:=_data;
-        buff.len:=_size;
+        buff.len:=DWORD(_size);
         if system.windows.winsock2.WSASend(sockethandle,^buff,1,writen,flags,nil,nil)=system.windows.winsock.SOCKET_ERROR then
           case (system.windows.winsock2.WSAGetLastError())
             when system.windows.winbase.winerror.WSAENETRESET,

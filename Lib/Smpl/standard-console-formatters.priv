@@ -19,7 +19,7 @@ class private c_console_text_writer =
     new coord;
     coord^.x:=pos.x;
     coord^.y:=pos.y;
-    create_signal(packet,t_dpss_con_set_pos,p_data_array(coord:unchecked));
+    create_signal(packet,m_dpss_con_set_pos:tag,p_data_array(coord:unchecked));
     _target^.write_packet(packet);
     end set_cursor_position;
 
@@ -35,7 +35,7 @@ class private c_console_text_writer =
   begin
     new pcolor;
     pcolor^:=color;
-    create_signal(packet,t_dpss_con_fgcolor,p_data_array(pcolor:unchecked));
+    create_signal(packet,m_dpss_con_fgcolor:tag,p_data_array(pcolor:unchecked));
     _target^.write_packet(packet);
     end set_foreground_color;
 
@@ -51,7 +51,7 @@ class private c_console_text_writer =
   begin
     new pcolor;
     pcolor^:=color;
-    create_signal(packet,t_dpss_con_bgcolor,p_data_array(pcolor:unchecked));
+    create_signal(packet,m_dpss_con_bgcolor:tag,p_data_array(pcolor:unchecked));
     _target^.write_packet(packet);
     end set_background_color;
 
@@ -64,7 +64,7 @@ class private c_console_text_writer =
     packet         : t_data_packet;
 
   begin
-    create_signal(packet,t_dpss_con_clear,nil);
+    create_signal(packet,m_dpss_con_clear:tag,nil);
     _target^.write_packet(packet);
     end clear_console;
 
@@ -100,13 +100,17 @@ class private c_console_text_reader =
   begin
     loop
       _source^.read_packet(packet,t_ro_default);
-      if packet.style=t_dps_signal and then packet.signal=t_dpss_con_event then
-        event:=p_console_event(packet.other:unchecked)^;
-        discard_packet(packet);
-        break;
-      else
-        discard_packet(packet);
+      if packet.style=t_dps_signal then
+        if packet.signal=m_dpss_con_event:tag then
+          event:=p_console_event(packet.other:unchecked)^;
+          discard_packet(packet);
+          break;
+        elsif packet.signal>=m_dpss_important:tag then
+          discard_packet(packet);
+          raise stream_invalid_data;
+          end if;
         end if;
+      discard_packet(packet);
       end loop;
     end read_event;
   end c_console_text_reader;

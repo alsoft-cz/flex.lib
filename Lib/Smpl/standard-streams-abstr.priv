@@ -85,7 +85,7 @@ class private abstract c_input_stream =
     -- cekam na packet
     read_packet(packet,t_ro_default);
 
-    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+    if packet.style=t_dps_signal and then packet.signal=m_dpss_eod:tag then
       -- jestli to byl end of data, koncim
       if transfer_eod then
         -- zapisu packet
@@ -125,7 +125,7 @@ class private abstract c_output_stream =
     -- cekam na packet
     source^.read_packet(packet,t_ro_default);
 
-    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+    if packet.style=t_dps_signal and then packet.signal=m_dpss_eod:tag then
       -- jestli to byl end of data, koncim
       if transfer_eod then
         -- zapisu packet

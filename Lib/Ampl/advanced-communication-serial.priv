@@ -1,0 +1,608 @@
+﻿----------------------------------------------------------------------------------------------------
+module private serial =
+-- Serial communication tools.
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  system,
+  system.windows,
+  system.windows.winbase,
+  system.windows.winbase.winerror,
+  system.windows.windef,
+  system.windows.windef.winnt,
+
+  standard,
+  standard.conversions,
+  standard.strings;
+
+----------------------------------------------------------------------------------------------------
+class private c_serial_port_stream =
+-- Serial port stream.
+----------------------------------------------------------------------------------------------------
+
+  var
+    handle         : t_handle;                   -- Communication device handle
+    h_read_event   : t_handle;                   -- Event handle for ReadFile
+    h_write_event  : t_handle;                   -- Event handle for WriteFile
+    h_wait_event   : t_handle;                   -- Event handle for WaitCommEvents
+    comm_state     : _DCB;                       -- Configuration
+    in_closed      : t_logical;                  -- Input has been closed
+    out_closed     : t_logical;                  -- Output has been closed
+    in_eod         : t_logical;                  -- EOD received
+    out_eod        : t_logical;                  -- EOD transmitted
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static open =
+  -- Open and set up the specified serial port.
+  --------------------------------------------------------------------------------------------------
+  type
+    p_a_char16ustr = ^string of aliased t_char16;
+
+  var
+    name           : t_char32str;
+    sys_name       : p_char16ustr;
+
+  begin
+    begin
+      -- create name of the device and convert it to system string
+      name:='\\.\COM' & unsigned_to_string(port_number) & \0;
+      str_iso_to_unicode(name,sys_name);
+
+      -- open the device
+      handle:=CreateFileW(pwstr(^((p_a_char16ustr(sys_name:unchecked))^[1]):unchecked),GENERIC_READ or GENERIC_WRITE,0,nil,OPEN_EXISTING,FILE_FLAG_OVERLAPPED,0);
+      if handle=INVALID_HANDLE_VALUE then
+        -- error opening the device
+        raise serial_communication_error;
+        end if;
+    leave
+      discard sys_name;
+      end;
+
+    -- create events for use in signalling
+    h_read_event:=CreateEventW(nil,FALSE,FALSE,nil);
+    h_write_event:=CreateEventW(nil,FALSE,FALSE,nil);
+    h_wait_event:=CreateEventW(nil,FALSE,FALSE,nil);
+    if h_read_event=0 or h_write_event=0 or h_wait_event=0 then
+      -- error opening the device
+      raise serial_communication_error;
+      end if;
+
+    -- initialize device
+    if not SetupComm(handle,dword(in_queue),dword(out_queue)) then
+      -- error initializing
+      raise serial_communication_error;
+      end if;
+
+    -- get initial state
+    comm_state.DCBlength:=comm_state:size;
+    if not GetCommState(handle,comm_state) then
+      -- error querying
+      raise serial_communication_error;
+      end if;
+    end open;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static close =
+  -- Close the communication.
+  --------------------------------------------------------------------------------------------------
+  begin
+    -- close remaining streams
+    if not in_closed then
+      c_input_stream:(this).close;
+      end if;
+    if not out_closed then
+      c_output_stream:(this).close;
+      end if;
+
+    -- close handle if open
+    if handle<>0 then
+      if not CloseHandle(handle) then
+        -- so what?
+        end if;
+      handle:=0;
+      end if;
+
+    -- free events if created
+    if h_read_event<>0 then
+      if not CloseHandle(h_read_event) then
+        -- so what?
+        end if;
+      h_read_event:=0;
+      end if;
+    if h_write_event<>0 then
+      if not CloseHandle(h_write_event) then
+        -- so what?
+        end if;
+      h_write_event:=0;
+      end if;
+    if h_wait_event<>0 then
+      if not CloseHandle(h_wait_event) then
+        -- so what?
+        end if;
+      h_wait_event:=0;
+      end if;
+    end close;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static set_rate_and_mode =
+  -- Configure communication rate and data parameters.
+  --------------------------------------------------------------------------------------------------
+  const
+    stop_bits_flags: array t_stop_bit_count of BYTE = [BYTE(ONESTOPBIT), BYTE(ONE5STOPBITS), BYTE(TWOSTOPBITS)];
+
+  begin
+    comm_state.BaudRate:=DWORD(rate);
+    comm_state.ByteSize:=BYTE(data_bits);
+    comm_state.StopBits:=stop_bits_flags[stop_bits];
+    if not SetCommState(handle,comm_state) then
+      raise serial_communication_error;
+      end if;
+    end set_rate_and_mode;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static set_parity =
+  -- Configure parity checking.
+  --------------------------------------------------------------------------------------------------
+  const
+    parity_flags   : array t_parity_scheme of BYTE = [EVENPARITY,MARKPARITY,NOPARITY,ODDPARITY,SPACEPARITY];
+
+  begin
+    comm_state.Flags1:=(comm_state.Flags1 and $FD) or (BYTE(enabled:ord) shl 1);
+    comm_state.Flags2:=(comm_state.Flags2 and $FB) or (BYTE(replace_bad:ord) shl 2);
+    comm_state.Parity:=parity_flags[scheme];
+    comm_state.ErrorChar:=t_char8(replace_char);
+    if not SetCommState(handle,comm_state) then
+      raise serial_communication_error;
+      end if;
+    end set_parity;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static set_flow_control =
+  -- Configure flow control parameters.
+  --------------------------------------------------------------------------------------------------
+  const
+    dtr_flags      : array t_dtr_control of BYTE = [DTR_CONTROL_DISABLE,DTR_CONTROL_ENABLE,DTR_CONTROL_HANDSHAKE];
+    rts_flags      : array t_rts_control of BYTE = [RTS_CONTROL_DISABLE,RTS_CONTROL_ENABLE,RTS_CONTROL_HANDSHAKE,RTS_CONTROL_TOGGLE];
+
+  begin
+    comm_state.Flags1:=(comm_state.Flags1 and $03) or
+                       (DWORD(out_cts:ord) shl 2) or
+                       (DWORD(out_dsr:ord) shl 3) or
+                       (dtr_flags[dtr] shl 4) or
+                       (DWORD(in_dsr:ord) shl 6) or
+                       (DWORD(continue_xoff:ord) shl 7);
+    comm_state.Flags2:=(comm_state.Flags2 and $CC) or
+                       (rts_flags[rts] shl 4) or
+                       (DWORD(out_x:ord) shl 0) or
+                       (DWORD(in_x:ord) shl 1);
+    comm_state.XonLim:=WORD(xon_limit);
+    comm_state.XoffLim:=WORD(xoff_limit);
+    comm_state.XonChar:=t_char8(xon_char);
+    comm_state.XoffChar:=t_char8(xoff_char);
+    if not SetCommState(handle,comm_state) then
+      raise serial_communication_error;
+      end if;
+    end set_flow_control;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static set_special_characters =
+  -- Configure handling of special characters.
+  --------------------------------------------------------------------------------------------------
+  begin
+    comm_state.Flags2:=(comm_state.Flags2 and $F7) or (BYTE(discard_null) shl 3);
+    comm_state.EofChar:=t_char8(eof_char);
+    comm_state.EvtChar:=t_char8(signal_char);
+    if not SetCommState(handle,comm_state) then
+      raise serial_communication_error;
+      end if;
+    end set_special_characters;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static set_timeouts =
+  -- Configure read/write timeouts.
+  --------------------------------------------------------------------------------------------------
+  var
+    timeouts       : _COMMTIMEOUTS;
+
+  begin
+    timeouts.ReadIntervalTimeout:=DWORD(read_interval);
+    timeouts.ReadTotalTimeoutMultiplier:=DWORD(read_total_mul);
+    timeouts.ReadTotalTimeoutConstant:=DWORD(read_total_c);
+    timeouts.WriteTotalTimeoutMultiplier:=DWORD(write_total_mul);
+    timeouts.WriteTotalTimeoutConstant:=DWORD(write_total_c);
+    if not SetCommTimeouts(handle,timeouts) then
+      raise serial_communication_error;
+      end if;
+    end set_timeouts;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static wait =
+  -- Wait for a communication event.
+  --------------------------------------------------------------------------------------------------
+  var
+    mask           : DWORD;
+    tmp            : DWORD;
+    overlapped     : aliased _OVERLAPPED;
+
+  begin
+    -- create bitmask
+    if tce_break in events then mask or EV_BREAK; end if;
+    if tce_cts in events then mask or EV_CTS; end if;
+    if tce_dsr in events then mask or EV_DSR; end if;
+    if tce_err in events then mask or EV_ERR; end if;
+    if tce_ring in events then mask or EV_RING; end if;
+    if tce_rlsd in events then mask or EV_RLSD; end if;
+    if tce_rxchar in events then mask or EV_RXCHAR; end if;
+    if tce_rxflag in events then mask or EV_RXFLAG; end if;
+    if tce_txempty in events then mask or EV_TXEMPTY; end if;
+
+    -- set waited-for events
+    if not SetCommMask(handle,mask) then
+      raise serial_communication_error;
+      end if;
+
+    -- wait for events
+    overlapped.hEvent:=h_wait_event;
+    if not WaitCommEvent(handle,mask,^overlapped) then
+      if GetLastError=ERROR_IO_PENDING
+        then
+          -- operation could not complete immediately => wait
+          if WaitForSingleObjectEx(h_wait_event,INFINITE,true)<>WAIT_OBJECT_0 then
+            raise serial_communication_error;
+            end if;
+
+        else
+          -- generic error
+          raise serial_communication_error;
+          end if;
+      end if;
+
+    if not GetOverlappedResult(handle,overlapped,tmp,false) then
+      raise serial_communication_error;
+      end if;
+
+    -- create set from bitmask
+    if (mask and EV_BREAK)<>0 then result:=result+t_communication_events:[tce_break]; end if;
+    if (mask and EV_CTS)<>0 then result+t_communication_events:[tce_cts]; end if;
+    if (mask and EV_DSR)<>0 then result+t_communication_events:[tce_dsr]; end if;
+    if (mask and EV_ERR)<>0 then result+t_communication_events:[tce_err]; end if;
+    if (mask and EV_RING)<>0 then result+t_communication_events:[tce_ring]; end if;
+    if (mask and EV_RLSD)<>0 then result+t_communication_events:[tce_rlsd]; end if;
+    if (mask and EV_RXCHAR)<>0 then result+t_communication_events:[tce_rxchar]; end if;
+    if (mask and EV_RXFLAG)<>0 then result+t_communication_events:[tce_rxflag]; end if;
+    if (mask and EV_TXEMPTY)<>0 then result+t_communication_events:[tce_txempty]; end if;
+    end wait;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static get_modem_status =
+  -- Read the state of modem registers.
+  --------------------------------------------------------------------------------------------------
+  var
+    status         : DWORD;
+
+  begin
+    if not GetCommModemStatus(handle,status) then
+      raise serial_communication_error;
+      end if;
+
+    if (status and MS_CTS_ON)<>0 then result+t_control_registers:[tcr_cts]; end if;
+    if (status and MS_DSR_ON)<>0 then result+t_control_registers:[tcr_dsr]; end if;
+    if (status and MS_RING_ON)<>0 then result+t_control_registers:[tcr_ring]; end if;
+    if (status and MS_RLSD_ON)<>0 then result+t_control_registers:[tcr_rlsd]; end if;
+    end get_modem_status;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  virtual get_flow =
+  -- number of transmitted bytes
+  --------------------------------------------------------------------------------------------------
+  var
+    flow_in        : t_offset;
+    flow_out       : t_offset;
+
+  begin
+    c_input_stream:(this).get_flow(flow_in);
+    c_output_stream:(this).get_flow(flow_out);
+    bytes:=flow_in+flow_out;
+    end get_flow;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.close = 
+  -- stream interface
+  --------------------------------------------------------------------------------------------------
+  begin
+    -- mark the output stream as closed
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    out_closed:=true;
+
+    -- if input already closed, close the communication definitely
+    if in_closed then
+      close;
+      end if;
+    end close;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  -- stream interface
+  --------------------------------------------------------------------------------------------------
+  var
+    _data           : p_data_array;
+    _size           : t_offset;
+    written         : DWORD;
+    overlapped      : aliased _OVERLAPPED;
+
+  begin
+    --asserts
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    if out_eod then
+      raise stream_end_of_data;
+      end if;
+
+    -- signal ?
+    if data.style=t_dps_signal then
+      if data.signal=m_dpss_flush:tag then
+        -- flush packet
+        if not FlushFileBuffers(handle) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_eod:tag then
+         -- eod
+         out_eod:=true;
+
+      elsif data.signal=m_dpss_serial_oob_char:tag then
+        -- OOB data
+        declare var
+          poob   : p_char8;
+
+        begin
+          poob:unchecked:=data.signal_data;
+          if not TransmitCommChar(handle,poob^) then
+            raise serial_communication_error;
+            end if;
+          end declare;
+
+      elsif data.signal=m_dpss_serial_purge:tag then
+        -- purge communication/buffers
+        declare var
+          paction: ^t_serial_purge_actions;
+          flags  : DWORD;
+
+        begin
+          -- assemble action flags
+          paction:unchecked:=data.signal_data;
+          if tspa_abort_tx        in paction^ then flags or PURGE_TXABORT; end if;
+          if tspa_abort_rx        in paction^ then flags or PURGE_RXABORT; end if;
+          if tspa_clear_tx_buffer in paction^ then flags or PURGE_TXCLEAR; end if;
+          if tspa_clear_rx_buffer in paction^ then flags or PURGE_RXCLEAR; end if;
+
+          -- do the purge
+          if not PurgeComm(handle,flags) then
+            raise serial_communication_error;
+            end if;
+          end declare;
+
+      elsif data.signal=m_dpss_serial_clear_dtr:tag then
+        -- clear DTR
+        if not EscapeCommFunction(handle,CLRDTR) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_clear_rts:tag then
+        -- clear RTS
+        if not EscapeCommFunction(handle,CLRRTS) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_set_dtr:tag then
+        -- set DTR
+        if not EscapeCommFunction(handle,SETDTR) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_set_rts:tag then
+        -- set RTS
+        if not EscapeCommFunction(handle,SETRTS) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_xon:tag then
+        -- set XON
+        if not EscapeCommFunction(handle,SETXON) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_xoff:tag then
+        -- set XOFF
+        if not EscapeCommFunction(handle,SETXOFF) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_set_break:tag then
+        -- set break
+        if not EscapeCommFunction(handle,SETBREAK) then
+          raise serial_communication_error;
+          end if;
+
+      elsif data.signal=m_dpss_serial_clear_break:tag then
+        -- set break
+        if not EscapeCommFunction(handle,CLRBREAK) then
+          raise serial_communication_error;
+          end if;
+
+      -- unknown signal: check if it is important
+      elsif data.signal>=m_dpss_important:tag then
+        -- unknown important signal, raise exception
+        raise serial_communication_error;
+        end if;
+    else
+      -- data packet
+      read_packet(data,_data,_size);
+      if _size>0 then
+        -- write data
+        overlapped.hEvent:=h_write_event;
+        if not WriteFile(handle,_data,DWORD(_size),nil,^overlapped) then
+          if GetLastError()=ERROR_IO_PENDING
+            then
+              -- operation will proceed on background => wait for completion
+              if WaitForSingleObjectEx(h_write_event,INFINITE,true)<>WAIT_OBJECT_0 then
+                raise serial_communication_error;
+                end if;
+
+            else
+              -- generic error
+              raise serial_communication_error;
+              end if;
+          end if;
+
+        -- check results
+        if not GetOverlappedResult(handle,overlapped,written,false) or else t_offset(written)<>_size then
+          raise serial_communication_error;
+          end if;
+        end if;
+      end if;
+    c_output_stream:(this).add_flow(data);
+    discard_packet(data);
+    end write_packet;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  -- stream interface
+  --------------------------------------------------------------------------------------------------
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    result:=true;
+    end is_reading;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close = 
+  -- stream interface
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- mark the input stream as closed
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    in_closed:=true;
+
+    -- if output already closed, close the communication definitely
+    if out_closed then
+      close;
+      end if;
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet = 
+  -- stream interface
+  ------------------------------------------------------------------------------------------------
+  var
+    filesize       : t_offset;
+    size           : t_offset;
+    _data          : p_data_array;
+    optimal_size   : DWORD;
+    read           : DWORD;
+    overlapped     : aliased _OVERLAPPED;
+    errors         : DWORD;
+    stat           : aliased _COMSTAT;
+
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    if in_eod then
+      raise stream_end_of_data;
+      end if;
+
+    -- determine data size
+    if not ClearCommError(handle,errors,^stat) or else errors<>0 then
+      raise serial_communication_error;
+      end if;
+    if stat.cbInQue>0
+      then size:=t_offset(stat.cbInQue);
+      else c_input_stream:(this).get_optimal_packet_size(size);
+      end if;
+    if size>options.maximal_size then
+      size:=options.maximal_size;
+      end if;
+
+    -- read data into buffer
+    new _data range size;
+    overlapped.hEvent:=h_read_event;
+    if not ReadFile(handle,_data^,DWORD(size),nil,^overlapped) then
+      if GetLastError()=ERROR_IO_PENDING
+        then
+          -- wait for incoming data
+          if WaitForSingleObjectEx(h_read_event,INFINITE,true)<>WAIT_OBJECT_0 then
+            raise serial_communication_error;
+            end if;
+
+        else
+          -- generic error
+          raise serial_communication_error;
+          end if;
+      end if;
+
+    if not GetOverlappedResult(handle,overlapped,read,false) then
+      -- generic error
+      raise serial_communication_error;
+      end if;
+
+    -- return received data
+    create_packet(data,_data,t_offset(read),t_dps_dynamic);
+    c_input_stream:(this).add_flow(data);
+    end read_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod = 
+  -- stream interface
+  ------------------------------------------------------------------------------------------------
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    result:=in_eod;
+    end is_eod;
+
+  end c_serial_port_stream;
+
+
+end serial;

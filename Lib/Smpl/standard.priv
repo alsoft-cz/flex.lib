@@ -49,46 +49,33 @@ procedure to_system_string (
     sysstr         : out windows.windef.winnt.pwstr) =
 -- Convert standard string to OS string.
 ----------------------------------------------------------------------------------------------------
+with
+  standard.strings;
+
 var
-  j                : t_unsigned;
-  surrogate_pairs  : t_unsigned;
-  low_surrogate    : t_char16;
-  high_surrogate   : t_char16;
+  unistr           : p_char16ustr;
 
 begin
-  -- compute number of surrogate pairs
-  for i in str:range loop
-    if str[i]:ord>$FFFF then
-      succ surrogate_pairs;
-      end if;
+  -- convert ISO string to Unicode string
+  -- %%TECH: Theoretically, Windows are able to work with UTF-16LE (i.e. surrogate pairs etc.),
+  --         but in practice, it does not work (more often than not), e.g. a surrogate pair is
+  --         displayed as _two_ unknown characters etc. So that we use [str_iso_to_unicode]
+  --         instead of [str_iso_to_utf16].
+  str_iso_to_unicode(str,unistr);
+
+  -- move to system zero-terminated string
+  new sysstr range unistr^:length+1;
+  for i in unistr^:range loop
+    sysstr^[i-1]:=unistr^[i];
     end loop;
 
-  -- allocate memory
-  new sysstr range str:length+surrogate_pairs+1;
+  -- append the zero terminator
+  sysstr^[unistr^:length]:=\0;
 
-  -- convert from ISO to UNICODE
-  for i in str:range loop
-    if str[i]:ord>$FFFF
-
-      -- convert and assign character which scalar value is greater than $FFFF as surrogates
-      then
-        high_surrogate:ord:=(str[i]:ord-$1_0000) div $400 + $D800;
-        low_surrogate:ord:=(str[i]:ord-$1_0000) mod $400 + $DC00;
-        sysstr^[j]:=high_surrogate;
-        succ j;
-        sysstr^[j]:=low_surrogate;
-
-      -- assign normal 16-bit character
-      else
-        sysstr^[j]:=str[i];
-        end if;
-    succ j;
-    end loop;
-
-  -- append zero
-  sysstr^[str:length+surrogate_pairs]:=\0;
+leave
+  -- free memory
+  discard unistr;
   end to_system_string;
-
 
 
 ----------------------------------------------------------------------------------------------------
@@ -97,24 +84,28 @@ procedure to_ascii_string (
     sysstr         : out windows.windef.winnt.lpstr) =
 -- Convert standard string to OS 8bit string.
 ----------------------------------------------------------------------------------------------------
+with
+  standard.strings;
+
+var
+  ascstr           : p_char8ustr;
+
 begin
-  -- %%TODO(LIB) Toto je velmi zjednodušené. Mělo by se to snažit například odháčkovávat
-  -- znaky s diakritikou, zohlednit systémovou kódovou stránku a podobně.
+  -- convert ISO string to ASCII string
+  str_iso_to_ascii(str,ascstr);
 
-  -- allocate memory
-  new sysstr range str:length+1;
-
-  -- convert from ISO to UNICODE
-  for i in str:range loop
-    if str[i]:ord>256 then
-      sysstr^[i-1]:=" ";
-    else
-      sysstr^[i-1]:=str[i];
-      end if;
+  -- move to system zero-terminated string
+  new sysstr range ascstr^:length+1;
+  for i in ascstr^:range loop
+    sysstr^[i-1]:=ascstr^[i];
     end loop;
 
-  -- append zero
-  sysstr^[str:length]:=\0;
+  -- append the zero terminator
+  sysstr^[ascstr^:length]:=\0;
+
+leave
+  -- free memory
+  discard ascstr;
   end to_ascii_string;
 
 #elsif os_linux then;
@@ -141,53 +132,30 @@ procedure from_system_string (
     str            : out p_char32ustr) =
 -- Convert standard string to OS string.
 ----------------------------------------------------------------------------------------------------
-
-    ------------------------------------------------------------------------------------------------
-    #template is_surrogate (index);
-    ------------------------------------------------------------------------------------------------
-      (t_mod_unsigned16(sysstr^[index]:ord) and $D800)=$D800 and (t_mod_unsigned16(sysstr^[index+1]:ord) and $DC00)=$DC00
-      #end is_surrogate;
+with
+  standard.strings;
 
 var
   length           : t_unsigned;
-  i                : t_unsigned;
-  surrogate_pairs  : t_unsigned;
+  unistr           : p_char16ustr;
 
 begin
-  -- compute string's length
-  while sysstr^[length]<>\0 loop 
-    -- check is system string contains a surrogate pair
-    if is_surrogate(length) then
-      succ surrogate_pairs;
-      end if;
-
+  while sysstr^[length]<>\0 loop
     succ length;
     end loop;
 
-  -- allocate memory for standard string
-  new str range length-surrogate_pairs;
-
-  -- convert from UNICODE to ISO
-  while i < length loop
-    -- check for a surrogate
-    if is_surrogate(i) 
-
-      -- convert surrogate pairs to 32-bit scalar value
-      then
-        str^ & t_char32((t_unsigned32(sysstr^[i]:ord)-$D800)*$400 + (t_unsigned32(sysstr^[i+1]:ord)-$DC00) + $1_0000);
-        i+2;
-
-      -- non-surrogate character
-      else 
-        str^ & t_char32(sysstr^[i]);
-        succ i;
-        end if;
+  new unistr range length;
+  for i in 0..length-1 loop
+    unistr^ & t_char16(sysstr^[i]);
     end loop;
+
+  str_unicode_to_iso(unistr^,str);
+leave
+  discard unistr;
   end from_system_string;
 #else;
   #error os_unsupported;
 #end if;
-
 
 
 ----------------------------------------------------------------------------------------------------

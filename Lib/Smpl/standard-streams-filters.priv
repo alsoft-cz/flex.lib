@@ -153,7 +153,7 @@ var
     while que.try_accept_any_msg(packet,t_wait_immediate) loop
       data:=p_data_packet(packet)^;
       discard packet;
-      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      if data.style=t_dps_signal and then data.signal=m_dpss_eod:tag then
         if transfer_eod then
           target^.write_packet(data);
           end if;
@@ -277,9 +277,9 @@ var
 
       -- zjistim jestli uz byl posledni
       if data.style=t_dps_signal then 
-        if data.signal=t_dpss_eod then
+        if data.signal=m_dpss_eod:tag then
           eod:=true;
-        elsif data.signal=t_dpss_bad_data then
+        elsif data.signal=m_dpss_bad_data:tag then
           raise stream_invalid_data;
           end if;
         end if;
@@ -318,7 +318,7 @@ var
       -- pripojim packet nakonec fronty
       que.append_msg(packet);
       -- jestli to byl eod, koncim
-      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      if data.style=t_dps_signal and then data.signal=m_dpss_eod:tag then
         break;
         end if;
       end loop;
@@ -448,7 +448,7 @@ var
     que.append_msg(packet);
 
     -- jestli to byl flush, cekam az cerpadlo vytlaci data ven
-    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+    if data.style=t_dps_signal and then data.signal=m_dpss_flush:tag then
       que.wait_empty;
       end if;
 
@@ -487,7 +487,7 @@ var
         end;
 
       -- jestli byl posledni koncim
-      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      if data.style=t_dps_signal and then data.signal=m_dpss_eod:tag then
         break;
         end if;
       end loop;
@@ -598,7 +598,7 @@ var
     que.append_msg(packet);
 
     -- jestli to byl flush, cekam az cerpadlo vytlaci data ven
-    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+    if data.style=t_dps_signal and then data.signal=m_dpss_flush:tag then
       que.wait_empty;
       end if;
 
@@ -627,7 +627,7 @@ var
       discard packet;
 
       -- jestli byl posledni koncim
-      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      if data.style=t_dps_signal and then data.signal=m_dpss_eod:tag then
         if transfer_eod then
           target^.write_packet(data);
           end if;

@@ -44,12 +44,22 @@ LPMENUTEMPLATE    = LPMENUTEMPLATEA;
 #end if;
 
 type
-WNDPROC           = ^procedure (
+t_window_proc     = procedure (
+    hwnd            : t_HWND;
+    umsg            : UINT;
+    wparam          : t_WPARAM;
+    lparam          : t_LPARAM)
+                      return t_LRESULT;
+#pragma convention(t_window_proc,system);
+
+{WNDPROC           = ^procedure (
     _001            : t_HWND;
     _002            : UINT;
     _003            : t_WPARAM;
     _004            : t_LPARAM)
-                      return t_LRESULT for machine_pointer use true;
+                      return t_LRESULT for machine_pointer use true;}
+WNDPROC = ^t_window_proc for machine_pointer use true;
+
 type
 DLGPROC           = FARPROC;
 type
@@ -117,12 +127,14 @@ DESKTOPENUMPROC   = DESKTOPENUMPROCA;
 #end if;
 
 #if #declared UNICODE; then;
-#template MAKEINTRESOURCE;
-  {MAKEINTRESOURCEW(i)} (LPWSTR)((ULONG_PTR)((WORD)(i))) 
+#template MAKEINTRESOURCE(i);
+  (LPWSTR(i:unchecked))
+  {{MAKEINTRESOURCEW(i)} (LPWSTR)((ULONG_PTR)((WORD)(i)))} 
 #end MAKEINTRESOURCE;
 #else;
-#template MAKEINTRESOURCE;
-  {MAKEINTRESOURCEA(i)} (LPSTR)((ULONG_PTR)((WORD)(i))) 
+#template MAKEINTRESOURCE(i);
+  (LPWSTR(i))
+  {{MAKEINTRESOURCEA(i)} (LPSTR)((ULONG_PTR)((WORD)(i)))} 
 #end MAKEINTRESOURCE;
 #end if;
 
@@ -1033,7 +1045,8 @@ const
 -- /*
 --  * HCBT_CREATEWND parameters pointed to by lParam
 --  */
-type  tagCREATESTRUCTA;
+type
+  tagCREATESTRUCTA;
 
 type
   tagCBT_CREATEWNDA = record
@@ -1046,7 +1059,8 @@ hwndInsertAfter : t_HWND;
 -- /*
 --  * HCBT_CREATEWND parameters pointed to by lParam
 --  */
-type  tagCREATESTRUCTW;
+type
+  tagCREATESTRUCTW;
 
 type
   tagCBT_CREATEWNDW = record
@@ -3435,9 +3449,37 @@ const
 const
   WS_MAXIMIZEBOX    = $10000;
 
+const
+  WS_TILED          =  WS_OVERLAPPED;
+
+const
+  WS_ICONIC         =  WS_MINIMIZE;
+
+const
+  WS_SIZEBOX        =  WS_THICKFRAME;
+
 -- /*
 --  * Common Window Styles
 --  */
+const
+  WS_OVERLAPPEDWINDOW = WS_OVERLAPPED     or
+                             WS_CAPTION        or
+                             WS_SYSMENU        or
+                             WS_THICKFRAME     or
+                             WS_MINIMIZEBOX    or
+                             WS_MAXIMIZEBOX;
+
+const
+  WS_POPUPWINDOW      = WS_POPUP          or
+                             WS_BORDER    or
+                             WS_SYSMENU;
+
+const
+  WS_CHILDWINDOW      = WS_CHILD;
+
+const
+  WS_TILEDWINDOW    =  WS_OVERLAPPEDWINDOW;
+
 -- /*
 --  * Extended Window Styles
 --  */
@@ -3497,6 +3539,12 @@ const
 
 const
   WS_EX_APPWINDOW   = $40000;
+
+const
+  WS_EX_OVERLAPPEDWINDOW = WS_EX_WINDOWEDGE or WS_EX_CLIENTEDGE;
+
+const
+  WS_EX_PALETTEWINDOW    = WS_EX_WINDOWEDGE or WS_EX_TOOLWINDOW or WS_EX_TOPMOST;
 
 const
   WS_EX_LAYERED     = $80000;
@@ -4186,7 +4234,7 @@ type
 t_020=^MSG for machine_pointer use true;
 
 procedure TranslateMessage(
-    lpMsg           : in t_020)
+    lpMsg           : in ref tagMSG)
                       return BOOL;
 #pragma convention(TranslateMessage,system);
 #pragma import(TranslateMessage,'TranslateMessage','user32.dll');
@@ -4195,7 +4243,7 @@ type
 t_021=^MSG for machine_pointer use true;
 
 procedure DispatchMessageA(
-    lpMsg           : in t_021)
+    lpMsg           : in ref tagMSG)
                       return t_LRESULT;
 #pragma convention(DispatchMessageA,system);
 #pragma import(DispatchMessageA,'DispatchMessageA','user32.dll');
@@ -4204,7 +4252,7 @@ type
 t_022=^MSG for machine_pointer use true;
 
 procedure DispatchMessageW(
-    lpMsg           : in t_022)
+    lpMsg           : in ref tagMSG)
                       return t_LRESULT;
 #pragma convention(DispatchMessageW,system);
 #pragma import(DispatchMessageW,'DispatchMessageW','user32.dll');
@@ -4949,7 +4997,7 @@ type
 t_033=^WNDCLASSEXA for machine_pointer use true;
 
 procedure RegisterClassExA(
-    _001            : in t_033)
+    _001            : in ref WNDCLASSEXA)
                       return ATOM;
 #pragma convention(RegisterClassExA,system);
 #pragma import(RegisterClassExA,'RegisterClassExA','user32.dll');
@@ -4958,7 +5006,7 @@ type
 t_034=^WNDCLASSEXW for machine_pointer use true;
 
 procedure RegisterClassExW(
-    _001            : in t_034)
+    _001            : in ref WNDCLASSEXW)
                       return ATOM;
 #pragma convention(RegisterClassExW,system);
 #pragma import(RegisterClassExW,'RegisterClassExW','user32.dll');
@@ -4999,9 +5047,15 @@ procedure GetClassInfoExW(
 #end GetClassInfoEx;
 #end if;
 
+const
+  CW_USEDEFAULT     = INT(-$80000000);
+
 -- /*
 --  * Special value for CreateWindow, et al.
 --  */
+const
+  HWND_DESKTOP       = t_HWND(0);
+
 type
 PREGISTERCLASSNAMEW = ^procedure (
     _001            : LPCWSTR)
@@ -9506,6 +9560,18 @@ const
   MB_USERICON       = $80;
 
 const
+  MB_ICONWARNING    = MB_ICONEXCLAMATION;
+
+const
+  MB_ICONERROR      = MB_ICONHAND;
+
+const
+  MB_ICONINFORMATION = MB_ICONASTERISK;
+
+const
+  MB_ICONSTOP       = MB_ICONHAND;
+
+const
   MB_DEFBUTTON1     = $00;
 
 const
@@ -11045,6 +11111,73 @@ procedure DestroyCursor(
 -- /*
 --  * Standard Cursor IDs
 --  */
+var
+  IDC_ARROW__INTERNAL: dword := 32512;
+  IDC_IBEAM__INTERNAL: dword := 32513;
+  IDC_WAIT__INTERNAL: dword := 32514;
+  IDC_CROSS__INTERNAL: dword := 32515;
+  IDC_UPARROW__INTERNAL: dword := 32516;
+  IDC_SIZE__INTERNAL: dword := 32640;
+  IDC_ICON__INTERNAL: dword := 32641;
+  IDC_SIZENWSE__INTERNAL: dword := 32642;
+  IDC_SIZENESW__INTERNAL: dword := 32643;
+  IDC_SIZEWE__INTERNAL: dword := 32644;
+  IDC_SIZENS__INTERNAL: dword := 32645;
+  IDC_SIZEALL__INTERNAL: dword := 32646;
+  IDC_NO__INTERNAL: dword := 32648;
+  IDC_HAND__INTERNAL: dword := 32649;
+  IDC_APPSTARTING__INTERNAL: dword := 32650;
+  IDC_HELP__INTERNAL: dword := 32651;
+
+#template IDC_ARROW           ;
+  lpwstr(IDC_ARROW__INTERNAL:unchecked)
+#end IDC_ARROW           ;
+#template IDC_IBEAM           ;
+  lpwstr(IDC_IBEAM__INTERNAL:unchecked)
+#end IDC_IBEAM           ;
+#template IDC_WAIT            ;
+  lpwstr(IDC_WAIT__INTERNAL:unchecked)
+#end IDC_WAIT            ;
+#template IDC_CROSS           ;
+  lpwstr(IDC_CROSS__INTERNAL:unchecked)
+#end IDC_CROSS           ;
+#template IDC_UPARROW         ;
+  lpwstr(IDC_UPARROW__INTERNAL:unchecked)
+#end IDC_UPARROW         ;
+#template IDC_SIZE            ;
+  lpwstr(IDC_SIZE__INTERNAL:unchecked)
+#end IDC_SIZE            ;
+#template IDC_ICON            ;
+  lpwstr(IDC_ICON__INTERNAL:unchecked)
+#end IDC_ICON            ;
+#template IDC_SIZENWSE        ;
+  lpwstr(IDC_SIZENWSE__INTERNAL:unchecked)
+#end IDC_SIZENWSE        ;
+#template IDC_SIZENESW        ;
+  lpwstr(IDC_SIZENESW__INTERNAL:unchecked)
+#end IDC_SIZENESW        ;
+#template IDC_SIZEWE          ;
+  lpwstr(IDC_SIZEWE__INTERNAL:unchecked)
+#end IDC_SIZEWE          ;
+#template IDC_SIZENS          ;
+  lpwstr(IDC_SIZENS__INTERNAL:unchecked)
+#end IDC_SIZENS          ;
+#template IDC_SIZEALL         ;
+  lpwstr(IDC_SIZEALL__INTERNAL:unchecked)
+#end IDC_SIZEALL         ;
+#template IDC_NO              ;
+  lpwstr(IDC_NO__INTERNAL:unchecked)
+#end IDC_NO              ;
+#template IDC_HAND            ;
+  lpwstr(IDC_HAND__INTERNAL:unchecked)
+#end IDC_HAND            ;
+#template IDC_APPSTARTING     ;
+  lpwstr(IDC_APPSTARTING__INTERNAL:unchecked)
+#end IDC_APPSTARTING     ;
+#template IDC_HELP            ;
+  lpwstr(IDC_HELP__INTERNAL:unchecked)
+#end IDC_HELP            ;
+
 procedure SetSystemCursor(
     hcur            : in t_HCURSOR; 
     id              : in DWORD)
@@ -11410,6 +11543,43 @@ const
 -- /*
 --  * Standard Icon IDs
 --  */
+var
+  IDI_APPLICATION__INTERNAL: dword := 32512;
+  IDI_HAND__INTERNAL: dword := 32513;
+  IDI_QUESTION__INTERNAL: dword := 32514;
+  IDI_EXCLAMATION__INTERNAL: dword := 32515;
+  IDI_ASTERISK__INTERNAL: dword := 32516;
+  IDI_WINLOGO__INTERNAL: dword := 32517;
+
+#template IDI_APPLICATION;
+  lpwstr(IDI_APPLICATION__INTERNAL:unchecked)
+#end IDI_APPLICATION;
+#template IDI_HAND;
+  lpwstr(IDI_HAND__INTERNAL:unchecked)
+#end IDI_HAND;
+#template IDI_QUESTION;
+  lpwstr(IDI_QUESTION__INTERNAL:unchecked)
+#end IDI_QUESTION;
+#template IDI_EXCLAMATION;
+  lpwstr(IDI_EXCLAMATION__INTERNAL:unchecked)
+#end IDI_EXCLAMATION;
+#template IDI_ASTERISK;
+  lpwstr(IDI_ASTERISK__INTERNAL:unchecked)
+#end IDI_ASTERISK;
+#template IDI_WINLOGO;
+  lpwstr(IDI_WINLOGO__INTERNAL:unchecked)
+#end IDI_WINLOGO;
+
+#template IDI_WARNING;
+  IDI_EXCLAMATION
+#end IDI_WARNING;
+#template IDI_ERROR;
+  IDI_HAND
+#end IDI_ERROR;
+#template IDI_INFORMATION;
+  IDI_ASTERISK
+#end IDI_INFORMATION;
+
 type
 t_330=signed 32;
 

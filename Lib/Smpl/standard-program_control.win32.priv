@@ -249,7 +249,7 @@ begin
     end if;
 
   -- allocate space for output string
-  new penv_value range env_value_size;
+  new penv_value range t_unsigned(env_value_size);
 
   -- make system call again to realy get the variables value
   env_value_size:=system.windows.winbase.getenvironmentvariablew(penv_var,penv_value,env_value_size);

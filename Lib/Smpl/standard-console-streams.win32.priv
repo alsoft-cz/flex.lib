@@ -46,7 +46,7 @@ var
     if handle_redir then
       -- nema smysl posilat
     else
-      attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+      attr:=WORD(fgcolor)+(WORD(bgcolor)*16);
       if not SetConsoleTextAttribute(handle,attr) then
         raise console_error;
         end if;
@@ -68,7 +68,7 @@ var
     if handle_redir then
       -- nema smysl posilat
     else
-      attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+      attr:=WORD(fgcolor)+(WORD(bgcolor)*16);
       if not SetConsoleTextAttribute(handle,attr) then
         raise console_error;
         end if;
@@ -110,13 +110,13 @@ var
 
   begin
     set_cursor_position(0,0);
-    if not FillConsoleOutputCharacterW(handle," ",cb_console_width*cb_console_height,crd,writen) then
+    if not FillConsoleOutputCharacterW(handle," ",DWORD(cb_console_width*cb_console_height),crd,writen) then
       raise console_error;
       end if;
 
-    attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+    attr:=WORD(fgcolor)+(WORD(bgcolor)*16);
 
-    if not FillConsoleOutputAttribute(handle,attr,cb_console_width*cb_console_height,crd,writen) then
+    if not FillConsoleOutputAttribute(handle,attr,DWORD(cb_console_width*cb_console_height),crd,writen) then
       raise console_error;
       end if;
     end clear_console;
@@ -127,10 +127,24 @@ var
     s              : in t_char32ustr)  =
   -- zapise na consolu nebo do presmerovani
   ----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure strlenw(
+      s            : in windows.windef.winnt.pwstr)
+      return t_unsigned =
+    -- Compute length of zero-terminated Unicode string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      while s^[result]<>\0 loop
+        succ result;
+        end loop;
+      end strlenw;
+
+
   var
     wstr         : windows.windef.winnt.pwstr;
     astr         : windows.windef.winnt.lpstr;
-    written      : dword;
+    written      : aliased dword;
 
   begin
     -- [writeconsole] cannot handle redirected output, so the application must
@@ -141,7 +155,7 @@ var
       then
         begin
           to_ascii_string(s,astr);
-          if not windows.winbase.writefile(handle,{windows.windef.lpcvoid(}astr{)},s:length,written,nil) then
+          if not windows.winbase.writefile(handle,{windows.windef.lpcvoid(}astr{)},dword(s:length),^written,nil) then
             raise console_error;
             end if;
         leave
@@ -152,7 +166,7 @@ var
       else 
         begin
           to_system_string(s,wstr);
-          if not writeconsolew(handle,wstr,s:length,written,nil) then
+          if not writeconsolew(handle,wstr,dword(strlenw(wstr)),written,nil) then
             raise console_error;
             end if;
         leave
@@ -214,23 +228,26 @@ var
       -- flex text
       read_temporary_text(data,text);
       write(text^);
-    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_clear then
+    elsif data.style=t_dps_signal and then data.signal=m_dpss_con_clear:tag then
       -- clear command
       clear_console;
-    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_fgcolor then
+    elsif data.style=t_dps_signal and then data.signal=m_dpss_con_fgcolor:tag then
       -- color command
       color:unchecked:=data.other;
       set_foreground_color(color^);
-    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_bgcolor then
+    elsif data.style=t_dps_signal and then data.signal=m_dpss_con_bgcolor:tag then
       -- color command
       color:unchecked:=data.other;
       set_background_color(color^);
-    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_pos then
+    elsif data.style=t_dps_signal and then data.signal=m_dpss_con_set_pos:tag then
       -- position command
       coord:unchecked:=data.other;
       set_cursor_position(coord^.x,coord^.y);
     elsif data.style=t_dps_signal then
       -- unknown signal
+      if data.signal>=m_dpss_important:tag then
+        raise stream_invalid_data;
+        end if;
 
     else
       --data packet
@@ -313,7 +330,7 @@ begin
       input.EventType:=KEY_EVENT;
       input.event.KeyEvent.bKeyDown:=true;
       input.event.KeyEvent.wRepeatCount:=1;
-      input.event.KeyEvent.wVirtualKeyCode:=t_ec_c;
+      input.event.KeyEvent.wVirtualKeyCode:=WORD(t_ec_c);
       input.event.KeyEvent.dwControlKeyState:=system.windows.wincon.RIGHT_CTRL_PRESSED+system.windows.wincon.LEFT_CTRL_PRESSED;
       result:=true;
     when others do
@@ -565,7 +582,7 @@ var
     console_event.mouse_pos:=mouse_pos;
 
     -- translate key
-    console_event.event_code:=key.wVirtualKeyCode;
+    console_event.event_code:=t_event_code(key.wVirtualKeyCode);
     console_event.down:=key.bKeyDown;
     mm:unchecked:=key.dwControlKeyState;
     if (mm and CAPSLOCK_ON)<>0 then
@@ -768,7 +785,7 @@ var
           if key_mode then
             new con_event_h;
             translate_key(input.event.KeyEvent,con_event_h^);
-            create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
+            create_signal(data,m_dpss_con_event:tag,p_data_array(con_event_h:unchecked));
             break;
           else
             translate_key(input.event.KeyEvent,con_event_l);
@@ -777,7 +794,7 @@ var
           if mouse_mode then
             new con_event_h;
             translate_mouse(input.event.MouseEvent,con_event_h^);
-            create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
+            create_signal(data,m_dpss_con_event:tag,p_data_array(con_event_h:unchecked));
             break;
             end if;
         when WINDOW_BUFFER_SIZE_EVENT do
@@ -802,7 +819,7 @@ var
     _buff          : p_data_array;
     _text          : p_data_array_char32;
     optimal_size   : t_offset;
-    readen         : dword;
+    read           : aliased dword;
     char_done      : t_logical;
 
   begin
@@ -812,17 +829,17 @@ var
       end if;
 
     new _buff range optimal_size div t_char32:size;
-    if not windows.winbase.readfile(handle,_buff^,_buff:size,readen,nil) then
-      if readen<>0 or else GetLastError()<>ERROR_HANDLE_EOF then
+    if not windows.winbase.readfile(handle,_buff^,_buff:size,^read,nil) then
+      if read<>0 or else GetLastError()<>ERROR_HANDLE_EOF then
         raise console_error;
         end if;
       end if;
-    size:=readen*t_char32:size;
-    if readen>0 then
+    size:=t_offset(read*t_char32:size);
+    if read>0 then
       new _data range size;
       size:=0;
       _text:unchecked:=_data;
-      for i in 1..readen loop
+      for i in 1..t_unsigned(read) loop
        decoder^.put_byte(t_unsigned8(_buff^[i-1]),char_done);
        if char_done then
          _text^[size]:=decoder^.get_character;
@@ -880,10 +897,15 @@ var
       set_mode(t_im_test_key_no_echo);
       read_packet_con(data,t_ro_default);
       result:=false;
-      if data.style=t_dps_signal and then data.signal=t_dpss_con_event then
-        event:=p_console_event(data.other:unchecked);
-        if event^.event_code<>t_ec_mouse_move then
-          result:=true;
+      if data.style=t_dps_signal then
+        if data.signal=m_dpss_con_event:tag then
+          event:=p_console_event(data.other:unchecked);
+          if event^.event_code<>t_ec_mouse_move then
+            result:=true;
+            end if;
+        elsif data.signal>=m_dpss_important:tag then
+          discard_packet(data);
+          raise stream_invalid_data;
           end if;
         end if;
       discard_packet(data);

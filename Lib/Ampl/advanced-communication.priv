@@ -1,13 +1,13 @@
 ﻿----------------------------------------------------------------------------------------------------
-module public debugging =
+module private communication =
+-- Additional communication tools.
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-#option required_security(100);
-
 ----------------------------------------------------------------------------------------------------
-procedure output_debug_string (
-    msg            : in t_char32ustr;
-    output_eol     : in t_logical:=true);
+#separate private serial;
+-- Serial port communication.
 ----------------------------------------------------------------------------------------------------
 
-end debugging;
+end communication;

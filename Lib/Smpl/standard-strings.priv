@@ -677,6 +677,217 @@ begin
   end str_hash;
 
 
+
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_unicode =
+-- Convert 32-bit ISO string to 16-bit Unicode string.
+-- Non-convertable characters (characters>=U+10000) will be replaced with U+FFFD (REPLACEMENT CHARACTER)
+----------------------------------------------------------------------------------------------------
+begin
+  -- allocate memory
+  new unistr range 1+isostr:length;              --%%TODO(RANGE) odstranit 1+ az pujde range 0
+
+  -- convert from ISO to UNICODE
+  for i in isostr:range loop
+    if isostr[i]:ord>$FFFF
+      -- cannot fit this character to 16-bit, replace with U+FFFD
+      then
+        unistr^ & \$FFFD;
+
+      -- assign normal 16-bit character
+      else
+        unistr^ & t_char16(isostr[i]);
+        end if;
+    end loop;
+  end str_iso_to_unicode;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_utf16 =
+-- Convert 32-bit ISO string to 16-bit Unicode string with surrogate pairs (UTF-16LE).
+----------------------------------------------------------------------------------------------------
+var
+  surrogate_pairs  : t_unsigned;
+  low_surrogate    : t_char16;
+  high_surrogate   : t_char16;
+
+begin
+  -- compute number of surrogate pairs
+  for i in isostr:range loop
+    if isostr[i]:ord>$FFFF then
+      succ surrogate_pairs;
+      end if;
+    end loop;
+
+  -- allocate memory
+  new unistr range 1+isostr:length+surrogate_pairs;    --%%TODO(RANGE) odstranit 1+ az pujde range 0
+
+  -- convert from ISO to UNICODE
+  for i in isostr:range loop
+    if isostr[i]:ord>$FFFF
+
+      -- convert and assign character which scalar value is greater than $FFFF as surrogates
+      then
+        high_surrogate:ord:=(isostr[i]:ord-$1_0000) div $400 + $D800;
+        low_surrogate:ord:=(isostr[i]:ord-$1_0000) mod $400 + $DC00;
+        unistr^ & high_surrogate;
+        unistr^ & low_surrogate;
+
+      -- assign normal 16-bit character
+      else
+        unistr^ & t_char16(isostr[i]);
+        end if;
+    end loop;
+  end str_iso_to_utf16;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_iso_to_ascii =
+-- Convert 32-bit ISO string to 8-bit ASCII string.
+----------------------------------------------------------------------------------------------------
+
+#if #environment target_os_family;='WIN32' then;
+
+with
+  system.windows.windef.winnt,
+  system.windows.winnls;
+
+#end if;
+
+  --------------------------------------------------------------------------------------------------
+  procedure simple_conversion =
+  -- Really simple conversion, used as a fallback method.
+  -- All non-ASCII characters are replaced with a space, surrogates are not handled accordingly, etc.
+  --------------------------------------------------------------------------------------------------
+  begin
+    -- (re)allocate memory
+    discard ascstr;
+    new ascstr range isostr:length;
+
+    -- convert from ISO to UNICODE
+    for i in isostr:range loop
+      if isostr[i]>t_char8:last then
+        ascstr^ & " ";
+      else
+        ascstr^ & t_char8(isostr[i]);
+        end if;
+      end loop;
+    end simple_conversion;
+
+#if #environment target_os_family;='WIN32' then;
+
+type
+  p_a_char8ustr = ^string of aliased t_char8;
+  p_a_char16ustr = ^string of aliased t_char16;
+
+var
+  wstr             : p_char16ustr;
+  size             : t_signed32;
+  p                : lpstr;
+
+begin
+  -- special case: empty string
+  if isostr:length=0 then
+    new ascstr range 1; -- %%TODO(RANGE) range 0
+    return;
+    end if;
+
+  -- convert from ISO to UNICODE
+  str_iso_to_unicode(isostr,wstr);
+
+  -- query memory requirements
+  size:=WideCharToMultiByte(CP_THREAD_ACP,0,pwstr(^((p_a_char16ustr(wstr:unchecked))^[1]):unchecked),t_signed32(wstr^:length),nil,0,nil,nil);
+  if size=0 then
+    -- ?? some error: fallback to very simplistic conversion
+    simple_conversion;
+    return;
+    end if;
+
+  -- allocate and prepare memory of the string
+  new ascstr range t_unsigned(size);
+  ascstr^:length:=t_unsigned(size);
+  p:=lpstr(^(p_a_char8ustr(ascstr:unchecked)^[1]:unchecked));
+
+  -- convert from UCS-2 to ASCII
+  if WideCharToMultiByte(CP_THREAD_ACP,0,pwstr(^(p_a_char16ustr(wstr:unchecked)^[1]:unchecked)),t_signed32(wstr^:length),p,size,nil,nil)<>size then
+    -- ?? some error: fallback to very simplistic conversion
+    simple_conversion;
+    return;
+    end if;
+
+leave
+  -- free temporary memory
+  discard wstr;
+  end str_iso_to_ascii;
+
+#else;
+
+begin
+  simple_conversion;
+  end str_iso_to_ascii;
+
+#end if;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_unicode_to_iso =
+-- Convert 16-bit Unicode string (in UTF-16LE) to 32-bit ISO string.
+----------------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------------
+  #template is_surrogate (index);
+  ------------------------------------------------------------------------------------------------
+    (index<unistr:last) and then (t_mod_unsigned16(unistr[index]:ord) and $D800)=$D800 and then (t_mod_unsigned16(unistr[index+1]:ord) and $DC00)=$DC00
+    #end is_surrogate;
+
+var
+  i                : t_unsigned;
+  surrogate_pairs  : t_unsigned;
+
+begin
+  -- compute string's length
+  for j in unistr:range loop
+    -- check is system string contains a surrogate pair
+    if is_surrogate(j) then
+      succ surrogate_pairs;
+      end if;
+    end loop;
+
+  -- allocate memory for standard string
+  new isostr range 1+unistr:length-surrogate_pairs; -- %%TODO(RANGE) odstranit 1+ po zprovozneni range 0
+
+  -- convert from UNICODE to ISO
+  i:=1;
+  while i<=unistr:length loop
+    -- check for a surrogate
+    if is_surrogate(i)
+
+      -- convert surrogate pairs to 32-bit scalar value
+      then
+        declare var
+          surrogate_low  : t_unsigned32;
+          surrogate_high : t_unsigned32;
+
+        begin
+          surrogate_high:=t_unsigned32(unistr[i]:ord)-$D800;
+          surrogate_low:=t_unsigned32(unistr[i+1]:ord)-$DC00;
+          isostr^ & t_char32(surrogate_high*$400 + surrogate_low + $1_0000);
+          i+2;
+          end declare;
+
+      -- non-surrogate character
+      else 
+        isostr^ & t_char32(unistr[i]);
+        succ i;
+        end if;
+    end loop;
+  end str_unicode_to_iso;
+
+
+
 ----------------------------------------------------------------------------------------------------
 #separate private dynamic;
 ----------------------------------------------------------------------------------------------------

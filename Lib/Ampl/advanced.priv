@@ -39,4 +39,6 @@ module private advanced =
 ----------------------------------------------------------------------------------------------------
 --#end if;
 
+#separate private communication;
+
 end advanced;

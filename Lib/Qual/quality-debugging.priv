@@ -4,6 +4,14 @@ module private debugging =
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+with
+  quality.unit_testing;
+
+----------------------------------------------------------------------------------------------------
+#separate platform;
+-- Platform dependent part.
+----------------------------------------------------------------------------------------------------
+
 ----------------------------------------------------------------------------------------------------
 procedure write_setup_before_all_tests =
 -- Pošle do výstupního formatteru [formatter] setupu celého testsuitu, tj:
@@ -18,7 +26,7 @@ begin
   formatter^.write_line('Setup tests information:');
 
   -- textový výstup registrovaných testů
-  formatter^.write_line('  Registred tests:');
+  formatter^.write_line('  Registered tests:');
 
   -- dokud jsou v seznamu testů nějaké testy, pošleme je do formatteru
   item:=test_list^.get_first;

@@ -1,27 +1,30 @@
 ﻿----------------------------------------------------------------------------------------------------
-module private debugging =
+-- Debug statements + low-level logging: Platform-dependent part.
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
 procedure output_debug_string =
 ----------------------------------------------------------------------------------------------------
 with
+  standard.strings,
   system,
   system.windows.windef.winnt,
   system.windows.winbase;
 
+type
+  p_system_string  = ^string of aliased WCHAR;   -- B&D
+
 var
   crlf             : static const string 2 of t_char32 := \$0d\$0a;
-  sys_str          : PWSTR;
+  sys_str          : p_char16ustr;
 
 begin
-  to_system_string(msg,sys_str);
-  OutputDebugStringW(sys_str);
+  str_iso_to_unicode(msg,sys_str);
+  OutputDebugStringW(PWSTR(^(p_system_string(sys_str:unchecked)^[1]):unchecked));
   if output_eol then
     output_debug_string(crlf,false);
     end if;
 leave
   discard sys_str;
   end output_debug_string;
-
-end debugging;

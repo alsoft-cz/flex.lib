@@ -98,12 +98,13 @@ var
     -- signal ?
     if data.style=t_dps_signal then 
       -- flush packet
-      if data.signal=t_dpss_flush then
+      if data.signal=m_dpss_flush:tag then
         pf^.flush;
-        end if;
       -- eod
-      if data.signal=t_dpss_eod then
+      elsif data.signal=m_dpss_eod:tag then
         eod:=true;
+      elsif data.signal>=m_dpss_important:tag then
+        raise stream_invalid_data;
         end if;
     else
       -- data packet

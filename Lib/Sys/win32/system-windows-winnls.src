@@ -1796,12 +1796,12 @@ t_005=signed 32;
 procedure WideCharToMultiByte(
     CodePage        : in UINT; 
     dwFlags         : in DWORD; 
-    lpWideCharStr   : in LPCWSTR; 
+    lpWideCharStr   : in PWSTR; 
     cchWideChar     : in t_004; 
-    lpMultiByteStr  : out CHARSTR ; 
+    lpMultiByteStr  : in PSTR ;
     cbMultiByte     : in t_005; 
-    lpDefaultChar   : in LPCSTR; 
-    lpUsedDefaultChar : out BOOL )
+    lpDefaultChar   : in PCSTR; 
+    lpUsedDefaultChar : in PBOOL )
                       return t_006;
 #pragma convention(WideCharToMultiByte,system);
 #pragma import(WideCharToMultiByte,'WideCharToMultiByte','kernel32.dll');

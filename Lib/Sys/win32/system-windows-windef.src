@@ -38,13 +38,13 @@ const
   MAX_PATH          = 260;
 
 type
-DWORD             = unsigned 32;
+DWORD             = mod unsigned 32;
 type
 BOOL              = logical 32;
 type
-BYTE              = character 8;
+BYTE              = mod unsigned 8;
 type
-WORD              = unsigned 16;
+WORD              = mod unsigned 16;
 type
 t_FLOAT           = float 32;
 type

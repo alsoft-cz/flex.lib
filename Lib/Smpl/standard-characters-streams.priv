@@ -522,7 +522,7 @@ var
 
       -- zjistim jestli uz byl posledni
       if data.style=t_dps_signal then 
-        if data.signal=t_dpss_eod then
+        if data.signal=m_dpss_eod:tag then
           eod:=true;
           end if;
         end if;
