@@ -1,0 +1,8 @@
+----------------------------------------------------------------------------------------------------
+module private namespaces =
+-- Additinal namespaces to standard.names.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+end namespaces;

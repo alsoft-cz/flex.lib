@@ -1,0 +1,77 @@
+----------------------------------------------------------------------------------------------------
+module private unchecked_memory_access =
+-- Unchecked memory access.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure memory_fill_zero =
+-- Sets [size] bytes of [x] to zero.
+----------------------------------------------------------------------------------------------------
+var
+  i                : t_unsigned;
+
+begin
+  {%%TODO(LIB) P©epsat do assembleru, naprogramovat t‚‘ MMX variantu }
+  for i in 1..size loop
+    t_unsigned8array(x)[i-1]:=0;
+    end loop;
+  end memory_fill_zero;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure memory_fill_byte =
+-- Sets [size] bytes of [x] to [fill_with].
+----------------------------------------------------------------------------------------------------
+var
+  i                : t_unsigned;
+
+begin
+  {%%TODO(LIB) P©epsat do assembleru, naprogramovat t‚‘ MMX variantu }
+  for i in 1..size loop
+    t_unsigned8array(x)[i-1]:=fill_with;
+    end loop;
+  end memory_fill_byte;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure memory_copy =
+-- Moves [size] of bytes from [source] to [destination].
+----------------------------------------------------------------------------------------------------
+var
+  i                : t_unsigned;
+  source_ptr       : t_machine_pointer;
+  destination_ptr  : t_machine_pointer;
+
+begin
+  {%%TODO(LIB) P©epsat do assembleru, naprogramovat t‚‘ MMX variantu }
+
+  -- acquire pointers do source and destination memory blocks
+  source_ptr:=^source;
+  destination_ptr:=^destination;
+
+  -- both operands start at the same address
+  if t_unsigned32(source_ptr:unchecked)=t_unsigned32(destination_ptr:unchecked) then 
+    -- do nothing
+
+  -- the source operand starts before the destination operand and ends within it
+  elsif t_unsigned32(source_ptr:unchecked)+size-1>=t_unsigned32(destination_ptr:unchecked) 
+  and t_unsigned32(source_ptr:unchecked)+size<t_unsigned32(destination_ptr:unchecked)+size then
+    for i in reverse 1..size loop
+      t_unsigned8array(destination)[i-1]:=t_unsigned8array(source)[i-1]
+      end loop;                           
+
+  -- in all other cases copy in the forward direction
+  else
+    for i in 1..size loop
+      t_unsigned8array(destination)[i-1]:=t_unsigned8array(source)[i-1]
+      end loop;
+    end if;
+  end memory_copy;
+
+
+
+end unchecked_memory_access;

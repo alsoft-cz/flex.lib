@@ -1,0 +1,178 @@
+----------------------------------------------------------------------------------------------------
+module private files =
+-- Files.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private tfile =
+-- File access class.
+----------------------------------------------------------------------------------------------------
+
+    var
+      handle       : unix.tsys_int;              -- OS file handle
+      sys_error    : unix.tsys_int;              -- system error code
+
+    ------------------------------------------------------------------------------------------------
+    static finit =
+    -- Initializes the instance of the file access class.
+    -- Given file name will be used in the FOPEN/FCREATE operations.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- remember the file name
+      this.name:=name;
+      end finit;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static fopen =
+    -- Opens existing file.
+    ------------------------------------------------------------------------------------------------
+    var
+      sys_name     : unix.psys_str;
+      sys_flags    : unix.tsys_int;
+
+    const
+      sys_mode     = 0;                          -- mode is used for the new file creating only
+
+    begin
+      -- remember file open parameters
+      this.mode:=mode;
+      this.access:=access;
+      this.sharing:=sharing;
+
+      -- complete system flags
+      if tfm_read  in mode then
+        if tfm_write in mode 
+          then sys_flags:=unix.o_rdwr;
+          else sys_flags:=unix.o_rdonly;
+          end if;
+      elsif tfm_write in mode then
+        sys_flags:=unix.o_wronly;
+      else
+        sys_flags:=0;
+        end if;
+     { And what about theese flags? :
+        --  O_NDELAY,
+        --  O_NONBLOCK: If the O_NONBLOCK flag is specified and the SYS_OPEN call would
+        --              result in the process being blocked for some reason (e.g., waiting
+        --              for carrier on a dialup line), SYS_OPEN returns immediately. The
+        --              first time the process attempts to perform I/O on the open file it
+        --              will block (not currently implemented).
+        --  O_NOCTTY:   If pathname refers to a terminal device it will not become the
+        --              process's controlling terminal even if the process does not have one.
+        --  O_APPEND:   Causes each write on the file to be appended to the end.
+        --  O_CREAT:    create file if it does not exist
+        --  O_TRUNC:    If the file exists, the file is truncated to zero length.
+        --  O_EXCL:     If O_EXCL is set with O_CREAT and the file already exists, SYS_OPEN
+        --              returns an error. This may be used to implement a simple exclusive
+        --              access locking mechanism. If O_EXCL is set and the last component of
+        --              the pathname is a symbolic link, SYS_OPEN will fail even if the
+        --              symbolic link points to a non-existent name.
+        --  O_SHLOCK:   atomically obtain a shared lock
+        --  O_EXLOCK:   atomically obtain an exclusive lock
+      if tfilesharingset:[tfs_read,tfs_write]*sharing<>tfilesharingset:[] then
+        sys_flags or unix.o_shlock;
+        end if;
+        }
+      begin
+        -- prepare filename (8 bit ascciz)
+        to_system_string(name,sys_name);
+
+        -- try to open file
+        unix.sys_open(sys_name^,sys_flags,sys_mode,handle,sys_error);
+
+      leave
+        -- free temporary name
+        discard sys_name;
+        end;
+
+      -- check result
+      if sys_error=unix.err_ok
+        then res:=tfe_ok;
+        else res:=tfe_open;
+        end if;
+      end fopen;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static fclose =
+    -- Closes the file.
+    -- File need not be opened (nothing happens in this case).
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- close a file
+      unix.sys_close(handle,sys_error);
+
+      -- check result
+      if sys_error=unix.err_ok
+        then res:=tfe_ok;
+        else res:=tfe_close;
+        end if;
+      end fclose;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static fseek (
+        pos        : in tfilepointer) =                    -- position within the file
+    -- Sets file pointer to the given position.
+    ------------------------------------------------------------------------------------------------
+    var
+      newpos       : unix.tsys_int;
+
+    begin
+      -- try to seek
+      unix.sys_lseek(handle,unix.tsys_int(pos),unix.seek_set,newpos,sys_error);
+
+      -- check result
+      if sys_error=unix.err_ok
+        then res:=tfe_ok;
+        else res:=tfe_close;
+        end if;
+      end fseek;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static fread =
+    -- Reads LEN bytes at position POS from the file and stores them to the BUFFER.
+    -- File must be open with the read (read/write) access.
+    ------------------------------------------------------------------------------------------------
+    var
+      read         : unix.tsys_size;             -- number of bytes read
+
+    begin
+      -- set file pointer
+      fseek(pos);
+      if res<>tfe_ok then return end if;
+
+      -- try to read the data block
+      unix.sys_read(handle,buffer,len,read,sys_error);
+
+      -- check result
+      if sys_error=unix.err_ok
+        then res:=tfe_ok;
+        else res:=tfe_read;
+        end if;
+      end fread;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static fsize =
+    -- Current size of the file.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=0;
+      res:=tfe_ok;
+      sys_error:=0;
+      #error 'Unimplemented';
+      end fsize;
+
+    end tfile;
+
+end files;

@@ -1,0 +1,353 @@
+---------------------------------------------------------------------------------------------------
+module private lists =
+-- Data structures - linked lists.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure list_init =
+-- Initializes the list.
+-- If HOMOGENOUS=True then only items of type ITEMTYPE are permitted on the list, otherwise only
+-- item of type ITEMTYPE and all its descendants.
+----------------------------------------------------------------------------------------------------
+begin
+  list.item_type:=item_type;
+  list.homogenous:=homogenous;
+  list.circular:=circular;
+  end list_init;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_new_first =
+-- Creates new item and places it to the beginning of the list.
+-- The type of the item is according to the type of the real parameter (item:tag:base).
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+{%%TODO(TAG)
+  -- create a new item
+  new item tag list.item_type;
+
+  -- insert to the beginning of the list
+  list_insert_first(list,item);
+}
+  end list_new_first;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_new_last =
+-- Creates new item and places it to the end of the list.
+-- The type of the item is according to the type of the real parameter (item:tag:base).
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+{%%TODO(TAG)
+  -- create a new item
+  new item tag list.item_type;
+
+  -- insert to the end of the list
+  list_insert_last(list,item);
+}
+  end list_new_last;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_new_before =
+-- Creates new item and places it before the specified REFITEM.
+-- Raises LIST_ERROR if REFITEM is NIL.
+-- The type of the item is according to the type of the real parameter (item:tag:base).
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+{%%TODO(TAG)
+  -- create a new item
+  new item tag list.item_type;
+
+  -- insert before the specified [refitem]
+  list_insert_before(list,item,refitem);
+}
+  end list_new_before;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_new_after =
+-- Creates new item and places it after the specified REFITEM.
+-- Raises LIST_ERROR if REFITEM is NIL.
+-- The type of the item is according to the type of the real parameter (item:tag:base).
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+{%%TODO(TAG)
+  -- create a new item
+  new item tag list.item_type;
+
+  -- insert after the specified [refitem]
+  list_insert_after(list,item,refitem);
+}
+  end list_new_after;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_insert_first =
+-- Places the given item to the beginning of the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item^.next:=list.first;
+  if list.first<>nil
+    then list.first^.prev:=item;
+    else list.last:=item;
+    end if;
+  list.first:=item;
+  end list_insert_first;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_insert_last =
+-- Places the given item to the end of the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item^.prev:=list.last;
+  if list.last<>nil
+    then list.last^.next:=item;
+    else list.first:=item;
+    end if;
+  list.last:=item;
+  end list_insert_last;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_insert_before =
+-- Places the given item to before the specified REFITEM.
+----------------------------------------------------------------------------------------------------
+begin
+  --%%TODO(LIB) check whether REFITEM is in the list
+  item^.prev:=refitem^.prev;
+  item^.next:=refitem;
+  if refitem^.prev<>nil
+    then refitem^.prev^.next:=item;
+    else list.first:=item;
+    end if;
+  refitem^.prev:=item;
+  end list_insert_before;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_insert_after =
+-- Places the given item to after the specified REFITEM.
+----------------------------------------------------------------------------------------------------
+begin
+  --%%TODO(LIB) check whether REFITEM is in the list
+  item^.next:=refitem^.next;
+  item^.prev:=refitem;
+  if refitem^.next<>nil
+    then refitem^.next^.prev:=item;
+    else list.last:=item;
+    end if;
+  refitem^.next:=item;
+  end list_insert_after;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_discard =
+-- Removes the specified item from the list and discards it.
+----------------------------------------------------------------------------------------------------
+begin
+  list_remove(list,item);
+  discard item;
+  end list_discard;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_discard_all =
+-- Discards all items of the list.
+----------------------------------------------------------------------------------------------------
+var
+  item             : p_list_item;
+
+begin
+  loop
+    item:=list.first;
+    if item=nil then break end if;
+    list.first:=item^.next;
+    discard item;
+    end loop;
+  end list_discard_all;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_remove =
+-- Removes the specified item from the list.
+----------------------------------------------------------------------------------------------------
+begin
+  if item^.prev<>nil
+    then item^.prev^.next:=item^.next;
+    else list.first:=item^.next;
+    end if;
+  if item^.next<>nil
+    then item^.next^.prev:=item^.prev;
+    else list.last:=item^.prev;
+    end if;
+  end list_remove;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_is_empty =
+-- Return [true] if the list is empty, or [false] otherwise.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=list.first=nil;
+  end list_is_empty;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_get_first =
+-- Returns the first item of the list, or NIL if empty.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=list.first;
+  end list_get_first;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_get_last =
+-- Returns the last item of the list, or NIL if empty.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=list.last;
+  end list_get_last;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_get_prev =
+-- Returns the item before ITEM, or NIL if ITEM is the first item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=item^.prev;
+  end list_get_prev;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_get_next =
+-- Returns the item after ITEM, or NIL if ITEM is the last item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=item^.next;
+  end list_get_next;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_set_first =
+-- Sets ITEM to the first item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item:=list.first;
+  end list_set_first;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_set_last =
+-- Sets ITEM to the last item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item:=list.last;
+  end list_set_last;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_set_prev =
+-- Sets ITEM to the previous item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item:=item^.prev;
+  end list_set_prev;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_set_next =
+-- Sets ITEM to the next item in the list.
+----------------------------------------------------------------------------------------------------
+begin
+  item:=item^.next;
+  end list_set_next;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_iterator_init =
+-- Initializes an iterator used for walking through a list.
+----------------------------------------------------------------------------------------------------
+begin
+  iterator.list:=list;
+  iterator.direction:=direction;
+  end list_iterator_init;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_iterator_reset =
+-- Resets the iterator to its initial position.
+----------------------------------------------------------------------------------------------------
+begin
+  iterator.curr:=nil;
+  end list_iterator_reset;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_iterator_get =
+-- Retrieves one item from the list using an iterator.
+----------------------------------------------------------------------------------------------------
+begin
+  -- is this the first call to [list_iterator_get] for this [iterator] ?
+  if iterator.curr=nil 
+
+    -- yes, first call
+    then
+      -- select the logically first item
+      case iterator.direction
+        when tlwd_forward  do iterator.curr:=iterator.list^.first;
+        when tlwd_backward do iterator.curr:=iterator.list^.last;
+        end case;
+
+    -- all other calls
+    else  
+      -- check whether the current item is valid
+      if iterator.curr=nil then 
+        raise list_error;
+        end if;
+
+      -- move to the logically following item
+      case iterator.direction
+        when tlwd_forward  do iterator.curr:=iterator.curr^.next;
+        when tlwd_backward do iterator.curr:=iterator.curr^.prev;
+        end case;
+      end if;
+
+  -- return the item
+  item:=iterator.curr;
+  result:=item<>nil;
+  end list_iterator_get;
+
+
+end lists;

@@ -1,0 +1,148 @@
+----------------------------------------------------------------------------------------------------
+module public classes =
+-- Data structures (lists, trees).
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- make [c_item], [c_container] and [c_iterater] and their methods to be abstract classes.
+--   -- add has_item virtual abstract method to [c_container]
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.triggers;
+
+-- forward declarations
+class c_item;      type p_item      = ^class c_item;
+class c_container; type p_container = ^class c_container;
+class c_iterator;  type p_iterator  = ^class c_iterator;
+
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT)} public c_item = extend c_trigger_container;
+-- An item storable into a container.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} to_string (
+        str        : out t_char32ustr);
+    -- Retrieves the string representation of the item.
+    ------------------------------------------------------------------------------------------------
+
+    end c_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT)} public c_container = extend c_trigger_container;
+-- A generic container of various items.
+--
+-- Remarks:
+--   The [c_container] class represents an abstract data structure used to hold items, that are 
+-- instances of [c_item] or its childres. The nature of the container is not specified and is
+-- defined by every descendant class. It may be a list (see [standard.lists.c_list]), a tree (see
+-- [standard.trees.c_tree] or any other data structure.
+--   [c_container] defines several basic operations over items:
+--   -- insertions (see [insert]),
+--   -- removal (see [remove]),
+--   -- deletion (see [delete]),
+--   -- deletion of all items within the container (see [delete_all]).
+----------------------------------------------------------------------------------------------------
+    
+    var
+      homogenous   : protected t_logical;        -- T-only items of type [item_type] can be stored
+                                                 -- within the container
+      item_type    : protected t_tag;            -- the root type of all items within the container
+      count        : protected t_unsigned;       -- number of items held by this object
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} insert (
+        item       : in p_item);                 -- item to be inserted into the container
+    -- Inserts the given [item] into the container.
+    -- 
+    -- Remarks:
+    --   The actual place where the [item] is iserted depends on the actual container and is defined
+    -- by descendants of [c_container].
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} remove (
+        item       : in p_item);                 -- item to be removed from the container
+    -- Removes the given [item] from the container.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} delete (
+        item       : in out p_item);             -- item to be deleted from the container
+    -- Removes and discards the given [item] from the container. Sets value of [item] to nil.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} delete_all;
+    -- Removes and discards all items in the container.
+    ------------------------------------------------------------------------------------------------
+
+    end c_container;
+
+
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT)} public c_iterator = extend c_trigger_container;
+-- Provides iterator capabilities for a container.
+--
+-- Remarks:
+--   An iterator represented by a [c_iterator] class is a utility object, that serves for 
+-- enumerating (iterating) all items contained in a container.
+--   Within the [c_iterator] class, there is no method how to specify the actual container (that is
+-- to initialize it) the iterator shall operate on. Since there may be any specific settings needed, 
+-- for the actual iterator operating on a specific type of container to work properly, the 
+-- initialization of the iterator is left upon [c_iterator]'s descendants.
+-- 
+-- When there are any modifications (e.g. insertions and removals of items) to the contents of the
+-- container during the lifetime of an iterator, they may not be reflected to the user of the
+-- iterator. This means, that when a deletion of an item happens in a part of a container, that was
+-- already enumerated, it is not reported to the user in any way. Analogicaly, when an insertion
+-- occurs to a part of a container, that was already enumerated, that item won't be enumerated to
+-- the user.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} reset;
+    -- Resets the iterator, so it can be re-used on top of the same container.
+    --
+    -- Remarks:
+    --   The [reset] methos maintains all properties of the iterator, but the position within the
+    -- container.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} get (
+        item       : out {%%TODO(TAG) class} p_item) -- retrieved item
+        return t_logical;                        -- T-an item was sucessfuly retrieved
+    -- Retrieves one item from the corresponding container.
+    -- 
+    -- Remarks:
+    --   To process all items in a containter, the suggested usage of the [get] method is within 
+    -- the condition of a while statement:
+    --
+    --    while iterator.get(item) loop
+    --      -- process item
+    --      end loop;
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    var
+      container    : p_container;
+
+    end c_iterator;
+
+
+----------------------------------------------------------------------------------------------------
+-- #separate public data_records;
+-- Data structures - basic data records.
+-- %%TODO(LIB) To be considered.
+----------------------------------------------------------------------------------------------------
+#separate public lists;
+-- Data structures - linked lists.
+----------------------------------------------------------------------------------------------------
+#separate public trees;
+-- Data structures - trees.
+----------------------------------------------------------------------------------------------------
+#separate public hash_tables;
+-- Data structures - hash tables.
+----------------------------------------------------------------------------------------------------
+
+end classes;

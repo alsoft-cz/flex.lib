@@ -1,0 +1,2769 @@
+
+----------------------------------------------------------------------------------------------------
+module unix =
+-- Unix System Call Library (Linux, FreeBSD, OpenBSD, NetBSD)
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+const
+  sys_stdin      = 0;           -- standard input
+  sys_stdout     = 1;           -- standard output
+  sys_stderr     = 2;           -- standard error output
+
+type
+  -- POSIX types
+  tsys_int       = signed   32; -- standard signed integer
+  tsys_pid       = signed   32; -- process ID
+  tsys_off       = signed   32; -- pointer/offset in the file
+  tsys_size      = unsigned 32; -- size of the data for read/write operations
+  tsys_time      = signed   32; -- time measured in seconds
+  tsys_char      = character 8;
+  psys_char      = ^tsys_char;
+  tsys_str       = array of tsys_char;
+  psys_str       = ^tsys_str for machine_pointer use true;
+  tsys_sockaddr  = ^tsys_char;       -- socket address (null terminated string)
+  tsys_caddr     = ^tsys_char;
+  tsys_pchararray= array of psys_char;
+  tsys_short     = signed   16;
+--tsys_dev       = unsigned 16;
+--tsys_ino       = unsigned 32;
+--tsys_mode      = unsigned 16;
+--tsys_nlink     = unsigned 16;
+--tsys_uid       = unsigned 16;
+--tsys_gid       = unsigned 16;
+--tsys_ssize     = signed   32;
+--tsys_ptrdiff   = signed   32;
+--tsys_clock     = signed   32;
+--tsys_daddr     = signed   32;
+
+--tsys_iovec = record
+--  iov_base : pointer;
+--  iov_len  : tsys_int;
+--  end record;
+
+--tsys_iovecs = array of tsys_iovec;
+
+  -- pair of two socket handles
+  tsys_spair = array 0..1 of tsys_int;
+
+type
+  { Linux signals }
+  #if #environment target_os_type;='LINUX';
+  tsys_signal = enum
+    { 0} sig_;           { 1} sig_hup;        { 2} sig_int;        { 3} sig_quit;
+    { 4} sig_ill;        { 5} sig_trap;       { 6} sig_abrt;       { 7} sig_bus;
+    { 8} sig_fpe;        { 9} sig_kill;       {10} sig_usr1;       {11} sig_segv;
+    {12} sig_usr2;       {13} sig_pipe;       {14} sig_alrm;       {15} sig_term;
+    {16} sig_stkflt;     {17} sig_chld;       {18} sig_cont;       {19} sig_stop;
+    {20} sig_tstp;       {21} sig_ttin;       {22} sig_ttou;       {23} sig_urg;
+    {24} sig_xcpu;       {25} sig_xfsz;       {26} sig_vtalrm;     {27} sig_prof;
+    {28} sig_winch;      {29} sig_io;         {30} sig_pwr;        {31} sig_unused;
+    end enum;
+  #end if;
+
+  { FreeBSD signals }
+  #if #environment target_os_type;='FREEBSD';{_ostype_=2;}
+  tsys_signal = enum
+    { 0} sig_;           { 1} sig_hup;        { 2} sig_int;        { 3} sig_quit;
+    { 4} sig_ill;        { 5} sig_trap;       { 6} sig_abrt;       { 7} sig_emt;
+    { 8} sig_fpe;        { 9} sig_kill;       {10} sig_bus;        {11} sig_segv;
+    {12} sig_sys;        {13} sig_pipe;       {14} sig_alrm;       {15} sig_term;
+    {16} sig_urg;        {17} sig_stop;       {18} sig_tstp;       {19} sig_cont;
+    {20} sig_chld;       {21} sig_ttin;       {22} sig_ttou;       {23} sig_io;
+    {24} sig_xcpu;       {25} sig_xfsz;       {26} sig_vtalrm;     {27} sig_prof;
+    {28} sig_winch;      {29} sig_info;       {30} sig_usr1;       {31} sig_usr2;
+    end enum;
+  #end if;
+
+  -- signal mask
+  tsys_sigset = tsys_int; {set of tsys_signal;}
+
+const
+  -- synonyms for some signals
+  sig_pool = sig_io;
+  sig_lost = sig_io;
+  sig_iot  = sig_abrt;
+
+
+--  Signal      Default action       Description
+-------------------------------------------------------------------------------------
+--  SIGHUP      terminate process    terminal line hangup
+--  SIGINT      terminate process    interrupt program
+--  SIGQUIT     create core image    quit program
+--  SIGILL      create core image    illegal instruction
+--  SIGTRAP     create core image    trace trap
+--  SIGABRT     create core image    abort(3) call (formerly SIGIOT)
+--  SIGEMT      create core image    emulate instruction executed
+--  SIGFPE      create core image    floating-point exception
+--  SIGKILL     terminate process    kill program
+--  SIGBUS      create core image    bus error
+--  SIGSEGV     create core image    segmentation violation
+--  SIGSYS      create core image    non-existent system call invoked
+--  SIGPIPE     terminate process    write on a pipe with no reader
+--  SIGALRM     terminate process    real-time timer expired
+--  SIGTERM     terminate process    software termination signal
+--  SIGURG      discard signal       urgent condition present on socket
+--  SIGSTOP     stop process         stop (cannot be caught or ignored)
+--  SIGTSTP     stop process         stop signal generated from keyboard
+--  SIGCONT     discard signal       continue after stop
+--  SIGCHLD     discard signal       child status has changed
+--  SIGTTIN     stop process         background read attempted from control terminal
+--  SIGTTOU     stop process         background write attempted to control terminal
+--  SIGIO       discard signal       I/O is possible on a descriptor (see SYS_FCNTL)
+--  SIGXCPU     terminate process    cpu time limit exceeded (see SYS_SETRLIMIT)
+--  SIGXFSZ     terminate process    file size limit exceeded (see SYS_SETRLIMIT)
+--  SIGVTALRM   terminate process    virtual time alarm (see SYS_SETITIMER)
+--  SIGPROF     terminate process    profiling timer alarm (see SYS_SETITIMER)
+--  SIGWINCH    discard signal       Window size change
+--  SIGINFO     discard signal       status request from keyboard
+--  SIGUSR1     terminate process    User defined signal 1
+--  SIGUSR2     terminate process    User defined signal 2
+
+
+-- struct  freebsd_sigcontext {
+--   int sc_onstack;   /* sigstack state to restore */
+--   int sc_mask;    /* signal mask to restore */
+--   int sc_esp;     /* machine state */
+--   int sc_ebp;
+--   int sc_isp;
+--   int sc_eip;
+--   int sc_eflags;
+--   int sc_es;
+--   int sc_ds;
+--   int sc_cs;
+--   int sc_ss;
+--   int sc_edi;
+--   int sc_esi;
+--   int sc_ebx;
+--   int sc_edx;
+--   int sc_ecx;
+--   int sc_eax;
+--   int sc_gs;
+--   int sc_fs;
+--   int sc_trapno;
+--   int sc_err;
+-- };
+
+type
+   tsys_linux_sigcontext = record
+     egs       : tsys_int;
+     efs       : tsys_int;
+     ees       : tsys_int;
+     eds       : tsys_int;
+     edi       : tsys_int;
+     esi       : tsys_int;
+     ebp       : tsys_int;
+     esp       : tsys_int;
+     ebx       : tsys_int;
+     edx       : tsys_int;
+     ecx       : tsys_int;
+     eax       : tsys_int;
+     trapno    : tsys_int;
+     err       : tsys_int;
+     eip       : tsys_int;
+     ecs       : tsys_int;
+     eflags    : tsys_int;
+     esp_at_sig: tsys_int;
+     ess       : tsys_int;
+     fpstate   : tsys_int;
+     oldmask   : tsys_int;
+     cr2       : tsys_int;
+     end record;
+
+--   ACT.SA_FLAGS:The logical OR of some subset of:
+--     SA_NOCLDSTOP: If this bit is set when installing a catching function for the SIGCHLD signal,
+--             the SIGCHLD signal will be generated only when a child process exits, not when
+--             a child process stops.
+--     SA_NOCLDWAIT: If this bit is set when calling SYS_SIGACTION for the SIGCHLD signal, the
+--             system will not create zombie processes when children of the calling process exit.
+--             If the calling process subsequently issues a SYS_WAIT (or equivalent), it blocks
+--             until all of the calling process's child processes terminate, and then returns ERROR.
+--     SA_ONSTACK: If this bit is set, the system will deliver the signal to the process on a signal
+--             stack, specified with SYS_SIGALTSTACK. (This is a Berkeley extension)
+--     SA_NODEFER: If this bit is set, further occurrences of the delivered signal are not masked
+--             during the execution of the handler.
+--     SA_RESETHAND: If this bit is set, the handler is reset back to SIG_DFL at the moment the
+--             signal is delivered.
+
+
+  tsys_sigcontext = tsys_linux_sigcontext;
+
+  tsys_shandler = procedure ( sig : tsys_int; code : tsys_int; scp : in tsys_sigcontext );
+  psys_shandler = ^tsys_shandler for machine_pointer use true;
+-- Here sig is the signal number, into which the hardware faults and traps are mapped. Code is a
+-- parameter that is either a constant or the code provided by the hardware. Scp is a pointer to the
+-- sigcontext structure (defined in <signal.h>), used to restore the context from before the signal.
+
+  tsys_sigaction = record
+    sa_handler : psys_shandler; -- signal handler procedure
+    sa_mask    : tsys_sigset;   -- signal mask to apply
+    sa_flags   : tsys_int;      -- signal options
+    pad        : tsys_int;      -- (obsolete)
+    end record;
+
+  tsys_timeval = record
+    tv_sec     : tsys_time;     -- seconds
+    tv_usec    : tsys_int;      -- microseconds
+    end record;
+
+  tsys_timespec = record
+    tv_sec     : tsys_time;     -- seconds
+    tv_nsec    : tsys_int;      -- nanoseconds
+    end record;
+
+  tsys_rusage = record
+    ru_utime   : tsys_timeval;  -- user time used
+    ru_stime   : tsys_timeval;  -- system time used
+    ru_maxrss  : tsys_int;      -- maximum resident set size
+    ru_ixrss   : tsys_int;      -- integral shared memory size */
+    ru_idrss   : tsys_int;      -- integral unshared data size */
+    ru_isrss   : tsys_int;      -- integral unshared stack size */
+    ru_minflt  : tsys_int;      -- page reclaims
+    ru_majflt  : tsys_int;      -- page faults
+    ru_nswap   : tsys_int;      -- swaps
+    ru_inblock : tsys_int;      -- block input operations
+    ru_oublock : tsys_int;      -- block output operations
+    ru_msgsnd  : tsys_int;      -- messages sent
+    ru_msgrcv  : tsys_int;      -- messages received
+    ru_nsignals: tsys_int;      -- signals received
+    ru_nvcsw   : tsys_int;      -- voluntary context switches
+    ru_nivcsw  : tsys_int;      -- involuntary
+    end record;
+
+
+  tsys_flock_freebsd = record
+    l_start    : tsys_off;      -- starting offset
+    l_len      : tsys_off;      -- len = 0 means until end of file
+    l_pid      : tsys_pid;      -- lock owner
+    l_type     : tsys_short;    -- lock type: read/write, etc.
+    l_whence   : tsys_short;    -- type of l_start
+    end record;
+
+  tsys_flock_linux = record
+    l_type     : tsys_short;    -- lock type: read/write, etc.
+    l_whence   : tsys_short;    -- type of l_start
+    l_start    : tsys_off;      -- starting offset
+    l_len      : tsys_off;      -- len = 0 means until end of file
+    l_pid      : tsys_pid;      -- lock owner
+    end record;
+
+
+  tsys_mmap_protections = enum
+    prot_read;
+    prot_write;
+    prot_exec;
+    end enum;
+
+  tsys_mmap_protset = set of tsys_mmap_protections;
+
+  tsys_mmap_flags = enum
+    {01} map_shared;
+    {02} map_private;
+    {04} map_unused04;
+    {08} map_unused08;
+    {10} map_fixed;
+    {20} map_anonymous;
+    end enum;
+
+  tsys_mmap_flagsset = set of tsys_mmap_flags;
+
+  -- file open/create modes from fcntl.h
+  const
+    O_ACCMODE  = 8$0000003;
+    O_RDONLY   = 8$0000000;
+    O_WRONLY   = 8$0000001;
+    O_RDWR     = 8$0000002;
+    O_CREAT    = 8$0000100; -- not fcntl
+    O_EXCL     = 8$0000200; -- not fcntl
+    O_NOCTTY   = 8$0000400; -- not fcntl
+    O_TRUNC    = 8$0001000; -- not fcntl
+    O_APPEND   = 8$0002000;
+    O_NONBLOCK = 8$0004000;
+    O_NDELAY   = O_NONBLOCK;
+    O_SYNC     = 8$0010000;
+    FASYNC     = 8$0020000;  -- fcntl, for BSD compatibility
+    O_DIRECT   = 8$0040000;  -- direct disk access hint - currently ignored
+    O_LARGEFILE= 8$0100000;
+    O_DIRECTORY= 8$0200000; -- must be a directory
+    O_NOFOLLOW = 8$0400000; -- don't follow links
+
+  -- seek modes
+  const
+    SEEK_SET   = 0;
+    SEEK_CUR   = 1;
+    SEEK_END   = 2;
+
+  -- error codes
+  const
+    err_ok     = 0;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure sys_exit (                           -- terminate the calling process
+               status  : in     tsys_int);     -- exit status of the calling process
+-- DESCRIPTION
+--   The SYS_EXIT function terminates a process with the following consequences:
+--     * All of the descriptors open in the calling process are closed. This may entail delays, for
+--       example, waiting for output to drain; a process in this state may not be killed, as it is
+--       already dying.
+--     * If the parent process of the calling process has an outstanding SYS_WAIT call or catches
+--       the SIGCHLD signal, it is notified of the calling process's termination and the status is
+--       set as defined by SYS_WAIT.
+--     * The parent process-ID of all of the calling process's existing child processes are set
+--       to 1; the initialization process (init) inherits each of these processes.
+--     * If the termination of the process causes any process group to become orphaned (usually
+--       because the parents of all members of the group have now exited), and if any member of the
+--       orphaned group is stopped, the SIGHUP signal and the SIGCONT signal are sent to all members
+--       of the newly-orphaned process group.
+--     * If the process is a controlling process, the SIGHUP signal is sent to the foreground pro
+--       cess group of the controlling terminal, and all current access to the controlling terminal
+--       is revoked.
+--   Most C programs call the library routine LIB_EXIT,  which flushes buffers, closes streams,
+--   unlinks temporary files, etc., before calling SYS_EXIT.
+-- PARAMETERS
+--   STATUS:   exit status of process.
+-- RETURN VALUES
+--   SYS_EXIT never returns.
+-- SEE ALSO
+--   SYS_FORK, SYS_SIGACTION, SYS_WAIT, SYS_EXECVE, SYS_WAITPID, SYS_WAIT4, SYS_KILL
+-- CONFORMING TO
+--   Linux 2.1, BSD 4.3, SVr4, X/OPEN, IEEE Std1003.1-1988 (POSIX)
+--   Linux 21.7.1993, FreeBSD 4.6.1993, OpenBSD 4.6.1993, NetBSD 4.6.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_fork (                           -- create a new process
+               pid     :    out tsys_pid;      -- new process PID
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_FORK causes creation of a new process. The new process (child process) is an exact copy of
+--   the calling process (parent process) except for the following:
+--     * The child process has a unique process ID.
+--     * The child process has a different parent process ID (i.e., the process ID of the parent
+--       process).
+--     * The child process has its own copy of the parent's descriptors. These descriptors reference
+--       the same underlying objects, so that, for instance, file pointers in file objects are
+--       shared between the child and the parent, so that an SYS_LSEEK on a descriptor in the child
+--       process can affect a subsequent SYS_READ or SYS_WRITE by the parent. This descriptor
+--       copying is also used by the shell to establish standard input and output for newly created
+--       processes as well as to set up pipes.
+--     * The child process' resource utilizations are set to 0; see SYS_SETRLIMIT.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   PID:      Upon successful completion, SYS_FORK returns a value of 0 to the child process and
+--             returns the process ID of the child process to the parent process.
+--   ERROR:    Error code. When ERROR<>0, no child process is created.
+-- ERRORS
+--   EAGAIN:   The system-imposed limit on the total number of processes under execution would be
+--             exceeded. The limit is given by the sysctl(3) MIB variable KERN_MAXPROC. (The limit
+--             is actually one less than this except for the super user).
+--   EAGAIN:   The user is not the super user, and the system-imposed limit on the total number of
+--             processes under execution by a single user would be exceeded. The limit is given by
+--             the sysctl(3) MIB variable KERN_MAXPROCPERUID.
+--   EAGAIN:   The user is not the superuser, and the soft resource limit corresponding to the
+--             resource parameter RLIMIT_NPROC would be exceeded (see SYS_GETRLIMIT).
+--   ENOMEM:   There is insufficient swap space for the new process.
+-- SEE ALSO
+--   SYS_CLONE, SYS_EXECVE, SYS_WAIT, SYS_SETRLIMIT, SYS_VFORK
+-- CONFORMING TO
+--   Linux 1.2.9, BSD 4.3, SVr4, X/OPEN, IEEE Std1003.1-1988 (POSIX)
+--   Linux 10.6.1995, FreeBSD 4.6.1993, OpenBSD 4.6.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_vfork (                          -- spawn new process and block parent
+               pid     :    out tsys_pid;      -- new process PID
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_VFORK can be used to create new processes without fully copying the address space of the
+--   old process, which is horrendously inefficient in a paged environment. It is useful when the
+--   purpose of SYS_FORK would have been to create a new system context for an SYS_EXECVE.
+--   SYS_VFORK differs from SYS_FORK in that the child borrows the parent's memory and thread of
+--   control until a call to SYS_EXECVE or an SYS_EXIT. The parent process is suspended while the
+--   child is using its resources.
+--     SYS_VFORK can normally be used just like SYS_FORK. It does not work, however, to return
+--   while running in the childs context from the procedure that called SYS_VFORK since the
+--   eventual return from SYS_VFORK would then return to a no longer existent stack frame.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   Same as for SYS_FORK.
+-- SEE ALSO
+--   SYS_EXIT, SYS_EXECVE, SYS_FORK, SYS_RFORK, SYS_SIGVEC, SYS_WAIT
+-- CONFORMING TO
+--   Linux 1.2.9, BSD 3.0, SVr4, X/OPEN, IEEE Std1003.1-1988 (POSIX)
+--   Linux 10.6.1995, FreeBSD 4.6.1993, OpenBSD 30.6.1997
+-- NOTES
+--   This system call will be eliminated when proper system sharing mechanisms are implemented.
+--   Users should not depend on the memory sharing semantics of vfork(2) as it will, in that case,
+--   be made synonymous to SYS_FORK.
+--     To avoid a possible deadlock situation, processes that are children in the middle of
+--   a SYS_VFORK are never sent SIGTTOU or SIGTTIN signals; rather, output or SYS_IOCTL calls are
+--   allowed and input attempts result in an end-of-file indication.
+----------------------------------------------------------------------------------------------------
+procedure sys_rfork (                          -- manipulate process resources
+               flags   : in     tsys_int;      -- new process PID
+               pid     :    out tsys_pid;      -- new process PID
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   Forking, vforking or rforking are the only ways new processes are created. The flags argument
+--   to SYS_RFORK selects which resources of the invoking process (parent) are shared by the new
+--   process (child) or initialized to their default values. The resources include the open file
+--   descriptor table (which, when shared, permits processes to open and close files for other
+--   processes), and open files.
+--     File descriptors in a shared file descriptor table are kept open until either they are
+--   explicitly closed or all processes sharing the table exit.
+-- PARAMETERS
+--   FLAGS:    The logical OR of some subset of:
+--               RFPROC:   If set a new process is created; otherwise changes affect the current
+--                         process. The current implementation requires this flag to always be set.
+--                         If RFPROC is set, the value returned in the parent process is the
+--                         process id of the child process; the value returned in the child is
+--                         zero. Without RFPROC, the return value is zero. Process id's range from
+--                         1 to the maximum integer (tsys_int) value. SYS_RFORK will sleep,
+--                         if necessary, until required process resources are available.
+--               RFNOWAIT: If set, the child process will be dissociated from the parent. Upon exit
+--                         the child will not leave a status for the parent to collect.
+--                         See SYS_WAIT.
+--               RFFDG:    If set, the invoker's file descriptor table is copied; otherwise the two
+--                         processes share a single table.
+--               RFCFDG:   If set, the new process starts with a clean file descriptor table.
+--                         Is mutually exclusive with RFFDG.
+--               RFMEM:    If set, the kernel will force sharing of the entire address space. The
+--                         child will then inherit all the shared segments the parent process owns.
+--                         Other segment types will be unaffected. Subsequent forks by the parent
+--                         will then propagate the shared data and bss between children. The stack
+--                         segment is always split. May be set only with RFPROC.
+--             RFSIGSHARE: If set, the kernel will force sharing the sigacts structure between the
+--                          child and the parent.
+--             RFLINUXTHPN: If set, the kernel will return SIGUSR1 instead of SIGCHILD upon thread
+--                         exit for the child. This is intended to mimic certain Linux clone
+--                         behaviour.
+-- RETURN VALUES
+--   Same as for SYS_FORK.
+-- NOTES
+--   SYS_FORK can be implemented as a call to SYS_RFORK(RFFDG | RFPROC) but isn't for backwards
+--   compatibility.
+-- ERRORS
+--   EAGAIN:   The system-imposed limit on the total number of processes under execution would be
+--             exceeded. The limit is given by the sysctl(3) MIB variable KERN_MAXPROC. (The limit
+--             is actually one less than this except for the super user).
+--   EAGAIN:   The user is not the super user, and the system-imposed limit on the total number of
+--             processes under execution by a single user would be exceeded. The limit is given by
+--             the sysctl(3) MIB variable KERN_MAXPROCPERUID.
+--   EAGAIN:   The user is not the superuser, and the soft resource limit corresponding to the
+--             resource parameter RLIMIT_NPROC would be exceeded (see SYS_GETRLIMIT).
+--   EINVAL:   The RFPROC flag was not specified.
+--   EINVAL:   Both the RFFDG and the RFCFDG flags were specified.
+--   ENOMEM:   There is insufficient swap space for the new process.
+-- SEE ALSO
+--   SYS_FORK, SYS_MINHERIT, SYS_VFORK
+-- CONFORMING TO
+--   BSD
+--   FreeBSD 12.1.1996, OpenBSD 12.1.1996
+----------------------------------------------------------------------------------------------------
+procedure sys_socket (                         -- create an endpoint for communication
+               domain  : in     tsys_int;      -- protocol family which should be used
+               socket  : in     tsys_int;      -- socket type
+               prot    : in     tsys_int;      -- particular protocol to be used with the socket
+               sd      :    out tsys_int;      -- socket descriptor
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_SOCKET creates an endpoint for communication and returns a descriptor.
+-- PARAMETERS
+--   DOMAIN:   The parameter specifies a communications domain within which communication will take
+--             place; this selects the protocol family which should be used. The currently
+--             understood formats are:
+--               PF_LOCAL: Host-internal protocols, formerly called PF_UNIX
+--               PF_INET:  ARPA Internet protocols)
+--               PF_ISO:   ISO protocols
+--               PF_CCITT: ITU-T protocols, like X.25
+--               PF_NS:    Xerox Network Systems protocols
+--   SOCKET:   The socket type, which specifies the semantics of communication. Currently defined
+--             types are:
+--               SOCK_STREAM: Socket provides sequenced, reliable, two-way connection based byte
+--                         streams. An out-ofband data transmission mechanism may be supported.
+--               SOCK_DGRAM: Socket supports datagrams (connectionless, unreliable messages of a
+--                         fixed (typically small) maximum length).
+--               SOCK_RAW: Socket provide access to internal network protocols and interfaces.
+--                         SOCK_RAW is available only to the super-user.
+--               SOCK_SEQPACKET: Socket may provide a sequenced, reliable, two-way connection-based
+--                         data transmission path for datagrams of fixed maximum length; a consumer
+--                         may be required to read an entire packet with each read system call. This
+--                         facility is protocol specific, and presently implemented only for PF_NS.
+--               SOCK_RDM: Planned, but not yet implemented.
+--   PROT:     Particular protocol to be used with the socket. Normally only a single protocol
+--             exists to support a particular socket type within a given protocol family. However,
+--             it is possible that many protocols may exist, in which case a particular protocol
+--             must be specified in this manner. The protocol number to use is particular to the
+--             communication domain in which communication is to take place; see protocols(5).
+-- RETURN  VALUES
+--   SD:       Descriptor referencing the socket.
+--   ERROR:    Error code.
+-- ERRORS
+--   EPROTONOSUPPORT: The protocol type or the specified protocol is not supported within this
+--             domain.
+--   EMFILE:   The per-process descriptor table is full.
+--   ENFILE:   The system file table is full.
+--   EACCES:   Permission to create a socket of the specified type and/or protocol is denied.
+--   ENOBUFS:  Insufficient buffer space is available. The socket cannot be created until sufficient
+--             resources are freed.
+-- SEE ALSO
+--   SYS_ACCEPT, SYS_BIND, SYS_CONNECT, SYS_GETPEERNAME, SYS_GETSOCKNAME, SYS_GETSOCKOPT, SYS_IOCTL,
+--   SYS_LISTEN, SYS_READ, SYS_RECV, SYS_SELECT, SYS_SEND, SYS_SHUTDOWN, SYS_SOCKETPAIR, SYS_WRITE
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 24.11.1997, OpenBSD 4.6.1993
+-- NOTES
+--   Sockets of type SOCK_STREAM are full-duplex byte streams, similar to pipes. A stream socket
+--   must be in a connected state before any data may be sent or received on it. A connection to
+--   another socket is created with a SYS_CONNECT call. Once connected, data may be transferred
+--   using SYS_READ and SYS_WRITE calls or some variant of the SYS_SEND and SYS_RECV calls. (Some
+--   protocol families, such as the Internet family, support the notion of an "implied connect,"
+--   which permits data to be sent piggybacked onto a connect operation by using the SYS_SENDTO
+--   call.) When a session has been completed a SYS_CLOSE may be performed. Out-of-band data may
+--   also be transmitted as described in SYS_SEND and received as described in SYS_RECV.
+--     The communications protocols used to implement a SOCK_STREAM insure that data is not lost or
+--   duplicated. If a piece of data for which the peer protocol has buffer space cannot be
+--   successfully transmitted within a reasonable length of time, then the connection is considered
+--   broken and calls will indicate an error ETIMEDOUT. The protocols optionally keep sockets "warm"
+--   by forcing transmissions roughly every minute in the absence of other activity. An error is
+--   then indicated if no response can be elicited on an otherwise idle connection for a extended
+--   period (e.g. 5 minutes). A SIGPIPE signal is raised if a process sends on a broken stream; this
+--   causes naive processes, which do not handle the signal, to exit.
+--     SOCK_SEQPACKET sockets employ the same system calls as SOCK_STREAM sockets. The only
+--   difference is that SYS_READ calls will return only the amount of data requested, and any
+--   remaining in the arriving packet will be discarded.
+--     SOCK_DGRAM and SOCK_RAW sockets allow sending of datagrams to correspondents named in
+--   SYS_SEND calls. Datagrams are generally received with SYS_RECVFROM, which returns the next
+--   datagram with its return address.
+--     An SYS_FCNTL call can be used to specify a process group to receive a SIGURG signal when the
+--   out-of-band data arrives. It may also enable non-blocking I/O and asynchronous notification of
+--   I/O events via SIGIO.
+--     The operation of sockets is controlled by socket level options. SYS_SETSOCKOPT and
+--   SYS_GETSOCKOPT are used to set and get options, respectively.
+----------------------------------------------------------------------------------------------------
+procedure sys_bind (                           -- assign a local protocol address to a socket.
+               s       :        tsys_int;      -- socket descriptor
+               addr    :    ref tsys_sockaddr; --
+               addrlen :    ref tsys_int;      --
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_BIND assigns the local protocol address to a socket. When a socket is created with
+--   SYS_SOCKET it exists in an address family space but has no protocol address assigned. SYS_BIND
+--   requests that ADDR be assigned to the socket.
+-- PARAMETERS
+--   S:        socket that has been created with SYS_SOCKET
+--   ADDR:     pointer to space where the address will be stored
+--   ADDRLEN:  amount of space pointed to by ADDR
+-- RETURN VALUES
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    S is not a valid descriptor.
+--   ENOTSOCK: S is not a socket.
+--   EADDRNOTAVAIL: The specified address is not available from the local machine.
+--   EADDRINUSE: The specified address is already in use.
+--   EACCES:   The requested address is protected, and the current user has inadequate
+--             permission to access it.
+--   EFAULT:   The addr parameter is not in a valid part of the user address space.
+--
+--   The following errors are specific to binding addresses in the UNIX domain.
+--   ENOTDIR:  A component of the path prefix is not a directory.
+--   ENAMETOOLONG: A component of a pathname exceeded 255 characters, or an entire path name
+--             exceeded 1023 characters.
+--   ENOENT:   A prefix component of the path name does not exist.
+--   ELOOP:    Too many symbolic links were encountered in translating the pathname.
+--   EIO:      An I/O error occurred while making the directory entry or allocating the inode.
+--   EROFS:    The name would reside on a read-only file system.
+--   EISDIR:   An empty pathname was specified.
+-- SEE ALSO
+--   SYS_CONNECT, SYS_GETSOCKNAME, SYS_LISTEN, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 4.6.1993
+-- NOTES
+--   Binding an address in the UNIX domain creates a socket in the file system that must be deleted
+--   by the caller when it is no longer needed (using SYS_UNLINK).
+--     The rules used in address binding vary between communication domains.
+----------------------------------------------------------------------------------------------------
+procedure sys_listen (                         -- listen for connections on a socket
+               s       : in     tsys_int;      -- socket descriptor
+               backlog : in     tsys_int;      --
+               error   :    out tsys_int);     -- error code
+
+-- DESCRIPTION
+--   To accept connections, a socket is first created with SYS_SOCKET, a willingness to accept
+--   incoming connections and a queue limit for incoming connections are specified with SYS_LISTEN,
+--   and then the connections are accepted with SYS_ACCEPT.  The SYS_LISTEN call applies only to
+--   sockets of type SOCK_STREAM or SOCK_SEQPACKET.
+-- PARAMETERS
+--   S:        socket that has been created with SYS_SOCKET
+--   BACKLOG:  maximum length the queue of pending connections may grow to. If a connection request
+--             arrives with the queue full the client may receive an error with an indication of
+--             ECONNREFUSED, or, if the underlying protocol supports retransmission, the request may
+--             be ignored so that retries may succeed. BSD (and at least some BSD derived systems)
+--             limit the backlog to 5.
+-- RETURN VALUES
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    The argument s is not a valid descriptor.
+--   ENOTSOCK: The argument s is not a socket.
+--   EOPNOTSUPP: The socket is not of a type that supports the operation SYS_LISTEN.
+-- SEE ALSO
+--   SYS_ACCEPT, SYS_CONNECT, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2, SVr4, 4.4BSD, Linux 2.0.30
+--   FreeBSD 3.11.1995, Linux
+----------------------------------------------------------------------------------------------------
+procedure sys_accept (                         -- accept a connection on a socket
+              s        : tsys_int;             -- socket descriptor
+              addr     : ref tsys_sockaddr;    --
+              addrlen  : ref tsys_int;         --
+              error    : out tsys_int);        -- error code
+-- DESCRIPTION
+--   The argument S is a socket that has been created with SYS_SOCKET, bound to an address with
+--   SYS_BIND, and is listening for connections after a SYS_LISTEN. The SYS_ACCEPT argument extracts
+--   the first connection request on the queue of pending connections, creates a new socket with
+--   the same properties of S and allocates a new file descriptor for the socket. If no pending
+--   connections are present on the queue, and the socket is not marked as non-blocking, SYS_ACCEPT
+--   blocks the caller until a connection is present. If the socket is marked non-blocking and no
+--   pending connections are present on the queue, SYS_ACCEPT returns an error as described below.
+--   The accepted socket may not be used to accept more connections. The original socket s remains
+--   open. This call is used with connection-based socket types, currently with SOCK_STREAM.
+--     It is possible to SYS_SELECT a socket for the purposes of doing an SYS_ACCEPT by selecting it
+--   for read. For certain protocols which require an explicit confirmation, such as ISO or
+--   DATAKIT, SYS_ACCEPT can be thought of as merely dequeueing the next connection request and not
+--   implying confirmation. Confirmation can be implied by a normal read or write on the new file
+--   descriptor, and rejection can be implied by closing the new socket.
+--     One can obtain user connection request data without confirming the connection by issuing a
+--   SYS_RECVMSG call with an msg_iovlen of 0 and a non-zero msg_controllen, or by issuing a
+--   SYS_GETSOCKOPT request. Similarly, one can provide user connection rejection information by
+--   issuing a SYS_SENDMSG call with providing only the control information, or by calling
+--   SYS_SETSOCKOPT.
+-- PARAMETERS
+--   S:       socket that has been created with SYS_SOCKET
+--   ADDR:    pointer to space where the address will be stored
+--   ADDRLEN: amount of space pointed to by ADDR
+-- RETURN VALUES
+--   ADDR:    is a result parameter that is filled in with the address of the connecting entity, as
+--            known to the communications layer. The exact format of the ADDR parameter is
+--            determined by the domain in which the communication is occurring.
+--   ADDRLEN: actual length (in bytes) of the address returned.
+--   ERROR:   Error code.
+-- ERRORS
+--   EBADF:   The descriptor is invalid.
+--   EINTR:   The SYS_ACCEPT operation was interrupted.
+--   EMFILE:  The per-process descriptor table is full.
+--   ENFILE:  The system file table is full.
+--   ENOTSOCK: The descriptor references a file, not a socket.
+--   EINVAL:  SYS_LISTEN has not been called on the socket descriptor.
+--   EFAULT:  The addr parameter is not in a writable part of the user address space.
+--   EWOULDBLOCK: The socket is marked non-blocking and no connections are present to be accepted.
+--   Various Linux kernels can return various other errors such as EMFILE, EINVAL, ENOSR, ENOBUFS,
+--   EAGAIN, EPERM, ECONNABORTED, ESOCKTNOSUPPORT, EPROT ONOSUPPORT, ETIMEDOUT, ERESTARTSYS.
+-- SEE ALSO
+--   SYS_BIND, SYS_CONNECT, SYS_GETPEERNAME, SYS_LISTEN, SYS_SELECT, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2, SVr4
+--   FreeBSD 11.12.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_getsockname (                    -- get socket name
+              s        : in     tsys_int;      -- socket descriptor
+              name     :    out tsys_sockaddr; --
+              namelen  : in out tsys_int;      --
+              error    :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_GETSOCKNAME returns the current name for the specified socket.
+-- PARAMETERS
+--   S:        socket that has been created with SYS_SOCKET
+--   NAMELEN:  amount of space pointed to by NAME
+-- RETURN VALUES
+--   NAME:     current name of the specified socket.
+--   NAMELEN:  actual length (in bytes) of the name returned.
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    The argument S is not a valid descriptor.
+--   ENOTSOCK: The argument S is a file, not a socket.
+--   ENOBUFS:  Insufficient resources were available in the system to perform the operation.
+--   EFAULT:   The NAME parameter points to memory not in a valid part of the process address space.
+-- SEE ALSO
+--   SYS_BIND, SYS_GETPEERNAME, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 4.6.1993
+-- NOTES
+--   Names bound to sockets in the UNIX domain are inaccessible; SYS_GETSOCKNAME returns a zero
+--   length name.
+----------------------------------------------------------------------------------------------------
+procedure sys_getpeername (                    -- get name of connected peer
+              s        : in     tsys_int;      -- socket descriptor
+              name     :    out tsys_sockaddr; --
+              namelen  : in out tsys_int;      --
+              error    :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_GETPEERNAME returns the name of the peer connected to socket S. The name is truncated if
+--   the buffer provided is too small.
+-- PARAMETERS
+--   S:        socket that has been created with SYS_SOCKET
+--   NAMELEN:  amount of space pointed to by NAME
+-- RETURN VALUES
+--   NAME:     current name of the specified socket.
+--   NAMELEN:  actual length (in bytes) of the name returned.
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    The argument S is not a valid descriptor.
+--   ENOTSOCK: The argument S is a file, not a socket.
+--   ENOTCONN: The socket is not connected.
+--   ENOBUFS:  Insufficient resources were available in the system to perform the operation.
+--   EFAULT:   The NAME parameter points to memory not in a valid part of the process address space.
+-- SEE ALSO
+--   SYS_ACCEPT, SYS_BIND, SYS_GETSOCKNAME, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 4.6.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_socketpair (                     -- create a pair of connected sockets
+               domain  : in     tsys_int;      -- protocol family which should be used
+               socket  : in     tsys_int;      -- socket type
+               prot    : in     tsys_int;      -- particular protocol to be used with the socket
+               spair   :    out tsys_spair;    -- two socket descriptors
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   The SYS_SOCKETPAIR call creates an unnamed pair of connected sockets in the specified domain,
+--   of the specified type, and using the optionally specified protocol. The descriptors used in
+--   referencing the new sockets are returned in SV[0] and SV[1]. The two sockets are
+--   indistinguishable.
+-- PARAMETERS
+--   DOMAIN:   The parameter specifies a communications domain within which communication will take
+--             place; this selects the protocol family which should be used. See SYS_SOCKET.
+--   SOCKET:   The socket type, which specifies the semantics of communication. See SYS_SOCKET.
+--   PROT:     Optional. Particular protocol to be used with the socket. See SYS_SOCKET.
+-- RETURN VALUES
+--   SPAIR:    two descriptors referencing the new sockets.
+--   ERROR:    Error code.
+-- ERRORS
+--   EMFILE:   Too many descriptors are in use by this process.
+--   EAFNOSUPPORT: The specified address family is not supported on this machine.
+--   EPROTONOSUPPORT: The specified protocol is not supported on this machine.
+--   EOPNOSUPPORT: The specified protocol does not support creation of socket pairs.
+--   EFAULT:   The address sv does not specify a valid part of the process address space.
+-- SEE ALSO
+--   SYS_PIPE, SYS_READ, SYS_WRITE
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 4.6.1993
+-- NOTES
+--   This call is currently implemented only for the UNIX domain.
+----------------------------------------------------------------------------------------------------
+procedure sys_shutdown (                       -- shut down part of a full-duplex connection
+               s       : in     tsys_int;      -- socket descriptor
+               how     : in     tsys_int;
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   The SYS_SHUTDOWN call causes all or part of a full-duplex connection on the socket associated
+--   with SOCKET to be shut down.
+-- PARAMETERS
+--   S:        socket that has been created with SYS_SOCKET
+--   HOW:      One from the following:
+--               SHUT_RD:  further receives will be disallowed.
+--               SHUT_WR:  further sends will be disallowed
+--               SHUT_RDWR: further sends and receives will be disallowed.
+-- RETURN VALUES
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    S is not a valid descriptor.
+--   ENOTSOCK: S is a file, not a socket.
+--   ENOTCONN: The specified socket is not connected.
+-- SEE ALSO
+--   SYS_CONNECT, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 4.6.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_setsockopt (                     -- set options on sockets
+               s       : in     tsys_int;      -- socket descriptor
+               level   : in     tsys_int;
+               optname : in     tsys_int;
+               optval  : in     unchecked;
+               optlen  : in     tsys_int;
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_SETSOCKOPT manipulate the options associated with a socket. Options may exist at multiple
+--   protocol levels; they are always present at the uppermost "socket" level.
+--     When manipulating socket options the level at which the option resides and the name of the
+--   option must be specified. To manipulate options at the socket level, LEVEL is specified as
+--   SOL_SOCKET. To manipulate options at any other level the protocol number of the appropriate
+--   protocol controlling the option is supplied. For example, to indicate that an option is to be
+--   interpreted by the TCP protocol, level should be set to the protocol number of TCP; see
+--   getprotoent(3).
+
+-- PARAMETERS
+--   S:        Socket descriptor
+--   LEVEL:    Socket Level
+--   OPTNAME:  The following options are recognized at the socket level:
+--               SO_DEBUG: enables recording of debugging information in the underlying protocol
+--                         modules.
+--               SO_REUSEADDR: enables local address reuse. It indicates that the rules used in
+--                         validating addresses supplied in a SYS_BIND call should allow reuse of
+--                         local addresses.
+--               SO_REUSEPORT: enables duplicate address and port bindings. It allows completely
+--                         duplicate bindings by multiple processes if they all set SO_REUSEPORT
+--                         before binding the port. This option permits multiple instances of a
+--                         program to each receive UDP/IP multicast or broadcast datagrams destined
+--                         for the bound port.
+--               SO_KEEPALIVE: enables keep connections alive. It enables the periodic transmission
+--                         of messages on a connected socket.  Should the connected party fail to
+--                         respond to these messages, the connection is considered broken and
+--                         processes using the socket are notified via a SIGPIPE signal when
+--                         attempting to send data.
+--               SO_DONTROUTE: enables routing bypass for outgoing messages. It indicates that
+--                         outgoing messages should bypass the standard routing facilities. Instead,
+--                         messages are directed to the appropriate network interface according to
+--                         the network portion of the destination address.
+--               SO_LINGER: linger on close if data present. It controls the action taken when
+--                         unsent messages are queued on socket and a SYS_CLOSE is performed. If the
+--                         socket promises reliable delivery of data and SO_LINGER is set, the
+--                         system will block the process on the SYS_CLOSE attempt until it is able
+--                         to transmit the data or until it decides it is unable to deliver the
+--                         information (a timeout period, termed the linger interval, is specified
+--                         in seconds in the SYS_SETSOCKOPT call when SO_LINGER is requested). If
+--                         SO_LINGER is disabled and a SYS_CLOSE is issued, the system will process
+--                         the close in a manner that allows the process to continue as quickly as
+--                         possible.
+--               SO_BROADCAST: enables permission to transmit broadcast messages. This option
+--                         requests permission to send broadcast datagrams on the socket. Broadcast
+--                         was a privileged operation in earlier versions of the system. With
+--                         protocols that support out-of-band data,
+--               SO_OOBINLINE: enables reception of out-of-band data in band. This option requests
+--                         that out-of-band data be placed in the normal data input queue as
+--                         received; it will then be accessible with SYS_RECV or SYS_READ calls
+--                         without the MSG_OOB flag. Some protocols always behave as if this option
+--                         is set.
+--               SO_SNDBUF,
+--               SO_RCVBUF: set buffer size for output resp. input. These are options to adjust the
+--                         normal buffer sizes allocated for output and input buffers, respectively.
+--                         The buffer size may be increased for high-volume connections, or may be
+--                         decreased to limit the possible backlog of incoming data. The system
+--                         places an absolute maximum on these values, which is accessible through
+--                         the sysctl(3) MIB variable "kern.ipc.maxsockbuf".
+--               SO_SNDLOWAT: set minimum count for output. This is an option to set the minimum
+--                         count for output operations. Most output operations process all of the
+--                         data supplied by the call, delivering data to the protocol for
+--                         transmission and blocking as necessary for flow control. Nonblocking
+--                         output operations will process as much data as permitted subject to flow
+--                         control without blocking, but will process no data if flow control does
+--                         not allow the smaller of the low water mark value or the entire request
+--                         to be processed. A SYS_SELECT operation testing the ability to write to
+--                         a socket will return true only if the low water mark amount could be
+--                         processed. The default value for SO_SNDLOWAT is set to a convenient size
+--                         for network efficiency, often 1024.
+--               SO_RCVLOWAT: set minimum count for input. It is an option to set the minimum count
+--                         for input operations. In general, receive calls will block until any
+--                         (non-zero) amount of data is received, then return with the smaller of
+--                         the amount available or the amount requested. The default value for
+--                         SO_RCVLOWAT is 1. If SO_RCVLOWAT is set to a larger value, blocking
+--                         receive calls normally wait until they hav e received the smaller of the
+--                         low water mark value or the requested amount. Receive calls may still
+--                         return less than the low water mark if an error occurs, a signal is
+--                         caught, or the type of data next in the receive queue is different from
+--                         that which was returned.
+--               SO_SNDTIMEO: set timeout value for output. It is an option to set a timeout value
+--                         for output operations. It accepts a struct timeval parameter with the
+--                         number of seconds and microseconds used to limit waits for output
+--                         operations to complete. If a send operation has blocked for this much
+--                         time, it returns with a partial count or with the error EWOULDBLOCK if
+--                         no data were sent. In the current implementation, this timer is
+--                         restarted each time additional data are delivered to the protocol,
+--                         implying that the limit applies to output portions ranging in size from
+--                         the low water mark to the high water mark for output.
+--               SO_RCVTIMEO: set timeout value for input. It is an option to set a timeout value
+--                         for input operations. It accepts a struct timeval parameter with the
+--                         number of seconds and microseconds used to limit waits for input
+--                         operations to complete. In the current implementation, this timer is
+--                         restarted each time additional data are received by the protocol, and
+--                         thus the limit is in effect an inactivity timer. If a receive operation
+--                         has been blocked for this much time without receiving additional data,
+--                         it returns with a short count or with the error EWOULDBLOCK if no data
+--                         were received.
+
+--   OPTVAL,
+--   OPTLEN:   OPTNAME and any specified options are passed uninterpreted to the appropriate
+--             protocol module for interpretation. Options at other protocol levels vary in format
+--             and name. Consult the appropriate entries in section 4 of the manual. If no option
+--             value is to be supplied, OPTVAL may be NULL.
+--               Most socket-level options utilize an TSYS_INT parameter for OPTVAL. The parameter
+--             should be non-zero to enable a boolean option, or zero if the option is to be
+--             disabled. SO_LINGER uses a struct linger parameter, which specifies the desired
+--             state of the option and the linger interval. SO_SNDTIMEO and SO_RCVTIMEO
+--             use a struct timeval parameter.
+-- RETURN VALUES
+-- ERRORS
+--   EBADF:    The argument s is not a valid descriptor.
+--   ENOTSOCK: The argument s is a file, not a socket.
+--   ENOPROTOOPT: The option is unknown at the level indicated.
+--   EFAULT:   The address pointed to by OPTVAL is not in a valid part of the process address space.
+-- SEE ALSO
+--   SYS_IOCTL, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 2.5.1995
+----------------------------------------------------------------------------------------------------
+procedure sys_getsockopt (                     -- get options on sockets
+               s       : in     tsys_int;      -- socket descriptor
+               level   : in     tsys_int;
+               optname : in     tsys_int;
+               optval  : in out unchecked;                                       -- %%FLEX: OUT ONLY
+               optlen  :    out tsys_int;
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   Get the option value associated with a socket. Options may exist at multiple protocol levels;
+--   they are always present at the uppermost "socket" level.
+--     When manipulating socket options the level at which the option resides and the name of the
+--   option must be specified. To manipulate options at the socket level, level is specified as
+--   SOL_SOCKET. To manipulate options at any other level the protocol number of the appropriate
+--   protocol controlling the option is supplied. For example, to indicate that an option is to be
+--   interpreted by the TCP protocol, level should be set to the protocol number of TCP.
+-- PARAMETERS
+--   S:        Socket descriptor
+--   LEVEL:    Socket Level
+--   OPTNAME:  The same as parameter OPTNAME in the SYS_SETSOCKOPT function. In addition, SYS_GETSOCKOPT
+--             accepts one from the following values:
+--               SO_TYPE:  get the type of the socket. SO_TYPE returns the type of the socket, such
+--                         as SOCK_STREAM; it is useful for servers that inherit sockets on startup.
+--               SO_ERROR: get and clear error on the socket. SO_ERROR returns any pending error on
+--                         the socket and clears the error status. It may be used to check for
+--                         asynchronous errors on connected datagram sockets or for other
+--                         asynchronous errors.
+--   OPTLEN:   size of the buffer pointed to by OPTVAL.
+-- RETURN VALUES
+--   OPTVAL:   returned value
+--   OPTLEN:   actual size of the value returned
+--   ERROR:
+-- ERRORS
+--   Same as for SYS_SETSOCKOPT. In addition, SYS_GETSOCKOPT may return one of the following errors:
+--   EFAULT:   The address pointed to by OPTLEN is not in a valid part of the process address space.
+-- SEE ALSO
+--   SYS_IOCTL, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 2.5.1995
+----------------------------------------------------------------------------------------------------
+procedure sys_read (                         -- read from a object descriptor
+               d       : in     tsys_int;    -- object descriptor
+               buf     : in out unchecked;   -- pointer to buffer                -- %%FLEX: OUT ONLY
+               nbytes  : in     tsys_size;   --
+               result  :    out tsys_size;   --
+               error   :    out tsys_int);   -- error code
+-- DESCRIPTION
+--   SYS_READ attempts to read NBYTES of data from the object referenced by the descriptor D into
+--   the buffer pointed to by BUF. On objects capable of seeking, the SYS_READ starts at a position
+--   given by the pointer associated with D (see SYS_LSEEK). Upon return from SYS_READ, the pointer
+--   is incremented by the number of bytes actually read. Objects that are not capable of seeking
+--   always read from the current position. The value of the pointer associated with such an object
+--   is undefined.
+-- PARAMETERS
+--   D:        Object descriptor
+--   BUF:      Pointer to buffer
+--   NBYTES:   Number of required bytes
+-- RETURN VALUES
+--   RESULT:   Number of bytes actually read and placed in the buffer. The system guarantees to read
+--             the number of bytes requested if the descriptor references a normal file that has
+--             that many bytes left before the end-of-file, but in no other case.
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    D is not a valid file or socket descriptor open for reading.
+--   EFAULT:   Buf points outside the allocated address space.
+--   EIO:      An I/O error occurred while reading from the file system.
+--   EINTR:    A read from a slow device was interrupted before any data arrived by the delivery of
+--             a signal.
+--   EINVAL:   The pointer associated with D was negative.
+--   EAGAIN:   The file was marked for non-blocking I/O, and no data were ready to be read.
+-- SEE ALSO
+--   SYS_DUP, SYS_DUPFCNTL, SYS_DUPOPEN, SYS_DUPPIPE, SYS_DUPSELECT, SYS_DUPSOCKET,
+--   SYS_DUPSOCKETPAIR, SYS_READV, SYS_PREAD
+-- CONFORMING TO
+--   BSD 4.2, Linux 2.0.32, SVr4, X/OPEN, IEEE Std1003.1-1988 (POSIX)
+--   FreeBSD 26.2.1994, Linux
+----------------------------------------------------------------------------------------------------
+--ocedure sys_readv (                          -- read from a object descriptor
+--             d       : in     tsys_int;      -- object descriptor
+--             iov     : in     tsys_iovecs;   -- pointer to buffer
+--             iovcnt  : in     tsys_int;      --
+--             result  :    out tsys_size;     --
+--             error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_READV performs the same action as SYS_READ, but scatters the input data into the IOVCNT
+--   buffers specified by the members of the IOV array: IOV[0], IOV[1], ..., IOV[IOVCNT - 1].
+-- PARAMETERS
+--   D:        Object descriptor
+--   IOV:      Array of IOVEC records. Each IOVEC entry specifies the base address and length of an
+--             area in memory where data should be placed. SYS_READV will always fill an area
+--             completely before proceeding to the next.
+--   IOVCNT:   Number of elements of the IOV array.
+-- RETURN VALUES
+--   Same as for SYS_READ.
+-- ERRORS
+--   Same as for SYS_READ. In addition, SYS_READV may return one of the following errors:
+--   EINVAL:   IOVCNT was less than or equal to 0, or greater than 16.
+--   EINVAL:   One of the IOV_LEN values in the IOV array was negative.
+--   EINVAL:   The sum of the IOV_LEN values in the IOV array overflowed a 32-bit integer.
+--   EFAULT:   Part of the IOV points outside the process's allocated address space.
+-- SEE ALSO
+--   SYS_DUP, SYS_DUPFCNTL, SYS_DUPOPEN, SYS_DUPPIPE, SYS_DUPSELECT, SYS_DUPSOCKET,
+--   SYS_DUPSOCKETPAIR, SYS_READ, SYS_PREAD
+-- CONFORMING TO
+--   BSD 4.2, Linux 1.3.86
+--   FreeBSD 26.2.1994, Linux 12.4.1996
+----------------------------------------------------------------------------------------------------
+procedure sys_pread (                          -- read from a object descriptor
+               d       : in     tsys_int;      -- object descriptor
+               buf     : in out unchecked;     -- pointer to buffer              -- %%FLEX: OUT ONLY
+               nbytes  : in     tsys_size;     --
+               offset  : in     tsys_off;      -- offset
+               result  :    out tsys_size;     --
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_PREAD performs the same function, but reads from the specified position in the file without
+--   modifying the file pointer.
+-- PARAMETERS
+--   Same as for SYS_READ. In addition, SYS_PREAD has a parameter:
+--   OFFSET:   position in the file for reading
+-- RETURN VALUES
+--   Same as for SYS_READ.
+-- ERRORS
+--   Same as for SYS_READ. In addition, SYS_PREAD may return one of the following errors:
+--   EINVAL:   The specified file offset is invalid.
+--   ESPIPE:   The file descriptor is associated with a pipe, socket, or FIFO.
+-- SEE ALSO
+--   SYS_DUP, SYS_DUPFCNTL, SYS_DUPOPEN, SYS_DUPPIPE, SYS_DUPSELECT, SYS_DUPSOCKET,
+--   SYS_DUPSOCKETPAIR, SYS_READ, SYS_READV
+-- CONFORMING TO
+--   BSD 4.2, IEEE Std1003.1-1988 (POSIX)
+--   FreeBSD 26.2.1994, OpenBSD 28.7.1998
+----------------------------------------------------------------------------------------------------
+procedure sys_write (                          -- write to a object descriptor
+               d       : in     tsys_int;
+               buf     : in     unchecked;
+               nbytes  : in     tsys_size;
+               result  :    out tsys_size;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   SYS_WRITE attempts to write NBYTES of data to the object referenced by the descriptor D from
+--   the buffer pointed to by BUF. On objects capable of seeking, the SYS_WRITE starts at a position
+--   given by the pointer associated with D, see SYS_LSEEK. Upon return from SYS_WRITE, the pointer
+--   is incremented by the number of bytes which were written. Objects that are not capable of
+--   seeking always write from the current position. The value of the pointer associated with such
+--   an object is undefined. If the real user is not the super-user, then SYS_WRITE clears the
+--   set-user-id bit on a file. This prevents penetration of system security by a user who
+--   "captures" a writable set-user-id file owned by the super-user. When using non-blocking I/O on
+--   objects such as sockets that are subject to flow control, SYS_WRITE and SYS_WRITEV may write
+--   fewer bytes than requested; the return value must be noted, and the remainder of the operation
+--   should be retried when possible. POSIX requires that a SYS_READ which can be proved to occur
+--   after a SYS_WRITE has returned returns the new data. Note that not all file systems are POSIX
+--   conforming.
+-- PARAMETERS
+--   D:        Object descriptor
+--   BUF:      Pointer to buffer
+--   NBYTES:   Number of bytes to write
+-- RETURN VALUES
+--   RESULT:   number of bytes which were written (zero indicates nothing was written).
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    D is not a valid descriptor open for writing.
+--   EPIPE:    An attempt is made to write to a pipe that is not open for reading by any process.
+--             When this happens the writing process will receive a SIGPIPE signal; if it catches,
+--             blocks or ignores this the error EPIPE is returned.
+--   EPIPE:    An attempt is made to write to a socket of type SOCK_STREAM that is not connected to
+--             a peer socket.
+--   EFBIG:    An attempt was made to write a file that exceeds the process's file size limit or the
+--             maximum file size.
+--   EFAULT:   Part of BUF or data to be written to the file points outside the process's allocated
+--             address space.
+--   EINVAL:   The pointer associated with d was neg ative.
+--   EINVAL:   D is attached to an object which is unsuitable for writing.
+--   ENOSPC:   There is no free space remaining on the file system containing the file.
+--   EDQUOT:   The user's quota of disk blocks on the file system containing the file has been
+--             exhausted.
+--   EIO:      An I/O error occurred while reading from or writing to the file system.
+--   EAGAIN:   The file was marked for non-blocking I/O, and no data could be written immediately.
+--   EINTR:    The call was interrupted by a signal before any data was written.
+-- SEE ALSO
+--   SYS_FCNTL, SYS_LSEEK, SYS_OPEN, SYS_PIPE, SYS_SELECT
+-- CONFORMING TO
+--   Linux 2.0.32, SVr4, SVID, IEEE Std1003.1-1988 (POSIX), X/OPEN, 4.3BSD.
+--   FreeBSD 2.4.1994, Linux 13.1.1996
+----------------------------------------------------------------------------------------------------
+--ocedure sys_writev (                    -- write to a object descriptor
+--             d       : in     tsys_int;
+--             iov     : in     tsys_iovecs;
+--             iovcnt  : in     tsys_int;
+--             result  :    out tsys_int;
+--             error   :    out tsys_int);
+-- DESCRIPTION
+--   SYS_WRITEV performs the same action as SYS_WRITE, but gathers the output data from the IOVCNT
+--   buffers specified by the members of the IOV array: IOV[0], IOV[1], ..., IOV[IOVCNT - 1].
+-- PARAMETERS
+--   D:      Object descriptor.
+--   IOV:    Array of IOVEC records. Each IOVEC entry specifies the base address and length of an
+--           area in memory from which data should be written. SYS_WRITEV will always write
+--           a complete area before proceeding to the next.
+--   IOVCNT: Number of elements of the IOV array.
+-- RETURN VALUES
+--   RESULT: number of bytes which were written (zero indicates nothing was written).
+--   ERROR:  Error code.
+-- ERRORS
+--   Same as for SYS_WRITE. In addition, SYS_WRITEV may return one of the following errors:
+--   EFAULT: Part of IOV or data to be written to the file points outside the process's allocated
+--           address space.
+--   EDESTADDRREQ: The destination is no longer available when writing to a UNIX domain datagram
+--           socket on which SYS_CONNECT had been used to set a destination address.
+--   EINVAL: IOVCNT was less than or equal to 0, or greater than UIO_MAXIOV.
+--   EINVAL: One of the IOV_LEN values in the IOV array was negative.
+--   EINVAL: The sum of the IOV_LEN values in the IOV array overflowed a 32-bit integer.
+-- SEE ALSO
+--   SYS_FCNTL, SYS_LSEEK, SYS_OPEN, SYS_PIPE, SYS_SELECT
+-- CONFORMING TO
+--   BSD 4.3.
+--   FreeBSD 2.4.1994
+----------------------------------------------------------------------------------------------------
+procedure sys_pwrite (                    -- write to a object descriptor
+              d        : in  tsys_int;
+              buf      : in  unchecked;
+              nbytes   : in  tsys_int;
+              ofs      : in  tsys_off;
+              result   : out tsys_int;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   SYS_PWRITE performs the same function as SYS_WRITE, but writes to the specified position in the
+--   file without modifying the file pointer.
+-- PARAMETERS
+--   Same as for SYS_WRITE. In addition, SYS_PWRITE has a parameter:
+--   OFFSET:  position in the file for writing
+-- RETURN VALUES
+--   RESULT: number of bytes which were written (zero indicates nothing was written).
+--   ERROR:  Error code.
+-- ERRORS
+--   Same as for SYS_WRITE. In addition, SYS_PWRITE may return one of the following errors:
+--   EINVAL: The specified file offset is invalid.
+--   ESPIPE: The file descriptor is associated with a pipe, socket, or FIFO.
+-- SEE ALSO
+--   SYS_FCNTL, SYS_LSEEK, SYS_OPEN, SYS_PIPE, SYS_SELECT
+-- CONFORMING TO
+--   BSD 4.2, Linux 1.3.86
+--   FreeBSD 2.4.1994, Linux 12.4.1996
+----------------------------------------------------------------------------------------------------
+procedure sys_lseek (                     -- reposition read/write file offset
+              d        : tsys_int;
+              ofs      : tsys_off;
+              whence   : tsys_int;
+              result   : out tsys_int;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   The SYS_LSEEK function repositions the offset of the file descriptor D to the argument OFF
+--   according to the directive whence. The argument D must be an open file descriptor. SYS_LSEEK
+--   repositions the file position pointer associated with the file descriptor fildes as follows:
+--   If WHENCE is SEEK_SET, the offset is set to OFF bytes. If WHENCE is SEEK_CUR, the offset is
+--   set to its current location plus OFF bytes. If WHENCE is SEEK_END, the offset is set to the
+--   size of the file plus OFF bytes. The SYS_LSEEK function allows the file offset to be set
+--   beyond the end of the existing end-of-file of the file. If data is later written at this
+--   point, subsequent reads of the data in the gap return bytes of zeros (until data is actually
+--   written into the gap).
+--     Some devices are incapable of seeking and POSIX does not specify which devices must support
+--   it. The value of the pointer associated with such a device is undefined.
+-- PARAMETERS
+--   D:       object descriptor
+--   OFS:     See DESCRIPTION
+--   WHENCE:  See DESCRIPTION
+-- RETURN VALUES
+--   RESULT:  resulting offset location as measured in bytes from the beginning of the file.
+--   ERROR:   Error code.
+-- ERRORS
+--   EBADF:   Fildes is not an open file descriptor.
+--   ESPIPE:  Fildes is associated with a pipe, socket, or FIFO.
+--   EINVAL:  Whence is not a proper value.
+-- SEE ALSO
+--   SYS_DUP, SYS_OPEN, SYS_FSEEK
+-- CONFORMING TO
+--   Linux, SVr4, BSD 4.3, IEEE Std1003.1-1988 (POSIX)
+--   FreeBSD 19.4.1994, Linux 17.1.1998
+-- NOTES
+--   This document's use of whence is incorrect English, but is maintained for historical reasons.
+--   Linux specific restrictions: using lseek on a tty device returns ESPIPE. Other systems return
+--     the number of written characters, using SEEK_SET to set the counter. Some devices,
+--     e.g. /dev/null do not cause the error ESPIPE, but return a pointer which value is undefined.
+----------------------------------------------------------------------------------------------------
+procedure sys_wait4   (                        -- wait for process termination
+              wpid     : tsys_pid;
+              status   : out tsys_int;         -- exit status of the calling process
+              options  : in  tsys_int;
+              rusage   : out tsys_rusage;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   The SYS_WAIT function suspends execution of its calling process until status information is
+--   available for a terminated child process, or a signal is received. On return from a successful
+--   SYS_WAIT call, the status area contains termination information about the process that exited
+--   as defined below.
+--     The SYS_WAIT4 call provides a more general interface for programs that need to wait for
+--   certain child processes, that need resource utilization statistics accumulated by child
+--   processes, or that require options. The other wait functions are implemented using SYS_WAIT4.
+-- PARAMETERS
+--   WPID:     The WPID parameter specifies the set of child processes for which to wait:
+--             -1:   the call waits for any child process.
+--             0:    the call waits for any child process in the process group of the caller.
+--             >0:   the call waits for the process with process id WPID.
+--             < -1: the call waits for any process whose process group id equals the absolute value
+--                   of WPID.
+--   STATUS:
+--   OPTIONS:  bitwise OR of any of the following options:
+--               WNOHANG: option is used to indicate that the call should not block if there are no
+--                        processes that wish to report status.
+--               WUNTRACED: if this option is set, children of the current process that are stopped
+--                        due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal also have their
+--                        status reported.
+--   RUSAGE:   If RUSAGE is non-zero, a summary of the resources used by the terminated process and
+--             all its children is returned (this information is currently not available for stopped
+--             processes).
+-- RETURN VALUES
+--   STATUS:   ID of the child process which exited, or zero if WNOHANG was used and no child was
+--             available.
+-- ERRORS
+--   ECHILD:   the process specified in PID does not exist or is not a child of the calling process.
+--             (This can happen for one's own child if the action for SIGCHLD is set to SIG_IGN.)
+--   EINVAL    the options argument was invalid.
+--   EFAULT:   The STATUS or RUSAGE arguments point to an illegal address. (May not be detected
+--             before exit of a child process.)
+--   ERESTARTSYS,
+--   EINTR:    The call was interrupted by a caught signal, or the signal did not have the
+--             SA_RESTART flag set.
+-- SEE ALSO
+--   SYS_EXIT, SYS_PTRACE, SYS_SIGACTION
+-- CONFORMING TO
+--   BSD Linux, SVr4, IEEE Std1003.1-1988 (POSIX)
+--   FreeBSD 10.4.1994, Linux 23.6.1994
+-- NOTES
+--   The following macros may be used to test the manner of exit of the process. One of the first
+--   three macros will evaluate to a non-zero (true) value:
+--     WIFEXITED(status)   True if the process terminated normally by a call to SYS_EXIT.
+--     WIFSIGNALED(status) True if the process terminated due to receipt of a signal.
+--     WIFSTOPPED(status)  True if the process has not terminated, but has stopped and can be
+--                         restarted. This macro can be true only if the wait call specified the
+--                         WUNTRACED option or if the child process is being traced (see SYS_PTRACE).
+--   Depending on the values of those macros, the following macros produce the remaining status
+--   information about the child process:
+--     WEXITSTATUS(status) If WIFEXITED(status) is true, evaluates to the low-order 8 bits of the
+--                         argument passed to _exit(2) or exit(3) by the child.
+--     WTERMSIG(status)    If WIFSIGNALED(status) is true, evaluates to the number of the signal
+--                         that caused the termination of the process.
+--     WCOREDUMP(status)   If WIFSIGNALED(status) is true, evaluates as true if the termination of
+--                         the process was accompanied by the creation of a core file containing an
+--                         image of the process when the signal was received.
+--     WSTOPSIG(status)    If WIFSTOPPED(status) is true, evaluates to the number of the signal that
+--                         caused the process to stop.
+----------------------------------------------------------------------------------------------------
+procedure sys_waitpid (                        -- wait for process termination
+              wpid     : tsys_pid;
+              status   : out tsys_int;         -- exit status of the calling process
+              options  : in  tsys_int;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   The SYS_WAITPID call is identical to SYS_WAIT4 with an rusage value of zero.
+----------------------------------------------------------------------------------------------------
+procedure sys_connect (                        -- initiate a connection on a socket
+              s        : in  tsys_int;         -- socket descriptor
+              addr     : ref tsys_sockaddr;    --
+              addrlen  : in  tsys_int;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   If S is of type SOCK_DGRAM, this call specifies the peer with which the socket is to be
+--   associated; this address is that to which datagrams are to be sent, and the only address from
+--   which datagrams are to be received. If the socket is of type SOCK_STREAM, this call attempts
+--   to make a connection to another socket. The other socket is specified by ADDR, which is an
+--   address in the communications space of the socket. Each communications space interprets the
+--   ADDR parameter in its own way. Generally, stream sockets may successfully SYS_CONNECT only
+--   once; datagram sockets may use SYS_CONNECT multiple times to change their association.
+--   Datagram sockets may dissolve the association by connecting to an invalid address,
+--   such as a null address.
+-- PARAMETERS
+--   S:        socket descriptor.
+-- RETURN VALUES
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:        S is not a valid descriptor.
+--   ENOTSOCK:     S is a descriptor for a file, not a socket.
+--   EADDRNOTAVAIL:The specified address is not available on this machine.
+--   EAFNOSUPPORT: Addresses in the specified address family cannot be used with this socket.
+--   EISCONN:      The socket is already connected.
+--   ETIMEDOUT:    Connection establishment timed out without establishing a connection.
+--   ECONNREFUSED: The attempt to connect was forcefully rejected.
+--   ENETUNREACH:  The network isn't reachable from this host.
+--   EADDRINUSE:   The address is already in use.
+--   EFAULT:       The name parameter specifies an area outside the process address space.
+--   EINPROGRESS:  The socket is non-blocking and the connection cannot be completed immediately.
+--                 It is possible to SYS_SELECT for completion by selecting the socket for writing.
+--   EALREADY:     The socket is non-blocking and a previous connection attempt has not yet been
+--                 completed.
+--
+--   The following errors are specific to connecting names in the UNIX domain. These errors may not
+--   apply in future versions of the UNIX IPC domain.
+--   ENOTDIR:      A component of the path prefix is not a directory.
+--   ENAMETOOLONG: A component of a pathname exceeded 255 characters, or an entire path name
+--                 exceeded 1023 characters.
+--   ENOENT:       The named socket does not exist.
+--   EACCES:       Search permission is denied for a component of the path prefix.
+--   EACCES:       Write access to the named socket is denied.
+--   ELOOP:        Too many symbolic links were encountered in translating the pathname.
+-- SEE ALSO
+--   SYS_ACCEPT, SYS_GETPEERNAME, SYS_GETSOCKNAME, SYS_SELECT, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 19.4.1994
+----------------------------------------------------------------------------------------------------
+procedure sys_close (                          -- delete a descriptor
+              d        : tsys_int;
+              error    : out tsys_int);
+-- DESCRIPTION
+--   The SYS_CLOSE call deletes a descriptor from the per-process object reference table. If this
+--   is the last reference to the underlying object, the object will be deactivated.  For example,
+--   on the last close of a file the current seek pointer associated with the file is lost; on the
+--   last close of a SYS_SOCKET associated naming information and queued data are discarded; on the
+--   last close of a file holding an advisory lock the lock is released (see further SYS_FLOCK).
+--   However, the semantics of System V and IEEE Std1003.1-1988 ("POSIX") dictate that all
+--   SYS_FCNTL advisory record locks associated with a file for a given process are removed when
+--   any file descriptor for that file is closed by that process.
+--     When a process exits, all associated file descriptors are freed, but since there is a limit
+--   on active descriptors per processes, the SYS_CLOSE function call is useful when a large
+--   quantity of file descriptors are being handled.
+--     When a process forks (see SYS_FORK), all descriptors for the new child process reference the
+--   same objects as they did in the parent before the fork. If a new process is then to be run
+--   using SYS_EXECVE, the process would normally inherit these descriptors. Most of the descriptors
+--   can be rearranged with SYS_DUP2 or deleted with SYS_CLOSE before the SYS_EXECVE is attempted,
+--   but if some of these descriptors will still be needed if the execve fails, it is necessary to
+--   arrange for them to be closed if the execve succeeds. For this reason, the call "SYS_FCNTL(d,
+--   F_SETFD, 1)" is provided, which arranges that a descriptor will be closed after a successful
+--   execve; the call "SYS_FCNTL(d, F_SETFD, 0)" restores the default, which is to not close the
+--   descriptor.
+
+-- PARAMETERS
+--   D:        object descriptor
+-- RETURN VALUES
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    D is not an active descriptor.
+--   EINTR:    An interrupt was received.
+-- SEE ALSO
+--   SYS_ACCEPT, SYS_EXECVE, SYS_FCNTL, SYS_FLOCK, SYS_OPEN, SYS_PIPE, SYS_SOCKET, SYS_SOCKETPAIR
+--   SYS_SHUTDOWN, SYS_FCLOSE
+-- CONFORMING TO
+--   BSD 4.2, SVr4, SVID, POSIX, X/OPEN, BSD 4.3.
+--   FreeBSD 4.6.1993, Linux 14.4.1996
+-- NOTES
+--   Not checking the return value of close is a common but nevertheless serious programming error.
+--   File system implementations which use techniques as "write-behind" to increase performance may
+--   lead to SYS_WRITE succeeding, although the data has not been written yet. The error status may
+--   be reported at a later write operation, but it is guaranteed to be reported on closing the
+--   file. Not checking the return value when closing the file may lead to silent loss of data.
+--   This can especially be observed with NFS and disk quotas.
+----------------------------------------------------------------------------------------------------
+procedure sys_open (                           -- open or create a file for reading or writing
+               fname   : in tsys_str;     -- filename
+               flags   : tsys_int;        --
+               mode    : tsys_int;        --
+               d       : out tsys_int;    --
+               error   : out tsys_int);
+-- DESCRIPTION
+--   The file name specified by path is opened for reading and/or writing as specified by the
+--   argument FLAGS and the file descriptor returned to the calling process. The FLAGS argument may
+--   indicate the file is to be created if it does not exist (by specifying the O_CREAT flag).  In
+--   this case open requires a third argument MODE, and the file is created with MODE mode as
+--   described in SYS_CHMOD and modified by the process' umask value in the usual way: the
+--   permissions of the created file are (MODE and not umask).
+--     When opening a file, a lock with SYS_FLOCK semantics can be obtained by setting O_SHLOCK for
+--   a shared lock, or O_EXLOCK for an exclusive lock.  If creating a file with O_CREAT, the request
+--   for the lock will never fail (provided that the underlying filesystem supports locking).
+--     When a new file is created it is given the group of the directory which contains it.
+--     The new descriptor is set to remain open across SYS_EXECVE system calls; see SYS_CLOSE and
+--   SYS_FCNTL.
+--     The system imposes a limit on the number of file descriptors open simultaneously by one
+--   process. SYS_GETDTABLESIZE returns the current system limit.
+-- PARAMETERS
+--   FNAME:    name of the file
+--   FLAGS:    The logical OR of some subset of:
+--               O_RDONLY:   open for reading only
+--               O_WRONLY:   open for writing only
+--               O_RDWR:     open for reading and writing
+--               O_NDELAY,
+--               O_NONBLOCK: If the O_NONBLOCK flag is specified and the SYS_OPEN call would
+--                           result in the process being blocked for some reason (e.g., waiting
+--                           for carrier on a dialup line), SYS_OPEN returns immediately. The
+--                           first time the process attempts to perform I/O on the open file it
+--                           will block (not currently implemented).
+--               O_NOCTTY:   If pathname refers to a terminal device it will not become the
+--                           process's controlling terminal even if the process does not have one.
+--               O_APPEND:   Causes each write on the file to be appended to the end.
+--               O_CREAT:    create file if it does not exist
+--               O_TRUNC:    If the file exists, the file is truncated to zero length.
+--               O_EXCL:     If O_EXCL is set with O_CREAT and the file already exists, SYS_OPEN
+--                           returns an error. This may be used to implement a simple exclusive
+--                           access locking mechanism. If O_EXCL is set and the last component of
+--                           the pathname is a symbolic link, SYS_OPEN will fail even if the
+--                           symbolic link points to a non-existent name.
+--               O_SHLOCK:   atomically obtain a shared lock
+--               O_EXLOCK:   atomically obtain an exclusive lock
+--             Some of these optional flags can be altered using fcntl after the file has been
+--             opened.
+--   MODE:     See DESCRIPTION
+-- RETURN VALUES
+--   FD:       Non-negative integer, termed a file descriptor. The file pointer used to mark the
+--             current position within the file is set to the beginning of the file.
+--   ERROR:    Error code.
+-- ERRORS
+--   ENOTDIR:      A component of the path prefix is not a directory.
+--   ENAMETOOLONG: A component of a pathname exceeded 255 characters, or an entire path name
+--                 exceeded 1023 characters.
+--   ENOENT:       O_CREAT is not set and the named file does not exist.
+--   ENOENT:       A component of the path name that must exist does not exist.
+--   EACCES:       Search permission is denied for a component of the path prefix.
+--   EACCES:       The required permissions (for reading and/or writing) are denied for the given
+--                 flags.
+--   EACCES:       O_CREAT is specified, the file does not exist, and the directory in which it is
+--                 to be created does not permit writing.
+--   ELOOP:        Too many symbolic links were encountered in translating the pathname.
+--   EISDIR:       The named file is a directory, and the arguments specify it is to be opened for
+--                 writing.
+--   EROFS:        The named file resides on a read-only file system, and the file is to be
+--                 modified.
+--   EMFILE:       The process has already reached its limit for open file descriptors.
+--   ENFILE:       The system file table is full.
+--   ENXIO:        The named file is a character special or block special file, and the device
+--                 associated with this special file does not exist.
+--   EINTR:        The SYS_OPEN operation was interrupted by a signal.
+--   EOPNOTSUPP:   O_SHLOCK or O_EXLOCK is specified but the underlying filesystem does not support
+--                 locking.
+--   ENOSPC:       O_CREAT is specified, the file does not exist, and the directory in which the
+--                 entry for the new file is being placed cannot be extended because there is no
+--                 space left on the file system containing the directory.
+--   ENOSPC:       O_CREAT is specified, the file does not exist, and there are no free inodes on
+--                 the file system on which the file is being created.
+--   EDQUOT:       O_CREAT is specified, the file does not exist, and the directory in which the
+--                 entry for the new file is being placed cannot be extended because the user's
+--                 quota of disk blocks on the file system containing the directory has been
+--                 exhausted.
+--   EDQUOT:       O_CREAT is specified, the file does not exist, and the user's quota of inodes on
+--                 the file sys tem on which the file is being created has been exhausted.
+--   EIO:          An I/O error occurred while making the directory entry or allocating the inode
+--                 for O_CREAT.
+--   ETXTBSY:      The file is a pure procedure (shared text) file that is being executed and the
+--                 SYS_OPEN call requests write access.
+--   EFAULT:       FNAME points outside the process's allocated address space.
+--   EEXIST:       O_CREAT and O_EXCL were specified and the file exists.
+--   EOPNOTSUPP:   An attempt was made to open a socket (not currently implemented).
+--   EINVAL:       An attempt was made to open a descriptor with an illegal combination of O_RDONLY,
+--                 O_WRONLY, and O_RDWR.
+-- SEE ALSO
+--   SYS_CHMOD, SYS_CLOSE, SYS_DUP, SYS_GETDTABLESIZE, SYS_LSEEK, SYS_READ, SYS_UMASK, SYS_WRITE
+-- CONFORMING TO
+--   BSD 4.3, SVr4, SVID, POSIX, X/OPEN, Linux 2.0.32
+--   FreeBSD 16.11.1993, Linux 20.12.1996
+-- NOTES
+--   Note that SYS_OPEN can open device special files, but cannot create them - use SYS_MKNOD
+--   instead.
+--     O_EXCL is broken on NFS file systems, programs which rely on it for performing locking tasks
+--   will contain a race condition. The solution for performing atomic file locking using a lockfile
+--   is to create a unique file on the same fs (e.g., incorporating hostname and pid), use SYS_LINK
+--   to make a link to the lockfile and use SYS_STAT on the unique file to check if its link count
+--   has increased to 2. Do not use the return value of the SYS_LINK call.
+--     O_APPEND may lead to corrupted files on NFS file systems if more than one process appends
+--   data to a file at once. This is because NFS does not support appending to a file, so the
+--   client kernel has to simulate it, which can't be done without a race condition.
+--     On NFS file systems with UID mapping enabled, open may return a file descriptor but e.g.
+--   SYS_READ requests are denied with EACCES. This is because the client performs open by checking
+--   the permissions, but UID mapping is performed by the server upon read and write requests.
+----------------------------------------------------------------------------------------------------
+procedure sys_recvfrom (                       -- receive a message from a socket
+              s        : in  tsys_int;         -- socket descriptor
+              buf      : in out unchecked;        -- buffer where the received message will be stored
+              len      : in  tsys_int;         -- size of the buffer
+              flags    : in  tsys_int;
+              from     : out tsys_sockaddr;    --
+              fromlen  : in out tsys_int;      -- size of from/length of from
+              result   : out    tsys_int;         -- length of the message
+              error    : out    tsys_int);
+-- DESCRIPTION
+--   Receive message from a socket or receive data on a socket whether or not it is connection-
+--   -oriented. If FROM is non-nil, and the SOCKET is not connection-oriented, the source address of
+--   the message is filled in. FROMLEN is a value-result parameter, initialized to the size of the
+--   buffer associated with FROM, and modified on return to indicate the actual size of the address
+--   stored there.
+--     If no messages are available at the socket, the receive call waits for a message to arrive,
+--   unless the socket is nonblocking (see SYS_FCNTL) in which case the error EAGAIN is returned.
+--   The receive calls normally return any data available, up to the requested amount, rather than
+--   waiting for receipt of the full amount requested; this behavior is affected by the socket-level
+--   options SO_RCVLOWAT and SO_RCVTIMEO described in SYS_GETSOCKOPT.
+-- PARAMETERS
+--   S:        socket descriptor.
+--   BUF:      buffer where the received message will be stored
+--   LEN:      size of the buffer BUF
+--   FLAGS:    The logical OR of some subset of:
+--               MSG_OOB:      process out-of-band data. This flag requests receipt of out-of-band
+--                             data that would not be received in the normal data stream. Some
+--                             protocols place expedited data at the head of the normal data queue,
+--                             and thus this flag cannot be used with such protocols.
+--               MSG_PEEK:     peek at incoming message. This flag causes the receive operation to
+--                             return data from the beginning of the receive queue without removing
+--                             that data from the queue. Thus, a subsequent receive call will return
+--                             the same  data.
+--               MSG_WAITALL:  wait for full. The MSG_WAITALL flag requests that the operation block
+--                             until the full request is satisfied. However, the call may still
+--                             return less data than requested if a signal is caught, an error or
+--                             disconnect occurs, or the next data to be received is of a different
+--                             type than that returned.
+--   FROMLEN:                  size of the buffer associated with FROM
+-- RETURN VALUES
+--   FROM:                     source address of the message
+--   FROMLEN:                  actual size of the address stored in the FROM
+--   RESULT:   length of the received message (number of bytes received). If a message is too long
+--             to fit in the supplied buffer, excess bytes may be discarded depending on the type of
+--             socket the message is received from (see SYS_SOCKET).
+--   ERROR:    Error code.
+-- ERRORS
+--   EBADF:    The argument S is an invalid descriptor.
+--   ENOTCONN: The socket is associated with a connection-oriented protocol and has not been
+--             connected (see SYS_CONNECT and SYS_ACCEPT).
+--   ENOTSOCK: The argument S does not refer to a socket.
+--   EAGAIN:   The socket is marked non-blocking, and the receive operation would block, or
+--             a receive timeout had been set, and the timeout expired before data were received.
+--   EINTR:    The receive was interrupted by delivery of a signal before any data were available.
+--   EFAULT:   The receive buffer pointer(s) point outside the process's address space.
+-- SEE ALSO
+--   SYS_FCNTL, SYS_GETSOCKOPT, SYS_READ, SYS_SELECT, SYS_SOCKET
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 21.2.1994
+-- NOTES
+----------------------------------------------------------------------------------------------------
+procedure sys_sendto (                         -- send a message to a socket
+               s       : in     tsys_int;      -- socket descriptor
+               msg     : in     unchecked;     -- message to send
+               len     : in     tsys_int;      -- length of the message to send
+               flags   : in     tsys_int;
+               addr    : in     tsys_sockaddr; --
+               addrlen : in     tsys_int;      --
+               result  :    out tsys_int;      -- number of characters sent
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   Transmit a message to another socket. The address of the target is given by ADDR with ADDRLEN
+--   specifying its size. The length of the message is given by LEN. If the message is too long to
+--   pass atomically through the underlying protocol, the error EMSGSIZE is returned, and the
+--   message is not transmitted.
+--     No indication of failure to deliver is implicit in a SYS_SEND. Locally detected errors are
+--   indicated by non-zero value of the ERROR parameter.
+--     If no messages space is available at the socket to hold the message to be transmitted, then
+--   SYS_SEND normally blocks, unless the socket has been placed in non-blocking I/O mode. The
+--   SYS_SELECT call may be used to determine when it is possible to send more data.
+-- PARAMETERS
+--   S:        socket descriptor
+--   MSG:      message to be sent
+--   LEN:      size (in bytes) of the message
+--   FLAGS:    The logical OR of some subset of:
+--               MSG_OOB:  process out-of-band data. This flag is used to send "out-of-band"
+--                         data on sockets that support this notion (e.g. SOCK_STREAM);
+--                         the underlying protocol must also support "out-of-band" data.
+--               MSG_PEEK: peek at incoming message
+--               MSG_DONTROUTE: bypass routing, use direct interface. Flag is usually used only by
+--                         diagnostic or routing programs.
+--               MSG_EOR:  data completes record. This flag is used to indicate a record mark
+--                         for protocols which support the concept.
+--               MSG_EOF:  data completes transaction. It requests that the sender side of
+--                         a socket be shut down, and that an appropriate indication be sent at
+--                         the end of the specified data; this flag is only implemented for
+--                         SOCK_STREAM sockets in the PF_INET protocol family, and is used to
+--                         implement Transaction TCP.
+--   ADDR:     address of the target
+--   ADDRLEN:  size of then target's address
+-- RETURN VALUES
+--   RESULT:   number of characters sent
+--   ERROR:    Error code
+-- ERRORS
+--   EBADF:    An invalid descriptor was specified.
+--   EACCES:   The destination address is a broadcast address, and SO_BROADCAST has not been set
+--             on the socket.
+--   ENOTSOCK: The argument s is not a socket.
+--   EFAULT:   An inv alid user space address was specified for a parameter.
+--   EMSGSIZE: The socket requires that message be sent atomically, and the size of the message
+--             to be sent made this impossible.
+--   EAGAIN:   The socket is marked non-blocking and the requested operation would block.
+--   ENOBUFS:  The system was unable to allocate an internal buffer. The operation may succeed
+--             when buffers become available.
+--   ENOBUFS:  The output queue for a network interface was full. This generally indicates that
+--             the interface has stopped sending, but may be caused by transient congestion.
+--   EHOSTUNREACH: The remote host was unreachable.
+-- SEE ALSO
+--   SYS_FCNTL, SYS_GETSOCKOPT, SYS_RECV, SYS_SELECT, SYS_SOCKET, SYS_WRITE
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 15.2.1995
+-- NOTES
+----------------------------------------------------------------------------------------------------
+procedure sys_sigaction (                      -- software signal facilities
+              sig      : in     tsys_int;      -- signal number
+              act      : in     tsys_sigaction;
+              oact     :    out tsys_sigaction;
+              error    :    out tsys_int);
+-- DESCRIPTION
+--   The system defines a set of signals that may be delivered to a process. Signal delivery
+--   resembles the occurrence of a hardware interrupt:  the signal is normally blocked from further
+--   occurrence, the current process context is saved, and a new one is built.  A process may
+--   specify a handler to which a signal is delivered, or specify that a signal is to be ignored. A
+--   process may also specify that a default action is to be taken by the system when a signal
+--   occurs. A signal may also be blocked, in which case its delivery is postponed until it is
+--   unblocked. The action to be taken on delivery is determined at the time of delivery. Normally,
+--   signal handlers execute on the current stack of the process. This may be changed, on a
+--   per-handler basis, so that signals are taken on a special signal stack.
+--     Signal routines normally execute with the signal that caused their invocation blocked, but
+--   other signals may yet occur. A global signal mask defines the set of signals currently blocked
+--   from delivery to a process. The signal mask for a process is initialized from that of its
+--   parent (normally empty). It may be changed with a SYS_SIGPROCMASK call, or when a signal is
+--   delivered to the process.
+--     When a signal condition arises for a process, the signal is added to a set of signals
+--   pending for the process. If the signal is not currently blocked by the process then it is
+--   delivered to the process. Signals may be delivered any time a process enters the operating
+--   system (e.g., during a system call, page fault or trap, or clock interrupt). If multiple
+--   signals are ready to be delivered at the same time, any signals that could be caused by traps
+--   are delivered first. Additional signals may be processed at the same time, with each appearing
+--   to interrupt the handlers for the previous signals before their first instructions. The set of
+--   pending signals is returned by the SYS_SIGPENDING function. When a caught signal is delivered,
+--   the current state of the process is saved, a new signal mask is calculated (as described
+--   below), and the signal handler is invoked.  The call to the handler is arranged so that if the
+--   signal handling routine returns normally the process will resume execution in the context from
+--   before the signal's delivery. If the process wishes to resume in a different context, then it
+--   must arrange to restore the previous context itself.
+--     When a signal is delivered to a process a new signal mask is installed for the duration of
+--   the process' signal handler (or until a sigprocmask call is made). This mask is formed by
+--   taking the union of the current signal mask set, the signal to be delivered, and the signal
+--   mask associated with the handler to be invoked.
+--     SYS_SIGACTION assigns an action for a signal specified by sig. If act is non-zero, it
+--   specifies an action (SIG_DFL, SIG_IGN, or a handler routine) and mask to be used when
+--   delivering the specified signal. If oact is non-zero, the previous handling information for
+--   the signal is returned to the user.
+--     Once a signal handler is installed, it normally remains installed until another SYS_SIGACTION
+--   call is made, or an SYS_EXECVE is performed. A signal-specific default action may be reset by
+--   setting sa_handler to SIG_DFL. The defaults are process termination, possibly with core dump;
+--   no action; stopping the process; or continuing the process. See the signal list below for each
+--   signal's default action. If sa_handler is SIG_DFL, the default action for the signal is to
+--   discard the signal, and if a signal is pending, the pending signal is discarded even if the
+--   signal is masked.  If sa_handler is set to SIG_IGN current and pending instances of the signal
+--   are ignored and discarded.
+--     If a signal is caught during the system calls listed below, the call may be forced to
+--   terminate with the error EINTR, the call may return with a data transfer shorter than
+--   requested, or the call may be restarted. Restart of pending calls is requested by setting the
+--   SA_RESTART bit in sa_flags. The affected system calls include SYS_OPEN, SYS_READ, SYS_WRITE,
+--   SYS_SENDTO, SYS_RECVFROM, SYS_SENDMSG and SYS_RECVMSG on a communications channel or a slow
+--   device (such as a terminal, but not a regular file) and during a SYS_WAIT or SYS_IOCTL.
+--   However, calls that have already committed are not restarted, but instead return a partial
+--   success (for example, a short read count).
+--     After a SYS_FORK or SYS_VFORK all signals, the signal mask, the signal stack, and the
+--   restart/interrupt flags are inherited by the child.
+--     SYS_EXECVE reinstates the default action for all signals which were caught and resets all
+--   signals to be caught on the user stack. Ignored signals remain ignored; the signal mask remains
+--   the same; signals that restart pending system calls continue to do so.
+-- PARAMETERS
+--   SIG:      Signal number.
+--   ACT:
+--   OACT:
+-- RETURN VALUES
+--   ERROR:    error code
+-- ERRORS
+--   EFAULT:   Either act or oact points to memory that is not a valid part of the process address space.
+--   EINVAL:   Sig is not a valid signal number.
+--   EINVAL:   An attempt is made to ignore or supply a handler for SIGKILL or SIGSTOP.
+-- SEE ALSO
+--   SYS_KILL, SYS_PTRACE, SYS_SIGALTSTACK, SYS_SIGBLOCK, SYS_SIGPAUSE, SYS_SIGPENDING,
+--   SYS_SIGPROCMASK, SYS_SIGSETMASK, SYS_SIGSUSPEND, SYS_SIGVEC, SYS_WAIT
+-- CONFORMING TO
+--   BSD , Linux 1.3
+--   FreeBSD 3.4.1994, Linux 24.8.1995
+-- NOTES
+--   The SA_MASK field specified in ACT is not allowed to block SIGKILL or SIGSTOP. Any attempt to
+--   do so will be silently ignored.
+--     The following functions are either reentrant or not interruptible by signals and are
+--   async-signal safe. Therefore applications may invoke them, without restriction, from
+--   signal-catching functions:
+--     Base Interfaces: SYS_EXIT, ACCESS, SYS_ALARM, SYS_CFGETISPEED, SYS_CFGETOSPEED, SYS_CFSETISPEED,
+--     SYS_CFSETOSPEED, SYS_CHDIR, SYS_CHMOD, SYS_CHOWN, SYS_CLOSE, SYS_CREAT, SYS_DUP, SYS_DUP2,
+--     SYS_EXECLE, SYS_EXECVE, SYS_FCNTL, SYS_FORK, SYS_FPATHCONF, SYS_FSTAT, SYS_FSYNC,
+--     SYS_GETEGID, SYS_GETEUID, SYS_GETGID, SYS_GETGROUPS, SYS_GETPGRP, SYS_GETPID, SYS_GETPPID,
+--     SYS_GETUID, SYS_KILL, SYS_LINK, SYS_LSEEK, SYS_MKDIR, SYS_MKFIFO, SYS_OPEN, SYS_PATHCONF,
+--     SYS_PAUSE, SYS_PIPE, SYS_RAISE, SYS_READ, SYS_RENAME, SYS_RMDIR, SYS_SETGID, SYS_SETPGID,
+--     SYS_SETSID, SYS_SETUID, SYS_SIGACTION, SYS_SIGADDSET, SYS_SIGDELSET, SYS_SIGEMPTYSET,
+--     SYS_SIGFILLSET, SYS_SIGISMEMBER, SYS_SIGNAL, SYS_SIGPENDING, SYS_SIGPROCMASK,
+--     SYS_SIGSUSPEND, SYS_SLEEP, SYS_STAT, SYS_SYSCONF, SYS_TCDRAIN, SYS_TCFLOW, SYS_TCFLUSH,
+--     SYS_TCGETATTR, SYS_TCGETPGRP, SYS_TCSENDBREAK, SYS_TCSETATTR, SYS_TCSETPGRP, SYS_TIME,
+--     SYS_TIMES, SYS_UMASK, SYS_UNAME, SYS_UNLINK, SYS_UTIME, SYS_WAIT, SYS_WAITPID, SYS_WRITE.
+--     Realtime Interfaces: SYS_AIO_ERROR, SYS_CLOCK_GETTIME, SYS_SIGPAUSE, SYS_TIMER_GETOVERRUN,
+--     SYS_AIO_RETURN, SYS_FDATASYNC, SYS_SIGQUEUE, SYS_TIMER_GETTIME, SYS_AIO_SUSPEND,
+--     SYS_SEM_POST, SYS_SIGSET, SYS_TIMER_SETTIME.
+--     All functions not in the above lists are considered to be unsafe with respect to signals.
+--   That is to say, the behaviour of such functions when called from a signal handler is undefined.
+----------------------------------------------------------------------------------------------------
+procedure sys_getpid return tsys_pid;          -- get calling process identification
+-- DESCRIPTION
+--   SYS_GETPID returns the process ID of the calling process. The ID is guaranteed to be unique
+--   and is useful for constructing temporary file names.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   process ID of the calling process.
+-- ERRORS
+--   The SYS_GETPID function is always successful.
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_getppid return tsys_pid;         -- get parent process identification
+-- DESCRIPTION
+--   SYS_GETPPID returns the process ID of the parent of the calling process.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   process ID of the parent of the calling process.
+-- ERRORS
+--   The SYS_GETPPID function is always successful.
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_nanosleep (                      -- suspend process execution for specified time
+              rqtp     : in     tsys_timespec;
+              rmtp     :    out tsys_timespec;
+              error    :    out tsys_int);
+-- DESCRIPTION
+--   SYS_NANOSLEEP causes the process to sleep for at least the specified time. An unmasked signal
+--   will cause it to terminate the sleep early, regardless of the SA_RESTART value on the
+--   interrupting signal.
+-- PARAMETERS
+--   RQTP:     The structure timespec is used to specify intervals of time with nanosecond
+--             precision. The value of the nanoseconds field must be in the range 0 to 999 999 999.
+-- RETURN VALUES
+--   RMTP:     If the SYS_NANOSLEEP function returns due to the delivery of a signal, RMTP is
+--             updated to contain the unslept amount (the request time minus the time actually
+--             slept). The value of RMTP can then be used to call SYS_NANOSLEEP again and complete
+--             the specified pause.
+--   ERROR:    error code
+-- ERRORS
+--   EFAULT:   Either RQTP or RMTP points to memory that is not a valid part of the process address
+--             space.
+--   EINTR:    SYS_NANOSLEEP was interrupted by the delivery of a signal.
+--   EINVAL:   RQTP specified a nanosecond value less than zero or greater than or equal
+--             to 1 000 000 000.
+--   ENOSYS:   SYS_NANOSLEEP is not supported by this implementation.
+-- SEE ALSO
+--   SYS_SIGSUSPEND, SYS_SCHED_SETSCHEDULER, SYS_TIMER_CREATE.
+-- CONFORMING TO
+--   BSD, Linux 1.3.85, IEEE Std1003.1b (POSIX.4)
+--   FreeBSD 17.4.1997, Linux 10.4.1996
+-- NOTES:      The current implementation (Linux) of nanosleep is based on the normal kernel timer
+--             mechanism, which has a resolution of 1/Hz s (i.e, 10 ms on Linux/i386 and 1 ms on
+--             Linux/Alpha). Therefore, SYS_NANOSLEEP pauses always for at least the specified time,
+--             however it can take up to 10 ms longer than specified until the process becomes
+--             runnable again. For the same reason, the value returned in case of a delivered signal
+--             in RMTP is usually rounded to the next larger multiple of 1/Hz s.
+--               As some applications require much more precise pauses (e.g., in order to control
+--             some time-critical hardware), SYS_NANOSLEEP is also capable of short high-precision
+--             pauses. If the process is scheduled under a realtime policy like SCHED_FIFO or
+--             SCHED_RR, then pauses of up to 2 ms will be performed as busy waits with microsecond
+--             precision.
+----------------------------------------------------------------------------------------------------
+procedure sys_mmap (                           -- map files or devices into memory
+               addr    : in     tsys_caddr;
+               len     : in     tsys_size;
+               prot    : in     tsys_mmap_protset;
+               flags   : in     tsys_mmap_flagsset;
+               fd      : in     tsys_int;
+               off     : in     tsys_off;
+               result  :    out tsys_caddr;
+               error   :    out tsys_int);     -- exit status of the calling process
+-- DESCRIPTION
+--   The SYS_MMAP function causes the pages starting at ADDR and continuing for at most LEN bytes
+--   to be mapped from the object described by FD, starting at byte offset OFF. If LEN is not a
+--   multiple of the pagesize, the mapped region may extend past the specified range. Any such
+--   extension beyond the end of the mapped object will be zero-filled.
+--     If ADDR is non-zero, it is used as a hint to the system. (As a convenience to the system, the
+--   actual address of the region may differ from the address supplied.) If ADDR is zero, an address
+--   will be selected by the system. The actual starting address of the region is returned.
+--   A successful SYS_MMAP deletes any previous mapping in the allocated address range.
+--     The SYS_CLOSE function does not unmap pages, see SYS_MUNMAP for further information. The
+--   current design does not allow a process to specify the location of swap space. In the future
+--   we may define an additional mapping type, MAP_SWAP, in which the file descriptor argument
+--   specifies a file or device to which swapping should be done.
+-- PARAMETERS
+--   ADDR:
+--   LEN:
+--   PROT:     The protections (region accessibility) are specified in the prot argument by or'ing
+--             the following values:
+--               PROT_NONE: The memory cannot be accessed at all.
+--               PROT_READ: Pages may be read.
+--               PROT_WRITE: Pages may be written.
+--               PROT_EXEC: Pages may be executed. The new protection replaces (at least in Linux)
+--                         any existing protection. For example, if the memory had previously been
+--                         marked PROT_READ, and SYS_MPROTECT is then called with prot PROT_WRITE,
+--                         it will no longer be readable.
+--   FLAGS:    The FLAGS parameter specifies the type of the mapped object, mapping options and
+--             whether modifications made to the mapped copy of the page are private to the process
+--             or are to be shared with other references. Sharing, mapping type and options are
+--             specified in the FLAGS argument by or'ing the following values:
+--               MAP_ANON: Map anonymous memory not associated with any specific file. The file
+--                         descriptor used for creating MAP_ANON must be -1. The offset parameter is
+--                         ignored.
+--               MAP_FIXED: Do not permit the system to select a different address than the one
+--                         specified. If the specified address cannot be used, SYS_MMAP will fail.
+--                         If MAP_FIXED is specified, addr must be a multiple of the pagesize. Use
+--                         of this option is discouraged.
+--               MAP_HASSEMAPHORE: Notify the kernel that the region may contain semaphores and that
+--                         special handling may be necessary.
+--               MAP_INHERIT: Permit regions to be inherited across SYS_EXECVE system calls.
+--               MAP_PRIVATE: Modifications are private.
+--               MAP_SHARED: Modifications are shared.
+--               MAP_STACK: This option is only available if your system has been compiled with
+--                          VM_STACK defined when compiling the kernel. This is the default for
+--                          i386 only. Consider adding DVM_STACK to COPTFLAGS in your /etc/make.conf
+--                          to enable this option for other architechures. MAP_STACK implies
+--                          MAP_ANON, and offset of 0. fd must be -1 and prot must include at least
+--                          PROT_READ and PROT_WRITE.  This option creates a memory region that
+--                          grows to at most len bytes in size, starting from the stack top and
+--                          growing down.  The stack top is the starting address returned by the
+--                          call, plus len bytes.  The bottom of the stack at maximum growth is
+--                          the starting address returned by the call.
+--
+-- RETURN VALUES
+--   RESULT:   pointer to the mapped region.
+--   ERROR:    error code
+-- ERRORS
+--   EACCES:   The flag PROT_READ was specified as part of the prot parameter and FD was not open
+--             for reading. The flags MAP_SHARED and PROT_WRITE were specified as part of the
+--             FLAGS and PROT parameters and FD was not open for writing.
+--   EBADF:    FD is not a valid open file descriptor.
+--   EINVAL:   MAP_FIXED was specified and the ADDR parameter was not page aligned, or part of the
+--             desired address space resides out of the valid address space for a user process.
+--   EINVAL:   LEN was negative.
+--   EINVAL:   MAP_ANON was specified and the FD parameter was not -1.
+--   EINVAL:   MAP_ANON has not been specified and FD did not reference a regular or character
+--             special file.
+--   EINVAL:   OFF was not page-aligned. See NOTES below.
+--   ENOMEM:   MAP_FIXED was specified and the ADDR parameter wasn't available. MAP_ANON was
+--             specified and insufficient memory was available.
+-- SEE ALSO
+--   SYS_MADVISE, SYS_MINCORE, SYS_MLOCK, SYS_MPROTECT, SYS_MSYNC, SYS_MUNLOCK, SYS_MUNMAP
+-- CONFORMING TO
+--   BSD 4.4, Linux 1.3.86, SVr4, IEEE Std1003.1b-1988 (POSIX.4)
+--   FreeBSD 11.5.1995, Linux 12.4.1996
+-- NOTES
+--   Len is limited to 2GB. Mmapping slightly more than 2GB doesn't work, but it is possible to map
+--   a window of size (filesize % 2GB) for file sizes of slightly less than 2G, 4GB, 6GB and 8GB.
+--     The limit is imposed for a variety of reasons. Most of them have to do with FreeBSD not
+--   wanting to use 64 bit offsets in the VM system due to the extreme performance penalty. So
+--   FreeBSD uses 32bit page indexes and this gives FreeBSD a maximum of 8TB filesizes. It's
+--   actually bugs in the filesystem code that causes the limit to be further restricted to 1TB
+--   (loss of precision when doing blockno calculations).
+--     Another reason for the 2GB limit is that filesystem metadata can reside at negative offsets.
+--   We currently can only deal with page aligned file offsets.
+----------------------------------------------------------------------------------------------------
+procedure sys_munmap (                         -- remove a mapping                                                       }
+               addr    : in     tsys_caddr;
+               len     : in     tsys_size;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   The SYS_MUNMAP system call deletes the mappings for the specified address range, and causes
+--   further references to addresses within the range to generate invalid memory references.
+-- PARAMETERS
+--   ADDR:
+--   LEN:
+-- RETURN VALUES
+--   ERROR:    error code
+-- ERRORS
+--   EINVAL:   The ADDR parameter was not page aligned, the LEN parameter was negative, or some part
+--             of the region being unmapped is outside the valid address range for a process.
+-- SEE ALSO
+--   SYS_MADVISE, SYS_MINCORE, SYS_MPROTECT, SYS_MSYNC, SYS_MUNMAP
+-- CONFORMING TO
+--   BSD 4.4, Linux 1.3.86, SVr4, IEEE Std1003.1b-1988 (POSIX.4)
+--   FreeBSD 27.5.1994, Linux 12.4.1996
+----------------------------------------------------------------------------------------------------
+procedure sys_mprotect (                       -- control the protection of pages
+               addr    : in     tsys_caddr;
+               len     : in     tsys_size;
+               prot    : in     tsys_int;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   The SYS_MPROTECT system call changes the specified pages to have protection PROT. Not all
+--   implementations will guarantee protection on a page basis; the granularity of protection
+--   changes may be as large as an entire region.
+
+-- PARAMETERS
+--   ADDR:     See SYS_MUNMAP.
+--   LEN:      See SYS_MUNMAP.
+--   PROT:     See SYS_MMAP.
+-- RETURN VALUES
+--   ERROR:    error code
+-- ERRORS
+--   EINVAL:   The virtual address range specified by the ADDR and LEN arguments is not valid.
+--   EINVAL:   ADDR is not a valid pointer, or not a multiple of PAGESIZE.
+--   EFAULT:   The memory cannot be accessed.
+--   EACCES:   The calling process was not allowed to change the protection to the value specified
+--             by the PROT argument. The memory cannot be given the specified access. This can
+--             happen, for example, if you SYS_MMAP a file to which you have read-only access, then
+--             ask SYS_MPROTECT to mark it PROT_WRITE.
+--   ENOMEM:   Internal kernel structures could not be allocated.
+-- SEE ALSO
+--   SYS_MADVISE, SYS_MINCORE, SYS_MSYNC, SYS_MUNMAP
+-- CONFORMING TO
+--   BSD 4.4, Linux 1.3.86, SVr4, IEEE Std1003.1b-1988 (POSIX.4)
+--   FreeBSD 9.6.1993, Linux 31.5.1997
+-- NOTES
+--   POSIX.1b says that SYS_MPROTECT can be used only on regions of memory obtained from SYS_MMAP.
+----------------------------------------------------------------------------------------------------
+procedure sys_execve (                         -- execute a file
+               path    : in ref tsys_char;     -- filename
+               argv    : in     tsys_pchararray;
+               envp    : in     tsys_pchararray;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   SYS_EXECVE transforms the calling process into a new process. The new process is constructed
+--   from an ordinary file, whose name is pointed to by PATH, called the new process file. This
+--   file is either an executable object file, or a file of data for an interpreter. An executable
+--   object file consists of an identifying header, followed by pages of data representing the
+--   initial program (text) and initialized data pages. Additional pages may be specified by the
+--   header to be initialized with zero data.
+--     An interpreter file begins with a line of the form:
+--       #! interpreter [arg]
+--   When an interpreter file is execve'd, the system actually execve's the specified interpreter.
+--   If the optional ARGV is specified, it becomes the first argument to the interpreter, and the
+--   name of the originally execve'd file becomes the second argument; otherwise, the name of the
+--   originally execve'd file becomes the first argument. The original arguments are shifted over
+--   to become the subsequent arguments.  The zeroth argument, normally the name of the execve'd
+--   file, is left unchanged.
+--     File descriptors open in the calling process image remain open in the new process image,
+--   except for those for which the close-on-exec flag is set (see SYS_CLOSE and SYS_FCNTL).
+--   Descriptors that remain open are unaffected by SYS_EXECVE.
+--      Signals set to be ignored in the calling process are set to be ignored in the new process.
+--   Signals which are set to be caught in the calling process image are set to default action in
+--   the new process image. Blocked signals remain blocked regardless of changes to the signal
+--   action. The signal stack is reset to be undefined (see SYS_SIGACTION for more information).
+--     If the set-user-ID mode bit of the new process image file is set (see SYS_CHMOD), the
+--   effective user ID of the new process image is set to the owner ID of the new process image
+--   file. If the set-group-ID mode bit of the new process image file is set, the effective group
+--   ID of the new process image is set to the group ID of the new process image file. (The
+--   effective group ID is the first element of the group list.) The real user ID, real group ID
+--   and other group IDs of the new process image remain the same as the calling process image.
+--   After any set-user-ID and set-group-ID processing, the effective user ID is recorded as the
+--   saved set-user-ID, and the effective group ID is recorded as the saved set-group-ID.  These
+--   values may be used in changing the effective IDs later (see SYS_SETUID). The set-ID bits are
+--   not honored if the respective file system has the nosuid option enabled or if the new process
+--   file is an interpreter file. Syscall tracing is disabled if effective IDs are changed.
+--     The new process also inherits the following attributes from the calling process:
+--     process ID: see SYS_GETPID(2)
+--     parent process ID see getppid(2)
+--     process group ID see getpgrp(2)
+--     access groups see getgroups(2)
+--     working directory see chdir(2)
+--     root directory see chroot(2)
+--     control terminal see termios(4)
+--     resource usages see getrusage(2)
+--     interval timers see getitimer(2)
+--     resource limits see getrlimit(2)
+--     file mode mask see umask(2)
+--     signal mask see sigvec(2), sigsetmask(2)
+--   When a program is executed as a result of an SYS_EXECVE call, it is entered as follows:
+--     main(argc, argv, envp) int argc; char **argv, **envp;
+--   where ARGC is the number of elements in ARGV (the "arg count") and ARGV points to the array of
+--   character pointers to the arguments themselves.
+-- PARAMETERS
+--   PATH:
+--   ARGV:     The argument ARGV is a pointer to a null-terminated array of character pointers to
+--             null-terminated character strings. These strings construct the argument list to be
+--             made available to the new process. At least one argument must be present in the
+--             array; by custom, the first element should be the name of the executed program (for
+--             example, the last component of path).
+--   ENVP:     The argument envp is also a pointer to a null-terminated array of character pointers
+--             to null-terminated strings.  A pointer to this array is normally stored in the
+--             global variable environ. These strings pass information to the new process that is
+--             not directly an argument to the command.
+-- RETURN VALUES
+--   ERROR:    Error code. As the SYS_EXECVE function overlays the current process image with a new
+--             process image the successful call has no process to return to. If SYS_EXECVE does
+--             return to the calling process an error has occurred.
+-- ERRORS
+--   ENOTDIR:  A component of the PATH prefix is not a directory.
+--   ENAMETOOLONG: A component of a pathname exceeded 255 characters, or an entire path name
+--             exceeded 1023 characters.
+--   ENOENT:   The new process file does not exist.
+--   ELOOP:    Too many symbolic links were encountered in translating the pathname.
+--   EACCES:   Search permission is denied for a component of the path prefix.
+--   EACCES:   The new process file is not an ordinary file.
+--   EACCES:   The new process file mode denies execute permission.
+--   ENOEXEC:  The new process file has the appropriate access permission, but has an invalid magic
+--             number in its header.
+--   ETXTBSY:  The new process file is a pure procedure (shared text) file that is currently open
+--             for writing or reading by some process.
+--   ENOMEM:   The new process requires more virtual memory than is allowed by the imposed maximum
+--             (SYS_GETRLIMIT).
+--   E2BIG:    The number of bytes in the new process' argument list is larger than the system-im
+--             posed limit. This limit is specified by the LIB_SYSCTL MIB variable KERN_ARGMAX.
+--   EFAULT:   The new process file is not as long as indicated by the size values in its header.
+--   EFAULT:   Path, argv, or envp point to an illegal address.
+--   EIO:      An I/O error occurred while reading from the file system.
+-- SEE ALSO
+--   SYS_EXIT, SYS_FORK
+-- CONFORMING TO
+--   BSD 4.2
+--   FreeBSD 1.6.1994
+-- NOTES
+--   If a program is setuid to a non-super-user, but is executed when the real uid is "root", then
+--   the program has some of the powers of a super-user as well.
+----------------------------------------------------------------------------------------------------
+procedure sys_brk (                            -- change data segment size
+               addr    : in     tsys_caddr;
+               result  :    out tsys_caddr;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   The SYS_BRK function is historical curiosity left over from earlier days before the advent of
+--   virtual memory management. The SYS_BRK function sets the break or lowest address of a process's
+--   data segment (uninitialized data) to ADDR (immediately above bss). Data addressing is
+--   restricted between ADDR and the lowest stack pointer to the stack segment. Memory is allocated
+--   by SYS_BRK in page size pieces; if ADDR is not evenly divisible by the system page size, it is
+--   increased to the next page boundary.
+--     The SYS_GETRLIMIT system call may be used to determine the maximum permissible size of the
+--   data segment; it will not be possible to set the break beyond the RLIM_MAX value returned from
+--   a call to SYS_GETRLIMIT.
+-- PARAMETERS
+--   ADDR:
+-- RETURN VALUES
+--   RESULT:   pointer to the base of the new storage.
+--   ERROR:    error code
+-- ERRORS
+--   ENOMEM:   The limit, as set by SYS_SETRLIMIT, was exceeded.
+--   ENOMEM:   The maximum possible size of a data segment (compiled into the system) was exceeded.
+--   ENOMEM:   Insufficient space existed in the swap area to support the expansion.
+-- SEE ALSO
+--   SYS_EXECVE, SYS_GETRLIMIT
+-- CONFORMING TO
+--   BSD
+--   FreeBSD 1.5.1995
+-- NOTES
+--   Setting the break may fail due to a temporary lack of swap space. It is not possible to
+--   distinguish this from a failure caused by exceeding the maximum size of the data segment
+--   without consulting SYS_GETRLIMIT.
+----------------------------------------------------------------------------------------------------
+procedure sys_sbrk (                           -- change data segment size
+               incr    : in     tsys_int;
+               result  :    out tsys_caddr;
+               error   :    out tsys_int);
+-- DESCRIPTION
+--   This system call performs similar action to SYS_BRK. SYS_SBRK increments the program's data
+--   space by increment bytes.
+-- PARAMETERS
+--   INCR:
+-- RETURN VALUES
+--   See SYS_BRK.
+-- ERRORS
+--   See SYS_BRK.
+-- SEE ALSO
+--   See SYS_BRK.
+-- CONFORMING TO
+--   See SYS_BRK.
+-- NOTES
+--   See SYS_BRK.
+----------------------------------------------------------------------------------------------------
+procedure sys_fcntl (                          -- manipulate file descriptor
+               d       : in     tsys_int;      -- object descriptor
+               cmd     : in     tsys_int;      -- command
+               arg     : in     tsys_int;      -- argument
+               result  :    out tsys_int;
+               error   :    out tsys_int);     -- error code
+-- DESCRIPTION
+--   SYS_FCNTL provides for control over descriptors. The argument D is a descriptor to be operated
+--   on by CMD as described below. Depending on the value of CMD, SYS_FCNTL can take an additional
+--   third argument int ARG.
+-- PARAMETERS
+--   D:        Object Descriptor.
+--   CMD:      Command. It should be one from the following:
+--               F_DUPFD:  Return a new descriptor as follows:
+--                         Makes ARG (or lowest numbered available descriptor greater than or equal
+--                         to ARG) be a copy of D, closing D first if necessary. The same
+--                         functionality can be more easily achieved by using SYS_DUP2. The old and
+--                         new descriptors may be used interchangeably. They share locks, file
+--                         position pointers and flags; for example, if the file position is
+--                         modified by using SYS_LSEEK on one of the descriptors, the position is
+--                         also changed for the other. The two descriptors do not share the
+--                         close-on-exec flag, however. The close-on-exec flag of the copy is off,
+--                         meaning that it will be closed on exec.
+--               F_GETFD:  Get the close-on-exec flag associated with the file descriptor D. If the
+--                         low-order bit of the returned value is 0, the file will remain open
+--                         across SYS_EXEC, otherwise the file will be closed upon execution of
+--                         sys_exec (ARG is ignored).
+--               F_SETFD:  Set the close-on-exec flag associated with D to the low order bit of ARG
+--                         (0 or 1 as above).
+--               F_GETFL:  Get descriptor status flags (as set by SYS_OPEN), as described below
+--                         (ARG is ignored).
+--               F_SETFL:  Set descriptor status flags to ARG. Only O_APPEND and O_NONBLOCK may be
+--                         set. The flags are shared between copies (made with SYS_DUP etc.) of the
+--                         same file descriptor.
+--               F_GETOWN: Get the process ID or process group currently receiving SIGIO and SIGURG
+--                         signals; process groups are returned as negative values (ARG is ignored).
+--               F_SETOWN: Set the process or process group to receive SIGIO and SIGURG signals;
+--                         process groups are specified by supplying ARG as negative, otherwise ARG
+--                         is interpreted as a process ID.
+--             The flags for the F_GETFL and F_SETFL flags are as follows:
+--               O_NONBLOCK: Non-blocking I/O; if no data is available to a SYS_READ call, or if a
+--                         SYS_WRITE operation would block, the SYS_READ or SYS_WRITE call returns
+--                         with the error EAGAIN.
+--               O_APPEND: Force each write to append at the end of file; corresponds to the
+--                         O_APPEND flag of SYS_OPEN.
+--               O_ASYNC:  Enable the SIGIO signal to be sent to the process group when I/O is
+--                         possible, e.g., upon availability of data to be read.
+--             Several commands are available for doing advisory file locking; they all operate on
+--             the structure TSYS_FLOCK. The commands available for advisory record locking are as
+--             follows:
+--               F_GETLK:  Get the first lock that blocks the lock description pointed to by the
+--                         third argument, ARG, taken as a pointer to a struct TSYS_FLOCK. The
+--                         information retrieved overwrites the information passed to SYS_FCNTL in
+--                         the TSYS_FLOCK structure. If no lock is found that would prevent this
+--                         lock from being created, the structure is left unchanged by this function
+--                         call except for the lock type which is set to F_UNLCK.
+--               F_SETLK:  Set or clear a file segment lock according to the lock description
+--                         pointed to by the third argument, ARG, taken as a pointer to a struct
+--                         TSYS_FLOCK. F_SETLK is used to establish shared (or read) locks (F_RDLCK)
+--                         or exclusive (or write) locks, (F_WRLCK), as well as remove either type
+--                         of lock (F_UNLCK). If a shared or exclusive lock cannot be set, SYS_FCNTL
+--                         returns immediately with EAGAIN.
+--               F_SETLKW: This command is the same as F_SETLK except that if a shared or exclusive
+--                         lock is blocked by other locks, the process waits until the request can
+--                         be satisfied. If a signal that is to be caught is received while
+--                         SYS_FCNTL is waiting for a region, the SYS_FCNTL will be interrupted if
+--                         the signal handler has not specified the SA_RESTART (see SYS_SIGACTION).
+--             When a shared lock has been set on a segment of a file, other processes can set
+--             shared locks on that segment or a portion of it. A shared lock prevents any other
+--             process from setting an exclusive lock on any portion of the protected area. A
+--             request for a shared lock fails if the file descriptor was not opened with read
+--             access.
+--               An exclusive lock prevents any other process from setting a shared lock or an
+--             exclusive lock on any portion of the protected area. A request for an exclusive lock
+--             fails if the file was not opened with write access.
+--               The value of L_WHENCE is SEEK_SET, SEEK_CUR, or SEEK_END to indicate that the
+--             relative offset, L_START bytes, will be measured from the start of the file, current
+--             position, or end of the file, respectively. The value of L_LEN is the number of
+--             consecutive bytes to be locked. If L_LEN is negative, the result is undefined. The
+--             L_PID field is only used with F_GETLK to return the process ID of the process
+--             holding a blocking lock. After a successful F_GETLK request, the value of L_WHENCE
+--             is SEEK_SET.
+--               Locks may start and extend beyond the current end of a file, but may not start or
+--             extend before the beginning of the file. A lock is set to extend to the largest
+--             possible value of the file offset for that file if L_LEN is set to zero. If L_WHENCE
+--             and L_START point to the beginning of the file, and L_LEN is zero, the entire file
+--             is locked.  If an application wishes only to do entire file locking, the SYS_FLOCK
+--             system call is much more effi-cient.
+--               There is at most one type of lock set for each byte in the file. Before a
+--             successful return from an F_SETLK or an F_SETLKW request when the calling process
+--             has previously existing locks on bytes in the region specified by the request, the
+--             previous lock type for each byte in the specified region is replaced by the new lock
+--             type. As specified above under the descriptions of shared locks and exclusive locks,
+--             an F_SETLK or an F_SETLKW request fails or blocks respectively when another process
+--             has existing locks on bytes in the specified region and the type of any of those
+--             locks conflicts with the type specified in the request.
+--               This interface follows the completely stupid semantics of System V and IEEE
+--             Std1003.1-1988 ("POSIX") that require that all locks associated with a file for a
+--             given process are removed when any file descriptor for that file is closed by that
+--             process. This semantic means that applications must be aware of any files that a
+--             subroutine library may access. For example if an application for updating the
+--             password file locks the password file database while making the update, and then
+--             calls LIB_GETPWNAM to retrieve a record, the lock will be lost because LIB_GETPWNAM
+--             opens, reads, and closes the password database. The database close will release all
+--             locks that the process has associated with the database, even if the library routine
+--             never requested a lock on the database. Another minor semantic problem with this
+--             interface is that locks are not inherited by a child process created using the
+--             SYS_FORK function. The SYS_FLOCK interface has much more rational last close
+--             semantics and allows locks to be inherited by child processes. SYS_FLOCK is
+--             recommended for applications that want to ensure the integrity of their locks when
+--             using library routines or wish to pass locks to their children.  Note that SYS_FLOCK
+--             and SYS_FCNTL locks may be safely used concurrently.
+--               All locks associated with a file for a given process are removed when the process
+--             terminates. A potential for deadlock occurs if a process controlling a locked region
+--             is put to sleep by attempting to lock the locked region of another process. This
+--             implementation (FreeBSD) detects that sleeping until a locked region is unlocked
+--             would cause a deadlock and fails with an EDEADLK error.
+-- RETURN VALUES
+--   RESULT:   Depends on CMD (See PARAMETERS):
+--               F_DUPFD:  A new file descriptor.
+--               F_GETFD:  Value of flag (only the low-order bit is defined).
+--               F_GETFL:  Value of flags.
+--               F_GETOWN: Value of file descriptor owner.
+--               other     Value other than -1.
+--   ERROR:    Error code.
+-- ERRORS
+--   EAGAIN:   The argument CMD is F_SETLK, the type of lock (L_TYPE) is a shared lock (F_RDLCK) or
+--             exclusive lock (F_WRLCK), and the segment of a file to be locked is already
+--             exclusivelocked by another process; or the type is an exclusive lock and some
+--             portion of the segment of a file to be locked is already shared-locked or
+--             exclusive-locked by another process.
+--   EBADF:    D is not a valid open file descriptor.
+--   EBADF:    The argument CMD is F_SETLK or F_SETLKW, the type of lock (l_type) is a shared lock
+--             (F_RDLCK), and D is not a valid file descriptor open for reading.
+--   EBADF:    The argument CMD is F_SETLK or F_SETLKW, the type of lock (L_TYPE) is an exclusive
+--             lock (F_WRLCK), and D is not a valid file descriptor open for writing.
+--   EDEADLK:  The argument cmd is F_SETLKW, and a deadlock condition was detected.
+--   EINTR:    The argument cmd is F_SETLKW, and the function was interrupted by a signal.
+--   EINVAL:   CMD is F_DUPFD and ARG is negative or greater than the maximum allowable number
+--             (see SYS_GETDTABLESIZE).
+--   EINVAL:   The argument CMD is F_GETLK, F_SETLK, or F_SETLKW and the data to which ARG points is
+--             not valid, or fildes refers to a file that does not support locking.
+--   EMFILE:   The argument CMD is F_DUPFD and the maximum number of file descriptors permitted for
+--             the process are already in use, or no file descriptors greater than or equal to ARG
+--             are available.
+--   ENOLCK:   The argument CMD is F_SETLK or F_SETLKW, and satisfying the lock or unlock request
+--             would result in the number of locked regions in the system exceeding a system-imposed
+--             limit.
+--   EPERM:    CMD is F_SETOWN and the process ID or process group given as an argument is in
+--             a different session than the caller.
+--   ESRCH:    CMD is F_SETOWN and the process ID given as argument is not in use. In addition, if D
+--             refers to a descriptor open on a terminal device (as opposed to a descriptor open on
+--             a socket), a CMD of F_SETOWN can fail for the same reasons as in LIB_TCSETPGRP(3),
+--             and a CMD of F_GETOWN for the reasons as stated in LIB_TCGETPGRP.
+-- SEE ALSO
+--   SYS_CLOSE, SYS_EXECVE, SYS_FLOCK, SYS_GETDTABLESIZE, SYS_OPEN, SYS_SIGVEC
+-- CONFORMING TO
+--   BSD 4.2, Linux, SVr4,  SVID,  POSIX,  X/OPEN,
+--   FreeBSD 12.1.1994, Linux 26.8.1995
+-- NOTES
+--   The errors returned by SYS_DUP2 are different from those returned by F_DUPFD.
+--     The use of O_ASYNC, F_GETOWN, F_SETOWN is BSD-specific. POSIX has asynchronous I/O and the
+--   AIO_SIGEVENT structure to achieve similar things.
+----------------------------------------------------------------------------------------------------
+procedure sys_getuid return tsys_int;          -- get user identification
+-- DESCRIPTION
+--   The SYS_GETUID function returns the real user ID of the calling process. The real user ID is
+--   that of the user who has invoked the program.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   user ID of the calling process.
+-- ERRORS
+--   The SYS_GETUID function is always successful.
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_geteuid return tsys_int;         -- get effective user identification
+-- DESCRIPTION
+--   The SYS_GETEUID function returns the effective user ID of the calling process. Effective user
+--   ID gives the process additional permissions during execution of "set-user-ID" mode processes,
+--   SYS_GETUID is used to determine the real-user-id of the calling process.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   effective user ID of the calling process.
+-- ERRORS
+--   The SYS_GETEUID function is always successful.
+-- SEE ALSO
+--   SYS_GETGID, SYS_ISSETUGID, SYS_SETGID, SYS_SETREUID, SYS_SETUID
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_getgid return tsys_int;          -- get group process identification
+-- DESCRIPTION
+--   The SYS_GETGID function returns the real group ID of the calling process. The real group ID is
+--   the group of the user who has invoked the program.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   group ID of the calling process.
+-- ERRORS
+--   The SYS_GETGID function is always successful.
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+procedure sys_getegid return tsys_int;         -- get effective group identification
+-- DESCRIPTION
+--   The SYS_GETEGID function returns the effective group ID of the calling process. Effective group
+--   ID gives the process additional permissions during execution of "set-group-ID" mode processes,
+--   SYS_GETGID is used to determine the real-group-id of the calling process.
+-- PARAMETERS
+--   None
+-- RETURN VALUES
+--   RESULT:   effective user ID of the calling process.
+-- ERRORS
+--   The SYS_GETEUID function is always successful.
+-- SEE ALSO
+--   SYS_GETGID, SYS_ISSETUGID, SYS_SETGID, SYS_SETREUID, SYS_SETUID
+-- CONFORMING TO
+--   BSD 4.3, Linux 0.99.11
+--   FreeBSD 4.6.1993, Linux 23.7.1993
+----------------------------------------------------------------------------------------------------
+
+
+private
+  { kontrola jestli NIL=0 }
+
+
+const
+  undef         = -1;
+  noaccess      = -1;
+  obsolete      = -1;
+  unimplemented = -1;
+  unsuppported  = -1;
+  --                                                       Linux   FreeBSD  OpenBSD  NetBSD
+
+                            -- process management
+  nr_sys_exit     =     1; {#syscallnr(nr_sys_exit,            1 ,      1 ,      1 ,      1 ); -- terminate the calling process                                          }
+  nr_sys_wait4    =   114; {#syscallnr(nr_sys_wait4,         114 ,      7 ,      7 ,      7 ); -- wait for process termination                                           }
+  nr_sys_waitpid  =     7; {#syscallnr(nr_sys_waitpid,         7 ,  undef ,  undef ,  undef ); -- wait for process termination                                           }
+  nr_sys_fork     =     2; {#syscallnr(nr_sys_fork,            2 ,      2 ,      2 ,      2 ); -- create a new process                                                   }
+  nr_sys_vfork    =   190; {#syscallnr(nr_sys_vfork,         190 ,     66 ,     66 ,     66 ); -- create a new process and block parent (In the Linux kernel since 2.1!) }
+                           {#syscallnr(nr_sys_rfork,       undef ,    251 ,    215 ,  undef ); -- manipulate process resources                                           }
+  nr_sys_getpid   =    20; {#syscallnr(nr_sys_getpid,         20 ,     20 ,     20 ,     20 ); -- get calling process identification                                     }
+  nr_sys_getppid  =    64; {#syscallnr(nr_sys_getppid,        64 ,     39 ,     39 ,     39 ); -- get parent process identification                                      }
+  nr_sys_nanosleep=   162; {#syscallnr(nr_sys_nanosleep      162 ,    240 ,    240 ,    240 ); -- suspend process execution for specified time                           }
+
+                            -- file open/close/...
+  nr_sys_open     =     5; {#syscallnr(nr_sys_open,            5 ,      5 ,      5 ,      5 ); -- open or create a file for reading or writing                           }
+  nr_sys_close    =     6; {#syscallnr(nr_sys_close,           6 ,      6 ,      6 ,      6 ); -- delete a descriptor                                                    }
+
+                            -- file read/write/...
+  nr_sys_lseek    =    19; {#syscallnr(nr_sys_lseek,          19 ,    199 ,        ,        ); -- reposition read/write file offset                                      }
+  nr_sys_read     =     3; {#syscallnr(nr_sys_read,            3 ,      3 ,      3 ,      3 ); -- read from a object descriptor                                          }
+  nr_sys_write    =     4; {#syscallnr(nr_sys_write,           4 ,      4 ,      4 ,      4 ); -- write to a object descriptor                                           }
+  nr_sys_readv    =   145; {#syscallnr(nr_sys_readv,         145 ,    120 ,    120 ,    120 ); -- read from a object descriptor                                          }
+  nr_sys_writev   =   146; {#syscallnr(nr_sys_writev,        146 ,    121 ,    121 ,    121 ); -- write to a object descriptor                                           }
+  nr_sys_pread    =   180; {#syscallnr(nr_sys_pread,         180 ,    173 ,    173 ,  undef ); -- read from a object descriptor                                          }
+  nr_sys_pwrite   =   181; {#syscallnr(nr_sys_pwrite,        181 ,    174 ,    174 ,  undef ); -- write to a object descriptor                                           }
+
+                            -- socket services
+                           {#syscallnr(nr_sys_socket,      undef ,     97 ,     97 ,     97 ); -- create an endpoint for communication                                   }
+                           {#syscallnr(nr_sys_bind,        undef ,    104 ,    104 ,    104 ); -- assign a local protocol address to a socket.                           }
+                           {#syscallnr(nr_sys_connect,     undef ,     98 ,     98 ,     98 ); -- initiate a connection on a socket                                      }
+                           {#syscallnr(nr_sys_listen       undef ,    106 ,    106 ,    106 ); -- listen for connections on a socket                                     }
+                           {#syscallnr(nr_sys_accept,      undef ,     30 ,     30 ,     30 ); -- accept a connection on a socket                                        }
+                           {#syscallnr(nr_sys_getsockname, undef ,     32 ,     32 ,     32 ); -- get socket name                                                        }
+                           {#syscallnr(nr_sys_getpeername, undef ,     31 ,     31 ,     31 ); -- get name of connected peer                                             }
+                           {#syscallnr(nr_sys_socketpair,  undef ,    135 ,    135 ,    135 ); -- create a pair of connected sockets                                     }
+                           {#syscallnr(nr_sys_sendto,      undef ,    133 ,    133 ,    133 ); -- send a message to a socket                                             }
+                           {#syscallnr(nr_sys_recvfrom,    undef ,     29 ,     29 ,     29 ); -- receive a message from a socket                                        }
+                           {#syscallnr(nr_sys_shutdown,    undef ,    134 ,    134 ,    134 ); -- shut down part of a full-duplex connection                             }
+                           {#syscallnr(nr_sys_setsockopt,  undef ,    105 ,    105 ,    105 ); -- set options on sockets                                                 }
+                           {#syscallnr(nr_sys_getsockopt,  undef ,    118 ,    118 ,    118 ); -- get options on sockets                                                 }
+                           {#syscallnr(nr_sys_sendmsg,     undef ,     28 ,     28 ,     28 ); -- send a message to a socket                                             }
+                           {#syscallnr(nr_sys_recvmsg,     undef ,     27 ,     27 ,     27 ); -- receive a message from a socket                                        }
+
+                            -- signal processing
+  nr_sys_sigaction=    67; {#syscallnr(nr_sys_sigaction,      67 ,     46 ,     46 , 291/46 ); -- software signal facilities                                             }
+
+  -- unsorted
+  nr_sys_execve   =    11; {#syscallnr(nr_sys_execve          11 ,     59 ,        ,        ); -- execute a file                                                         }
+  nr_sys_mmap     =    90; {#syscallnr(nr_sys_mmap            90 ,    197 ,        ,        ); -- map files or devices into memory                                       }
+  nr_sys_munmap   =    91; {#syscallnr(nr_sys_munmap          91 ,     73 ,        ,        ); -- remove a mapping                                                       }
+  nr_sys_mprotect =   125; {#syscallnr(nr_sys_mprotect       125 ,     74 ,        ,        ); -- control the protection of pages                                        }
+  nr_sys_brk      =    45; {#syscallnr(nr_sys_brk             45 ,        ,        ,        ); -- change data segment size                                               }
+                           {#syscallnr(nr_sys_sbrk         undef ,     69 ,        ,        ); -- change data segment size                                               }
+  nr_sys_fcntl    =    55; {#syscallnr(nr_sysfcntl            55 ,     92 ,     92 ,     92 ); -- manipulate file descriptor                                             }
+
+const
+  linux_nr_socket     =  1;    -- sys_socket(2)
+  linux_nr_bind       =  2;    -- sys_bind(2)
+  linux_nr_connect    =  3;    -- sys_connect(2)
+  linux_nr_listen     =  4;    -- sys_listen(2)
+  linux_nr_accept     =  5;    -- sys_accept(2)
+  linux_nr_getsockname=  6;    -- sys_getsockname(2)
+  linux_nr_getpeername=  7;    -- sys_getpeername(2)
+  linux_nr_socketpair =  8;    -- sys_socketpair(2)
+  --nux_nr_send       =  9;    -- sys_send(2)        -- obsolete
+  --nux_nr_recv       = 10;    -- sys_recv(2)        -- obsolete
+  linux_nr_sendto     = 11;    -- sys_sendto(2)
+  linux_nr_recvfrom   = 12;    -- sys_recvfrom(2)
+  linux_nr_shutdown   = 13;    -- sys_shutdown(2)
+  linux_nr_setsockopt = 14;    -- sys_setsockopt(2)
+  linux_nr_getsockopt = 15;    -- sys_getsockopt(2)
+  linux_nr_sendmsg    = 16;    -- sys_sendmsg(2)
+  linux_nr_recvmsg    = 17;    -- sys_recvmsg(2)
+
+
+
+-- SYS_IOCTL SYS_PIPE SYS_PTRACE
+-- SYS_EXECVE SYS_FSEEK SYS_FCNTL SYS_SELECT
+-- SYS_DUPSOCKET SYS_CLONE SYS_DUPSOCKETPAIR  SYS_SETRLIMIT
+-- SYS_SHUTDOWN SYS_DUP SYS_MINHERIT SYS_DUPFCNTL SYS_GETPEERNAME
+-- SYS_SIGVEC SYS_DUPOPEN SYS_GETSOCKNAME  SYS_SOCKETPAIR SYS_DUPPIPE SYS_GETSOCKOPT
+-- SYS_DUPSELECT
+
+-- DESCRIPTION
+-- PARAMETERS
+-- RETURN VALUES
+-- ERRORS
+-- SEE ALSO
+-- CONFORMING TO
+-- NOTES
+
+-- p©ed v n¡ parametr–:
+-- syscall1(edx)
+-- syscall3(ebx,ecx,edx)
+
+
+----------------------------------------------------------------------------------------------------
+--procedure sys_socketcall (
+--               call    :        tsys_int;
+--               args    :        ;
+--              error    :    out tsys_int) =
+-- universal Linux socket service
+----------------------------------------------------------------------------------------------------
+--begin
+--  case call
+--    when linux_nr_socket      do return(sys_socket(a0,a1,get_user(args+2)));
+--    when linux_nr_bind        do return(sys_bind(a0,(struct sockaddr *)a1,get_user(args+2)));
+--    when linux_nr_connect     do return(sys_connect(a0, (struct sockaddr *)a1,get_user(args+2)));
+--    when linux_nr_listen      do return(sys_listen(a0,a1));
+--    when linux_nr_accept      do return(sys_accept(a0,(struct sockaddr *)a1,(int *)get_user(args+2)));
+--    when linux_nr_getsockname do return(sys_getsockname(a0,(struct sockaddr *)a1,(int *)get_user(args+2)));
+--    when linux_nr_getpeername do return(sys_getpeername(a0, (struct sockaddr *)a1,(int *)get_user(args+2)));
+--    when linux_nr_socketpair  do return(sys_socketpair(a0,a1,get_user(args+2),(int *)get_user(args+3)));
+--    when linux_nr_send        do return(sys_send(a0,(void *)a1,get_user(args+2),get_user(args+3)));
+--    when linux_nr_sendto      do return(sys_sendto(a0,(void *)a1,get_user(args+2),get_user(args+3),(struct sockaddr *)get_user(args+4),get_user(args+5)));
+--    when linux_nr_recv        do return(sys_recv(a0,(void *)a1,get_user(args+2),get_user(args+3)));
+--    when linux_nr_recvfrom    do return(sys_recvfrom(a0,(void *)a1,get_user(args+2),get_user(args+3),(struct sockaddr *)get_user(args+4),(int *)get_user(args+5)));
+--    when linux_nr_shutdown    do return(sys_shutdown(a0,a1));
+--    when linux_nr_setsockopt  do return(sys_setsockopt(a0,a1,get_user(args+2),(char *)get_user(args+3),get_user(args+4)));
+--    when linux_nr_getsockopt  do return(sys_getsockopt(a0,a1,get_user(args+2),(char *)get_user(args+3),(int *)get_user(args+4)));
+--    when linux_nr_sendmsg     do return sys_sendmsg(a0,(struct msghdr *) a1,get_user(args+2));
+--    when linux_nr_recvmsg     do return sys_recvmsg(a0,(struct msghdr *) a1,get_user(args+2));
+--    when others             do return -EINVAL;
+--  end sys_socketcall;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure sys_exit =                           -- terminate the calling process
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm;
+      lea   ebx,status                         -- exit status of the calling process
+      mov   eax,nr_sys_exit                    -- kernel syscall "terminate the calling process"
+      int   $80                                -- call to kernel
+  #end asm;
+  end sys_exit;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure sys_fork =                           -- create a new process
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm;
+      mov   eax,nr_sys_fork                    -- kernel syscall "create a new process"
+      int   $80                                -- call to kernel
+  #end asm;
+  -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+  #syntax asm;
+  cmp  eax,$fffff001       -- nastala chyba?
+  jc   @1                  -- ne, nenastala
+  -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+  mov  error,eax           -- p©edat k¢d chyby ven
+  jmp  @0
+  -- nen¡ chyba
+@1: mov  pid,eax             -- vpo© dku
+  mov  error,err_ok        -- bez chyby
+@0: #end asm;
+  end sys_fork;
+
+
+
+----------------------------------------------------------------------------
+procedure sys_open =
+----------------------------------------------------------------------------
+var
+  xerror       : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    #syntax asm;
+    mov  edx,mode
+    mov  ecx,flags
+    mov  ebx,fname
+    mov  eax,nr_sys_open     -- syst‚mov  slu‘ba "open"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  error,eax           -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xresult,eax
+    mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    d:=xresult;
+    error:=xerror;
+    end sys_open;
+
+
+
+----------------------------------------------------------------------------
+procedure sys_close =
+----------------------------------------------------------------------------
+var
+  xerror       : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    #syntax asm;
+    mov  ebx,d
+    mov  eax,nr_sys_close    -- syst‚mov  slu‘ba "close"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra (jen k¢d chyby)
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  error,eax           -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    error:=xerror;
+    end sys_close;
+
+
+
+----------------------------------------------------------------------------
+procedure sys_read =
+----------------------------------------------------------------------------
+var
+  xerror       : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_size;  { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    #syntax asm;
+    mov  edx,nbytes          -- po‘adovan˜ po‡et byt–
+    mov  ecx,buf             -- buffer na data
+    mov  ebx,d               -- deskriptor souboru
+    mov  eax,nr_sys_read     -- syst‚mov  slu‘ba "read"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  error,eax           -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xresult,eax         -- vpo© dku
+    mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    result:=xresult;
+    error:=xerror;
+    end sys_read;
+
+
+
+----------------------------------------------------------------------------
+procedure sys_lseek =
+----------------------------------------------------------------------------
+var
+  xerror       : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    #syntax asm;
+    mov  edx,whence          -- v˜znam £daje OFS
+    mov  ecx,ofs             -- nov  poloha p©¡¨t¡ho ‡ten¡/z pisu
+    mov  ebx,d               -- deskriptor souboru
+    mov  eax,nr_sys_lseek    -- syst‚mov  slu‘ba "lseek"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  error,eax           -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xresult,eax         -- vpo© dku
+    mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    result:=xresult;
+    error:=xerror;
+    end sys_lseek;
+
+
+
+
+----------------------------------------------------------------------------
+procedure sys_write =
+----------------------------------------------------------------------------
+var
+  xerror       : tsys_int;   { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_size;  { <--- %FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    #syntax asm;
+    mov  edx,nbytes          -- number of bytes to write
+    mov  ecx,buf             -- buffer s daty
+    mov  ebx,d               -- file/object descriptor
+    mov  eax,nr_sys_write    -- syst‚mov  slu‘ba "write"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  xerror,eax          -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xresult,eax
+    mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    result:=xresult;
+    error:=xerror;
+    end sys_write;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure sys_mmap =
+--             addr    : in     tsys_caddr;
+--             len     : in     tsys_size;
+--             prot    : in     tsys_int;
+--             flags   : in     tsys_int;
+--             fd      : in     tsys_int;
+--             off     : in     tsys_off;
+--             result  :    out tsys_caddr;
+--             error   :    out tsys_int);     -- exit status of the calling process
+----------------------------------------------------------------------------------------------------
+type
+  { Linux and FreeBSD 4.x }
+  tmmap_arg_struct = record
+    addr   : tsys_caddr;
+    len    : tsys_size;
+    prot   : tsys_mmap_protset ;
+    flags  : tsys_mmap_flagsset;
+    fd     : tsys_int;
+  #if #environment target_os_type;='FREEBSD';
+    #if #environment target_os_version;>='4.4';
+    pad    : tsys_int;
+    #end if;
+  #end if;
+    offset : tsys_off;
+    end record for alignment use 4; { %%X: Ovˆ©it velikost z znamu }
+var
+  mmap_arg_struct : tmmap_arg_struct;
+  xerror       : tsys_int;       { <--- %%FLEX: zaplata!, nefunguje mov [???],eax }
+  xresult      : tsys_int;       { <--- %%FLEX: zaplata!, nefunguje mov [???],eax }
+
+begin
+    -- Perform the select(nd, in, out, ex, tv) and mmap() system calls. Linux/i386 didn't use to be
+    -- able to handle more than 4 system call parameters, so these system calls used a memory block
+    -- for parameter passing..
+    -- %%FLEX: UNIMPLEMENTED: mmap_arg_struct:=[addr,len,prot,flags,fd,off];
+    mmap_arg_struct.addr  :=addr;
+    mmap_arg_struct.len   :=len;
+    mmap_arg_struct.prot  :=prot;
+    mmap_arg_struct.flags :=flags;
+    mmap_arg_struct.fd    :=fd;
+    mmap_arg_struct.offset:=off;
+    #syntax asm;
+    lea  ebx,mmap_arg_struct
+    mov  eax,nr_sys_mmap     -- syst‚mov  slu‘ba "mmap"
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  xerror,eax          -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  xresult,eax
+    mov  xerror,err_ok       -- bez chyby
+@0: #end asm;
+    tsys_int(result:unchecked):=xresult;
+    error:=xerror;
+    end sys_mmap;
+
+
+
+
+
+
+
+{ ----------------------------------------------------------------------------
+  procedure sys_acct =
+  ----------------------------------------------------------------------------
+  begin
+    #syntax asm;
+    mov  eax,sys_acct        -- syst‚mov  slu‘ba "acct"
+    mov  edx,filename        -- adresa, kde je ulo‘eno jm‚no souboru
+    int  $80                 -- volat kernel
+    #end asm;
+    -- standardn¡ obsluha chyby po vol n¡ slu‘by j dra (jen k¢d chyby)
+    #syntax asm;
+    cmp  eax,$fffff001       -- nastala chyba?
+    jc   @1                  -- ne, nenastala
+    -- chyba
+@2: neg  eax                 -- normalizovat k¢d chyby
+    mov  error,eax           -- p©edat k¢d chyby ven
+    jmp  @0
+    -- nen¡ chyba
+@1: mov  error,err_ok        -- bez chyby
+@0: #end asm;
+    end sys_acct;}
+
+
+----------------------------------------------------------------------------------------------------
+procedure sys_vfork       = begin end sys_vfork;
+procedure sys_rfork       = begin end sys_rfork;
+procedure sys_socket      = begin end sys_socket;
+procedure sys_bind        = begin end sys_bind;
+procedure sys_accept      = begin end sys_accept;
+procedure sys_listen      = begin end sys_listen;
+procedure sys_getsockname = begin end sys_getsockname;
+procedure sys_getpeername = begin end sys_getpeername;
+procedure sys_socketpair  = begin end sys_socketpair;
+procedure sys_shutdown    = begin end sys_shutdown;
+procedure sys_getsockopt  = begin end sys_getsockopt;
+procedure sys_setsockopt  = begin end sys_setsockopt;
+procedure sys_readv       = begin end sys_readv;
+procedure sys_writev      = begin end sys_writev;
+procedure sys_pread       = begin end sys_pread;
+procedure sys_pwrite      = begin end sys_pwrite;
+procedure sys_wait4       = begin end sys_wait4;
+procedure sys_waitpid     = begin end sys_waitpid;
+procedure sys_connect     = begin end sys_connect;
+procedure sys_recvfrom    = begin end sys_recvfrom;
+procedure sys_sendto      = begin end sys_sendto;
+procedure sys_sigaction   = begin end sys_sigaction;
+procedure sys_getpid      = begin end sys_getpid;
+procedure sys_getppid     = begin end sys_getppid;
+procedure sys_nanosleep   = begin end sys_nanosleep;
+procedure sys_munmap      = begin end sys_munmap;
+procedure sys_mprotect    = begin end sys_mprotect;
+procedure sys_execve      = begin end sys_execve;
+procedure sys_brk         = begin end sys_brk;
+procedure sys_sbrk        = begin end sys_sbrk;
+procedure sys_fcntl       = begin end sys_fcntl;
+procedure sys_getuid      = begin end sys_getuid;
+procedure sys_geteuid     = begin end sys_geteuid;
+procedure sys_getgid      = begin end sys_getgid;
+procedure sys_getegid     = begin end sys_getegid;
+------------------------------------------------------------------------------------------------------
+
+end unix;

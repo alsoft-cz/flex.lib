@@ -1,0 +1,59 @@
+----------------------------------------------------------------------------------------------------
+module public xml_tree =
+-- XML document tree construction.
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.structures.trees;
+
+type
+  -- forward declarations
+  t_xml_document;  p_xml_document   = ^class t_xml_document;
+  t_xml_node;      p_xml_node       = ^class t_xml_node;
+  t_xml_element;   p_xml_element    = ^class t_xml_element;
+  t_xml_pi;        p_xml_pi         = ^class t_xml_pi;
+  t_xml_text;      p_xml_text       = ^class t_xml_text;
+  t_xml_cdata;     p_xml_cdata      = ^class t_xml_cdata;
+  t_xml_comment;   p_xml_comment    = ^class t_xml_comment;
+
+  ----- XML document -------------------------------------------------------------------------------
+  t_xml_document   = t_ntree with record
+      end record;
+
+  ----- generic XML document tree node -------------------------------------------------------------
+  t_xml_node       = t_ntree_node with record
+      end record;
+
+  ----- XML element --------------------------------------------------------------------------------
+  t_xml_element    = t_xml_node with record
+      end record;
+
+  ----- processing instruction ---------------------------------------------------------------------
+  t_xml_pi         = t_xml_node with record
+      end record;
+
+  ----- text ---------------------------------------------------------------------------------------
+  t_xml_text       = t_xml_node with record
+      end record;
+
+  ----- CDATA section ------------------------------------------------------------------------------
+  t_xml_cdata      = t_xml_text with record
+      end record;
+
+  ----- comment ------------------------------------------------------------------------------------
+  t_xml_comment    = t_xml_text with record
+      end record;
+
+----------------------------------------------------------------------------------------------------
+class public c_xml_tree_reader =
+-- XML tree reader.
+----------------------------------------------------------------------------------------------------
+    end c_xml_tree_reader;
+
+----------------------------------------------------------------------------------------------------
+class private c_xml_tree_writer =
+-- XML tree reader.
+----------------------------------------------------------------------------------------------------
+    end c_xml_tree_writer;
+
+end xml_tree;

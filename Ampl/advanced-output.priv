@@ -1,0 +1,192 @@
+----------------------------------------------------------------------------------------------------
+module private output =
+-- Standardized program output forms.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_listing = 
+-- Listing.
+----------------------------------------------------------------------------------------------------
+    
+    var
+      -- configuration data
+      os           : p_output_text_stream;       -- target output stream
+      width        : t_unsigned;                 -- normalized line width
+      indent       : t_unsigned;                 -- indentation
+      header_tab   : t_unsigned;                 -- header item tabbing width
+
+      -- status variables
+      section_pending    : t_logical := false;   -- there is some section being ouputted now
+      current_indent     : t_unsigned := 0;      -- current indentation level
+
+      -- temporary buffers
+      separator_template : p_char32ustr;         -- template of a separator ('-----  ------..----')
+      separator_buffer   : p_char32ustr;         -- space for separator construction
+      header_buffer      : p_char32ustr;         -- space for header item construction
+      indent_buffer      : p_char32ustr;         -- space for indentation template
+
+    ------------------------------------------------------------------------------------------------
+    static create =
+    -- Creates a new listing.
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      this.os:=os;
+      this.width:=width;
+      this.indent:=indent;
+      this.header_tab:=header_tab;
+
+      -- prepare a separator template
+      new separator_template range width;
+      -- %%TODO(AGGREGATE) separator^:=[for 1..5 use "-",for 6..7 use " ",for 8..width use "-"];
+      separator_template^:=[for 1..5 use "-",for 6..7 use " "];
+      for i in 8..width loop
+        separator_template^ & "-";
+        end loop;
+
+      -- prepare a separator buffer
+      new separator_buffer range width;
+
+      -- prepare header item buffer
+      new header_buffer range width;
+      end create;
+      
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual start_section =
+    -- Starts a new named section within the listing.
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      -- finish the current section if there is any
+      if section_pending then
+        skip_line; -- %%TODO(LISTING) Make this configurable.
+        skip_line;
+        skip_line;
+        current_indent:=0;
+        end if;
+
+      -- construct the separator
+      --%%TODO(SLICE) separator_buffer^:=separator_template^[1..6] & name & separator_template^[7..separator_template^:length];
+      separator_buffer^:=nil;
+      for i in 1..6 loop
+        separator_buffer^ & separator_template^[i];
+        end loop;
+      separator_buffer^ & name;
+      if separator_buffer^:length<width then
+        for i in 7..6+(width-separator_buffer^:length) loop
+          separator_buffer^ & separator_template^[i];
+          end loop
+        end if;
+
+      -- write it to the listing
+      os^.write_line(separator_buffer^);
+
+      -- note that there is a section being outputted
+      section_pending:=true;
+      end start_section;
+
+
+ 
+    ------------------------------------------------------------------------------------------------
+    virtual write_header_item =
+    -- Outputs a single header item into the listing. 
+    ------------------------------------------------------------------------------------------------
+    with
+      standard.strings;
+
+    begin 
+      -- %%TODO(SLICE) os^.write_line(name & [for 1..header_tab-name:length use " "] & value);
+      os^.write(name);
+      if header_tab>name:length then
+        os^.write(str_fill_substring(header_tab-name:length,' '));
+        end if;
+      os^.write_line(value);
+      end write_header_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual end_header =
+    -- Ends the header part of a section.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      skip_line;
+      current_indent:=0;
+      end end_header;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual write_line =
+    -- Outputs a single line of text into the listing. The text is indented according the current
+    -- indentation level.
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      -- first handle the current indent
+      for i in 1..current_indent loop
+        os^.write(' ');
+        end loop;
+      
+      -- then write the actual text
+      os^.write_line(text);
+      end write_line;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual skip_line =
+    -- Produces an empty line in the listing. Multiple calss to [skip_line] produce adequate number
+    -- of empty lines in the output.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      os^.write_line('');
+      end skip_line;
+   
+
+
+    ------------------------------------------------------------------------------------------------
+    static start_indent =
+    -- Starts indented sequence of lines.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      current_indent+indent;
+      end start_indent;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static end_indent =
+    -- Ends indented sequence of lines.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      current_indent-indent;
+      end end_indent;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalizace.
+    ------------------------------------------------------------------------------------------------
+    begin
+      discard separator_template;
+      discard separator_buffer;
+      discard header_buffer;
+      end exit;
+
+    end c_listing;
+
+
+
+end output;

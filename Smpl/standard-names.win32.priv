@@ -1,0 +1,1666 @@
+----------------------------------------------------------------------------------------------------
+module private names =
+-- Object names.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- add suport for quotes in file names
+--   -- change the silly implementation of [c_name.join] into clone & join of the [components] lists
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.classes,
+  standard.classes.lists,
+  standard.strings;
+
+----- Generic mechanisms for manipulation with names in a context of a namespace -------------------
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT) abstract} private c_namespace =
+-- Zaklad pro odvozeni konkretniho namespace.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual check_name =
+    -- Check if the given plain-text name [text_name] is a valid name in this namespace. When the
+    -- name is a valid name, [valid] is set to [true], otherwise it is set to [false].
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented
+      end check_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components]
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual compose_name =
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented
+      end compose_name;
+
+    end c_namespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT) abstract} private c_name_component =
+-- A single component of a name.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of subcomponents [subcomponents]
+    ------------------------------------------------------------------------------------------------
+    var
+      base_name    : p_name_subcomponent_base_name; -- base name of a component
+
+    begin
+      -- by defalult, the name is composed of one component only - a base name
+      new base_name;
+      base_name^.set_name(text_name);
+      subcomponents.insert(base_name);
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual compose_name =
+    -- Composes a plain-text name [text_name] from a list of subcomponents of this component. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      base_name    : p_name_subcomponent_base_name; -- base name of a component
+
+    begin
+      -- by default, return the base name
+      subcomponents.set_first(p_list_item(base_name));
+      new text_name range base_name^.name^:length;
+      text_name^:=base_name^.name^;
+      end compose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization
+    ------------------------------------------------------------------------------------------------
+    begin
+      subcomponents.delete_all;
+      end exit;
+
+    end c_name_component;
+
+
+
+----------------------------------------------------------------------------------------------------
+class {%%TODO(ABSTRACT) abstract} private c_name_subcomponent =
+-- A single subcomponent of a name's component.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static set_name =
+    -- Assigns a plain-text name of this subcomponent.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- discard the existing name, if any
+      discard name;
+
+      -- set a new name
+      new name range text_name:length;
+      name^:=text_name;
+      end set_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    ------------------------------------------------------------------------------------------------
+    begin
+      discard name;
+      end exit;
+
+    end c_name_subcomponent;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name =
+-- A name split into a list of components.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components]
+    ------------------------------------------------------------------------------------------------
+    var
+      valid        : t_logical;                  -- [true] if the name is a valid name in the given 
+                                                 -- namespace
+      system_ns    : c_namespace_system;
+
+    begin
+    { %%TODO(LIB)
+      -- try to figure-out the right namespace
+
+      -- decompose the name
+    }
+      system_ns.check_name(text_name,name_type,valid);
+      if valid
+        then system_ns.decompose_name(text_name,name_type,components,ns_data);
+        else raise name_error;
+        end if;
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static compose_name =
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      system_ns    : c_namespace_system;
+
+    begin
+    { %%TODO(LIB)
+      -- compose the name in context of the same namespace as used for decomposition
+    }
+      system_ns.compose_name(components,ns_data,text_name);
+      end compose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static join =
+    -- Joins a prefix and a suffix into this name. 
+    ------------------------------------------------------------------------------------------------
+    var
+      prefix_name  : p_text_name;
+      suffix_name  : p_text_name;
+      full_name    : p_text_name;
+
+    begin
+      prefix.compose_name(prefix_name);
+      suffix.compose_name(suffix_name);
+      new full_name range prefix_name^:length+suffix_name^:length+1;
+      full_name^:=prefix_name^;
+      if full_name^<>'' and then full_name^[full_name^:length]<>"\" then
+        full_name^ & "\";
+        end if;
+      full_name^ & suffix_name^;    
+      decompose_name(full_name^,tnt_unspecified);
+    leave
+      discard prefix_name;
+      discard suffix_name;
+      discard full_name;
+      end join;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static join_before =
+    -- Prepends a prefix before this name. This name must be a relative name.
+    ------------------------------------------------------------------------------------------------
+    var
+      x_prefix     : c_name;                     -- temporary copy of the prefix
+      text_name    : p_text_name;                -- plain-text name of the prefix
+      component    : p_name_component;           -- component being copied from the prefix to this name
+
+    begin 
+      -- make a copy of the prefix
+      begin
+        prefix.compose_name(text_name);
+        x_prefix.decompose_name(text_name^,tnt_unspecified);
+      leave
+        discard text_name;
+        end;
+
+      -- prepend it to the beginnig of this name
+      loop
+        -- remove the first component from the temporary suffix
+        component:=x_prefix.components.remove_last;
+        if component=nil then break; end if;
+
+        -- insert it at the end of this name
+        components.insert_first(component);
+        end loop;
+      end join_before;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static join_after =
+    -- Appends a suffix to this name. The [suffix] must be a relative name.
+    ------------------------------------------------------------------------------------------------
+    var
+      x_suffix     : c_name;                     -- temporary copy of the suffix
+      text_name    : p_text_name;                -- plain-text name of the suffic
+      component    : p_name_component;           -- component being copied from the suffix to this name
+
+    begin 
+      -- make a copy of the suffix
+      begin
+        suffix.compose_name(text_name);
+        x_suffix.decompose_name(text_name^,tnt_relative);
+      leave
+        discard text_name;
+        end;
+
+      -- append it to the end of this name
+      loop
+        -- remove the first component from the temporary suffix
+        component:=x_suffix.components.remove_first;
+        if component=nil then break; end if;
+
+        -- insert it at the end of this name
+        components.insert(component);
+        end loop;
+      end join_after;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization
+    ------------------------------------------------------------------------------------------------
+    begin
+      components.delete_all;
+      discard ns_data;
+      end exit;
+
+    end c_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_names =
+-- A collection of names.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization
+    ------------------------------------------------------------------------------------------------
+    begin
+      init(c_name:tag,false,false);
+      end entry;
+
+    end c_names;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure register_namespace =
+-- Registers a new namespace.
+--
+-- Remarks:
+--   The system namespace ([c_namespace_system]) is registered by default.
+----------------------------------------------------------------------------------------------------
+begin
+  -- %%TODO(LIB)
+{
+  -- check if it is an ancestor of c_namespace
+  if not (namspace>c_namespace:tag) then
+    ...
+    end if;
+
+  -- add to the list of registered namespaces
+  namespaces.insert(...);
+}
+  end register_namespace;
+
+
+
+----- Implementation of a system native namespace --------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_system =
+-- This platform's native namespace.
+----------------------------------------------------------------------------------------------------
+
+    type
+      -- internal differentiation between types of names
+      t_system_name_type = enum
+          tsnt_empty;                            -- an empty name
+          tsnt_absolute_unc;                     -- an UNC name in the form "\\server\share\path"
+          tsnt_absolute_local;                   -- a local absolute name in the form "c:\path"
+          tsnt_root_relative;                    -- a root-relative name in the form "\path"
+          tsnt_relative;                         -- a relative name in the form "path"
+          end enum;
+
+      -- system-namespace specific data
+      t_namespace_specific_system = t_namespace_specific with record
+          name_type: t_system_name_type;
+          end record;
+      p_namespace_specific_system = ^class t_namespace_specific_system;
+
+    ------------------------------------------------------------------------------------------------
+    override check_name =
+    -- Check if the given plain-text name [text_name] is a valid name in this namespace. When the
+    -- name is a valid name, [valid] is set to [true], otherwise it is set to [false].
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure check_for_valid_characters (
+            from   : in t_unsigned)              -- starting index into [text_name] from which to check
+            return t_logical =
+        -- Checks if the name contains only valid characters
+        --------------------------------------------------------------------------------------------
+        var
+          i        : t_unsigned;
+
+        begin
+          for i in from..text_name:length loop
+            -- the invalid characters within a name are >, <, :, " and |
+            -- more precisely, \ and / are also invalid characters, but in this stage, we do not
+            -- distinguish between a full path and a file name
+            if {%%TODO(SET)text_name[i] in [">","<",":",""","|"]} text_name[i]=">" or text_name[i]="<" or text_name[i]=":" or text_name[i]=""" or text_name[i]="|" then
+              result:=false;
+              end if;
+            end loop;
+          result:=true;
+          end check_for_valid_characters;
+
+    begin
+      -- empty name always matches
+      if text_name='' then
+        valid:=true;
+        return;
+        end if;
+
+      -- possibly a UNC name
+      if name_type in t_name_type_set:[tnt_absolute,tnt_unspecified] and then {%%TODO(SLICE)text_name[1..2]='\\'} text_name:length>=4 and then (text_name[1]="\" and text_name[2]="\") then
+      {%%TODO(SLICE) %%TODO(LIB)
+        -- it could be a "long" UNC name
+        if text_name[1..8]='\\?\UNC\' then
+          ...
+          end if;
+      }
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        valid:=check_for_valid_characters(3);
+
+      -- possibly a "c:\file.ext" name
+      elsif name_type in t_name_type_set:[tnt_absolute,tnt_unspecified] and then text_name:length>=2 
+      and then (((text_name[1]>="a" and text_name[1]<="z") or (text_name[1]>="A" and text_name[1]<="Z")) {%%TODO(SET)text_name[1] in ["a".."z","A".."Z"]} and text_name[2]=":") then
+        -- the third character shall be a backslash
+        if text_name:length>=3 and then text_name[3]<>"\" then  
+          valid:=false;
+          return;
+          end if;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        valid:=check_for_valid_characters(4);
+
+      -- possibly a relative name 
+      elsif name_type in t_name_type_set:[tnt_relative,tnt_unspecified] then
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        valid:=check_for_valid_characters(1);
+
+      -- definitely an invalid name
+      else
+        valid:=false;
+        end if;
+      end check_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components]
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure separate_component_name (
+            start  : in out t_unsigned;          -- actual position in [text_name]
+            name   : out p_text_name;            -- separated subcomponent name
+            is_folder : out t_logical) =         -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+        -- Separates the name of a subcomponent starting at position [start] from the [text_name].
+        --------------------------------------------------------------------------------------------
+        var
+          stop     : t_unsigned;
+          i        : t_unsigned;
+
+        begin
+          -- find the end of the name
+          stop:=start;
+          while stop<=text_name:length and then {%%TODO(SLICE)text_name[stop] not in ["\","/"]} (text_name[stop]<>"\" and text_name[stop]<>"/") loop
+            succ stop;
+            end loop;
+
+          -- copy it
+          new name range stop-start;
+          for i in start..stop-1 loop
+            name^ & text_name[i];
+            end loop;
+
+          -- decide if it is a folder name for sure
+          is_folder:=stop<=text_name:length or name^='.' or name^='..';
+
+          -- update the [start] position
+          start:=stop+1;
+          end separate_component_name;
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure parse_rest_of_name (
+            initial : in t_unsigned) =           -- initial position for parsing
+        -- Parses the rest of the name starting with position [initial].
+        --------------------------------------------------------------------------------------------
+        var
+          folder   : p_name_component_folder;    -- folder component
+          file_or_folder : p_name_component_file_or_folder; -- file or folder component
+          name     : p_text_name;                -- name of a single component
+          start    : t_unsigned;                 -- actual position in [text_name]
+          is_folder: t_logical;                  -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+        begin
+          start:=initial;
+          while start<=text_name:length loop
+            begin
+              -- separate the name of a folder or file
+              separate_component_name(start,name,is_folder);
+
+              -- create a component
+              if is_folder
+
+                -- it is a folder for sure
+                then
+                  new folder;
+                  folder^.decompose_name(name^);
+                  components.insert(folder);
+
+                -- it can be either a folder or a file
+                else
+                  new file_or_folder;
+                  file_or_folder^.decompose_name(name^);
+                  components.insert(file_or_folder);
+                  end if;
+            leave
+              -- free the plain-text name
+              discard name;
+              end;
+            end loop;
+          end parse_rest_of_name;
+
+    var
+      server       : p_name_component_server;    -- server component
+      drive        : p_name_component_drive;     -- drive component
+      name         : p_text_name;                -- name of a single component
+      start        : t_unsigned;                 -- actual position in [text_name]
+      is_folder    : t_logical;                  -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+
+    begin
+      -- prepare namespace specific data
+      new p_namespace_specific_system(ns_data);
+
+      -- empty name - no decomposition possible
+      if text_name='' then
+        return;
+        end if;
+
+      -- possibly a UNC name
+      if name_type in t_name_type_set:[tnt_absolute,tnt_unspecified] and then {%%TODO(SLICE)text_name[1..2]='\\'} text_name:length>=4 and then (text_name[1]="\" and text_name[2]="\") then
+      {%%TODO(SLICE) %%TODO(LIB)
+        -- it could be a "long" UNC name
+        if text_name[1..8]='\\?\UNC\' then
+          ...
+          end if;
+      }                                                        
+        {%%TODO(DECLARE) server, drive, start, name, is_folder }
+
+        -- remember the type of the name
+        p_namespace_specific_system(ns_data)^.name_type:=tsnt_absolute_unc;
+        
+        -- the first component of a name is a server
+        start:=3;
+        separate_component_name(start,name,is_folder);
+        new server;
+        server^.decompose_name(name^);
+        components.insert(server);
+        discard name;
+
+        -- the second component of a name is a share
+        separate_component_name(start,name,is_folder);
+        new server;
+        server^.decompose_name(name^);
+        components.insert(server);
+        discard name;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        parse_rest_of_name(start);
+
+      -- possibly a "c:\file.ext" name
+      elsif name_type in t_name_type_set:[tnt_absolute,tnt_unspecified] and then text_name:length>=2 
+      and then (((text_name[1]>="a" and text_name[1]<="z") or (text_name[1]>="A" and text_name[1]<="Z")) {%%TODO(SET)text_name[1] in ["a".."z","A".."Z"]} and text_name[2]=":") then
+        -- the third character shall be a backslash
+        if text_name:length>=3 and then text_name[3]<>"\" then  
+          -- %%FLEX signal an error !
+          return;
+          end if;
+
+        -- remember the type of the name
+        p_namespace_specific_system(ns_data)^.name_type:=tsnt_absolute_local;
+        
+        -- the first component of a name is a drive
+        {%%TODO(DECLARE) drive, name }
+        new name range 1;
+        name^ & text_name[1];
+        new drive;
+        drive^.decompose_name(name^);
+        components.insert(drive);
+        discard name;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        parse_rest_of_name(4);
+        
+      -- possibly a relative name 
+      elsif name_type in t_name_type_set:[tnt_relative,tnt_unspecified] then
+        -- remember the type of the name
+        if {%%TODO(SET) text_name[1] in ["\","/"]} text_name[1]="\" or text_name[1]="/"
+          then p_namespace_specific_system(ns_data)^.name_type:=tsnt_root_relative;
+          else p_namespace_specific_system(ns_data)^.name_type:=tsnt_relative;
+          end if;
+        
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes       
+        parse_rest_of_name(1);
+
+      -- definitely an invalid name
+      else
+        -- %%FLEX signal an error !
+        return;
+        end if;
+
+    leave
+      -- discard any unfreed memory
+      discard name;
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override compose_name =
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure append_name_component (
+            component : in t_text_name) =
+        -- Appends the name of a component to the full plain-text name.
+        --------------------------------------------------------------------------------------------
+        var
+          _text_name : p_text_name;
+
+        begin
+          -- reallocate memory
+          if text_name=nil
+            then new text_name range component:length
+            else
+              -- %%TODO(ADJUST) adjust text_name range text_name^:length+component:length;
+              new _text_name range text_name^:length+component:length;
+              _text_name^:=text_name^;
+              discard text_name;
+              text_name:=_text_name;
+              end if;
+
+          -- append the component's name
+          text_name^ & component;
+          end append_name_component; 
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure append_rest_of_path (
+            first_file_or_folder : in p_name_component_file_or_folder) =
+        -- Appends the rest of the path beginning with [file_or_folder].
+        --------------------------------------------------------------------------------------------
+        var
+          text_name : p_text_name;               -- a plain-text name of a component
+          file_or_folder : p_name_component_file_or_folder; -- the file or folder actually being processed
+
+        begin
+          file_or_folder:=first_file_or_folder;
+          while file_or_folder<>nil loop
+            -- append the name of this file or folder
+            begin
+              file_or_folder^.compose_name(text_name);
+              append_name_component(text_name^);
+            leave
+              discard text_name;
+              end;
+
+            -- get next entry
+            components.set_next(p_list_item(file_or_folder));
+
+            -- don't forget the separating backslash
+            if file_or_folder<>nil then
+              append_name_component('\');
+              end if;
+            end loop;
+          end append_rest_of_path;
+
+    var
+      server       : p_name_component_server;    -- the server component
+      share        : p_name_component_drive;     -- the share component
+      drive        : p_name_component_drive;     -- the drive component
+      component_name : p_text_name;              -- a plain-text name of a component
+
+    begin
+      case p_namespace_specific_system(ns_data)^.name_type
+        -- an empty name
+        when tsnt_empty do new text_name range {%%FLEX 0 => Constant out of range}1;
+
+        -- an UNC name in the form "\\server\share\path"
+        when tsnt_absolute_unc do
+            -- append the server name
+            begin
+              server:=components.get_first;
+              server^.compose_name(component_name);
+              append_name_component('\\');
+              append_name_component(component_name^);
+            leave
+              discard component_name;
+              end;
+
+            -- append the share name
+            begin
+              share:=components.get_next(server);
+              share^.compose_name(component_name);
+              append_name_component('\');
+              append_name_component(component_name^);
+            leave
+              discard component_name;
+              end;
+
+            -- append the rest of the path
+            append_name_component('\');
+            append_rest_of_path(components.get_next(share));
+
+        -- a local absolute name in the form "c:\path"
+        when tsnt_absolute_local do
+            -- append the drive name
+            begin
+              drive:=components.get_first;
+              drive^.compose_name(component_name);
+              append_name_component(component_name^);
+              append_name_component(':\');
+            leave
+              discard component_name;
+              end;
+
+            -- append the rest of the path
+            append_rest_of_path(components.get_next(drive));
+
+        -- a root-relative name in the form "\path"
+        when tsnt_root_relative do
+            -- append the rest of the path
+            append_name_component('\');
+            append_rest_of_path(components.get_first);
+
+        -- a relative name in the form "path"
+        when tsnt_relative do
+            -- append the rest of the path
+            append_rest_of_path(components.get_first);
+        end case;
+      
+      -- prepare iterator
+      --iterator.init(this,
+      end compose_name;
+
+    end c_namespace_system;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_server =
+-- Name of a server.
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_server;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_drive =
+-- Name of a drive (or a "share" or a "volume" in some naming conventions) within a server.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_drive;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_file_or_folder =
+-- Name of a folder or a file.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static get_base_name =
+    -- Retrieves the base name of a file or folder name.
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      end get_base_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_last_extension =
+    -- Checks if the last extension of the name is equal to the given extension.
+    ------------------------------------------------------------------------------------------------
+    var
+      ext          : p_name_subcomponent_extension; -- extension
+
+    begin
+      -- if there are any extensions in the name...
+      if subcomponents.count>1 then
+        -- retrieve the last
+        ext:=subcomponents.get_last;
+
+        -- and compare with the given extension
+        result:=str_compare_case_insensitive(ext^.name^,extension);
+        end if;
+      end check_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static replace_last_extension =
+    -- Replaces the last extension of the name with the given extension.
+    ------------------------------------------------------------------------------------------------
+    var
+      ext          : p_name_subcomponent_extension; -- extension
+
+    begin
+      -- if there are any extensions in the name...
+      if subcomponents.count>1 then
+        -- retrieve the last
+        ext:=subcomponents.get_last;
+
+        -- replace it with the value
+        ext^.set_name(extension);
+        end if;
+      end replace_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static append_extension =
+    -- Appends the given extension to the name.
+    ------------------------------------------------------------------------------------------------
+    var
+      ext          : p_name_subcomponent_extension; -- extension
+
+    begin
+      -- create a subcomponent
+      new ext;
+      ext^.set_name(extension);
+      subcomponents.insert(ext);
+      end append_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of subcomponents [subcomponents]
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure separate_subcomponent_name (
+            start  : in out t_unsigned;          -- actual position in [text_name]
+            name   : out p_text_name) =          -- separated subcomponent name
+        -- Separates the name of a subcomponent starting at position [start] from the [text_name].
+        --------------------------------------------------------------------------------------------
+        var
+          stop     : t_unsigned;
+          i        : t_unsigned;
+
+        begin
+          -- find the end of the name
+          stop:=start;
+          while stop<=text_name:length and then text_name[stop]<>"." loop
+            succ stop;
+            end loop;
+
+          -- copy it
+          new name range stop-start;
+          for i in start..stop-1 loop
+            name^ & text_name[i];
+            end loop;
+
+          -- update the [start] position
+          start:=stop+1;
+          end separate_subcomponent_name;
+
+    var
+      base_name    : p_name_subcomponent_base_name; -- base name
+      extension    : p_name_subcomponent_extension; -- extension
+      name         : p_text_name;                -- plain-text name of a single subcomponent
+      start        : t_unsigned;                 -- actual position in [text_name]
+
+    begin
+      -- there are two special cases of folder names: '.' and '..' => handle them separately
+      if text_name='.' or text_name='..' then
+        new base_name;
+        base_name^.set_name(text_name);
+        subcomponents.insert(base_name);
+        return;
+        end if;
+
+      -- start from the beginning of the name
+      start:=1;
+
+      -- separate the base name
+      separate_subcomponent_name(start,name);
+
+      -- create a subcomponent
+      new base_name;
+      base_name^.set_name(name^);
+      subcomponents.insert(base_name);
+
+      -- free the plain-text name
+      discard name;
+
+      -- separate all extensions
+      while start<=text_name:length loop
+        -- separate one extension
+        separate_subcomponent_name(start,name);
+
+        -- create a subcomponent
+        new extension;
+        extension^.set_name(name^);
+        subcomponents.insert(extension);
+
+        -- free the plain-text name
+        discard name;
+        end loop;
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override compose_name =
+    -- Composes a plain-text name [text_name] from a list of subcomponents of this component. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure append_name_subcomponent (
+            subcomponent : in t_text_name) =
+        -- Appends s name of a subcomponent to the full plain-text name of the component.
+        --------------------------------------------------------------------------------------------
+        var
+          _text_name : p_text_name;
+
+        begin
+          -- reallocate memory
+          if text_name=nil
+            then new text_name range subcomponent:length
+            else
+              -- %%TODO(ADJUST) adjust text_name range text_name^:length+subcomponent:length;
+              new _text_name range text_name^:length+subcomponent:length;
+              _text_name^:=text_name^;
+              discard text_name;
+              text_name:=_text_name;
+              end if;
+
+          -- append the subcomponent's name
+          text_name^ & subcomponent;
+          end append_name_subcomponent; 
+
+    var
+      base_name    : p_name_subcomponent_base_name; -- base name of a component
+      extension    : p_name_subcomponent_extension; -- extension
+
+    begin
+      -- retrieve the base name
+      subcomponents.set_first(p_list_item(base_name));
+      append_name_subcomponent(base_name^.name^);
+
+      -- append all extensions
+      extension:=subcomponents.get_next(base_name);
+      while extension<>nil loop
+        -- append the extension to the full plain-text name
+        append_name_subcomponent('.');
+        append_name_subcomponent(extension^.name^);
+        
+        -- retrieve next extension
+        subcomponents.set_next(p_list_item(extension));
+        end loop;
+      end compose_name;
+
+    end c_name_component_file_or_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_file =
+-- Name of a file.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_file;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_folder =
+-- Name of a folder.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_base_name =
+-- Base part of a name.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_subcomponent_base_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_extension =
+-- Extension of a name.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_subcomponent_extension;
+
+
+
+----------------------------------------------------------------------------------------------------
+entry =
+-- Initialization.
+----------------------------------------------------------------------------------------------------
+begin
+  -- register the system namespace
+  register_namespace(c_namespace_system:tag);
+  end entry;
+
+{
+----------------------------------------------------------------------------------------------------
+class c_name_subcomponent = extend c_list_item;
+-- Cast slozky jmena.
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent;
+
+type
+  p_name_subcomponent = ^class c_name_subcomponent;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_name_subcomponents_list = extend c_list;
+-- Seznam casti slozeky jmena.
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponents_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_name_component = extend c_list_item;
+-- Slozka jmena.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual init;
+    -- Inicializace.
+    ------------------------------------------------------------------------------------------------
+    virtual free;
+    -- Uvolneni pameti alokovane komponentou.
+    ------------------------------------------------------------------------------------------------
+    virtual set_name (
+       _name       : t_char32ustr);
+    -- Nastavi jmeno komponenty.
+    ------------------------------------------------------------------------------------------------
+
+  private
+    
+    var
+      subcomponents: c_name_subcomponents_list;  -- seznam slozek komponenty jmena
+     
+    ------------------------------------------------------------------------------------------------
+    virtual init =
+    -- Inicializace.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace seznamu slozek komponenty jmena
+      subcomponents.init;
+      end init;
+     
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual free =
+    -- Uvolneni pameti alokovane komponentou.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- odstranime vsechny slozky komponenty
+      subcomponents.delete_all;
+      end free;
+     
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual set_name =
+    -- Nastavi jmeno komponenty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end set_name;
+
+    end c_name_component;
+
+type
+  p_name_component = ^class c_name_component;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_name_components_list = extend c_list;
+-- Seznam slozek jmena.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init;
+    -- Inicializace.
+    ------------------------------------------------------------------------------------------------
+    static clear;
+    -- Odstrani vsechny komponenty jmena ze seznamu.
+    ------------------------------------------------------------------------------------------------
+
+  private
+   
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializace.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- %%TODO(ANCESTOR)
+      -- this:ancestor.init(c_name_component:tag,true,false);
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static clear =
+    -- Odstrani vsechny komponenty jmena ze seznamu.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_name_component;           -- aktualni komponenta jmena
+      item_old     : p_name_component;           -- ostranovana komponenta
+
+    begin
+      -- ostranime vsechny komponenty ve jmene
+      item:=get_first; item_old:=nil;
+      while item<>nil loop
+        -- schovame pointer na rusenou komponentu
+        item_old:=item;
+
+        -- dalsi prvek v poradi
+        item:=get_next(item);
+
+        -- odstanime komponentu
+        item_old^.free;
+        discard(item_old);
+        end loop;
+      end clear;
+    end c_name_components_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_namespace =
+-- Zaklad pro odvozeni konkretniho namespace.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual process =
+    -- Rozlozi retezec na strukturu obsahujici jednotlive komponenty jmena.
+    -- Vrati TRUE pokud [_name] nalezi do prislusneho namespace a je typu [_type]
+    ------------------------------------------------------------------------------------------------
+    begin
+      end process;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual compose =
+    -- Ze struktury jmena sestavi retezec.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end compose;
+
+    end c_namespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name =
+-- Jmeno.
+----------------------------------------------------------------------------------------------------
+
+    var
+      components   : c_name_components_list;     -- seznam komponent
+      name_type    : t_name_type;                -- typ jmena
+      namespace    : t_tag;                      -- namespace jmena          
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializace tridy jmeno.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- ostranime pripadnou starsi strukturu
+      components.clear;
+
+      -- inicializace
+      namespace:=c_namespace:tag;
+      name_type:=tnt_unspecified;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static assign =
+    -- Prirazeni retece do c_name. Parametr [_name] obsahuje retezec se jmenem, [_namespace] pak 
+    -- urcuje typ jmena. Pokud [_name] vyhovuje danemu [_namespace], vrati metoda assign TRUE.
+    -- Pokud je [_namespace] c_namespace zkusi se vybrat automaticky nejvhodnejsi z dostupnych
+    -- namespace
+    ------------------------------------------------------------------------------------------------
+    var
+      parser       : p_namespace;
+
+    begin
+      -- inicializace
+      result:=false;
+      namespace:=_namespace;
+      name_type:=_type;
+
+      -- ostranime predchozi strukturu
+      components.clear;
+
+      -- kontrola zadaneho typu komponenty
+--       if namespace>c_namespace:tag then
+           -- zkusime aplikovat na jmeno parser zadaneho namespace
+--         new parser tag namespace;
+           if parser^.process(_name,name_type,components) then 
+             result:=true; 
+             end if;
+--         end if;
+      end assign;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static to_string =
+    -- Prevede jmeno na retezec.    
+    ------------------------------------------------------------------------------------------------
+    begin
+    #if #declared radekr_newfs; #and then; radekr_newfs then;
+      result:=^xname;
+    #end if;
+      end to_string;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Entry sekce tridy.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace struktury se jmenem
+      components.init;
+      end entry;
+
+    end c_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Implementace odvozenych slozek komponent
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_name = extend c_name_subcomponent;
+-- Jmeno
+----------------------------------------------------------------------------------------------------
+    end c_name_subcomponent_name;
+
+type
+  p_name_subcomponent_name = ^class c_name_subcomponent_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_extension = extend c_name_subcomponent;
+-- Pripona
+----------------------------------------------------------------------------------------------------
+    end c_name_subcomponent_extension;
+
+type
+  p_name_subcomponent_extension = ^class c_name_subcomponent_extension;
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Implementace odvozenych komponent
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_file = extend c_name_component;
+-- Jmeno souboru.
+----------------------------------------------------------------------------------------------------
+
+    const
+      extension_separator : t_char32 = ".";
+   
+    ------------------------------------------------------------------------------------------------
+    virtual set_name (
+       _name       : t_char32ustr) =
+    -- Nastavi jmeno komponenty.
+    ------------------------------------------------------------------------------------------------
+    var
+      subcomp      : p_name_subcomponent;        -- slozka komponenty jmena
+      subcomp_name : p_char32ustr;               -- jmeno subkomponenty
+      name         : p_char32ustr;               -- jmeno komponenty 
+      extension_pos: t_unsigned;                 -- pozice oddelovace ve jmene
+      first_part   : t_logical;                  -- prvni slozka komponenty 
+
+    begin
+
+      -- inicializace
+      extension_pos:=1;
+      str_create_copy(_name,name,1,_name:length);
+      first_part:=true;
+
+      -- najdeme jednotlive casti komponenty jmena
+      while name^:length>0 loop
+        -- obsahuje jmeno oddelovac slozek ?
+        extension_pos:=str_pos_substring(name^,t_char32str:[extension_separator]);
+
+        -- oddelime cast pred oddelovacem
+        if extension_pos>0 then
+          -- jmeno polozky komponenty           
+          str_create_copy(name^,subcomp_name,1,extension_pos-1);
+
+          -- zbytek jmena komponenty
+          name^:=str_copy(name^,extension_pos+1,name^:length);
+        else
+          -- jmeno polozky komponenty           
+          str_create_copy(name^,subcomp_name,1,name^:length);
+
+          -- jmeno uz nepotrebujeme, uvolnime alokovanou pamet
+          discard name;
+          end if;
+
+        -- vytvorime slozku komponenty
+        if first_part then
+--%%TODO    new subcomp tag c_name_subcomponent_name:tag;
+          new p_name_subcomponent_name(subcomp);
+          first_part:=false; 
+        else
+--%%TODO    new subcomp tag c_name_subcomponent_extension:tag;
+          new p_name_subcomponent_extension(subcomp);
+          end if;  
+
+        end loop;
+      end set_name;
+    end c_name_component_file;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_directory = extend c_name_component;
+-- Jmeno adresare.
+----------------------------------------------------------------------------------------------------
+    end c_name_component_directory;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_drive = extend c_name_component;
+-- Jmeno disku.
+----------------------------------------------------------------------------------------------------
+    end c_name_component_drive;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_server = extend c_name_component;
+-- Jmeno serveru.
+----------------------------------------------------------------------------------------------------
+    end c_name_component_server;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_share = extend c_name_component;
+-- Jmeno sharu.
+----------------------------------------------------------------------------------------------------
+    end c_name_component_share;
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Implementace odvozenych namespace
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class c_namespace_system = extend c_namespace;
+-- Namespace pro systemove jmena souboru.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual init;
+    -- Inicializace namespace.
+    ------------------------------------------------------------------------------------------------
+    virtual process (
+        _name      : in t_name;
+        _type      : in t_name_type;
+        _list      : in out c_name_components_list)
+        return t_logical;
+    -- Rozlozi retezec na strukturu obsahujici jednotlive komponenty jmena.
+    -- Vrati TRUE pokud [_name] nalezi do prislusneho namespace a je typu [_type]
+    ------------------------------------------------------------------------------------------------
+    virtual compose (
+        _name_struct : in c_name_components_list)
+        return t_name;
+    -- Ze struktury jmena sestavi retezec.
+    ------------------------------------------------------------------------------------------------
+     
+  private
+
+    const
+      -- definice rezervovanych znaku ve jmene souboru
+      path_separator      : t_char32 = "\";
+      drive_separator     : t_char32 = ":";
+
+    type
+      -- stavy parseru
+      t_name_parser_status = enum
+          tnps_init;                             -- pocateni stav
+          tnps_path_separator;                   -- nalezen oddelovac komponent
+          tnps_first_path_separator;             -- nalezen oddelovac komponent na prvni pozici
+          tnps_name;                             -- jmeno
+          tnps_first_name;                       -- jmeno na prvni pozici 
+          tnps_drive_separator;                  -- nalezen oddelovac disku
+          tnps_server_separator;                 -- nalezen oddelovac serveru
+          tnps_server_name;                      -- jmeno serveru
+          tnps_share_separator;                  -- nelezen oddelovac sharu
+          tnps_share_name;                       -- jmeno sharu
+          tnps_error;                            -- chybovy stav
+          end enum;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual init =
+    -- Inicializace namespace.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static denied_character (
+        _character : in t_char32)
+        return t_logical =
+    -- Vrati TRUE v pripade ze se jedna v tomto namespace o zakazany znak.
+    -- %%TODO(SET)
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace
+      result:=false;
+
+      -- nachazi se znak v mnozine zakazanych znaku ?
+      if _character="<" or _character=">" or _character=""" or
+         _character="/" or _character="|" then
+
+        result:=true;
+        end if;
+       end denied_character;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static denied_word (
+        _word      : in t_char32ustr)
+        return t_logical =
+    -- Vrati TRUE v pripade ze se jedna v tomto namespace o zakazane jmeno.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace
+      result:=false;
+
+      -- nachazi se slovo v mnozine zakazanych jmen ?
+      if _word='con' or _word='prn' or _word='aux' or _word='clock$' or _word='nul' or 
+         _word='com1' or _word='com2' or _word='com3' or _word='com4' or _word='com5' or
+         _word='com6' or _word='com7' or _word='com8' or _word='com9' or _word='lpt1' or 
+         _word='lpt2' or _word='lpt3' or _word='lpt4' or _word='lpt5' or _word='lpt6' or 
+         _word='lpt7' or _word='lpt8' or _word='lpt9' then
+
+        result:=true;
+        end if;
+       end denied_word;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static add (
+        _name      : in t_char32ustr;
+        _type      : in t_tag;
+        _list      : in out c_name_components_list)
+        return t_logical =
+    -- Zaradi do seznamu dalsi komponentu, v pripade neuspechu vrati FALSE.
+    ------------------------------------------------------------------------------------------------
+    var
+      component    : p_name_component;
+
+    begin
+       -- inicializace
+       result:=false;
+
+       -- kontrola zadaneho typu komponenty
+--       if _type>c_name_component:tag then
+           -- kontola jmena na zakazana klicova slova
+           if denied_word(_name) then return; end if;
+
+--         new component tag _type;
+           component^.init;
+           component^.set_name(_name);
+           _list.insert_last(component);
+--         end if;
+       end add;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual process =
+    -- Rozlozi retezec na strukturu obsahujici jednotlive komponenty jmena.
+    ------------------------------------------------------------------------------------------------
+    var
+      status       : t_name_parser_status:=tnps_init; -- aktualni stav parseru
+      offset       : t_unsigned32;               -- offset prave zpracovavaneho znaku
+      curr_char    : t_char32;                   -- prave zpracovavany znak
+      name_start   : t_unsigned32:=0;            -- offset zacatku jmena ve stringu
+      name_end     : t_unsigned32:=0;            -- offset konce jmena ve stringu
+      comp_name    : p_char32ustr;               -- jmeno komponenty
+
+    begin
+      -- projdeme jmeno znak po znaku a zpracujeme ho
+      offset:=1;
+      while (status<>tnps_error) and (offset<=_name:length) loop
+        -- nacteme znak
+        curr_char:=_name[offset];
+
+        -- oddelovac adresaru
+        if curr_char=path_separator then
+          -- podle stavu parseru
+          case status
+              when tnps_init do
+                status:=tnps_first_path_separator;
+
+              when tnps_first_path_separator do
+                status:=tnps_server_separator;
+     
+              when tnps_name, tnps_first_name do
+                status:=tnps_path_separator;
+
+                -- vlozime do seznamu jmeno adresare
+                str_create_copy(_name,comp_name,name_start,name_end);
+                if not add(comp_name^,c_name_component_directory:tag,_list) then
+                  status:=tnps_error;
+                  end if;
+
+                discard(comp_name);
+
+              when tnps_server_name do
+                status:=tnps_share_separator;
+
+                -- vlozime do seznamu jmeno serveru
+                str_create_copy(_name,comp_name,name_start,name_end);
+                if not add(comp_name^,c_name_component_server:tag,_list) then
+                  status:=tnps_error;
+                  end if;
+
+                discard(comp_name);
+
+              when tnps_share_name do
+                status:=tnps_path_separator;
+
+                -- vlozime do seznamu jmeno sharu
+                str_create_copy(_name,comp_name,name_start,name_end);
+                if not add(comp_name^,c_name_component_share:tag,_list) then
+                  status:=tnps_error;
+                  end if;
+
+                discard(comp_name);
+  
+              when tnps_drive_separator do;
+                status:=tnps_path_separator;
+
+              when others do;
+                -- chyba pri zpracovani jmena parserem
+                status:=tnps_error;
+              end case;
+
+        -- oddelovac disku
+        elsif curr_char=drive_separator then 
+          -- podle stavu parseru
+          case status
+              when tnps_first_name do;
+                status:=tnps_drive_separator;
+
+                -- vlozime do seznamu jmeno disku
+                str_create_copy(_name,comp_name,name_start,name_end);
+                if not add(comp_name^,c_name_component_drive:tag,_list) then
+                  status:=tnps_error;
+                  end if;
+
+                discard(comp_name);
+
+              when others do;
+                -- chyba pri zpracovani jmena parserem
+                status:=tnps_error;
+              end case;
+
+        -- zakazany znak
+        elsif denied_character(curr_char) then
+           -- chyba pri zpracovani jmena parserem
+           status:=tnps_error;
+
+        -- povoleny znak - jmeno komponenty
+        else
+          -- podle stavu parseru
+          case status
+            when tnps_init do;
+              status:=tnps_first_name;
+              name_start:=offset;
+              name_end:=offset;
+
+            when tnps_first_name, tnps_name, tnps_server_name, tnps_share_name do;
+              -- pokracovani jmena
+              name_end:=offset;
+
+            when tnps_first_path_separator, tnps_path_separator do;
+              status:=tnps_name;
+
+              -- zacatek jmena
+              name_start:=offset;
+              name_end:=offset;
+
+            when tnps_server_separator do;
+              status:=tnps_server_name;
+
+              -- zacatek jmena serveru
+              name_start:=offset;
+              name_end:=offset;
+
+            when tnps_share_separator do;
+              status:=tnps_share_name;
+
+              -- zacatek jmena sharu
+              name_start:=offset;
+              name_end:=offset;
+
+            when others do;
+                -- chyba pri zpracovani jmena parserem
+                status:=tnps_error;
+                end case;
+          end if;
+
+        -- dalsi pozice ve jmene
+        offset+1;
+        end loop;
+
+      -- zpracujeme posledni stav parseru
+      case status
+          -- ani jsme nezacali
+          when tnps_init do;
+
+          -- nedokoncene jmeno
+          when tnps_first_name, tnps_name do;
+
+          -- nedokoncene jmeno sharu
+          when tnps_share_name do ;
+
+          -- povolene separatory
+          when tnps_path_separator, tnps_drive_separator do;
+
+          -- vsechno ostatni je chyba
+          when others do
+            status:=tnps_error;
+          end case;
+      end process;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual compose =
+    -- Ze struktury jmena sestavi retezec.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end compose;
+    end c_namespace_system;
+}
+
+end names;

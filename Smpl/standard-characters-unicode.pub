@@ -1,0 +1,99 @@
+----------------------------------------------------------------------------------------------------
+module public unicode =
+-- Support for 16bit UNICODE character coding.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  t_char_category      = enum
+    cc_Cn;         -- Other, Not Assigned (no characters in the file have this property)Other no character
+    cc_Cc;         -- Other, Control                                                                      
+    cc_Zs;         -- Separator, Space                                                                    
+    cc_Po;         -- Punctuation, Other                                                                  
+    cc_Sc;         -- Symbol, Currency                                                                    
+    cc_Ps;         -- Punctuation, Open                                                                   
+    cc_Pe;         -- Punctuation, Close                                                                  
+    cc_Sm;         -- Symbol, Math                                                                        
+    cc_Pd;         -- Punctuation, Dash                                                                   
+    cc_Nd;         -- Number, Decimal Digit                                                               
+    cc_Lu;         -- Letter, Uppercase                                                                   
+    cc_Sk;         -- Symbol, Modifier                                                                    
+    cc_Pc;         -- Punctuation, Connector                                                              
+    cc_Ll;         -- Letter, Lowercase                                                                   
+    cc_So;         -- Symbol, Other                                                                       
+    cc_Pi;         -- Punctuation, Initial quote (may behave like Ps or Pe depending on usage)            
+    cc_No;         -- Number, Other                                                                       
+    cc_Pf;         -- Punctuation, Final quote (may behave like Ps or Pe depending on usage)              
+    cc_Lo;         -- Letter, Other                                                                       
+    cc_Lt;         -- Letter, Titlecase                                                                   
+    cc_Lm;         -- Letter, Modifier                                                                    
+    cc_Mn;         -- Mark, Non-Spacing                                                                   
+    cc_Me;         -- Mark, Enclosing                                                                     
+    cc_Cf;         -- Other, Format                                                                       
+    cc_Mc;         -- Mark, Spacing Combining                                                             
+    cc_Nl;         -- Number, Letter                                                                      
+    cc_Zl;         -- Separator, Line                                                                     
+    cc_Zp;         -- Separator, Paragraph                                                                
+    cc_Cs;         -- Other, Surrogate                                                                    
+    cc_Co;         -- Other, Private Use                                                                  
+      end enum;
+
+----------------------------------------------------------------------------------------------------
+procedure to_unicode (
+    istr       : in t_char32ustr;                -- ISO 10646 string
+    ustr       : out t_char16ustr);              -- UNICODE string
+-- Converts an ISO 10646 string to a UNICODE string.
+--   No character representation changes are made. <ent>range_error</ent> is raised when a source 
+-- character's 32bit encoding cannot be narrowed to 16bit encoding (that is when the character's 
+-- ordinal value is greater than $FFFF). 
+----------------------------------------------------------------------------------------------------
+procedure unicode_char_to_lower (
+    c          : in t_char16)                    -- character to convert
+    return t_char16;                             -- converted character
+-- Convers given character <par>c</par> that is an upper-case letter to corresponding lower-case
+-- letter. If <par>c</par> is already a lower-case letter or any other non-letter character, it is
+-- returned unchanged.
+-- 
+-- Examples:
+--   unicode_char_to_lower(".") = "."
+--   unicode_char_to_lower("†") = "†"
+--   unicode_char_to_lower("Ä") = "á"
+----------------------------------------------------------------------------------------------------
+procedure unicode_char_to_upper (
+    c          : in t_char16)                    -- character to convert
+    return t_char16;                             -- converted character
+-- Convers given character <par>c</par> that is a lower-case letter to corresponding upper-case
+-- letter. If <par>c</par> is already an upper-case letter or any other non-letter character, it is
+-- returned unchanged.
+-- 
+-- Examples:
+--   unicode_char_to_upper(".") = "."
+--   unicode_char_to_upper("á") = "Ä"
+--   unicode_char_to_upper("è") = "è"
+----------------------------------------------------------------------------------------------------
+procedure unicode_get_char_category (
+    c          : in t_char16)                    -- character 
+    return t_char_category;                      -- value of caracter category
+-- Returns character category to the given character <par>c</par>.
+----------------------------------------------------------------------------------------------------
+procedure unicode_char_get_numeric_value (
+    c          : in t_char16)                    -- character 
+    return t_signed32;                           -- numeric value represented by the character
+-- Returns numeric value to the given character <par>c</par>.
+----------------------------------------------------------------------------------------------------
+procedure unicode_char_to_tittle (
+    c          : in t_char16)                    -- character to convert
+    return t_char16;                             -- converted character
+-- Convers given character <par>c</par> that is a lower-case or upper-case letter to corresponding
+-- tittle-case letter. If <par>c</par> is already a tittle-case letter or any other non-letter 
+-- character, it is returned unchanged.
+-- 
+-- Examples:
+--   unicode_char_to_upper(".") = "."
+--   unicode_char_to_upper("ff") = "Ff"
+--   unicode_char_to_upper("è") = "è"
+----------------------------------------------------------------------------------------------------
+
+
+end unicode;

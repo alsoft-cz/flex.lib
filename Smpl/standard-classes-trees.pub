@@ -1,0 +1,23 @@
+----------------------------------------------------------------------------------------------------
+module public trees =
+-- Data structures - binary trees.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+{
+  To do:
+    -- move [t_comparison_result] somewhere else, into a more universal location
+    -- change t_tree_compare into a virtual procedure tree_compare,
+    -- add node,
+    -- delete node,
+    -- split subtree from given tree,
+    -- merge two trees,
+    -- implement AVL balancing
+}
+----------------------------------------------------------------------------------------------------
+
+extend
+  lists;
+
+
+end trees;

@@ -1,0 +1,145 @@
+----------------------------------------------------------------------------------------------------
+module private triggers =
+-- Flex Standard Library
+-- Event triggers.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_trigger_container =
+-- Container of multiple sets of triggers, that shall be executed upon specified events.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create_trigger =
+    -- Creates and registeres a new trigger of the [trigger] type.
+    ------------------------------------------------------------------------------------------------
+    {%%TODO(TAG)
+    var
+      instance     : p_trigger;
+      _desc        : triggers^:base;
+      _triggers    : triggers:type;
+    }
+    begin
+    {%%TODO(TAG)
+      -- check for tag validity
+      if not (trigger>c_trigger:tag) then
+        raise parameter_error;
+        end if;
+    
+      -- allocate memory if necessary
+      if triggers=nil then
+        new triggers range 4;
+      elsif triggers^:length=triggers^:last then
+        --%%TODO(ADJUST) adjust triggers range triggers^:last+4;
+        new _triggers range triggers^:last+4;
+        _triggers^:=triggers^;
+        discard triggers;
+        triggers:=_triggers;
+        end if;
+      
+      -- create a new trigger
+      new instance tag trigger;
+
+      -- register
+      _desc.trigger:=instance;
+      _desc.release:=true;
+      triggers^ & _desc{%%TODO(AGGREGATE) [instance,true]};
+    }
+      raise feature_not_implemented;
+      end create_trigger;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static register_trigger =
+    -- Registeres the specified [trigger].
+    ------------------------------------------------------------------------------------------------
+    var
+      _desc        : triggers^:base;
+      _triggers    : triggers:type;
+
+    begin
+      -- allocate memory if necessary
+      if triggers=nil then
+        new triggers range 4;
+      elsif triggers^:length=triggers^:last then
+        --%%TODO(ADJUST) adjust triggers range triggers^:last+4;
+        new _triggers range triggers^:last+4;
+        _triggers^:=triggers^;
+        discard triggers;
+        triggers:=_triggers;
+        end if;
+      
+      -- register
+      _desc.trigger:=trigger;
+      _desc.release:=false;
+      triggers^ & _desc{%%TODO(AGGREGATE) [trigger,false]};
+      end register_trigger;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static unregister_trigger =
+    -- Unregisteres the specified [trigger].
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      -- find the registered trigger
+      i:=triggers^:first;
+      while i<=triggers^:length and then triggers^[i].trigger<>trigger loop succ i; end loop;
+
+      -- when not found, raise an error
+      if i>triggers^:length then
+        raise parameter_error;
+        end if;
+
+      -- remove the trigger from the list
+      --triggers:=triggers^[1..i-1] & trigger^[i+1..triggers:length];
+      end unregister_trigger;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override execute =
+    -- Event trigger.
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      -- execute all triggers
+      if triggers<>nil then
+        for i in triggers^:range loop
+          triggers^[i].trigger^.execute(event);
+          end loop;
+        end if;
+      end execute;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization.
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;
+
+    begin
+      if triggers<>nil then
+        for i in triggers^:range loop
+          if triggers^[i].release then
+            discard triggers^[i].trigger;
+            end if;
+          end loop;
+        discard triggers;
+        end if;
+      end exit;
+
+
+
+    end c_trigger_container;
+
+end triggers;

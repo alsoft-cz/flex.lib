@@ -1,0 +1,105 @@
+----------------------------------------------------------------------------------------------------
+module public hash_tables =
+-- Data structures - hash tables.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- add set/get_first/last/prev/next methods
+--   -- add has_item method
+--   -- implement delete_all
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.common;
+
+extend
+  standard.common.structures;
+
+-- forward declarations
+class c_hash_table;          type p_hash_table      = ^class c_hash_table;
+class c_hash_table_item;     type p_hash_table_item = ^class c_hash_table_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_hash_table_item = extend c_item;
+-- Hash table item.
+----------------------------------------------------------------------------------------------------
+
+    var
+      item_id      : t_hash_item_id;             -- item's ID
+      prev         : p_hash_table_item;          -- previous item in the hash slot
+      next         : p_hash_table_item;          -- next item in the hash slot
+
+    end c_hash_table_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT)} c_hash_table = extend c_container;
+-- Abstract hash table.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        modulus    : in t_unsigned;              -- hash modulus, that is the length of the hash table
+        item_type  : in t_tag;                   -- (root) type of its items
+        homogenous : in t_logical := true);      -- T-only items of type [item_type] are permitted
+    -- Initializes the hash table.
+    --   When [homogenous] is set to True, then only items of type [item_type] are permitted in the 
+    -- hash table, otherwise only items of type [item_type] and all its descendants. All hash table
+    -- manipulation procedures raise [list_error] when the type of an item violates this rule.
+    ------------------------------------------------------------------------------------------------
+    static store (
+        item       : in p_hash_table_item);      -- item to be stored into the hash table
+    -- Inserts the given [item] into the hash table.
+    -- 
+    -- Remarks:
+    --   The [item] shall have its ID already assigned.
+    ------------------------------------------------------------------------------------------------
+    static find (
+        id         : in t_hash_item_id;          -- 
+        item       : out p_hash_table_item);     -- found item
+    -- Finds and [item] by its [id]. When there is no item with such an [id] in the hash table, 
+    -- sets [item] to NIL.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    type
+      -- one slot of a hash table
+      t_hash_slot  = record
+          count    : t_unsigned;                 -- number of items in this slot
+          first    : p_hash_table_item;          -- first item in slot
+          last     : p_hash_table_item;          -- last item in slot
+          end record;
+      p_hash_slot  = ^t_hash_slot;
+
+      -- a hash table
+      p_hash_table = ^array of t_hash_slot;
+
+    var
+      modulus      : t_unsigned;                 -- hash modulus, that is the length of the hash table
+      hash_table   : p_hash_table;               -- the hash table itself
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTACRT) abstract} assign_hash_id (
+        item       : in p_hash_table_item);
+    -- Assigns an ID to the given [item].
+    ------------------------------------------------------------------------------------------------
+
+    end c_hash_table;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT)} c_auto_hash_table = extend c_hash_table;
+-- Hash table with automatically assigned incremental item IDs.
+----------------------------------------------------------------------------------------------------
+
+    end c_auto_hash_table;
+
+
+
+end hash_tables;

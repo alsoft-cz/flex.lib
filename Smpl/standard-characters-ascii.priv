@@ -1,0 +1,70 @@
+----------------------------------------------------------------------------------------------------
+module private ascii =
+-- ASCII support.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+#if #declared radekr; #and then; radekr then;
+----------------------------------------------------------------------------------------------------
+{#separate private kam;
+-- Support for 8bit kamenicky character coding.
+----------------------------------------------------------------------------------------------------
+#separate private latin2;
+-- Support for 8bit latin2 character coding.
+----------------------------------------------------------------------------------------------------
+#separate private iso8859_2;
+-- Support for 8bit ISO 8859.2 character coding.}
+----------------------------------------------------------------------------------------------------
+#separate private cp1250;
+-- Support for 8bit CP1250 character coding.
+----------------------------------------------------------------------------------------------------
+#end if;
+
+----------------------------------------------------------------------------------------------------
+procedure to_ascii =
+-- Converts ISO 10646 string to ASCII string.
+----------------------------------------------------------------------------------------------------
+var
+  i            : t_unsigned;
+
+begin
+  for i in 1..istr:length loop
+    astr & t_char8(istr[i]);
+    end loop;
+  end to_ascii;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure ascii_char_to_lower =
+-- Convers given character <par>c</par> that is an upper-case letter to corresponding lower-case
+-- letter. If <par>c</par> is already a lower-case letter or any other non-letter character, it is
+-- returned unchanged.
+----------------------------------------------------------------------------------------------------
+begin
+  if (c>="A" and c<="Z") or (c>=\$c0 and c<=\$de) then
+    result:=t_char8(c:ord-"A":ord+"a":ord)
+  else result:=c;
+    end if;
+  end ascii_char_to_lower;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure ascii_char_to_upper =
+-- Convers given character <par>c</par> that is a lower-case letter to corresponding upper-case
+-- letter. If <par>c</par> is already an upper-case letter or any other non-letter character, it is
+-- returned unchanged.
+----------------------------------------------------------------------------------------------------
+begin
+  if (c>="a" and c<="z") or (c>=\$e0 and c<=\$fe)
+    then result:=t_char8(c:ord-"a":ord+"A":ord)
+    else result:=c;
+    end if;
+  end ascii_char_to_upper;
+
+
+
+end ascii;

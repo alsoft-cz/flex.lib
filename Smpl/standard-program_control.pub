@@ -1,0 +1,108 @@
+----------------------------------------------------------------------------------------------------
+module public program_control =
+-- Flex Standard Library
+-- General program execution control.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  -- sigle environment variable
+  t_environment_variable = record
+      env_name     : p_char32ustr;               -- name of the environment variable
+      env_value    : p_char32ustr;               -- value of the environment variable
+      end record;
+  p_environment_variable = ^t_environment_variable;
+
+  -- block of environment variables
+  t_environment_variables = string of t_environment_variable;
+  p_environment_variables = ^t_environment_variables;
+
+  -- block of command line parameters
+  t_command_line_parameters = string of p_char32ustr;
+  p_command_line_parameters = ^t_command_line_parameters;
+
+----------------------------------------------------------------------------------------------------
+procedure get_command_line (
+    cmd_line       : out p_char32ustr);          -- the command line string
+-- Returns the command line string of the program. The command line is taken from the operating
+-- system without any modifications except character encodig changes.
+--   The caller is responsible for freeing the memory.
+--
+-- Result:
+--   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+procedure get_command_line_parameters (
+    cmd_line       : out p_command_line_parameters); -- the command line string
+-- Returns the command line string of the program split into separate parameters. The command line
+-- is taken from the operating system without any modifications except character encodig changes and
+-- removal of the actual program name, if placed into the command line string by the operating
+-- system.
+--   The caller is responsible for freeing the memory. The [discard_command_line_parameters] 
+-- subprogram is provided to ease this task.
+--
+-- Result:
+--   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+procedure get_environment_variables (
+    env_vars       : out p_environment_variables;-- list of environment variables
+    error          : out t_logical);             -- result of an operation
+-- Returns pointer to a list of all environment variables [env_vars]. Environment variables are 
+-- taken from the operating system without any modifications except character encoding changes. If
+-- there are no environment variables at all, [env_vars] points to an empty string.
+--   The caller is responsible for freeing the memory. The [discard_environment_variables] 
+-- subprogram is provided to ease this task.
+--
+-- Result:
+--   When the subprogram fails, [error] is set to [True]. 
+--   When the subprogram succeeds, [error] is set to [False]. 
+----------------------------------------------------------------------------------------------------
+procedure get_environment_variable (
+    env_var        : in t_char32ustr;            -- environment variable name
+    env_value      : out p_char32ustr;           -- environment variable value
+    error          : out t_logical);             -- result of an operation
+-- Returns the environment variable`s [env_var] value. The value is taken from the operating
+-- system without any modifications except character encodig changes. When no such environment
+-- variable exists, the subprogram fails.
+--   The caller is responsible for freeing the memory.
+--
+-- Result:
+--   When the subprogram fails, [error] is set to [True]. 
+--   When the subprogram succeeds, [error] is set to [False]. 
+----------------------------------------------------------------------------------------------------
+procedure set_environment_variable (
+    env_var        : in t_char32ustr;            -- environment variable name
+    env_value      : in t_char32ustr;            -- environment variable value
+    error          : out t_logical);             -- result of an operation
+-- Sets the environment variable`s [env_var] value. Neither [env_var] nor [env_value] may be an 
+-- empty string, otherwise the subprogram fails.
+--
+-- Result:
+--   When the subprogram fails, [error] is set to [True]. 
+--   When the subprogram succeeds, [error] is set to [False]. 
+----------------------------------------------------------------------------------------------------
+procedure delete_environment_variable (
+    env_var        : in t_char32ustr;            -- environment variable name
+    error          : out t_logical);             -- result of an operation
+-- Deletes the environment variable [env_var]. [env_var] may not be an empty string, otherwise the 
+-- subprogram fails.
+--
+-- Result:
+--   When the subprogram fails, [error] is set to [True]. 
+--   When the subprogram succeeds, [error] is set to [False]. 
+----------------------------------------------------------------------------------------------------
+procedure discard_environment_variables (
+    env_vars       : in out p_environment_variables); -- list to be discarded
+-- Helper subprogram to discard a block of environment variables.
+--
+-- Result:
+--   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+procedure discard_command_line_parameters (
+    cmd_line       : in out p_command_line_parameters); -- list to be discarded
+-- Helper subprogram to discard a block of command line parameters.
+--
+-- Result:
+--   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+
+end program_control;

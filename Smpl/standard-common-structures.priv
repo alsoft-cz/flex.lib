@@ -1,0 +1,8 @@
+----------------------------------------------------------------------------------------------------
+module private structures =
+-- Common utility declarations reused in different parts of the SMPL.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+end structures;

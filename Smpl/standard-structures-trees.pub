@@ -1,0 +1,218 @@
+----------------------------------------------------------------------------------------------------
+module public trees =
+-- Data structures - binary trees.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+{
+  To do:
+    -- move [t_comparison_result] somewhere else, into a more universal location
+    -- change t_tree_compare into a virtual procedure tree_compare,
+    -- add node,
+    -- delete node,
+    -- split subtree from given tree,
+    -- merge two trees,
+    -- implement AVL balancing
+}
+----------------------------------------------------------------------------------------------------
+
+extend
+  lists;
+{
+type
+  -- binary tree
+  t_tree;
+  p_tree           = ^t_tree;
+
+  -- binary tree node
+  t_tree_node;
+  p_tree_node      = ^class t_tree_node;
+
+  -- n-ary tree
+  t_ntree;
+  p_ntree          = ^t_ntree;
+
+  -- n-ary tree node
+  t_ntree_node;
+  p_ntree_node     = ^class t_ntree_node;
+
+  -- result of a comparison of two objects A and B
+  t_comparison_result = enum
+      tcr_unordered;                             -- unordered: not comparable, not yet compared
+      tcr_equal;                                 -- A = B
+      tcr_lesser;                                -- A < B
+      tcr_greater;                               -- A > B
+      end enum;
+
+  -- behavior of the insertion procedure when two nodes are equal
+  t_on_equal_behavior = enum
+      toeb_error;                                -- report an error
+      toeb_treat_as_lesser;                      -- treat as lesser and put into the left subtree
+      toeb_treat_as_greater;                     -- treat as greater and put into the right subtree
+      end enum;
+
+  -- procedure for comparison of two nodes of a tree
+  -- %%TODO(VIRTUAL) to be replaced by [tree_compare]
+  t_tree_compare   = procedure (
+      A            : in p_tree_node;             -- node A
+      B            : in p_tree_node)             -- node B
+      return t_comparison_result;                -- result of the comparison of A and B
+  p_tree_compare   = ^t_tree_compare;
+
+  -- tree iterator
+  t_tree_iterator;
+
+  -- the direction of walking through a tree
+  t_tree_walking_direction = enum
+      ttwd_left_to_right;                        -- from the leftmost node to the rightmost
+      ttwd_right_to_left;                        -- from the rightmost node to the leftmost
+      ttwd_top_to_bottom;                        -- from the root to the bottom
+      end enum;
+
+message
+  -- raised when an error occurs during manipulation with the list
+  tree_error       : exception;
+
+----------------------------------------------------------------------------------------------------
+procedure tree_init (
+    tree           : out t_tree;                 -- the tree to be created
+    node_type      : in t_tag;                   -- (root) type of its nodes
+    compare        : in p_tree_compare;          -- procedure to be used for comparison of two nodes
+    on_equal       : in t_on_equal_behavior      -- behavior of the insertion procedure when two     
+                   := toeb_error;                -- nodes are equal
+    homogenous     : in t_logical := true;       -- T-only nodes of type [node_type] are permitted
+    balanced       : in t_logical := true);      -- perform AVL-balancing of the tree automatically
+-- Initializes the tree.
+--   The [on_equal] parameter controls the behavior of the insertion when  is set to True, then equal nodes (in terms of the result of the
+-- [tree_compare] procedure) are permitted in the tree, otherwise only distinct nodes may be
+-- inserted into the tree.
+--   When [homogenous] is set to True, then only nodes of type [node_type] are permitted in the 
+-- tree, otherwise only nodes of type [node_type] and all its descendants. All tree manipulation 
+-- procedures raise [node_error] when the type of a node violates this rule.
+--   When [balanced] is set to True, AVL-balancing of the tree is performed automatically during
+-- insert and remove operations, otherwise no balancing is performed.
+----------------------------------------------------------------------------------------------------
+procedure tree_insert (
+    tree           : in out t_tree;
+    node           : in p_tree_node);
+-- Inserts a [node] into the [tree]. Walks the tree from its root down to find a suitable location 
+-- for the node. 
+--   The [tree_compare] procedure is used to determine the location of the node within the tree.
+-- When equal nodes are permitted within the tree (see the [allow_equals] parameter of the 
+-- [tree_init] procedure), the node may be inserted either into the left or the right sub-tree
+-- regardless if balancing is or is not allowed.
+----------------------------------------------------------------------------------------------------
+{ %%TODO(VIRTUAL)
+virtual abstract tree_compare (
+    A              : in virtual t_tree_node;
+    B              : in virtual t_tree_node)
+    return t_comparison_result;
+-- Compares two nodes [A] and [B].
+--   This virtual procedure must be overriden for user-types of nodes derived from [t_tree_node].
+}
+----------------------------------------------------------------------------------------------------
+procedure tree_remove (
+    tree           : in out t_tree;
+    node           : in p_tree_node);
+-- Removes a node from the tree.
+----------------------------------------------------------------------------------------------------
+procedure tree_discard (
+    tree           : in out t_tree;
+    node           : in out p_tree_node);
+-- Removes the specified node from the tree and discards it.
+----------------------------------------------------------------------------------------------------
+procedure tree_discard_all (
+    tree           : in out t_tree);
+-- Discards all nodes of the tree.
+----------------------------------------------------------------------------------------------------
+procedure tree_get_root (
+    tree           : in t_tree)
+    return p_tree_node;
+-- Return the root node of the [tree]. When the [tree] is empty, the result is nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_get_left (
+    node           : in p_tree_node)
+    return p_tree_node;
+-- Returns the left child of the [node]. When the [node] has no left child, the result is nil.
+-- [node] may not be nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_get_right (
+    node           : in p_tree_node)
+    return p_tree_node;
+-- Returns the right child of the [node]. When the [node] has no right child, the result is nil.
+-- [node] may not be nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_set_root (
+    tree           : in t_tree;
+    node           : out p_tree_node);
+-- Sets [node] to the root of the [tree]. When the [tree] is empty, [node] is set to nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_set_left (
+    node           : in out p_tree_node);
+-- Sets [node] to its left child. When [node] has no left child, it is set to nil.
+-- [node] may not be nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_set_right (
+    node           : in out p_tree_node);
+-- Sets [node] to its right child. When [node] has no right child, it is set to nil.
+-- [node] may not be nil.
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_init (
+    iterator       : out t_tree_iterator;
+    tree           : in p_tree;
+    direction      : in t_tree_walking_direction);
+-- Initializes an iterator used for walking through a tree.
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_reset (
+    iterator       : in out t_tree_iterator);
+-- Resets the interator to its initial position.
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_get (
+    iterator       : in t_tree_iterator)
+    return p_tree_node;
+-- Retrieves one node from the list using an iterator.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+protected
+----------------------------------------------------------------------------------------------------
+
+type
+  -- binary tree
+  t_tree           = record
+      root         : p_tree_node;                -- root of the tree (root node)
+      node_type    : t_tag;                      -- root tag of permissible node types
+      compare      : p_tree_compare;             -- procedure to be used for comparison of two nodes
+      on_equal     : t_on_equal_behavior;        -- behavior of the insertion procedure when two nodes are equal
+      homogenous   : t_logical;                  -- T-allow only nodes with type specified by [node_type]
+      balanced     : t_logical;                  -- perform AVL-balancing of the tree automatically
+      end record;
+
+  -- binary tree node
+  t_tree_node      = record
+      parent       : p_tree_node;                -- parent node
+      left         : p_tree_node;                -- left child node
+      right        : p_tree_node;                -- right child node
+      balance      : t_signed;                   -- subtrees' balance (for AVL)
+      end record;
+
+  -- n-ary tree
+  t_ntree          = record
+      root         : p_ntree_node;               -- root of the tree (root node), can be only one
+      end record;
+
+  -- n-ary tree node
+  t_ntree_node     = t_list_item with record
+      parent       : p_ntree_node;               -- parent node
+      children     : t_list;                     -- list of child nodes
+      end record;
+
+  -- tree iterator
+  t_tree_iterator  = record
+      tree         : p_tree;
+      direction    : t_tree_walking_direction;
+      end record;
+}
+end trees;

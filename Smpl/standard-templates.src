@@ -1,0 +1,22 @@
+----------------------------------------------------------------------------------------------------
+module {standard.}templates =
+-- Flex Standard Library
+-- Miscellaneous #define's
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+#template exchange (a,b);
+-- Exchanges values of variables "A" and "B". Neither "A" nor "B" shall be named "_".
+-- "A" and "B" shall be of the same type or at least of two compatible types.
+----------------------------------------------------------------------------------------------------
+  declare
+    _ : a:type;
+  begin
+    _:=a;
+    a:=b;
+    b:=_;
+    end declare;
+  #end exchange;
+
+end templates;

@@ -1,0 +1,206 @@
+----------------------------------------------------------------------------------------------------
+module public lists =
+-- Data structures - linked lists.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+{
+  To do:
+    -- join two lists (join list after/before given list),
+    -- split list
+    -- 
+}
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.triggers,
+  standard.common;
+
+extend           
+  standard.common.structures;
+
+
+-- forward declarations
+class c_list_item;     type p_list_item     = ^class c_list_item;
+class c_list;          type p_list          = ^class c_list;
+class c_list_iterator; type p_list_iterator = ^class c_list_iterator;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_list_item = extend c_item;
+-- List item.
+----------------------------------------------------------------------------------------------------
+
+    var 
+      prev         : p_list_item;                -- previous item in the list
+      next         : p_list_item;                -- next item in the list
+    
+    end c_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_list = extend c_container;
+-- List.
+--
+-- Remarks:
+--   The [c_container.insert] method behaves as the [insert_last] method.
+----------------------------------------------------------------------------------------------------
+
+    var
+      first        : protected p_list_item;      -- first item in the list
+      last         : protected p_list_item;      -- last item in the list
+      circular     : protected t_logical;        -- T-the list shall be circular
+
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        item_type  : in t_tag;                   -- (root) type of its items
+        homogenous : in t_logical := true;       -- T-only items of type [item_type] are permitted
+        circular   : in t_logical := false);     -- T-the list shall be circular
+    -- Initializes the list.
+    --   When [homogenous] is set to True, then only items of type [item_type] are permitted on the 
+    -- list, otherwise only items of type [item_type] and all its descendants. All list manipulation 
+    -- procedures raise [list_error] when the type of an item violates this rule.
+    ------------------------------------------------------------------------------------------------
+    static new_first (
+        item       : out p_list_item);
+    -- Creates a new item and places it to the beginning of the list.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    static new_last (
+        item       : out p_list_item);
+    -- Creates a new item and places it to the end of the list.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    static new_before (
+        refitem    : in p_list_item;
+        item       : out p_list_item);
+    -- Creates a new item and places it before the specified [refitem].
+    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    static new_after (
+        refitem    : in p_list_item;
+        item       : out p_list_item);
+    -- Creates a new item and places it after the specified [refitem].
+    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    static insert_first (
+        item       : in p_list_item);
+    -- Places the given [item] to the beginning of the list.
+    ------------------------------------------------------------------------------------------------
+    static insert_last (
+        item       : in p_list_item);
+    -- Places the given [item] to the end of the list.
+    ------------------------------------------------------------------------------------------------
+    static insert_before (
+        refitem    : in p_list_item;
+        item       : in p_list_item);
+    -- Places the given [item] to before the specified [refitem].
+    ------------------------------------------------------------------------------------------------
+    static insert_after (
+        refitem    : in p_list_item;
+        item       : in p_list_item);
+    -- Places the given item to after the specified [refitem].
+    ------------------------------------------------------------------------------------------------
+    static remove_first return p_list_item;
+    -- Removes the first item from the list and returns a pointer to it.
+    --   If the list is empty, [nil] is returned.
+    ------------------------------------------------------------------------------------------------
+    static remove_last return p_list_item;
+    -- Removes the last item from the list and returns a pointer to it.
+    --   If the list is empty, [nil] is returned.
+    ------------------------------------------------------------------------------------------------
+    static delete_first;
+    -- Removes and discards the first item from the list;
+    ------------------------------------------------------------------------------------------------
+    static delete_last;
+    -- Removes and discards the last  item from the list;
+    ------------------------------------------------------------------------------------------------
+    static get_first return p_list_item;
+    -- Returns the first item of the list, or NIL if empty.
+    ------------------------------------------------------------------------------------------------
+    static get_last return p_list_item;
+    -- Returns the last item of the list, or NIL if empty.
+    ------------------------------------------------------------------------------------------------
+    static get_prev (
+        item       : in p_list_item)
+        return p_list_item;
+    -- Returns the item before [item], or NIL if [item] is the first item in the list.
+    ------------------------------------------------------------------------------------------------
+    static get_next (
+        item       : in p_list_item)
+        return p_list_item;
+    -- Returns the item after [item], or NIL if [item] is the last item in the list.
+    ------------------------------------------------------------------------------------------------
+    static set_first (
+        item       : out p_list_item);
+    -- Sets [item] to the first item in the list.
+    ------------------------------------------------------------------------------------------------
+    static set_last (
+        item       : out p_list_item);
+    -- Sets [item] to the last item in the list.
+    ------------------------------------------------------------------------------------------------
+    static set_prev (
+        item       : in out p_list_item);
+    -- Sets [item] to the previous item in the list.
+    ------------------------------------------------------------------------------------------------
+    static set_next (
+        item       : in out p_list_item);
+    -- Sets [item] to the next item in the list.
+    ------------------------------------------------------------------------------------------------
+    static has_item (
+        item       : in p_list_item)
+        return t_logical;
+    -- Returns true if [item] is an item of the list.
+    ------------------------------------------------------------------------------------------------
+        
+    end c_list;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_list_iterator = extend c_iterator;
+-- List.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        list       : in c_list;                  -- a list to be walked through
+        direction  : in t_list_walking_direction -- the direction of walking through a list
+                   := tlwd_forward);
+    -- Initializes an iterator used for walking through a list.
+    ------------------------------------------------------------------------------------------------   
+   
+    end c_list_iterator;
+
+
+#if #declared radekr_stack; #and then; radekr_stack then;
+----------------------------------------------------------------------------------------------------
+class public c_stack = extend c_container;
+-- Stack.
+--
+-- Remarks
+--   The [c_container.insert] method behaves as the [push] method.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static push (
+        item       : in p_list_item);
+    ------------------------------------------------------------------------------------------------
+    static pop (
+        item       : out p_list_item);
+    ------------------------------------------------------------------------------------------------
+    static peek (
+        item       : out p_list_item);
+    ------------------------------------------------------------------------------------------------
+
+    end c_stack;
+
+#end if {radekr_stack};
+
+
+
+end lists;

@@ -1,0 +1,264 @@
+----------------------------------------------------------------------------------------------------
+module private conversions =
+-- Miscellaneous conversion routines.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure signed_to_string =
+-- Converts a signed integer to string.
+----------------------------------------------------------------------------------------------------
+var
+  i                : t_unsigned;                 -- absolute value of NUM
+  j                : t_unsigned;                 -- floating 1 for conversion
+  k                : t_unsigned;                 -- temp
+  z                : t_unsigned;                 -- next digit's position
+
+begin
+  -- care about the sign
+  if num<0
+    then
+      result:='-0';
+      i:=t_unsigned(-num);
+    else
+      if sign_always
+        then result:='+0';
+        else result:='0';
+        end if;
+      i:=t_unsigned(num);
+      end if;
+  --%%TODO(ABS) i:=abs num;
+
+  -- save the first digit's position
+  z:=result:length;
+
+  -- for i=859 we'll start with j=100; for i=1000, j=1000.
+  j:=1;
+  while j<=i div 10 loop
+    j:=10*j;
+    result:length+1;
+    end loop;
+
+  -- set each digit to it's right value
+  while j>0 loop
+    k:=k:type(i div j);
+    if k>=0 and then k<=9 then
+      result[z]:ord:=48+k;
+      z+1;
+      i:=i mod j;
+      j:=j div 10;
+    else
+      result:='???';
+      return;
+      end if;
+    end loop;
+  end signed_to_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_string =
+-- Converts a signed integer to string.
+----------------------------------------------------------------------------------------------------
+var
+  i                : t_unsigned;                 -- absolute value of NUM
+  j                : t_unsigned;                 -- floating 1 for conversion
+  k                : t_unsigned;                 -- temp
+  z                : t_unsigned;                 -- next digit's position
+
+begin
+  -- care about the sign
+  result:='0';
+  i:=num;
+
+  -- save the first digit's position
+  z:=result:length;
+
+  -- for i=859 we'll start with j=100; for i=1000, j=1000.
+  j:=1;
+  while j<=i div 10 loop
+    j:=10*j;
+    result:length+1;
+    end loop;
+
+  -- set each digit to it's right value
+  while j>0 loop
+    k:=k:type(i div j);
+    if k>=0 and then k<=9 then
+      result[z]:ord:=48+k;
+      z+1;
+      i:=i mod j;
+      j:=j div 10;
+    else
+      result:='???';
+      return;
+      end if;
+    end loop;
+  end unsigned_to_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_radix_string =
+-- Converts an unsigned integer to its string representation in the number system with the specified
+-- [radix]. The plus sign is not included.
+----------------------------------------------------------------------------------------------------
+begin
+  --%%TODO(LIB) Doplnit konverzi
+  result:=unsigned_to_string(num);
+  --raise feature_not_implemented;
+  end unsigned_to_radix_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure mulx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    n              : in t_unsigned)              -- coefficient (0-255)
+    return t_unsigned =                          -- overflow
+-- Multiplication of a long unsigned integer by a small coefficient within the range 0-255.
+-- Coefficient's range is not tested.
+----------------------------------------------------------------------------------------------------
+begin
+       #syntax asm;
+       xor     ebx,ebx
+       mov     edi,bin
+       mov     edx,n
+       mov     ecx,lbin
+       {%%FLEX jecxz   @1}
+       cmp     ecx,0
+       je      @1
+
+       xor     eax,eax
+       cld
+@2:    mov     al,[edi]
+       mul     dl
+       add     ax,bx
+       stosb
+       xor     ebx,ebx
+       mov     bl,ah
+       {%%FLEX loop    @2}
+       dec     ecx
+       jnz     @2
+@1:
+       mov     result,ebx
+       #end asm;
+  end mulx;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure addx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    n              : in t_unsigned)              -- coefficient (0-255)
+    return t_logical =                           -- overflow
+-- Addition of a small coefficient within the range 0-255 to a long unsigned integer
+-- Coefficient's range is not tested.
+----------------------------------------------------------------------------------------------------
+begin
+       #syntax asm;
+       mov     edi,bin
+       mov     eax,n
+       mov     ecx,lbin
+       xor     edx,edx            -- result (overflow flag)
+       {%%FLEX jecxz   @5}
+       cmp     ecx,0
+       je      @5
+       jmp     @1
+
+       -- lbin = 0
+@5:    or      al,al              -- check if n is zero
+       jnz     @8                 -- n>0
+       jmp     @9                 -- n=0
+
+       -- lbin > 0
+@1:    add     [edi],al
+       jmp     @7
+@2:    {%%FLEX adc     byte ptr [edi],0   -- test cf }
+       { v DL je shodou okolnost¡ nula... }
+       adc     [edi],dl           -- test cf
+@7:    jnc     @9
+       inc     edi
+       {%%FLEX loop    @2}
+       dec     ecx
+       jnz     @2
+
+@8:    mov     edx,1
+@9:
+       mov     result,edx
+       #end asm;
+  end addx;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_unsigned =
+-- Converts a string representation of an unsigned integer to the corresponding binary 
+-- representation.
+----------------------------------------------------------------------------------------------------
+var
+  i                : s:range:type;               -- index to the string
+  j                : t_unsigned;                 -- value of a single digit
+  c                : s:base;                     -- processed character
+
+begin
+  -- convert
+  i:=1;
+  j:=0;
+  while i<=s:length loop
+    -- get one character
+    c:=s[i];
+
+    -- convert the character to its corresponding value
+    if    {%%TODO(SET) c in digits}  c>="0" and c<="9" then j:=c:ord-"0":ord
+    elsif {%%TODO(SET) c in letterL} c>="a" and c<="z" then j:=c:ord-"a":ord+10
+    elsif {%%TODO(SET) c in letterU} c>="A" and c<="Z" then j:=c:ord-"A":ord+10
+    else
+      error:=error:type(i+1);
+      return;
+      end if ;
+
+    -- does the digit fit to the expected radix ?
+    if j>=radix then
+      error:=error:type(i+1);
+      return;
+      end if;
+
+    -- shift left (multiply by radix)
+    if i>1 then
+      if mulx(bin,bin:size,radix)>0 then
+        error:=conv_small;
+        return;
+        end if;
+      end if;
+
+    -- add digit
+    if addx(bin,bin:size,j) then
+      error:=conv_small;
+      return;
+      end if;
+
+    -- next character
+    succ i;
+    end loop;
+
+  -- no error
+  error:=conv_ok;
+  end string_to_unsigned;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_signed =
+-- Converts a string representation of a signed integer to the corresponding binary representation. 
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end string_to_signed;
+
+
+
+end conversions;

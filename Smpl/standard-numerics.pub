@@ -1,0 +1,99 @@
+---------------------------------------------------------------------------------------------------
+module public numerics =
+-- Mathematical computations.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+#template min_template(instance_id,T);
+-- Minimum of two values of type T.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure instance_id (
+        A          : T;
+        B          : T)
+        return T =
+    -- Minimum of the two values A and B.
+    ------------------------------------------------------------------------------------------------
+    begin
+      if A<B
+        then result:=A
+        else result:=B
+        end if;
+      end instance_id;
+
+    #end min_template;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure min_unsigned (
+    A              : t_unsigned;
+    B              : t_unsigned)
+    return t_unsigned;
+-- Minimum of the two unsigned values A and B.
+----------------------------------------------------------------------------------------------------
+procedure max_unsigned (
+    A              : t_unsigned;
+    B              : t_unsigned)
+    return t_unsigned;
+-- Maximum of the two unsigned values A and B.
+----------------------------------------------------------------------------------------------------
+procedure min_signed (
+    A              : t_signed;
+    B              : t_signed)
+    return t_signed;
+-- Minimum of the two signed values A and B.
+----------------------------------------------------------------------------------------------------
+procedure max_signed (
+    A              : t_signed;
+    B              : t_signed)
+    return t_signed;
+-- Maximum of the two signed values A and B.
+----------------------------------------------------------------------------------------------------
+procedure avg_unsigned (
+    A              : t_unsigned;
+    B              : t_unsigned)
+    return t_unsigned;
+-- Average of the two unsigned values A and B.
+----------------------------------------------------------------------------------------------------
+procedure avg_signed (
+    A              : t_signed;
+    B              : t_signed)
+    return t_signed;
+-- Average of the two signed values A and B.
+----------------------------------------------------------------------------------------------------
+procedure is_odd_unsigned (
+    A              : t_unsigned)
+    return t_logical;
+-- True if A is odd.
+----------------------------------------------------------------------------------------------------
+procedure is_odd_signed (
+    A              : t_signed)
+    return t_logical;
+-- True if A is odd.
+----------------------------------------------------------------------------------------------------
+procedure is_even_unsigned (
+    A              : t_unsigned)
+    return t_logical;
+-- True if A is even.
+----------------------------------------------------------------------------------------------------
+procedure is_even_signed (
+    A              : t_signed)
+    return t_logical;
+-- True if A is even.
+----------------------------------------------------------------------------------------------------
+overload min : min_unsigned, min_signed;
+----------------------------------------------------------------------------------------------------
+overload max : max_unsigned, max_signed;
+----------------------------------------------------------------------------------------------------
+overload avg : avg_unsigned, avg_signed;
+----------------------------------------------------------------------------------------------------
+overload is_odd : is_odd_unsigned, is_odd_signed;
+----------------------------------------------------------------------------------------------------
+overload is_even : is_even_unsigned, is_even_signed;
+----------------------------------------------------------------------------------------------------
+
+end numerics;

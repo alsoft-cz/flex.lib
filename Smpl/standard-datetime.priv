@@ -1,0 +1,18 @@
+----------------------------------------------------------------------------------------------------
+module private datetime =
+-- Date/time.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  -- time
+  t_time           = private unsigned 32;
+
+  -- date
+  t_date           = private unsigned 32;
+
+  -- date and time
+  t_datim          = private unsigned 32;
+
+end datetime;

@@ -1,0 +1,86 @@
+----------------------------------------------------------------------------------------------------
+module public data_records =
+-- Data structures - basic data records.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  -- state of a data record
+  t_data_state     = enum
+      tds_initial;                               -- initial state
+      tds_initializing;                          -- initialization in progress
+      tds_ready;                                 -- ready for use 
+      tds_finalizing;                            -- finalization in progress
+      tds_finalized;                             -- finalized
+      end enum;
+
+  -- data record
+  t_data_record    = abstract with private;
+
+----------------------------------------------------------------------------------------------------
+virtual abstract to_binary (
+    data_record    : in virtual t_data_record;
+    binary_form    : out unchecked);
+-- Retrieves a binary comparable representation of key items of a data record
+----------------------------------------------------------------------------------------------------
+virtual abstract to_string (
+    data_record    : in virtual t_data_record;
+    string_form    : out t_char32ustr);
+----------------------------------------------------------------------------------------------------
+virtual abstract compare (
+    A              : in virtual t_data_record;
+    B              : in virtual t_data_record)
+    return t_comparison_result;
+----------------------------------------------------------------------------------------------------
+procedure check_state (
+    data_record    : in class t_data_record;
+    state          : in t_data_state);
+----------------------------------------------------------------------------------------------------
+procedure to_state (
+    data_record    : in class t_data_record;
+    state          : in t_data_state);
+----------------------------------------------------------------------------------------------------
+
+  
+
+----------------------------------------------------------------------------------------------------
+class c_data_record =
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract to_binary (
+        binary_form    : out unchecked);
+    -- Retrieves a binary comparable representation of key items of a data record
+    ------------------------------------------------------------------------------------------------
+    virtual abstract to_string (
+        string_form    : out t_char32ustr);
+    ------------------------------------------------------------------------------------------------
+    virtual abstract compare (
+        B              : in class c_data_record)
+        return t_comparison_result;
+    ------------------------------------------------------------------------------------------------
+    procedure check_state (
+        state          : in t_data_state);
+    ------------------------------------------------------------------------------------------------
+    procedure to_state (
+        state          : in t_data_state);
+    ------------------------------------------------------------------------------------------------
+
+  protected  
+
+    var  
+      state        : t_data_state;
+    
+    end c_data_record;
+
+----------------------------------------------------------------------------------------------------
+protected
+----------------------------------------------------------------------------------------------------
+
+type
+  t_data_record    = record
+      state        : t_data_state;
+      end record;
+
+end data_structures;

@@ -1,0 +1,391 @@
+----------------------------------------------------------------------------------------------------
+module private trees =
+-- Data structures - trees.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+{
+----------------------------------------------------------------------------------------------------
+procedure tree_init =
+-- Initializes the tree.
+--   When [homogenous] is set to True, then only nodes of type [node_type] are permitted in the 
+-- tree, otherwise only nodes of type [node_type] and all its descendants. All tree manipulation 
+-- procedures raise [node_error] when the type of a node violates this rule.
+--   When [balanced] is set to True, AVL-balancing of the tree is performed automatically during
+-- insert and remove operations, otherwise no balancing is performed.
+----------------------------------------------------------------------------------------------------
+begin
+  tree.compare:=compare;
+  tree.balanced:=balanced;
+  end tree_init;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure compare_nodes (
+    tree           : in out t_tree;
+    A              : in p_tree_node;
+    B              : in p_tree_node)
+    return t_comparison_result =
+-- Compares two nodes and handles the equality state according to the tree's settings.
+----------------------------------------------------------------------------------------------------
+begin
+  -- compare nodes
+  result:=tree.compare^(A,B);
+
+  -- handle equality state
+  if result=tcr_equal then
+    case tree.on_equal
+      -- treat as an error
+      when toeb_error do {...}
+      
+      -- treat as lesser
+      when toeb_treat_as_lesser  do result:=tcr_lesser;
+      
+      -- treat as greater
+      when toeb_treat_as_greater do result:=tcr_greater;
+      end case;
+    end if;
+ 
+  end compare_nodes;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_insert =
+-- Inserts a node into the tree.
+----------------------------------------------------------------------------------------------------
+var
+  p                : p_tree_node;
+
+begin
+  -- are there already any nodes in the tree ?
+  if tree.root<>nil
+
+    -- yes => find a suitable position for the node being inserted
+    then
+      p:=tree.root;
+      loop
+        -- compare nodes and take appropriate action
+        case compare_nodes(tree,node,p)
+          -- node < p => insert into the left subtree
+          when tcr_lesser do
+              if p^.left<>nil
+                then p:=p^.left;
+                else 
+                  p^.left:=node;
+                  break;
+                end if;
+
+          -- node > p => insert into the right subtree
+          when tcr_greater do
+              if p^.right<>nil
+                then p:=p^.right;
+                else 
+                  p^.right:=node;
+                  break;
+                end if;
+
+          -- node = p - should have already been handled
+          when tcr_equal do {...}
+
+          -- unordered => error
+          when tcr_unordered do {...}
+          end case;
+        end loop;
+
+    -- no => insert as a root node                                                             
+    else
+      tree.root:=node;
+      end if;
+  end tree_insert;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure extract_leftmost (
+    subtree        : in out p_tree_node)         -- a subtree that is searched for the leftmost node
+    return p_tree_node =                         -- the leftmost node
+-- Extracts the leftmost [node] from the given [subtree]. The leftmost node is such a node, that
+-- is in the left subtree of the superior tree and itself has no left subtree.
+----------------------------------------------------------------------------------------------------
+var
+  top              : p_tree_node;
+
+begin
+  -- start from the root of the given subtree
+  result:=subtree;
+
+  -- there is no leftmost node in an empty subtree
+  if subtree=nil then 
+    return
+    end if;
+
+  -- find leftmost node
+  top:=nil;
+  while result^.left<>nil loop
+    top:=result;
+    result:=result^.left;
+    end loop;
+
+  -- rearrange the tree
+  if top<>nil
+    then top^.left:=result^.right
+    else subtree:=result^.right;
+    end if;
+
+  -- clear pointer to a possible right subtree
+  result^.right:=nil;
+  end extract_leftmost;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure extract_rightmost (
+    subtree        : in out p_tree_node)         -- a subtree that is searched for the rightmost node
+    return p_tree_node =                         -- the rightmost node
+-- Extracts the rightmost [node] from the given [subtree]. The rightmost node is such a node, that
+-- is in the right subtree of the superior tree and itself has no right subtree.
+----------------------------------------------------------------------------------------------------
+var
+  top              : p_tree_node;
+
+begin
+  -- start from the root of the given subtree
+  result:=subtree;
+
+  -- there is no rightmost node in an empty subtree
+  if subtree=nil then 
+    return
+    end if;
+
+  -- find rightmost node
+  top:=nil;
+  while result^.right<>nil loop
+    top:=result;
+    result:=result^.right;
+    end loop;
+
+  -- rearrange the tree
+  if top<>nil
+    then top^.right:=result^.left
+    else subtree:=result^.left;
+    end if;
+
+  -- clear pointer to a possible left subtree
+  result^.left:=nil;
+  end extract_rightmost;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_remove =
+-- Removes a node from the tree.
+----------------------------------------------------------------------------------------------------
+var
+  p                : p_tree_node;
+  top              : p_tree_node;
+  way_back         : enum went_left; went_right; end enum;
+
+    ------------------------------------------------------------------------------------------------
+    procedure replace_subtree (
+        new_subtree: p_tree_node) =
+    -- Replaces the subtree specified by [way_back] of the [top] tree with the [new_subtree].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- is this the root of the tree ?
+      if top=nil
+
+        -- yes => replace the tree's root
+        then tree.root:=new_subtree;
+
+        -- no => replace one of superior tree's subtrees
+        else 
+          -- how was this node reached ?
+          case way_back
+            -- as a left subtree => replace the left subtree
+            when went_left  do top^.left:=new_subtree;
+            -- as a right subtree => replace the right subtree
+            when went_right do top^.right:=new_subtree;
+            end case;
+          end if;
+      end replace_subtree;
+
+begin
+  -- find the node in the tree
+  top:=nil;
+  p:=tree.root;  
+  while p<>nil and then p<>node loop
+    -- compare nodes and take appropriate action
+    case compare_nodes(tree,node,p)
+      -- node < p => move to the left subtree
+      when tcr_lesser    do 
+          p:=p^.left;
+          way_back:=went_left;
+
+      -- node < p => move to the right subtree
+      when tcr_greater   do 
+          p:=p^.right;
+          way_back:=went_right;
+
+      -- node = p - should have already been handled
+      when tcr_equal     do {...}
+
+      -- unordered => error
+      when tcr_unordered do {...}
+      end case;
+    end loop;
+
+  -- extract the node being removed
+  -- no subtrees
+  if p^.left=nil and p^.right=nil then
+    replace_subtree(nil);
+
+  -- only right subtree
+  elsif p^.right<>nil then
+    replace_subtree(p^.right)
+
+  -- only left subtree
+  elsif p^.left<>nil then
+    replace_subtree(p^.left)
+
+  -- both subtrees
+  else
+    replace_subtree(extract_leftmost(p^.right));
+    end if;
+
+  -- clear pointers to possible subtrees
+  p^.left:=nil;
+  p^.right:=nil;
+  end tree_remove;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_discard =
+-- Removes the specified node from the tree and discards it.
+----------------------------------------------------------------------------------------------------
+begin
+  -- remove from the tree
+  tree_remove(tree,node);
+
+  -- and discard
+  discard node;
+  end tree_discard;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_discard_all =
+-- Discards all nodes of the tree.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure discard_subtree (
+        node       : in out p_tree_node) =
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node<>nil then
+        discard_subtree(node^.left);
+        discard_subtree(node^.right);
+        discard node;
+        end if;
+      end discard_subtree;
+
+begin
+  discard_subtree(tree.root);
+  end tree_discard_all;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_get_root =
+-- Return the root node of the [tree]. When the [tree] is empty, the result is nil.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=tree.root;
+  end tree_get_root;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_get_left =
+-- Returns the left child of the [node]. When the [node] has no left child, the result is nil.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=node^.left;
+  end tree_get_left;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_get_right =
+-- Returns the right child of the [node]. When the [node] has no right child, the result is nil.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=node^.right;
+  end tree_get_right;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_set_root =
+-- Sets [node] to the root of the [tree]. When the [tree] is empty, [node] is set to nil.
+----------------------------------------------------------------------------------------------------
+begin
+  node:=tree.root;
+  end tree_set_root;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_set_left =
+-- Sets [node] to its left child. When [node] has no left child, it is set to nil.
+----------------------------------------------------------------------------------------------------
+begin
+  node:=node^.left;
+  end tree_set_left;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_set_right =
+-- Sets [node] to its right child. When [node] has no right child, it is set to nil.
+----------------------------------------------------------------------------------------------------
+begin
+  node:=node^.right;
+  end tree_set_right;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_init =
+-- 
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end tree_iterator_init;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_reset =
+--    
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end tree_iterator_reset;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure tree_iterator_get =
+--
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end tree_iterator_get;
+
+
+}
+end trees;

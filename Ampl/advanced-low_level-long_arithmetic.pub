@@ -1,0 +1,311 @@
+----------------------------------------------------------------------------------------------------
+module public long_arithmetic =
+-- Long signed integer arithmetic operations.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- vy©e¨it pr ci s dynamick˜mi atributy z inline assembleru. V sou‡asn‚ dobˆ je nutno pou‘¡vat
+--      lok ln¡ promnˆnn‚
+--   -- utajit strukturu [t_long_signed] a [t_long_unsigned]. Zat¡m to nejde k–li chybˆ v p©eklada‡i
+----------------------------------------------------------------------------------------------------
+
+with
+  standard;
+
+type
+  -- internal represenation are described in private part of this module
+
+  -- long signed integer
+  t_long_signed    = array of t_unsigned;
+  p_long_signed    = ^class t_long_signed;
+
+  -- long unsigned integer
+  t_long_unsigned  = array of t_unsigned;
+  p_long_unsigned  = ^class t_long_unsigned;
+
+  -- number precision in bits
+  t_precision      = protected t_unsigned range 1..t_unsigned:last;
+
+
+
+-- basic operations (creation, initialization)
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_bits_to_items (
+    precision      : in t_precision)
+    return t_unsigned;
+-- Returns number of elements which T_LONG_UNSIGNED array has to have to be able to store a number 
+-- at least [precision] bits long.
+----------------------------------------------------------------------------------------------------
+procedure long_signed_bits_to_items (
+    precision      : in t_precision)
+    return t_unsigned;
+-- Returns number of elements which T_LONG_UNSIGNED array has to have to be able to store a number 
+-- at least [precision] bits long.
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_new (
+    number         : out p_long_unsigned;
+    precision      : in t_precision);
+-- Creates new instance of high precision number. [precision] parameter specifies minimum length
+-- (number of bits) of unsigned integer which must be possible to store to this new created number.
+----------------------------------------------------------------------------------------------------
+procedure long_signed_new (
+    number         : out p_long_signed;
+    precision      : in t_precision);
+-- Creates new instance of high precision number. [precision] parameter specifies minimum length
+-- (number of bits) of signed integer which must be possible to store to this new created number.
+-- Internally  Sign flag takes just one bit from given precision, i.e. for precision 1024 bits will be created
+-- number which can keep any number from range <-2^1023..2^1023-1>.
+----------------------------------------------------------------------------------------------------
+
+
+
+-- na‡ten¡ mal‚ho ‡¡sla a un rn¡ operace s velk˜m ‡¡slem
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_load (
+    number         : in out t_long_unsigned;
+    n              : in t_unsigned);
+-- Expands small number [number] and saves it into long number [n].
+----------------------------------------------------------------------------------------------------
+procedure long_signed_load (
+    number         : in out t_long_signed;
+    i              : in t_signed);
+-- Expands small number [number] and saves it into long number [i].
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_assign (
+    dst            : out t_long_unsigned;
+    src            : in  t_long_unsigned);
+-- Provede p©i©azen¡ DEST:=SRC
+----------------------------------------------------------------------------------------------------
+procedure long_signed_assign (
+    dst            : out t_long_signed;
+    src            : in  t_long_signed);
+-- Provede p©i©azen¡ DEST:=SRC
+----------------------------------------------------------------------------------------------------
+procedure long_signed_abs (
+    A              : in out t_long_signed);
+-- Provede p©i©azen¡ A:=ABS(A)
+----------------------------------------------------------------------------------------------------
+procedure long_signed_neg (
+    A              : in out t_long_signed);
+-- Provede p©i©azen¡ A:=-A
+----------------------------------------------------------------------------------------------------
+
+
+
+-- s‡¡t n¡, ode‡¡t n¡
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add_assign (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te A:=A+B; Sou‡et se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add_assign (
+    A              : in out t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te A:=A+B; Sou‡et se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add (
+    C              : out t_long_unsigned;
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te C:=A+B; Sou‡et se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add (
+    C              : out t_long_signed;
+    A              : in t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te C:=A+B; Sou‡et se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add_n (
+    A              : in out t_long_unsigned;
+    N              : in t_unsigned);
+-- Vypo‡te A:=A+N, kde N je mal‚ ‡¡slo; Sou‡et se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add_n (
+    A              : in out t_long_signed;
+    I              : in t_signed);
+-- Vypo‡te A:=A+N, kde N je mal‚ ‡¡slo; Sou‡et se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub_assign (
+    A              : in out t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te A:=A-B; Rozd¡l se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub_assign (
+    A              : in out t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te A:=A-B; Rozd¡l se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub (
+    C              : out t_long_unsigned;
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te C:=A-B; Rozd¡l se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub (
+    C              : out t_long_signed;
+    A              : in t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te C:=A-B; Rozd¡l se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub_n (
+    A              : in out t_long_unsigned;
+    N              : in t_unsigned);
+-- Vypo‡te A:=A-N, kde N je mal‚ ‡¡slo; Rodz¡l se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub_n (
+    A              : in out t_long_signed;
+    I              : in t_signed);
+-- Vypo‡te A:=A-N, kde N je mal‚ ‡¡slo; Rozd¡l se prov d¡ modulo "a:bits"
+----------------------------------------------------------------------------------------------------
+
+-- n soben¡, dˆlen¡, modulo
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_mul (
+    C              : out t_long_unsigned;
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te C:=A*B; Sou‡in se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_mul (
+    C              : out t_long_signed;
+    A              : in t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te C:=A*B; Sou‡in se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_div (
+    C              : out t_long_unsigned;
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te C:=A/B; Pod¡l se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_signed_div (
+    C              : out t_long_signed;
+    A              : in t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te C:=A/B; Pod¡l se prov d¡ modulo "c:bits"
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_mod (
+    C              : out t_long_unsigned;
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned);
+-- Vypo‡te C:=A mod B, resp. C := a - (a div b) * b.
+----------------------------------------------------------------------------------------------------
+procedure long_signed_mod (
+    C              : out t_long_signed;
+    A              : in t_long_signed;
+    B              : in t_long_signed);
+-- Vypo‡te C:=A mod B; resp. C := a - (a div b) * b.
+----------------------------------------------------------------------------------------------------
+
+-- zji¨Ÿov n¡ vlastnost¡ ‡¡sla (sudost, lichost, znam‚nko)
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_is_odd (
+    A              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_odd (
+    A              : in t_long_signed) return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_is_even (
+    A              : in t_long_unsigned) return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_even (
+    A              : in t_long_signed) return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_positive (
+    A              : in t_long_signed) return t_logical;
+-- Returns [true] when A>=0
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_negative (
+    A              : in t_long_signed) return t_logical;
+-- Returns [true] when A<0
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_neutral (
+    A              : in t_long_signed) return t_logical;
+-- Returns [true] when A=0
+----------------------------------------------------------------------------------------------------
+
+-- porovn v n¡ ‡¡sel
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_eq (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_ne (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_lt (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_le (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_gt (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_ge (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure long_signed_eq (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+--------------------------------------------------------------------------------------------------
+procedure long_signed_ne (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+--------------------------------------------------------------------------------------------------
+procedure long_signed_lt (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+--------------------------------------------------------------------------------------------------
+procedure long_signed_le (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+--------------------------------------------------------------------------------------------------
+procedure long_signed_gt (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+--------------------------------------------------------------------------------------------------
+procedure long_signed_ge (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+
+
+{ Chyba p©i p©ekladu
+protected
+
+type
+  -- long signed integer
+  t_long_signed    = array of t_unsigned;
+
+  -- long unsigned integer
+  t_long_unsigned  = array of t_unsigned;
+}
+
+end long_arithmetic;

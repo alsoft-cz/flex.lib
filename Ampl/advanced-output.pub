@@ -1,0 +1,71 @@
+----------------------------------------------------------------------------------------------------
+module public output =
+-- Standardized program output forms.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- clarify documentation of this module
+--   -- make the number of empty lines between sections configurable
+--   -- make the number of empty lines before and after a section header configurable
+--   -- introduce a "strict" [skip_line]ing strategy besides the current "loose" strategy
+--   -- think about the possibility to automatically append ":" to header item names
+--   -- consider redoing indentation handling using an indent template (indent_template : p_char32ustr)
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.triggers;
+
+-- forward declarations
+class c_listing;       type p_listing        = ^class c_listing;
+
+----------------------------------------------------------------------------------------------------
+class public c_listing = 
+-- Listing.
+----------------------------------------------------------------------------------------------------
+
+    with
+      standard.streams;
+
+    extend 
+      c_trigger_container;
+
+    ------------------------------------------------------------------------------------------------
+    static create (
+        os         : in p_output_text_stream;    -- target output stream
+        width      : in t_unsigned := 100;       -- normalized line width
+        indent     : in t_unsigned := 2;         -- indentation
+        header_tab : in t_unsigned := 24);       -- header item tabbing width
+    -- Creates a new listing.
+    ------------------------------------------------------------------------------------------------
+    virtual start_section (
+        name       : in t_char32ustr);           -- section's name
+    -- Starts a new named section within the listing.
+    ------------------------------------------------------------------------------------------------
+    virtual write_header_item (
+        name       : in t_char32ustr;            -- header item's name
+        value      : in t_char32ustr);           -- header item's value
+    -- Outputs a single header item into the listing. 
+    ------------------------------------------------------------------------------------------------
+    virtual end_header;
+    -- Ends the header part of a section.
+    ------------------------------------------------------------------------------------------------
+    virtual write_line (
+        text       : in t_char32ustr);           -- single line of text to be written to the listing
+    -- Outputs a single line of text into the listing. The text is indented according the current
+    -- indentation level.
+    ------------------------------------------------------------------------------------------------
+    virtual skip_line;
+    -- Produces an empty line in the listing. Multiple calss to [skip_line] produce adequate number
+    -- of empty lines in the output.
+    ------------------------------------------------------------------------------------------------
+    static start_indent;
+    -- Starts indented sequence of lines.
+    ------------------------------------------------------------------------------------------------
+    static end_indent;
+    -- Ends indented sequence of lines.
+    ------------------------------------------------------------------------------------------------
+
+    end c_listing;
+
+end output;

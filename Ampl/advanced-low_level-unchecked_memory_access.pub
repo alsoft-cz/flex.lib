@@ -1,0 +1,48 @@
+----------------------------------------------------------------------------------------------------
+module public unchecked_memory_access =
+-- Unchecked memory access.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  -- machine pointer (address)
+  t_machine_pointer = ^unchecked for machine_pointer use true;
+
+----------------------------------------------------------------------------------------------------
+procedure memory_fill_zero (
+    x              : in out unchecked;
+    size           : in t_unsigned);
+-- Sets [size] bytes of [x] to zero.
+--
+-- Remarks:
+--   The IN OUT mode of the [x] parameter is used to disable automatic compiler-generated zeroing 
+-- of [x].
+--
+-- Result:
+--   This subprogram always succeeds.
+----------------------------------------------------------------------------------------------------
+procedure memory_fill_byte (
+    x              : in out unchecked;
+    size           : in t_unsigned;
+    fill_with      : in t_unsigned8);
+-- Sets [size] bytes of [x] to [fill_with].
+--
+-- Remarks:
+--   The IN OUT mode of the [x] parameter is used to disable automatic compiler-generated zeroing 
+-- of [x].
+--
+-- Result:
+--   This subprogram always succeeds.
+----------------------------------------------------------------------------------------------------
+procedure memory_copy (
+    source         : in unchecked;               -- source block of memory
+    destination    : in out unchecked;           -- destination block of memory
+    size           : in t_unsigned);             -- block size    
+-- Moves [size] of bytes from [source] to [destination].
+--
+-- Result:
+--   This subprogram always succeeds.
+----------------------------------------------------------------------------------------------------
+
+end unchecked_memory_access;

@@ -1,0 +1,170 @@
+----------------------------------------------------------------------------------------------------
+module public streams =
+-- Data streams.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- clarify documentation
+--   -- change all stream classes into abstract classes
+--   -- remove [c_output_stream.writex]
+--   -- remove the [len] parameter from [c_output_buffer.t_write_method] 
+--      and [c_output_buffer.write_block]
+--   -- add c_input_buffer
+----------------------------------------------------------------------------------------------------
+
+-- forward declarations
+class c_input_stream;       type p_input_stream       = ^class c_input_stream;
+class c_output_stream;      type p_output_stream      = ^class c_output_stream;
+class c_input_text_stream;  type p_input_text_stream  = ^class c_input_text_stream;
+class c_output_text_stream; type p_output_text_stream = ^class c_output_text_stream;
+class c_output_buffer;      type p_output_buffer      = ^class c_output_buffer;
+--class c_input_buffer;       type p_input_buffer       = ^class c_input_buffer;
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT) abstract} c_input_stream =
+-- Data input stream.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_input_size return t_unsigned; 
+    -- Returns the number of bytes, that can be immediatelly read from the input stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_input_read return t_unsigned;
+    -- Returns the number of bytes already read from the stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} look (
+        data       : out unchecked t_unsigned8);
+    -- 
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} read (
+        data       : out unchecked);
+    -- Reads [data:size] bytes of data and stores them into [data].
+    ------------------------------------------------------------------------------------------------
+    
+    end c_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT) abstract} c_output_stream =
+-- Data output stream.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_output_written return t_unsigned;
+    -- Returns the number of bytes already written to the stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} write (
+        data       : in unchecked);
+    -- Writes [data:size] bytes of data from [data] to the output.
+    ------------------------------------------------------------------------------------------------
+    virtual writex (
+        data       : in unchecked;
+        len        : in t_unsigned);
+    -- To be removed: Writes [len] bytes of data from [data] to the output.
+    ------------------------------------------------------------------------------------------------
+    
+    end c_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT) abstract} c_input_text_stream =
+-- Data input stream.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} read_line (
+        text       : out t_char32ustr);
+    -- Reads a line of text from the input and stores it in [text].
+    ------------------------------------------------------------------------------------------------
+    
+    end c_input_text_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT) abstract} c_output_text_stream =
+-- Data output stream.
+----------------------------------------------------------------------------------------------------
+
+    with
+      standard.characters;
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_output_lines return t_unsigned;
+    -- Returns the number of bytes already written to the stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_output_characters return t_unsigned;
+    -- Returns the number of bytes already written to the stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} get_output_bytes return t_unsigned;
+    -- Returns the number of bytes already written to the stream.
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} write (
+        text       : in t_char32ustr);
+    -- Writes [text] to the output.                                    
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT) abstract} write_line (
+        text       : in t_char32ustr);
+    -- Writes [text] to the output and transitions to a new line.
+    ------------------------------------------------------------------------------------------------
+    
+    end c_output_text_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_buffer =
+-- Common output buffer.
+----------------------------------------------------------------------------------------------------
+
+    type
+      -- method to write 
+      t_write_method = procedure (
+          data     : in unchecked;               -- data to be written
+          len      : in t_unsigned);             -- To be removed: size of [data]
+      p_write_method = ^t_write_method;
+          
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        buffer_size  : in t_unsigned;            -- size of the output buffer
+        write_method : in p_write_method);       -- pointer to the buffer flushing method
+    -- Initializes the buffer. The buffer is created [buffer_size] bytes long. The [write_method] 
+    -- subprogram is used to physically output the buffered data, when the buffer becomes full or
+    -- [flush] is called.
+    --
+    -- Parameters:
+    --   buffer_size   [buffer_size] may not be zero.
+    --   write_method  [write_method] may not be NIL.
+    --
+    -- Result:
+    --   -- when the subprogram fails, [parameter_error] is raised,
+    --   -- when the subprogram succeeds, a buffer of [buffer_size] bytes is allocated.
+    ------------------------------------------------------------------------------------------------
+    static write_byte (
+        data       : in unchecked t_unsigned8);  -- data to be written
+    -- Writes a single byte of data into the buffer.
+    ------------------------------------------------------------------------------------------------
+    static write_block (
+          data     : in unchecked {%%FLEX t_unsigned8array}; -- data to be written
+          len      : in t_unsigned);             -- To be removed: size of [data]
+    -- Writes a block of bytes into the buffer.
+    ------------------------------------------------------------------------------------------------
+    static flush;
+    -- Flushes the contents of the buffer to the physical output using the [write_method].
+    ------------------------------------------------------------------------------------------------
+    -- %%TODO(OVERLOAD) overload write : write_byte, write_block;
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    var
+      buffer       : p_unsigned8string;          -- the actual buffer
+      write_method : p_write_method;             -- a method used to physically output the data
+
+    end c_output_buffer;
+
+end streams;

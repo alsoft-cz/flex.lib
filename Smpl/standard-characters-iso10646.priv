@@ -1,0 +1,318 @@
+----------------------------------------------------------------------------------------------------
+module private iso10646 =
+-- ISO 10646 support.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+#include 'full_unicode_data.src';
+#include 'unicode_blocks.src';
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_to_upper =
+-- Converts a lower-case character to the corresponding upper-case character.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+{
+  -- %% FIX
+  if c="z" then
+    result:="Z";
+    return
+    end if;
+}
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+  if ((val and $20) = $20) 
+    -- is caharacter convertible to upper case
+    then
+      if (((val shr 8) and $1ff)=$1ff) 
+        then
+          -- characters with overflow offset
+          case c:ord
+            when $00b5 do result:ord:=$03C9;
+            when $212a do result:ord:=$0053;
+            when $212b do result:ord:=$0399;
+            when others do;
+            end case;
+        else
+          if (((val shr 8) and $100)=$100)
+            then
+              -- characters with negative offset
+              result:ord := c:ord + t_unsigned16(((val shr 8) and $ff));
+            else
+              result:ord := c:ord - t_unsigned16(((val shr 8) and $ff));
+              end if;
+          end if;
+    -- charcter is not convertible to upper case 
+    else
+      -- return original charcter 
+      result:=c;
+      end if;
+  end iso_char_to_upper;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_to_lower =
+-- Converts a lower-case character to the corresponding upper-case character.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+{
+  if c="Z" then
+    result:="z";
+    return
+    end if;
+}
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+  if ((val and $40) = $40) 
+    -- is caharacter convertible to lower case
+    then
+      if (((val shr 8) and $1ff)=$1ff) 
+        then
+          -- characters with overflow offset
+          case c:ord
+            when $2126 do result:ord:=$03C9;
+            when $212a do result:ord:=$006b;
+            when $212b do result:ord:=$00e5;
+            when others do;
+            end case;
+        else
+          if (((val shr 8) and $100)=$100)
+            then
+              -- characters with negative offset
+              result:ord := c:ord - t_unsigned16(((val shr 8) and $ff));
+            else
+              result:ord := c:ord + t_unsigned16(((val shr 8) and $ff));
+              end if;
+          end if;
+
+    -- charcter is not convertible to lower case 
+    else
+      -- return original charcter 
+      result:=c;
+      end if;
+  end iso_char_to_lower;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_to_title =
+-- Converts given character <par>c</par> that is a lower-case or upper-case letter to corresponding
+-- tittle-case letter. If <par>c</par> is already a tittle-case letter or any other non-letter 
+-- character, it is returned unchanged.
+----------------------------------------------------------------------------------------------------
+const 
+  lower_case       = cc_letter_lowercase;
+  upper_case       = cc_letter_uppercase;
+
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+ 
+  if ((val and $40) = $40) 
+    then
+      -- has tittle-case different from upper-case
+      -- only few characters belongs here and the rule for conversion is simple
+      -- add 1 to upper-case letter or substract 1 from lower-case letter
+      if ((val and $1f) = t_mod_unsigned32(lower_case:ord)) then
+        -- character is lower-case
+        result:ord - 1;
+      elsif ((val and $1f) = t_mod_unsigned32(upper_case:ord)) then
+        -- character is upper-case
+        result:ord + 1;
+      else 
+        -- anything else including tittle-case letter stays unchanged
+        end if;
+
+    else
+      -- tittle-case ot this character is the same as it`s upper-case    
+      result:=iso_char_to_upper(c);
+      end if;
+  end iso_char_to_title;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_get_char_category =
+-- Returns ordinal value of category to the given character <par>c</par>. If zero than given 
+-- character <par>c</par> is not a valid character.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  result:=t_char_category(val and $1f);
+
+  end iso_get_char_category;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_get_numeric_value =
+-- Returns numeric value to the given character <par>c</par>.
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end iso_char_get_numeric_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_lower =
+-- Returns true if the given character <par>c</par> is a lower-case.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_letter_lowercase then
+    result:=true;
+    end if;
+  end iso_char_is_lower;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_upper =
+-- Returns true if the given character <par>c</par> is a upper-case.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_letter_uppercase then
+    result:=true;
+    end if;
+  end iso_char_is_upper;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_title =
+-- Returns true if the given character <par>c</par> is a tittle-case.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_letter_titlecase then
+    result:=true;
+    end if;
+  end iso_char_is_title;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_letter =
+-- Returns true if the given character <par>c</par> is a decimal digit.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_letter_lowercase or
+     t_char_category(val and $1f)=cc_letter_uppercase or
+     t_char_category(val and $1f)=cc_letter_titlecase or
+     t_char_category(val and $1f)=cc_letter_modifier or
+     t_char_category(val and $1f)=cc_letter_other then
+    result:=true;
+    end if;
+  end iso_char_is_letter;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_digit =
+-- Returns true if the given character <par>c</par> is a decimal digit.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_number_decimal then
+    result:=true;
+    end if;
+  end iso_char_is_digit;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_char_is_number =
+-- Returns true if the given character <par>c</par> is a number.
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  val:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+
+  if t_char_category(val and $1f)=cc_number_decimal or
+     t_char_category(val and $1f)=cc_number_letter or 
+     t_char_category(val and $1f)=cc_number_other then
+    result:=true;
+    end if;
+  end iso_char_is_number;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_get_char_property =
+-- working procedure to be deleted
+-- %FLEX
+----------------------------------------------------------------------------------------------------
+var 
+  val              : t_mod_unsigned32;
+
+begin
+  result:=_c[t_unsigned8(_b[t_unsigned16(_a[c:ord div compression_size] + t_mod_unsigned16(c:ord mod compression_size))])];
+  end iso_get_char_property;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure iso_get_block =
+-- working procedure to be deleted
+-- %FLEX
+----------------------------------------------------------------------------------------------------
+var 
+  low              : t_unsigned8;
+  high             : t_unsigned8;
+  curr             : t_unsigned8;
+
+begin
+  low:=0{%%FLEX -- unicode_blocks:firts};
+  high:=107{%%FLEX --unicode_blocks:last};
+  curr:=(low+high) div 2;
+  while (high - low > 1)loop
+    if (c >= unicode_blocks[curr].start) 
+      then low:= curr;
+      else high:= curr;
+        end if;
+    curr:=(high+low) div 2;
+    end loop;        
+    result:=unicode_blocks[curr];
+
+  end iso_get_block;
+
+
+end iso10646;

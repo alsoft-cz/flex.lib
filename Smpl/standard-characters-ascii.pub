@@ -1,0 +1,49 @@
+----------------------------------------------------------------------------------------------------
+module public ascii =
+-- Support for 8bit ASCII character coding.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+#if #declared radekr; #and then; radekr then;
+----------------------------------------------------------------------------------------------------
+{#separate public kam;
+-- Support for 8bit kamenicky character coding.
+----------------------------------------------------------------------------------------------------
+#separate public latin2;
+-- Support for 8bit latin2 character coding.
+----------------------------------------------------------------------------------------------------
+#separate public iso8859_2;
+-- Support for 8bit ISO 8859.2 character coding.}
+----------------------------------------------------------------------------------------------------
+#separate public cp1250;
+-- Support for 8bit CP1250 character coding.
+----------------------------------------------------------------------------------------------------
+#end if;
+
+
+----------------------------------------------------------------------------------------------------
+procedure to_ascii (
+    istr       : in t_char32ustr;                -- ISO 10646 string
+    astr       : out t_char8ustr);               -- ASCII string
+-- Converts an ISO 10646 string to an ascii string.
+--   No character representation changes are made. <ent>range_error</ent> is raised when a source 
+-- character's 32bit encoding cannot be narrowed to 8bit encoding (that is when the character's 
+-- ordinal value is greater than $FF). 
+----------------------------------------------------------------------------------------------------
+procedure ascii_char_to_lower (
+    c          : in t_char8)                     -- character to convert
+    return t_char8;                              -- converted character
+-- Convers given character <par>c</par> that is an upper-case letter to corresponding lower-case
+-- letter. If <par>c</par> is already a lower-case letter or any other non-letter character, it is
+-- returned unchanged.
+----------------------------------------------------------------------------------------------------
+procedure ascii_char_to_upper (
+    c          : in t_char8)                     -- character to convert
+    return t_char8;                              -- converted character
+-- Convers given character <par>c</par> that is a lower-case letter to corresponding upper-case
+-- letter. If <par>c</par> is already an upper-case letter or any other non-letter character, it is
+-- returned unchanged.
+----------------------------------------------------------------------------------------------------
+
+end ascii;

@@ -1,0 +1,884 @@
+---------------------------------------------------------------------------------------------------
+module private lists =
+-- Data structures - linked lists.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_list_item =
+-- List item.
+----------------------------------------------------------------------------------------------------
+
+    end c_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_list =
+-- List.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initializes the list.
+    --   When [homogenous] is set to True, then only items of type [item_type] are permitted on the 
+    -- list, otherwise only items of type [item_type] and all its descendants. All list manipulation 
+    -- procedures raise [list_error] when the type of an item violates this rule.
+    ------------------------------------------------------------------------------------------------
+    begin
+      this.item_type:=item_type;
+      this.homogenous:=homogenous;
+      this.circular:=circular;
+      count:=0;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static new_first =
+    -- Creates a new item and places it to the beginning of the list.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      raise feature_not_implemented;
+    {%%TODO(TAG)
+      -- create a new item
+      new item tag item_type;
+
+      -- insert to the beginning of the list
+      insert_first(item);
+    }
+
+    leave
+      execute(event_after);
+      end new_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static new_last =
+    -- Creates a new item and places it to the end of the list.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      raise feature_not_implemented;
+    {%%TODO(TAG)
+      -- create a new item
+      new item tag list.item_type;
+
+      -- insert to the end of the list
+      insert_last(item);
+    }
+
+    leave
+      execute(event_after);
+      end new_last;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static new_before =
+    -- Creates a new item and places it before the specified [refitem].
+    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      raise feature_not_implemented;
+    {%%TODO(TAG)
+      -- create a new item
+      new item tag list.item_type;
+
+      -- insert before the specified [refitem]
+      insert_before(item,refitem);
+    }
+
+    leave
+      execute(event_after);
+      end new_before;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static new_after =
+    -- Creates a new item and places it after the specified [refitem].
+    -- Raises LIST_ERROR if [refitem] is NIL.
+    -- The type of the item is according to the type of the real parameter (item:tag:base).
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      raise feature_not_implemented;
+    {%%TODO(TAG)
+      -- create a new item
+      new item tag list.item_type;
+
+      -- insert after the specified [refitem]
+      insert_after(item,refitem);
+    }
+
+    leave
+      execute(event_after);
+      end new_after;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_first =
+    -- Places the given item to the beginning of the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      item^.next:=first;
+      if first<>nil
+        then first^.prev:=item;
+        else last:=item;
+        end if;
+      first:=item;
+      succ count;
+
+    leave
+      execute(event_after);
+      end insert_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_last =
+    -- Places the given item to the end of the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      item^.prev:=last;
+      if last<>nil
+        then last^.next:=item;
+        else first:=item;
+        end if;
+      last:=item;
+      succ count;
+
+    leave
+      execute(event_after);
+      end insert_last;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert =
+    -- Places the given item to the end of the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      insert_last(item);
+
+    leave
+      execute(event_after);
+      end insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_before =
+    -- Places the given item to before the specified [refitem].
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- check whether REFITEM is in the list
+      if not has_item(refitem) then
+        -- %%TODO do something in case of error 
+        raise feature_not_implemented;
+        return;
+        end if;
+      
+      -- insert item
+      item^.prev:=refitem^.prev;
+      item^.next:=refitem;
+      if refitem^.prev<>nil
+        then refitem^.prev^.next:=item;
+        else first:=item;
+        end if;
+      refitem^.prev:=item;
+      succ count;
+
+    leave
+      execute(event_after);
+      end insert_before;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_after =
+    -- Places the given item to after the specified [refitem].
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- check whether REFITEM is in the list
+      if not has_item(refitem) then
+        -- %%TODO do something in case of error 
+        raise feature_not_implemented;
+        return;
+        end if;
+      
+      -- insert item
+      item^.next:=refitem^.next;
+      item^.prev:=refitem;
+      if refitem^.next<>nil
+        then refitem^.next^.prev:=item;
+        else last:=item;
+        end if;
+      refitem^.next:=item;
+      succ count;
+
+    leave
+      execute(event_after);
+      end insert_after;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_first =
+    -- Removes the first item from the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- check wether the list isn't empty
+      if first=nil then
+        return;
+        end if;
+     
+      -- return the first item
+      result:=first;
+     
+      -- remove it from the list
+      if first=last then
+        last:=nil;
+        end if;
+      if first^.next<>nil then
+        first^.next^.prev:=nil;
+        end if;
+      first:=first^.next;
+      result^.next:=nil;
+
+      -- adjust the number of items in the list
+      pred count;
+
+    leave
+      execute(event_after);
+      end remove_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_last =
+    -- Removes the last  item from the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- check wether the list isn't empty
+      if last=nil then
+        return;
+        end if;
+     
+      -- return the last item
+      result:=last;
+     
+      -- remove it from the list
+      if last=first then
+        first:=nil;
+        end if;
+      if last^.prev<>nil then
+        last^.prev^.next:=nil;
+        end if;
+      last:=last^.prev;
+      result^.prev:=nil;
+
+      -- adjust the number of items in the list
+      pred count;
+
+    leave
+      execute(event_after);
+      end remove_last;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override remove =
+    -- Removes the [item] from the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      if not has_item(item) then
+        raise list_error;
+        end if;
+
+      -- remove from the list
+      if p_list_item(item)^.next<>nil
+        then p_list_item(item)^.next^.prev:=p_list_item(item)^.prev;
+        else last:=p_list_item(item)^.prev;
+        end if;
+      if p_list_item(item)^.prev<>nil
+        then p_list_item(item)^.prev^.next:=p_list_item(item)^.next;
+        else first:=p_list_item(item)^.next;
+        end if;
+
+      -- adjust the number of items in the list
+      pred count;
+
+    leave
+      execute(event_after);
+      end remove;
+    
+
+    
+    ------------------------------------------------------------------------------------------------
+    static delete_first =
+    -- Removes and discards the first item from the list.
+    ------------------------------------------------------------------------------------------------
+    var 
+      item         : p_list_item;
+
+    begin
+      execute(event_before);
+
+      -- check wether the list isn't empty
+      if first=nil then
+        return;
+        end if;
+     
+      begin
+        -- remember the first item
+        item:=first;
+       
+        -- remove it from the list
+        if first=last then
+          last:=nil;
+          end if;
+        first^.next^.prev:=nil;
+        first^.next:=nil;
+        first:=first^.next;
+
+      leave
+        -- discard the first item
+        discard item;
+
+        -- adjust the number of items in the list
+        pred count;
+        end;
+
+    leave
+      execute(event_after);
+      end delete_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_last =
+    -- Removes and discards the last  item from the list.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_list_item;
+
+    begin
+      execute(event_before);
+
+      -- check wether the list isn't empty
+      if last=nil then
+        return;
+        end if;
+
+      begin
+        -- remember the last item
+        item:=last;
+       
+        -- remove it from the list
+        if last=first then
+          first:=nil;
+          end if;
+        last^.prev^.next:=nil;
+        last^.prev:=nil;
+        last:=last^.prev;
+
+      leave
+        -- discard the first item
+        discard item;
+
+        -- adjust the number of items in the list
+        pred count;
+        end;
+
+    leave
+      execute(event_after);
+      end delete_last;
+    
+    
+    
+    ------------------------------------------------------------------------------------------------
+    override delete =
+    -- Removes and discards the [item] from the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      if not has_item(item) then
+        raise list_error;
+        end if;
+
+      begin
+        -- remove from the list
+        if p_list_item(item)^.next<>nil
+          then p_list_item(item)^.next^.prev:=p_list_item(item)^.prev;
+          else last:=p_list_item(item)^.prev;
+          end if;
+        if p_list_item(item)^.prev<>nil
+          then p_list_item(item)^.prev^.next:=p_list_item(item)^.next;
+          else first:=p_list_item(item)^.next;
+          end if;
+
+      leave
+        -- discard the item
+        discard item;
+
+        -- adjust the number of items in the list
+        pred count;
+        end;
+
+    leave
+      execute(event_after);
+      end delete;
+    
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete_all =
+    -- Removes and discards the [item] from the list.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_list_item;
+
+    begin
+      execute(event_before);
+
+      loop
+        -- get the first item
+        item:=first;
+        if item=nil then break; end if;
+
+        -- remove it from the list
+        first:=item^.next;
+
+        -- and discard it
+        discard item;
+        end loop;
+
+      -- there are no more items on the list
+      last:=nil;
+      count:=0;
+
+    leave
+      execute(event_after);
+      end delete_all;
+    
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_first =
+    -- Returns the first item of the list, or NIL if empty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the first item
+      result:=first;
+
+    leave
+      execute(event_after);
+      end get_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_last =
+    -- Returns the last item of the list, or NIL if empty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the last item
+      result:=last;
+
+    leave
+      execute(event_after);
+      end get_last;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_prev =
+    -- Returns the item before [item], or NIL if [item] is the first item in the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the previous item
+      result:=item^.prev;
+
+    leave
+      execute(event_after);
+      end get_prev;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static get_next =
+    -- Returns the item after [item], or NIL if [item] is the last item in the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the next item
+      result:=item^.next;
+
+    leave
+      execute(event_after);
+      end get_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_first =
+    -- Sets [item] to the first item in the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the first item
+      item:=first;
+
+    leave
+      execute(event_after);
+      end set_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_last =
+    -- Sets [item] to the last item in the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the last item
+      item:=last;
+
+    leave
+      execute(event_after);
+      end set_last;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_prev =
+    -- Sets [item] to the previous item in the list.
+    -----------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the previous item
+      item:=item^.prev;
+
+    leave
+      execute(event_after);
+      end set_prev;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_next =
+    -- Sets [item] to the next item in the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      execute(event_before);
+
+      -- return the next item
+      item:=item^.next;
+
+    leave
+      execute(event_after);
+      end set_next;
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_item =
+    -- Returns true if [item] is an item of the list.
+    ------------------------------------------------------------------------------------------------
+    var 
+      curr_item    : p_list_item;
+
+    begin 
+      execute(event_before);
+
+      curr_item:=first;
+      while curr_item<>last loop
+        if item=curr_item then
+          result:=true;
+          return;
+          end if;
+        end loop;
+
+    leave
+      execute(event_after);
+      end has_item;
+
+    end c_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_list_iterator =
+-- List.
+----------------------------------------------------------------------------------------------------
+
+    var 
+      direction    : t_list_walking_direction;   -- direction of iteration
+      list         : p_list;                     -- subject to iteration
+      curr_item    : p_list_item;                -- current item
+      next_item    : p_list_item;                -- next item
+    
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initializes an iterator used for walking through a list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      this.direction:=direction;
+      this.list:=^list;
+      curr_item:=nil;
+      next_item:=nil;
+      end init;
+
+                                                                                                    
+
+    ------------------------------------------------------------------------------------------------
+    override reset =
+    -- Resets the iterator, so it can be re-used on top of the same container.
+    --
+    -- Remarks:
+    --   The [reset] methos maintains all properties of the iterator, but the position within the
+    -- container.
+    ------------------------------------------------------------------------------------------------
+    begin
+      curr_item:=nil;
+      end reset;
+    
+    
+    ------------------------------------------------------------------------------------------------
+    override get =
+    -- Retrieves one item from the corresponding container.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- walk in the appropriate direction
+      case direction
+        -- forward iteration
+        when tlwd_forward do
+            -- check for first item
+            if curr_item=nil then
+              next_item:=list^.get_first;
+              end if;
+
+            -- get item
+            curr_item:=next_item;
+            item:=curr_item;
+            if curr_item<>nil then
+              next_item:=curr_item^.next;
+              end if;
+
+        -- backward iteration
+        when tlwd_backward do
+            -- check for first item
+            if curr_item=nil then
+              next_item:=list^.get_last;
+              end if;
+
+            -- get item
+            curr_item:=next_item;
+            item:=curr_item;
+            if curr_item<>nil then
+              next_item:=curr_item^.prev;
+              end if;
+        end case;
+      
+      -- set result
+      result:=item<>nil;
+      end get;
+    
+    end c_list_iterator;
+
+
+
+#if #declared radekr_stack; #and then; radekr_stack then;
+----------------------------------------------------------------------------------------------------
+class private c_stack =
+-- Stack.
+--
+-- Remarks
+--   The [c_container.insert] method behaves as the [push] method.
+----------------------------------------------------------------------------------------------------
+
+    var 
+      current_item : p_list_item;
+
+
+    ------------------------------------------------------------------------------------------------
+    static push =
+    -- Pushes [item] on top of the stack.
+    -- 
+    -- Result:
+    --   If we try po push in a nil an error contition occures.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- trigger the 'before' event
+      execute(event_before);
+
+      if item=nil then
+        execute(event_error);
+        end if;
+
+      -- clear links to item
+      item^.next:=nil;
+      item^.prev:=nil;
+
+      -- link item to stack
+      current_item^.next:=item;
+      item^.prev:=current_item;
+      current_item:=item;
+
+    leave
+      -- trigger the 'after' event
+      execute(event_after);
+      end push;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static pop =
+    -- Pop [item] that is on the top of the stack
+    --
+    -- Result:
+    --   If there is no item in the stack an error condiotion occures and output parametr [item] is
+    --   set to nil.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- trigger the 'before' event
+      execute(event_before);
+
+      if current_item=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- assing current_item to item and unlink it from stack
+      item:=current_item;
+      if current_item^.prev<>nil 
+        then
+          -- there is more item on the stack
+          current_item:=current_item^.prev;
+          current_item^.next:=nil;
+        
+        else
+          -- the stack is empty now
+          current_item:=nil;
+          end if;
+        
+      -- clear links to item
+      item^.next:=nil;
+      item^.prev:=nil;
+
+    leave
+      -- trigger the 'after' event
+      execute(event_after);
+      end pop;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static peek =
+    -- Returns item currently on top of the stack.
+    -- 
+    -- Result:
+    --   If we try po push in a nil an error contition occures.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- trigger the 'before' event
+      execute(event_before);
+
+      -- result
+      item:=current_item;
+
+    leave
+      -- trigger the 'after' event
+      execute(event_after);
+      end peek;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert =
+    -- Overrides insert from c_container.
+    -- Behaves same as method [push].
+    ------------------------------------------------------------------------------------------------
+    begin
+      push(item);
+      end insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete_all =
+    -- Overrides delete_all from c_container.
+    --
+    -- Result:
+    --   This subprogram never fails.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- trigger the 'before' event
+      execute(event_before);
+
+      -- go from the top and discard all items
+      while current_item<>nil loop
+        if current_item^.prev<>nil 
+          then
+            -- there is more than one item on the stack
+            current_item:=current_item^.prev;
+            discard current_item^.next;
+
+          else
+            -- last item on the stack
+            discard current_item;
+            end if;
+        end loop;
+
+    leave
+      -- trigger the 'after' event
+      execute(event_after);
+      end delete_all;
+
+
+    end c_stack;
+
+#end if {radekr_stack};
+
+
+end lists;

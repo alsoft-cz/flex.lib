@@ -1,0 +1,87 @@
+----------------------------------------------------------------------------------------------------
+module public normalizer =
+-- Text normalization.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+type
+  -- normalization forms defined in unicode 3.2
+  t_normalization_form = enum
+      nf_d;        -- cannonical decomposition
+      nf_c;        -- cannonical decompostion folowed by cannonical composition
+      nf_kd;       -- cannonical and compatibility decomposition
+      nf_kc;       -- cannonical and compatibility decomposition folowed by cannonical composition
+      end enum;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_normalizer =
+-- Class used to normalilze strings, using defined normalization form following rules and
+-- definitions described in The Unicode Standart
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static init(
+      form         : in t_normalization_form);
+    -- Initialilze normalizer object, say which form will be used and creates normalization
+    -- properties of characters
+    ------------------------------------------------------------------------------------------------
+    static normalize (
+      source       : in p_char32str; 
+      target       : out p_char32str);
+    -- from given string [source] produces a normalized form of the string as a new string [target]
+    -- uses [form] to determine which normalization form will be produced.
+    ------------------------------------------------------------------------------------------------
+
+    end c_normalizer;
+   
+
+----------------------------------------------------------------------------------------------------
+class public c_character_normalizer =
+-- Character normalizerer.
+----------------------------------------------------------------------------------------------------
+-- This class serves as a normalizer of a stream of input 32bit characters. The input shall
+-- be fed in character-by-character by calling <ent>put_char</ent> until it returs True which 
+-- means that there is at least one character prepared to retreive by calling <ent>get_char</ent>.
+-- Repeat <ent>get_char</ent> while it retruns True. The process can be repeated until last
+-- character is put. When the last character is put the call of <ent>finalize<\ent> must be done
+-- and <ent>get_char</ent> to retreive rest of the result.
+----------------------------------------------------------------------------------------------------
+
+    message
+      -- input overflow
+      character_normalizer_error : exception;
+
+    
+    ------------------------------------------------------------------------------------------------
+    static init(
+      form         : in t_normalization_form);
+    -- Initialilze normalizer object, say which form will be used and creates normalization
+    -- properties of characters
+    ------------------------------------------------------------------------------------------------
+    static put_char (
+        char       : in t_char32)                -- single charatcer of input
+        return t_logical;                        -- T- character prepared at the ouput
+    -- Feeds in a single character of input. 
+    --   When inputing more data wold cause internal buffer overflow 
+    -- <ent>character_normalizer_error</ent> is raised. This could happen when output is not being 
+    -- retrieved by <ent>get_char</ent>. The function returns True, when outbut buffer contains
+    -- at least one character that will not be further normalized.
+    ------------------------------------------------------------------------------------------------
+    static finalize_input;
+    -- Informs the normalizer, that there will be no more input character. Then the last sequence 
+    -- of output characters must be retrived by <ent>get_char</ent>.
+    ------------------------------------------------------------------------------------------------
+    static get_char (
+        char       : out t_char32)               -- single charatcer of input
+        return t_logical;                        -- T- more characters waiting
+    -- Returns the normalized characteras [char]. Call repeatedly while this function returns True
+    -- to retrieve sequence of normalized characters.
+    --   When no character is prepared to be retreive, <ent>character_decoder_error</ent> is raised.
+    ------------------------------------------------------------------------------------------------
+
+    end c_character_normalizer;
+
+end normalizer;

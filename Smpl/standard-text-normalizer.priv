@@ -1,0 +1,542 @@
+----------------------------------------------------------------------------------------------------
+module private normalizer =
+-- Text normalization.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- normalization property data
+{%%TODO change this for something different}
+#include 'normalization_data.src';
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_character_normalizer =
+-- Character normalizerer.
+----------------------------------------------------------------------------------------------------
+-- This class serves as a normalizer of a stream of input 32bit characters. The input shall
+-- be fed in character-by-character by calling <ent>put_char</ent> until it returs True which 
+-- means that there is at least one character prepared to retreive by calling <ent>get_char</ent>.
+-- Repeat <ent>get_char</ent> while it retruns True. The process can be repeated until last
+-- character is put. When the last character is put the call of <ent>finalize<\ent> must be done
+-- and <ent>get_char</ent> to retreive rest of the result.
+----------------------------------------------------------------------------------------------------
+
+    type
+      -- normalization property of a character
+      t_norm_property = record
+        can_class  : t_unsigned8;                -- cannonical class of character
+        compose    : t_char32;                   -- composition character
+        decomposed : p_char32str;                -- decomposition sequence
+        excluded   : t_logical;                  -- character is excluded from composition
+        compat     : t_logical;                  -- character is compatibility composition
+        end record;
+      p_norm_property = ^t_norm_property; 
+
+      t_norm_character_status = enum             -- states of character waiting in buffer
+        ncs_none;                                -- character has not been normalized at all
+        ncs_decomposed;                          -- character has been decomposed
+        ncs_composed;                            -- character has been composed, but may be subject
+                                                 -- to further further composition
+        ncs_fully_composed;                      -- character has been composed and can not be part
+                                                 -- of further composition
+        end enum;
+
+      t_norm_buffer_item = record                -- item of internal buffer
+        char       : t_char32;                   -- space for character
+        status     : t_norm_character_status;    -- character state
+        end record;
+
+    const 
+      buffer_size = 10;                          -- internal buffer size
+    
+    type 
+      t_norm_buffer = string buffer_size of t_norm_buffer_item;
+
+    const
+      -- hangul composition constants
+      sbase = $AC00;
+      lbase = $1100;
+      vbase = $1161;
+      tbase = $11A7;
+      lcount = 19;
+      vcount = 21;
+      tcount = 28;
+      ncount = vcount * tcount;   
+      scount = lcount * ncount; 
+
+      
+    var 
+      form         : t_normalization_form;       -- a from that will be used for normalization 
+      compose_data : static ^t_norm_data;        -- index of data containing normalization property,
+                                                 -- as a tree sorted by composed character
+      decompose_data: static ^t_norm_data;       -- the same data as above, but sorted by 
+                                                 -- decomposed character sequence
+      buffer       : t_norm_buffer;              -- internal buffer for normalized characters
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static create_norm_table =
+    -- Creates table of normalization properties and indexes for composition and decomposition
+    -- searches.
+    ------------------------------------------------------------------------------------------------
+    var 
+      property     : p_norm_property;
+      i            : t_unsigned;
+      j            : t_unsigned;
+
+    begin
+      -- create trees
+      new compose_data;
+      new decompose_data;
+
+      for i in norm_data:range div 7 loop
+        -- create space for property
+        new property;
+       
+        -- assign to property
+        property^.composed:=norm_data[i*7];               -- composed form of a charatcer
+
+        if norm_data[i*7+1]=0
+          then property^.decomposed=nil;
+          else new property^.decomposed range norm_data[i*7+1];
+          end if;
+        for j in 1..norm_data[i*7+1] loop
+          property^.decomposed^[j]:=norm_data[i*7+1+j];   -- decomposed form of a charatcer
+          end loop;
+
+        property^.can_class:=norm_data[i*7+6];            -- cannonical class of a charatcer
+
+        if (norm_data[i*7+7] and 2 = 2) then
+          property^.is_copmat:=true;                      -- decomposition is compatibility
+          end if;
+
+        if (norm_data[i*7+7] and 1 = 1) then              
+          property^.is_excluded:=true;                    -- character is excluded from composition
+          end if;
+
+        -- add pointer to property into trees 
+        decompose_data.add(property);
+        if property^.decomposed<>nil and not property^.is_compat then
+          -- add only if decomposition exists
+          compose_data.add(property);
+          end if;
+        end loop;
+
+      -- Hangul decompositions are computed while normalization is processed
+
+      end create_norm_table;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static decompose_hangul(
+      char         : t_char32)                   -- character to find decomposition for
+      return p_char32str =                       -- decomposition
+    -- Gets decomposed equivalent to the hangul sylable [char].
+    -- For optimalization reason we do not control boundaries of input character [char] here,
+    -- remember that for correct result you shoud pass only charaters between AC00 and D7A3.
+    ------------------------------------------------------------------------------------------------
+    var 
+      sindex       : t_unsigned;
+      l            : t_unsigned;
+      v            : t_unsigned;
+      t            : t_unsigned;
+
+    begin
+      sindex:=char:ord - sbase
+
+      l = lbase + sindex div ncount;
+      v = vbase + (sindex mod ncount) div tcount;
+      t = tbase + sindex mod tcount;
+      
+      if t<>tbase 
+        then
+          new result range 3;
+          result^[3]:=char(t);
+        else
+          new result range 2;
+          end if;
+
+      result^[1]char(l);
+      result^[2]char(v);
+        
+      end decompose_hangul;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static compose_hangul(
+      char_sequence: in p_char32str)             -- character sequence to be hangul composed
+      return t_char32 = 
+    -- Process string to look up for a hangul decompositions and compose then
+    ------------------------------------------------------------------------------------------------
+    var
+      first        : t_char32;
+      second       : t_char32;
+      lindex       : t_unsigned;
+      vindex       : t_unsigned;
+      sindex       : t_unsigned;
+      tindex       : t_unsigned;
+
+    begin 
+      -- empty string needs not to be processed
+      if char_sequence^:length=O then return;
+
+      -- first character
+      first:=char_sequence^[1];
+      second:=char_sequence^[2];
+
+      -- 1. check to see if two current characters are L and V
+      lindex:=first:ord - lbase;
+      if lindex>=0 and lindex<lcount then
+        vindex:=second:ord - vbase;
+        if vindex>=0 and vindex<vcount then
+          result = char(sbase + (lindex * vcount + vindex) * tcount);
+          return;
+          end if;
+        end if;
+
+      -- 2. check to see if two current characters are LV and T
+      sindex = first - sbase;
+      if (sindex>=0) and (sindex<scount) and (sindex mod tcount=0) then
+        tindex = second - tbase;
+        if tindex>=0 and  tindex<=tcount then
+          -- make syllable of form LVT
+          result:ord:=first:ord + tindex;
+          return;
+          end if;
+        end if;
+
+      -- if neither of the case above just append character to resulting string
+      result:=nil;
+
+      end compose_hangul;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_cannonical_class(
+      char         : in t_char)                  -- character find cannonical class for
+      return t_unsigned =                        -- cannonical class
+    -- Gets cannonical combining class of teh character [char].
+    ------------------------------------------------------------------------------------------------
+    var 
+      data         : t_norm_property;
+
+    begin
+      -- get the property
+      data:=decomposed_data.search(char);
+      result:=data^.can_class;
+
+      end get_cannonical_class;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_decomposition(
+      char         : in t_char32)                -- character to find decomposition for
+      return p_char32str =                       -- decomposition
+    -- Gets decomposed equivalent to the character [char], may be the character itself.
+    ------------------------------------------------------------------------------------------------
+    var 
+      data         : t_norm_property;
+      i            : t_unsigned;
+      tmp          : p_char32str;
+
+    begin
+      if char:ord>=$AC00 and char:ord<=$d7a3 then
+        -- hangul sylables
+        result:=decompose_hangul(char s);
+
+      -- get the property
+      data:=decomposed_data.search(char);
+
+      if data^.decomposed=nil then
+        -- character has no decomposition
+        new result range 1;
+        result:=p_char32str(char);
+        return;
+        end if;
+
+      if form=nf_c or form=nf_d then
+        -- cannonical decomposition only
+        if data.is_compat then 
+          -- if compatibility decomposition was found then return original character
+          new result range 1;
+          result:=p_char32str(char);
+          return;
+          end if;
+
+      -- both cannonical and compatibility decomposition
+      new tmp range data^.decomposed:length;
+      tmp:=data^.decomposed;
+
+      -- allocate space for result
+      new result range 4;
+
+      -- repeat recursively 
+      for i in tmp^:range loop
+        result^ & get_decomposition(tmp^[i]);
+        end loop;
+
+    leave 
+      discard tmp;
+
+      end get_decomposition;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static get_composition(
+      char_sequence: in t_char32usr)             -- character sequence find composition for
+      return t_char32 =                          -- composite character
+    -- Gets composed equivalent to the character sequence [char_sequence], if ipunt sequence has  
+    -- no composite returns nil.
+    ------------------------------------------------------------------------------------------------
+    var 
+      data         : t_norm_property;
+
+    begin
+      -- check for hangul combination
+      if (char_sequence^[1]:ord>=$1100 and char_sequence^[1]:ord<=$11f9)
+        or (char_sequence^[1]:ord>=$AC00 and char_sequence^[1]:ord<=$d7a3) then  
+        result:=compose hangul(char_sequence);
+        return;
+        end if;
+
+      -- get the property
+      data:=composed_data.search(char_sequence);
+
+      if data.is_exculed or data=nil then 
+        -- composition is excluded so we return the input
+        result:=nil;
+        return;
+        end if;
+
+      -- return composite character
+      result:=data^.composed;
+
+      end get_composition;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static init(
+      form         : in normalization_form);
+    -- Initialilze normalizer object, say which form will be used and creates normalization
+    -- properties of characters
+    ------------------------------------------------------------------------------------------------
+    begin
+      this.form := form;
+
+      -- initialize normalization table
+      {%%TODO this may be better to be done earlier and used for all normalizer objects}
+      create_norm_table;
+      end init;
+    
+
+    
+    ------------------------------------------------------------------------------------------------
+    static put_char =
+    -- Feeds in a single character of input. 
+    --   When inputing more data wold cause internal buffer overflow 
+    -- <ent>character_normalizer_error</ent> is raised. This could happen when output is not being 
+    -- retrieved by <ent>get_char</ent>. The function returns True, when outbut buffer contains
+    -- at least one character that will not be further normalized.
+    ------------------------------------------------------------------------------------------------
+    var 
+      decomposition: p_char32str;                -- decomposed sequence of characters
+      composition  : t_char32;                   -- composite character
+      laster       : t_unsigned;                 -- position of last decomposed starter in buffer
+      i            : t_unsigned;
+      j            : t_unsigned;
+      
+
+    begin
+      -- decompose and store in buffer
+      decomposition:=get_decomposition(char);
+      if decomposition^:length > buffer:size-buffer:length then
+        raise character_normalizer_error;
+        end if;
+
+      -- order cannonically
+      for i in 1..decompostion^:length loop
+        char:=decomposition^[i];
+        can_class:=get_cannonical_class(char);
+        j:=buffer:length;
+        if can_class<>0 
+          then
+            -- check cannonical order and reorder if needed
+            while j>1 and can_class<get_cannonical_class(buffer[j]) loop
+              j-1;
+              end loop;
+          else
+            -- this is the last starter since ther is only one character with cannonical class
+            -- of zero in decomposition
+            laster:=j;
+            end if;
+
+          -- add character
+          buffer.char & char;
+          buffer[buffer:last].status:=ncs_decomposed;
+        end loop; 
+
+      -- check fro working space
+      if decomposition^:size<2 then
+        discard decoposition;
+        new decomposition range 2;
+        end if;
+      
+      -- go for composition
+      if form=nf_c or form=nf_kc then
+        i=1;
+        while i<laster loop
+          -- reset next flag
+          next:=true;
+          -- if character can be further copmosed
+          if buffer[i].status<>ncs_fully_decomposed then
+            -- find composite and add it to resulting string
+            decomposition^:=buffer[i] & buffer[i+1];
+            composition:=get_composition(decomposition);
+            if composition<>nil then
+              -- copy composition character
+              buffer[i].char:=composition;
+              buffer[i+1..buffer:length-1]:=buffer[i+2..buffer:length];
+              -- this shorten the buffer by 1
+              buffer:length - 1;
+              -- this prevents from moving to next character
+              next:=false;
+              end if;
+            -- set current's character status to composed
+            buffer[i].status:=ncs_compposed;
+            if i>1 then
+              -- and previus character is then fully composed
+              buffer[i-1].status:=ncs_fully_compposed;
+              end if;
+            -- if no composition was made then go to next charcter
+            if next then i+1 end if;
+          end loop;
+        end if;
+
+    leave 
+      -- free memory 
+      discard decomposition;
+
+      end put_char;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static finalize_input = 
+    -- Informs the normalizer, that there will be no more input character. Then the last sequence 
+    -- of output characters must be retrived by <ent>get_char</ent>.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i            : t_unsigned;
+
+    begin
+      -- set all characters in to fully composed, though they will be available for get_char
+      for i in buffer:range loop
+        buffer[i].status:=ncs_fully_composed;
+        end loop;
+
+      end finalize_input;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_char =
+    -- Returns the normalized characteras [char]. Call repeatedly while this function returns True
+    -- to retrieve sequence of normalized characters.
+    --   When no character is prepared to be retreive, <ent>character_decoder_error</ent> is raised.
+    ------------------------------------------------------------------------------------------------
+    begin
+      if buffer[1].status=ncs_fully_composed
+        -- return first character in buffer and move buffer
+        then
+          char:=buffer[1].char;
+          buffer:=buffer[2..buffer:length];
+          if buffer:length>0 and buffer[1].status=ncs_fully_composed then
+            result:=true;
+            end if;
+        -- raise exception
+        else 
+          raise character_normalizer_error;
+          end if;
+
+      end get_char;
+
+
+    end c_character_normalizer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_normalizer =
+-- Class used to normalilze strings, using defined normalization form following rules and
+-- definitions described in The Unicode Standart
+----------------------------------------------------------------------------------------------------
+
+    var
+      char_normalizer : c_character_normalizer;   -- character normalizer object
+    
+    ------------------------------------------------------------------------------------------------
+    static normalize(
+      source       : in p_char32str; 
+      target       : out p_char32str);
+    -- from given string [source] produces a normalized form of the string as a new string [target]
+    -- uses [form] to determine which normalization form will be produced.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i            : t_unsigned:=1;
+      char         : t_char32;
+      tmp          : p_char32str; 
+
+    begin
+      -- iterate through each character
+      while i in source^:last loop
+        -- put characters
+        while not char_normalizer.put_char(source[i]^) and i<source^:last loop
+          i+1;
+          end loop;
+
+        -- finalize input
+        if i i=source^:last then
+          char_normalizer.finalize;
+          end if;
+
+        -- retrieve characters and store then in target string
+        while char_normalizer.get_char(char) loop
+          new tmp range target^:length+1;
+          tmp^:=target^ & char;
+          discard target;
+          target:=tmp;
+        end loop;
+      
+      end normalize;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initialilze normalizer object, say which form will be used and creates normalization
+    -- properties of characters
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- sets normalization form  
+      this.form = form;
+
+      -- initialize character normalizer
+      new char_normalizer;
+      char_normalizer.init(form);
+
+      end init;
+
+
+    end c_normalizer;
+    
+
+end normalizer;

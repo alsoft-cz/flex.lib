@@ -1,0 +1,276 @@
+----------------------------------------------------------------------------------------------------
+module public characters =
+-- Character manipulation for different code page standards (ASCII, UNICODE, ISO 10646)
+-- Flex Standard Library                                   
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- Add:
+--        overload char_is_lower
+--        overload char_is_upper
+--        overload char_is_alpha
+--        overload char_is_digit
+----------------------------------------------------------------------------------------------------
+
+type
+  -- code-page table for translation of 8bit characters to 32bit ISO 10646
+  t_code_page        = array t_char8 of t_char32;
+  p_code_page        = ^t_code_page;
+
+type
+  -- endianness specifier
+  t_endian         = enum
+      te_little_endian;
+      te_big_endian;
+      end enum;
+
+----------------------------------------------------------------------------------------------------
+#separate public ascii;
+-- Support for 8bit ASCII character coding.
+----------------------------------------------------------------------------------------------------
+#separate public unicode;
+-- Support for 16bit UNICODE character coding.
+----------------------------------------------------------------------------------------------------
+#separate public iso10646;
+-- Support for 32bit ISO 10646 character coding.
+----------------------------------------------------------------------------------------------------
+                 
+----------------------------------------------------------------------------------------------------
+overload char_to_lower : ascii.ascii_char_to_lower,unicode.unicode_char_to_lower,iso10646.iso_char_to_lower;
+----------------------------------------------------------------------------------------------------
+overload char_to_upper : ascii.ascii_char_to_upper,unicode.unicode_char_to_upper,iso10646.iso_char_to_upper;
+----------------------------------------------------------------------------------------------------
+
+-- forward declarations
+class c_character_decoder;       type p_character_decoder       = ^class c_character_decoder;
+class c_character_decoder_ascii; type p_character_decoder_ascii = ^class c_character_decoder_ascii;
+class c_character_decoder_utf8;  type p_character_decoder_utf8  = ^class c_character_decoder_utf8;
+class c_character_decoder_utf16; type p_character_decoder_utf16 = ^class c_character_decoder_utf16;
+class c_character_decoder_ucs2;  type p_character_decoder_ucs2  = ^class c_character_decoder_ucs2;
+class c_character_decoder_ucs4;  type p_character_decoder_ucs4  = ^class c_character_decoder_ucs4;
+class c_character_encoder;       type p_character_encoder       = ^class c_character_encoder;
+class c_character_encoder_ascii; type p_character_encoder_ascii = ^class c_character_encoder_ascii;
+class c_character_encoder_utf8;  type p_character_encoder_utf8  = ^class c_character_encoder_utf8;
+class c_character_encoder_utf16; type p_character_encoder_utf16 = ^class c_character_encoder_utf16;
+class c_character_encoder_ucs2;  type p_character_encoder_ucs2  = ^class c_character_encoder_ucs2;
+class c_character_encoder_ucs4;  type p_character_encoder_ucs4  = ^class c_character_encoder_ucs4;
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT)} c_character_decoder =
+-- Character decoder.
+----------------------------------------------------------------------------------------------------
+-- This class serves as a decoder of a stream of input bytes to 32bit characters. The input shall
+-- be fed in byte-by-byte by calling <ent>put_byte</ent> until it returs True. A single decoded 
+-- character is then prepared for retrieval by <ent>get_character</ent>. The process can be then
+-- repeated.
+----------------------------------------------------------------------------------------------------
+
+    message
+      -- invalid input
+      character_decoder_error : exception;
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} put_byte (
+        b          : in t_unsigned8;             -- single byte of input
+        char_done  : out t_logical);             -- T-character prepared, F-input more bytes
+    -- Feeds in a single byte of input. 
+    --   When decoding of the input data doesn't lead to any valid ISO 10646 character, 
+    -- <ent>character_decoder_error</ent> is raised. The function sets output parameter 
+    -- <ent>char_done</ent>to True, when decoding of a single character is finished after 
+    -- processing of this byte, otherwise it being set to False.
+    ------------------------------------------------------------------------------------------------
+    static finalize_input;
+    -- Informs the decoder, that there will be no more input character. The decored checks if 
+    -- decoding of the last character was finalized. When not, <ent>character_decoder_error</ent> is 
+    -- raised, otherwise no action is taken.
+    ------------------------------------------------------------------------------------------------
+    static set_endian (
+        new_endian : t_endian);                  -- typ endianu
+    -- sets byte order of input bytes
+    ------------------------------------------------------------------------------------------------
+    static get_character
+        return t_char32;                         -- decoded character
+    -- Returns the lastly decoded character.
+    --   When no character is prepared, <ent>character_decoder_error</ent> is raised.
+    --   Calling this function multiple times leads to same return value.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    var
+      char_prepared: t_logical;                  -- T-a character is prepared for output
+      c            : t_char32;                   -- the prepared character
+      endian       : t_endian;                   -- byte order
+    end c_character_decoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_character_decoder_ascii = extend c_character_decoder; 
+-- ASCII (8bit) character decoder.
+----------------------------------------------------------------------------------------------------
+-- Optionally, a pointer to a code-page table can be specified using the <ent>set_codepage</ent> 
+-- method to control translation of 8bit characters to ISO 10646. When no code-page is specified, 
+-- the characters are decoded by direct mapping of 8bit ordinal values to 32bit ordinal values.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static set_codepage (
+        cp         : in p_code_page);            -- code-page to use for character translation
+    -- Assign a code-page table to the decoder. From now on, the input characters are translated 
+    -- to ISO 10646 by looking up in this table. 
+    ------------------------------------------------------------------------------------------------
+
+    end c_character_decoder_ascii;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_character_decoder_utf8 = extend c_character_decoder; end c_character_decoder_utf8;
+-- UTF-8 decoder.
+----------------------------------------------------------------------------------------------------
+-- Decodes 8bit sequences into 32bit ordinal values of a unicode charaters.
+-- As specifies unicode 3.2.0
+-- Decoding table:
+--    scalar value                  UTF-8: 1st byte  2nd byte 3rd byte 4th byte
+--    00000000 0xxxxxxx                    0xxxxxxx
+--    00000yyy yyxxxxxx                    110yyyyy  10xxxxxx
+--    zzzzyyyy yyxxxxxx                    1110zzzz  10yyyyyy 10xxxxxx
+--    000uuuuu zzzzyyyy yyxxxxxx           11110uuu  10uuzzzz 10yyyyyy 10xxxxxx
+----------------------------------------------------------------------------------------------------
+class public c_character_decoder_utf16 = extend c_character_decoder; end c_character_decoder_utf16;
+-- UTF-16 decoder.
+----------------------------------------------------------------------------------------------------
+-- Decodes 16bit sequences into 32bit ordinal values of a unicode charaters.
+-- As specifies unicode 3.2.0
+-- Decoding table:
+--    scalar value                  UTF-16: 1st byte            2nd byte 
+--    zzzzyyyy yyxxxxxx                     zzzzyyyy yyxxxxxx 
+--    000uuuuu zzzzyyyy yyxxxxxx            110110ww wwzzzzyy   110111yy yyxxxxxx  
+--                                          (where uuuuu=wwww+1)       
+----------------------------------------------------------------------------------------------------
+class public c_character_decoder_ucs2 = extend c_character_decoder; end c_character_decoder_ucs2;
+-- UCS-2 decoder.
+----------------------------------------------------------------------------------------------------
+-- Decodes two 8bit sequences into 32bit ordinal values of ISO10646 charaters, covers only first
+-- 256x256 (16bit) characters of ISO10646.
+-- As specifies ISO10646
+----------------------------------------------------------------------------------------------------
+class public c_character_decoder_ucs4 = extend c_character_decoder; end c_character_decoder_ucs4;
+-- UCS-4 decoder.
+----------------------------------------------------------------------------------------------------
+-- Decodes four 8bit sequences into 32bit ordinal values of ISO10646 charaters.
+-- As specifies ISO10646
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+class public {%%TODO(ABSTRACT)} c_character_encoder =
+-- Character encoder.
+----------------------------------------------------------------------------------------------------
+-- This class serves as an encoder of a stream of input 32bit characters to bytes. The input shall
+-- be fed in character-by-character by calling <ent>put_character</ent>. A sequence of output 
+-- bytes cna br retrieved by <ent>get_output</ent>. The process can be then repeated.
+----------------------------------------------------------------------------------------------------
+
+    message
+      -- invalid charcater
+      character_encoder_error : exception;
+
+    ------------------------------------------------------------------------------------------------
+    virtual {%%TODO(ABSTRACT)} put_character (
+        c          : in t_char32);               -- single output character
+    -- Feeds in a single character. 
+    ------------------------------------------------------------------------------------------------
+    virtual set_endian (
+        new_endian : t_endian);                  -- typ endianu
+    -- Sets byte order of output bytes and puts character $feff at the begining of output where
+    -- applicable.
+    ------------------------------------------------------------------------------------------------
+    static finalize_output;
+    -- Informs the encoder, that there will be no more output character. The decored checks if 
+    -- all encoded bytes were retrieved. When not, <ent>character_encoder_error</ent> is 
+    -- raised, otherwise <ent>output_bytes</ent> and <ent>bytes_out</ent> are cleared.
+    ------------------------------------------------------------------------------------------------
+    static get_output (
+      {%%TODO(output variable)} 
+      b            : out t_unsigned8;            -- output byte
+      all_out      : out t_logical);             -- T- no more bytes to get for this character
+    -- Returns one byte of encoded character, and sets <ent>all_out</ent> to True when there is no
+    -- more bytes to complete this encoding.
+    --   When there is no byte prepared at all <ent>character_encoder_error</ent> is raised.
+    --   Calling this function multiple times leads to same return value.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+    var
+      {%%TODO(output_bytes variable)} 
+      output_bytes : string 8{%%FLEX}of t_unsigned8;-- sequence of output bytes
+      bytes_out    : t_unsigned8;                -- number of bytes retrieved
+      endian       : t_endian;                   -- byte order
+
+    end c_character_encoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_character_encoder_ascii = extend c_character_encoder; 
+-- ASCII (8bit) character encoder.
+----------------------------------------------------------------------------------------------------
+-- Optionally, a pointer to a code-page table can be specified using the <ent>set_codepage</ent> 
+-- method to control translation of ISO 10646 characters to 8bit. When no code-page is specified, 
+-- the characters are decoded by direct mapping of 32bit ordinal values to 8bit ordinal values.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static set_codepage (
+        cp         : in p_code_page);            -- code-page to use for character translation
+    -- Assign a code-page table to the encoder. From now on, the input characters are translated 
+    -- from ISO 10646 by looking up in this table. 
+    ------------------------------------------------------------------------------------------------
+
+    end c_character_encoder_ascii;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_character_encoder_utf8 = extend c_character_encoder; end c_character_encoder_utf8;
+-- UTF-8 decoder.
+----------------------------------------------------------------------------------------------------
+-- Encodes 32bit ordinal values of a unicode charaters into sequences of up to four 8bits.
+-- As specifies unicode 3.2.0
+-- Decoding table:
+--    scalar value                  UTF-8: 1st byte  2nd byte 3rd byte 4th byte
+--    00000000 0xxxxxxx                    0xxxxxxx
+--    00000yyy yyxxxxxx                    110yyyyy  10xxxxxx
+--    zzzzyyyy yyxxxxxx                    1110zzzz  10yyyyyy 10xxxxxx
+--    000uuuuu zzzzyyyy yyxxxxxx           11110uuu  10uuzzzz 10yyyyyy 10xxxxxx
+----------------------------------------------------------------------------------------------------
+class public c_character_encoder_utf16 = extend c_character_encoder; end c_character_encoder_utf16;
+-- UTF-16 decoder.
+----------------------------------------------------------------------------------------------------
+-- Encodes 32bit ordinal values of a unicode charaters into 16bit sequences.
+-- As specifies unicode 3.2.0
+-- Decoding table:
+--    scalar value                  UTF-16: 1st byte            2nd byte 
+--    zzzzyyyy yyxxxxxx                     zzzzyyyy yyxxxxxx 
+--    000uuuuu zzzzyyyy yyxxxxxx            110110ww wwzzzzyy   110111yy yyxxxxxx  
+--                                          (where uuuuu=wwww+1)       
+----------------------------------------------------------------------------------------------------
+class public c_character_encoder_ucs2 = extend c_character_encoder; end c_character_encoder_ucs2;
+-- UCS-2 decoder.
+----------------------------------------------------------------------------------------------------
+-- Encodes 32bit ordinal values of ISO10646 charaters into two 8bit sequences, covers only first
+-- 256x256 (16bit) characters of ISO10646.
+-- As specifies ISO10646
+----------------------------------------------------------------------------------------------------
+class public c_character_encoder_ucs4 = extend c_character_encoder; end c_character_encoder_ucs4;
+-- UCS-4 decoder.
+----------------------------------------------------------------------------------------------------
+-- Encodes 32bit ordinal values of ISO10646 charaters into four 8bit sequences.
+-- As specifies ISO10646
+----------------------------------------------------------------------------------------------------
+
+
+end characters;
