@@ -1,0 +1,131 @@
+----------------------------------------------------------------------------------------------------
+module private console =
+-- Console I/O.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.input,
+  standard.characters,
+  standard.characters.unicode;
+
+const
+    t_dpss_set_pos : t_unsigned = 1001;          -- set cursor position
+
+
+----------------------------------------------------------------------------------------------------
+#separate private streams;
+----------------------------------------------------------------------------------------------------
+#separate private formatters;
+----------------------------------------------------------------------------------------------------
+  
+var
+    stdout_stream  : streams.p_console_output_stream;
+    stdout_redir   : p_output_stream_redirector;
+
+    stderr_stream  : streams.p_console_output_stream;
+    stderr_redir   : p_output_stream_redirector;
+
+    stdin_stream   : streams.p_console_input_stream;
+    stdin_redir    : p_input_stream_redirector;
+
+    stdout_writer  : formatters.p_console_text_writer;
+    stderr_writer  : formatters.p_console_text_writer;
+    stdin_reader   : formatters.p_console_text_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write =
+----------------------------------------------------------------------------------------------------
+begin
+  console_writer^.write(s);
+  end write;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_line =
+----------------------------------------------------------------------------------------------------
+begin
+  console_writer^.write_line(s);
+  end write_line;
+
+
+----------------------------------------------------------------------------------------------------
+procedure set_cursor_position =
+----------------------------------------------------------------------------------------------------
+begin
+  stdout_writer^.set_cursor_position(x,y);
+  end set_cursor_position;
+
+
+----------------------------------------------------------------------------------------------------
+entry =
+-- Module initialization.
+----------------------------------------------------------------------------------------------------
+begin
+  -- initialize the console output stream
+  new stdout_stream;
+  stdout_stream^.init_console(false);
+
+  -- redirector
+  new stdout_redir;
+  stdout_redir^.init_output_redirector(stdout_stream);
+  console_output:=^c_output_stream:(stdout_redir^);
+
+  -- writer
+  new stdout_writer;
+  stdout_writer^.init_text_writer(console_output);
+  console_writer:=^c_text_writer:(stdout_writer^);
+
+  -- initialize the console error stream
+  new stderr_stream;
+  stderr_stream^.init_console(true);
+
+  -- redirector
+  new stderr_redir;
+  stderr_redir^.init_output_redirector(stderr_stream);
+  console_error_output:=^c_output_stream:(stderr_redir^);
+
+  -- writer
+  new stderr_writer;
+  stderr_writer^.init_text_writer(console_error_output);
+  console_error_writer:=^c_text_writer:(stderr_writer^);
+
+  -- initialize the console input stream
+  new stdin_stream;
+  stdin_stream^.init_console;
+
+  -- redirector
+  new stdin_redir;
+  stdin_redir^.init_input_redirector(stdin_stream);
+  console_input:=^c_input_stream:(stdin_redir^);
+
+  -- writer
+  new stdin_reader;
+  stdin_reader^.init_text_reader(console_input);
+  console_reader:=^c_text_reader:(stdin_reader^);
+  end entry;
+
+
+
+----------------------------------------------------------------------------------------------------
+exit =
+-- Module finalization.
+----------------------------------------------------------------------------------------------------
+begin
+  discard stdout_writer;
+  discard stdout_redir;
+  discard stdout_stream;
+
+  discard stderr_writer;
+  discard stderr_redir;
+  discard stderr_stream;
+
+  discard stdin_reader;
+  discard stdin_redir;
+  discard stdin_stream;
+  end exit;
+end console;

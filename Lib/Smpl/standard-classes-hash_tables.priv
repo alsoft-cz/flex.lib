@@ -1,0 +1,567 @@
+----------------------------------------------------------------------------------------------------
+module private hash_tables =
+-- Data structures - hash tables.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_hash_table_item =
+-- Hash table item.
+----------------------------------------------------------------------------------------------------
+
+    end c_hash_table_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_hash_table =
+-- Hash table.
+----------------------------------------------------------------------------------------------------
+
+    use
+      supervised c_hash_table_item;
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initializes the hash table.
+    --   When [homogenous] is set to True, then only items of type [item_type] are permitted in the 
+    -- hash table, otherwise only items of type [item_type] and all its descendants. All hash table
+    -- manipulation procedures raise [list_error] when the type of an item violates this rule.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- set up basic parameters
+      this.modulus:=modulus;
+      this.item_type:=item_type;
+      this.homogenous:=homogenous;
+     
+      -- create the actual hash table
+      new this.hash_table range this.modulus;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static store =
+    -- Inserts the given [item] into the hash table.
+    ------------------------------------------------------------------------------------------------
+    var
+      slot         : p_hash_slot;
+
+    begin
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        return;
+        end if;
+
+      -- select a slot
+      slot:=^hash_table^[item^.item_id mod modulus];
+
+      -- insert into it
+      if slot^.last<>nil
+        then slot^.last^.next:=item;
+        else slot^.first:=item;
+        end if;
+      item^.prev:=slot^.last;
+      item^.next:=nil;
+      slot^.last:=item;
+
+      -- reflect the change of the number of items in the slot
+      succ slot^.count;
+
+      -- reflect the change of the number of items in hash table
+      succ count;
+      end store;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find =
+    -- Finds and [item] by its [id]. When there is no item with such an [id] in the hash table, 
+    -- sets [item] to NIL.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- try to find the item
+      item:=hash_table^[id mod modulus].first;
+      while item<>nil and then item^.item_id<>id loop
+        item:=item^.next;
+        end loop;
+      end find;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert =
+    -- Inserts the given [item] into the container.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- assign an ID
+      assign_hash_id(item);
+
+      -- store into the hash table
+      store(item);
+      end insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override remove =
+    -- Removes the given [item] from the container.
+    ------------------------------------------------------------------------------------------------
+    var
+      slot         : p_hash_slot;
+
+    begin
+      -- select a slot
+      slot:=^hash_table^[p_hash_table_item(item)^.item_id mod modulus];
+
+      -- remove the item from the slot
+      if p_hash_table_item(item)^.next<>nil
+        then p_hash_table_item(item)^.next^.prev:=p_hash_table_item(item)^.prev
+        else slot^.last:=p_hash_table_item(item)^.prev;
+        end if;
+      if p_hash_table_item(item)^.prev<>nil
+        then p_hash_table_item(item)^.prev^.next:=p_hash_table_item(item)^.next
+        else slot^.first:=p_hash_table_item(item)^.next;
+        end if;
+      p_hash_table_item(item)^.prev:=nil;
+      p_hash_table_item(item)^.next:=nil;
+
+      -- reflect the change of the number of items in the slot
+      pred slot^.count;
+
+      -- reflect the change of the number of items in hash table
+      pred count;
+      end remove;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete =
+    -- Removes and discards the given [item] from the container. Sets value of [item] to nil.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- remove from the hash table
+      remove(item);
+
+      -- and discard
+      discard item;
+      end delete;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete_all =
+    -- Removes and discards all items in the container.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_hash_table_item;          -- prvn¡ prvek hash table
+
+    begin
+      -- na‡¡st prvn¡ prvek
+      item:=get_first;
+
+      -- smazat v¨echny prvky hash table
+      while item<>nil loop
+        -- na‡¡st prvn¡ prvek a smazat ho
+        delete(item);
+        item:=get_first;
+        end loop;
+      end delete_all;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_item =
+    -- Vrac¡, zda [item] je prvkem hash table. Pokud je, vrac¡ [true].
+    ------------------------------------------------------------------------------------------------
+    var 
+      item_in_hash : p_hash_table_item;          -- aktu ln¡ prvek v hash table
+
+    begin
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        result:=false;
+        return;
+        end if;
+
+      -- hledat prvn¡ prvek ve stejn‚m slotu jako hledan˜ prvek
+      item_in_hash:=hash_table^[item^.item_id mod modulus].first;
+
+      -- hledat hledan˜ prvek od prvn¡ho prvku seznamu
+      while item_in_hash<>nil and then item_in_hash<>item loop
+        -- p©echod na dal¨¡ prvek
+        item_in_hash:=item_in_hash^.next;
+        end loop;
+
+      -- byl nalezen hledan˜ prvek ?
+      result:=item_in_hash=item;
+      end has_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_first =
+    -- Vrac¡ prvn¡ prvek hash table. Pokud ‘ dn˜ prvek tabulka nem , vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot
+
+    begin
+      -- zbavit se trivi ln¡ch p©¡pad–
+      if count=0 then return end if;
+
+      -- naj¡t prvn¡ obsazen˜ slot
+      i_slot:=hash_table^:first;
+      while hash_table^[i_slot].first=nil loop
+        succ i_slot;
+        end loop;
+
+      -- vr tit prvn¡ prvek slotu
+      result:=hash_table^[i_slot].first;
+      end get_first;
+    
+
+    
+    ------------------------------------------------------------------------------------------------
+    static set_first =
+    -- Vrac¡ prvn¡ prvek hash table. Pokud ‘ dn˜ prvek tabulka nem , vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot
+
+    begin
+      -- zbavit se trivi ln¡ch p©¡pad–
+      if count=0 then return end if;
+
+      -- naj¡t prvn¡ obsazen˜ slot
+      i_slot:=hash_table^:first;
+      while hash_table^[i_slot].first=nil loop
+        succ i_slot;
+        end loop;
+
+      -- vr tit prvn¡ prvek slotu
+      item:=hash_table^[i_slot].first;
+      end set_first;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_last =
+    -- Vrac¡ posledn¡ prvek hash table. Pokud ‘ dn˜ prvek tabulka nem , vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot
+
+    begin
+      -- zbavit se trivi ln¡ch p©¡pad–
+      if count=0 then return end if;
+
+      -- naj¡t prvn¡ obsazen˜ slot
+      i_slot:=hash_table^:last;
+      while hash_table^[i_slot].last=nil loop
+        pred i_slot;
+        end loop;
+
+      -- vr tit prvn¡ prvek slotu
+      result:=hash_table^[i_slot].last;
+      end get_last;
+    
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_last =
+    -- Vrac¡ posledn¡ prvek hash table. Pokud ‘ dn˜ prvek tabulka nem , vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot
+
+    begin
+      -- zbavit se trivi ln¡ch p©¡pad–
+      if count=0 then return end if;
+
+      -- naj¡t prvn¡ obsazen˜ slot
+      i_slot:=hash_table^:last;
+      while hash_table^[i_slot].last=nil loop
+        pred i_slot;
+        end loop;
+
+      -- vr tit prvn¡ prvek slotu
+      item:=hash_table^[i_slot].last;
+      end set_last;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static get_prev =
+    -- Vrac¡ p©edch zej¡c¡ prvek k [item] v hash table. Pokud zadan˜ prvek nen¡ v hash table
+    -- nalezen vrac¡ NIL. 
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter‚m by mohl b˜t [prev_item]
+
+    begin
+      -- p©edpoklad neexistejce p©edch zej¡c¡ho prvku
+      result:=nil;
+      
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        return;
+        end if;
+
+      -- je [item] prvkem hash table ?
+      if not has_item(item) then 
+        -- nen¡ prvkem hash table, vr tit [result:=nil]
+        return;
+        end if;
+
+      -- existuje v aktu ln¡m slotˆ p©edch zej¡c¡ item ?
+      if item^.prev<>nil then
+        -- ano, existuje, vr tit [prev_item]
+        result:=item^.prev;
+        return;
+        end if;
+
+      -- zjistit index slotu aktu ln¡ho prvku
+      i_slot:=item^.item_id mod modulus;
+
+      -- hledat p©edch zej¡c¡ prvek (proch zet p©edch zej¡c¡ sloty, dokud nebude prvek nalezen)
+      while i_slot<>hash_table^:first loop;
+        -- p©ej¡t na p©edch zej¡c¡ slot
+        pred i_slot;
+
+        -- je slot nepr zdn˜ ?
+        if hash_table^[i_slot].last<>nil then
+          -- ne, vr tit p©edch zej¡c¡ prvek
+          result:=hash_table^[i_slot].last;
+          break;
+          end if;
+        end loop;
+      end get_prev;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    static set_prev =
+    -- Vrac¡ p©edch zej¡c¡ prvek k [item] v hash table. Pokud zadan˜ prvek nen¡ v hash table
+    -- nalezen vrac¡ [item:=nil]. 
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter‚m by mohl b˜t [prev_item]
+
+    begin
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        return;
+        end if;
+
+      -- je [item] prvkem hash table ?
+      if not has_item(item) then 
+        -- nen¡ prvkem hash table, vr tit [item:=nil]
+        item:=nil;
+        return;
+        end if;
+
+      -- existuje v aktu ln¡m slotu p©edch zej¡c¡ item ?
+      if item^.prev<>nil then
+        -- ano, existuje, vr tit [prev_item]
+        item:=item^.prev;
+        return;
+        end if;
+
+      -- zjistit index slotu aktu ln¡ho prvku
+      i_slot:=item^.item_id mod modulus;
+
+      -- p©edpoklad neexistejce p©edch zej¡c¡ho prvku
+      item:=nil;
+      
+      -- hledat p©edch zej¡c¡ prvek (proch zet p©edch zej¡c¡ sloty, dokud nebude prvek nalezen)
+      while i_slot<>hash_table^:first loop;
+        -- p©ej¡t na p©edch zej¡c¡ slot
+        pred i_slot;
+
+        -- je prvek nalezen ?
+        if hash_table^[i_slot].last<>nil then
+          -- ano, vr tit p©edch zej¡c¡ prvek
+          item:=hash_table^[i_slot].last;
+          break;
+          end if;
+        end loop;
+      end set_prev;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    static get_next =
+    -- Vrac¡ n sleduj¡c¡ prvek k [item] v hash table. Pokud zadan˜ prvek nen¡ v hash table
+    -- nalezen, vrac¡ [item:=nil]. 
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter‚m by mohl b˜t [next_item]
+
+    begin
+      -- p©edpoklad neexistejce n sleduj¡c¡ho prvku
+      result:=nil;
+      
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        return;
+        end if;
+
+      -- je [item] prvkem hash table ?
+      if not has_item(item) then 
+        -- nen¡ prvkem hash table, vr tit [result:=nil]
+        return;
+        end if;
+
+      -- existuje v aktu ln¡m slotˆ n sleduj¡c¡ item ?
+      if item^.next<>nil then
+        -- ano, existuje, vr tit [next_item]
+        result:=item^.next;
+        return;
+        end if;
+
+      -- zjistit index slotu aktu ln¡ho prvku
+      i_slot:=item^.item_id mod modulus;
+
+      -- hledat n sleduj¡c¡ prvek (proch zet n sleduj¡c¡ sloty, dokud nebude prvek nalezen)
+      while i_slot<>hash_table^:last loop;
+        -- p©ej¡t na n sleduj¡c¡ slot
+        succ i_slot;
+
+        -- je prvek nalezen ?
+        if hash_table^[i_slot].first<>nil then
+          -- ano, vr tit n sleduj¡c¡ prvek
+          result:=hash_table^[i_slot].first;
+          break;
+          end if;
+        end loop;
+      end get_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_next =
+    -- Vrac¡ n sleduj¡c¡ prvek k [item] v hash table. Pokud zadan˜ prvek nen¡ v hash table
+    -- nalezen, vrac¡ [item:=nil]. 
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter‚m by mohl b˜t [next_item]
+
+    begin
+      -- item mus¡ b˜t definov n
+      if item=nil then
+        return;
+        end if;
+
+      -- je [item] prvkem hash table ?
+      if not has_item(item) then 
+        -- nen¡ prvkem hash table, vr tit [next_item:=nil]
+        item:=nil;
+        return;
+        end if;
+
+      -- existuje v aktu ln¡m slotˆ n sleduj¡c¡ item ?
+      if item^.next<>nil then
+        -- ano, existuje, vr tit [next_item]
+        item:=item^.next;
+        return;
+        end if;
+
+      -- zjistit index slotu aktu ln¡ho prvku
+      i_slot:=item^.item_id mod modulus;
+
+      -- p©edpoklad neexistejce n sleduj¡c¡ho prvku
+      item:=nil;
+
+      -- hledat n sleduj¡c¡ prvek (proch zet n sleduj¡c¡ sloty, dokud nebude prvek nalezen)
+      while i_slot<>hash_table^:last loop;
+        -- p©ej¡t na n sleduj¡c¡ slot
+        succ i_slot;
+
+        -- je prvek nalezen ?
+        if hash_table^[i_slot].first<>nil then
+          -- ano, vr tit n sleduj¡c¡ prvek
+          item:=hash_table^[i_slot].first;
+          break;
+          end if;
+        end loop;
+      end set_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization.
+    ------------------------------------------------------------------------------------------------
+    begin
+      discard hash_table;
+      end exit;
+
+    end c_hash_table;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_incremental_hash_table = 
+-- Hash table with automatically assigned incremental item IDs.
+----------------------------------------------------------------------------------------------------
+
+    var
+      next_id      : t_hash_item_id := 1;        -- next ID to be assigned
+
+    ------------------------------------------------------------------------------------------------
+    override assign_hash_id =
+    -- Assigns an ID to the given [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- assign an ID to the item
+      item^.item_id:=next_id;
+
+      -- calucate the least next item ID
+      next_id + 1;
+      end assign_hash_id;
+    end c_incremental_hash_table;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_auto_hash_table = 
+-- Hash table with automatically assigned incremental item IDs.
+----------------------------------------------------------------------------------------------------
+    var
+      next_id      : t_hash_item_id := 1;        -- next ID to be assigned
+
+    ------------------------------------------------------------------------------------------------
+    override assign_hash_id =
+    -- Assigns an ID to the given [item].
+    ------------------------------------------------------------------------------------------------
+    var
+      min_id       : t_hash_item_id;             -- ID of the slot with the minimum number of items
+      min_count    : t_unsigned;                 -- minimal number of items in a slot
+
+    begin
+      -- find the slot with the least number of items
+      min_count:=min_count:last;
+      min_id:=0;
+      for i in hash_table^:range loop
+        -- check if this slot is better than the best known slot or not
+        if hash_table^[(next_id+i) mod modulus].count<min_count then
+          min_count:=hash_table^[(next_id+i) mod modulus].count;
+          min_id:=i;
+
+          -- if the slot is empty, there can't be any better slot
+          if min_count=0 then
+            break;
+            end if;
+          end if;
+        end loop;
+
+      -- assign an ID to the item
+      item^.item_id:=next_id+min_id;
+
+      -- calucate the least next item ID
+      next_id+min_id+1;
+      end assign_hash_id;
+    end c_auto_hash_table;
+end hash_tables;

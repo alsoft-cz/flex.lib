@@ -1,0 +1,408 @@
+----------------------------------------------------------------------------------------------------
+-- h2text
+----------------------------------------------------------------------------------------------------
+-- Prace s textovym souborem.
+----------------------------------------------------------------------------------------------------
+-- Se znaky nizsimi nez 32 nepracuje. Vyjimkou je 13 oznacujici konec radku a 26 oznacujici konec
+-- souboru.
+----------------------------------------------------------------------------------------------------
+
+module h2text =
+
+with
+  system,h2def,str,filedef,files,num,log,dir,txtfiles,lstr,
+  debug;
+
+  exception
+    file_error,
+    buffer_error;
+
+  type
+    tinputtype     = enum
+      tit_file;                                  -- zpracovava se soubor
+      tit_string;                                -- zpracovava se retezec
+      tit_text;                                  -- zpracovava se soubor (txtfiles)
+      end enum;
+
+
+
+--------------------------------------------------------------------------------------------------
+procedure pathfile2 (
+            name : str255;
+           idlctrl : boolean:=false)
+                   return str255;
+-- Dohleda adresar ve kterem se nachazi zadany soubor nebo zpusobi vyjimku FILE_ERROR
+--------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------
+class textfile   =
+--------------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure open (
+            _input : tinputtype;                 -- druh vstupu
+              name : lstring;                    -- jmeno souboru nebo retezec
+             chyba : ref boolean);
+    -- Otevreni souboru.
+    ----------------------------------------------------------------------------------------------
+    procedure close;
+    -- Uzavreni souboru.
+    ----------------------------------------------------------------------------------------------
+    procedure getchar
+                     return char;
+    -- Precte dalsi znak.
+    ----------------------------------------------------------------------------------------------
+    procedure ungetchar (
+                ch : char );
+    -- Vrati znak zpatky.
+    ----------------------------------------------------------------------------------------------
+    procedure getpos
+                     return longint;
+    -- Vrati aktualni pozici v souboru.
+    ----------------------------------------------------------------------------------------------
+    procedure ungetlstr (
+                 s : lstring);
+    -- Vrati retezec zpatky.
+    ----------------------------------------------------------------------------------------------
+    procedure ungetstr2 (
+                 s : str255);
+    -- Vrati retezec zpatky.
+    ----------------------------------------------------------------------------------------------
+    procedure getinputtype
+                     return tinputtype;
+    -- Vrati pouzivany typ vstupu.
+    ----------------------------------------------------------------------------------------------
+
+  private
+
+    var
+      input        : tinputtype;                 -- druh vstupu
+      fhandle      : file;                       -- handle souboru
+      buffchar     : lstring;                    -- 0 nebo vraceny znak v bufferu
+      linepos      : longint;                    -- aktualni pozice radku
+
+    ----------------------------------------------------------------------------------------------
+    procedure open =
+    --      _input : tinputfile;                 -- druh vstupu
+    --        name : lstring;
+    --       chyba : ref boolean);
+    -- Otevreni souboru.
+    ----------------------------------------------------------------------------------------------
+    begin
+      -- inicializace
+      input:=_input;
+      chyba:=true;
+
+      -- otevreni souboru
+      if input in [tit_file,tit_text] then
+        finit(fhandle,name.getstr(1));
+        fopen(fhandle,fmodesr);
+        if fgetres(fhandle)<>f_ok then
+          wr({MSG=}000210,lc_error,formats('Nelze otevrit soubor %1',name.getstr(1)));
+          return;
+          end if;
+
+        if input=tit_text then
+          txtopen(fhandle,4096,chyba);
+          if chyba then
+            wr({MSG=}000211,lc_error,formats('Nelze otevrit textovy buffer souboru %1',name.getstr(1)));
+            return;
+            end if;
+          end if;
+        end if;
+
+      -- inicializace promennych
+      buffchar.empty;
+      linepos:=1;
+
+      -- kopie retezce
+      if input=tit_string then
+        -- musi se obratit poradi, protoze funguje rezimem FIFO
+        while name.getsize>0 loop
+          buffchar.addchar(name.getchar(name.getsize));
+          name.setsize(name.getsize-1);
+          end loop;
+        end if;
+
+      -- tak ted uz je vse v poradku
+      chyba:=false;
+      end open;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure close =
+    -- Uzavreni souboru.
+    ----------------------------------------------------------------------------------------------
+    begin
+      buffchar.free;
+
+      if input=tit_text then
+        txtclose(fhandle);
+        end if;
+
+      if input in [tit_file,tit_text] then
+        fclose(fhandle);
+        if fgetres(fhandle)<>f_ok then
+          raise file_error;
+          end if;
+        end if;
+      end close;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getchar_string return char =
+    -- Precte dalsi znak.
+    ----------------------------------------------------------------------------------------------
+    begin
+      if buffchar.getsize=0
+        then
+          -- konec souboru
+          result:=\26;
+        else
+          -- cteni z bufferu
+          result:=buffchar.getchar(buffchar.getsize);
+          buffchar.setsize(buffchar.getsize-1);
+        end if;
+      end getchar_string;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getchar_file return char =
+    -- Precte dalsi znak.
+    ----------------------------------------------------------------------------------------------
+    begin
+      if buffchar.getsize=0
+        then
+          if feof(fhandle)
+            then
+              -- konec souboru
+              result:=\26;
+            else
+              -- precteni jednoho znaku ze souboru
+              fread(fhandle,result,1);
+              if fgetres(fhandle)<>f_ok then
+                raise file_error;
+                end if;
+              -- pokud se jedna o konec radku
+              if result=\13
+                then
+                  -- predpokladame ze bude nasledovat druhy znak konce radku
+                  fread(fhandle,result,1);
+                  if result=\10
+                    then
+                      result:=\13;
+                    else
+                      ungetchar(result);
+                    end if;
+                  linepos+1;
+                end if;
+            end if;
+        else
+          -- cteni z bufferu
+          result:=buffchar.getchar(buffchar.getsize);
+          buffchar.setsize(buffchar.getsize-1);
+        end if;
+      end getchar_file;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getchar_text return char =
+    -- Precte dalsi znak
+    ----------------------------------------------------------------------------------------------
+    var
+      templine     : str255;
+
+    begin
+      if buffchar.getsize=0
+        then
+          if txteof(fhandle)
+            then
+              -- konec souboru
+              result:=\26;
+            else
+              -- precteni jedne radky ze souboru
+              txtread(fhandle,templine);
+              if fgetres(fhandle)<>f_ok then
+                raise file_error;
+                end if;
+              linepos+1;
+
+              -- zapsani do bufferu
+              templine & \13;
+              ungetstr2(templine);
+
+              -- precteni jednoho znaku
+              result:=buffchar.getchar(buffchar.getsize);
+              buffchar.setsize(buffchar.getsize-1);
+            end if;
+        else
+          -- cteni z bufferu
+          result:=buffchar.getchar(buffchar.getsize);
+          buffchar.setsize(buffchar.getsize-1);
+        end if;
+      end getchar_text;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getchar =
+    ----------------------------------------------------------------------------------------------
+    begin
+      case input
+        when tit_file   do result:=getchar_file;
+        when tit_string do result:=getchar_string;
+        when tit_text   do result:=getchar_text;
+        end case;
+      end getchar;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure ungetchar =
+    --        ch : char );
+    -- Vrati znak zpatky.
+    ----------------------------------------------------------------------------------------------
+    begin
+--      if buffchar:length=255 then
+--        wr({MSG=}000212,,'ungetchar error : string is too long (=255 chars)');
+--        raise buffer_error;
+--        end if;
+
+      buffchar.addchar(ch);
+      end ungetchar;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure ungetlstr =
+    --         s : lstring);
+    -- Vrati retezec zpatky.
+    ----------------------------------------------------------------------------------------------
+    begin
+      -- vlastni vlozeni do bufferu
+      while s.getsize>0 loop
+        ungetchar(s.getchar(s.getsize));
+        s.setsize(s.getsize-1);
+        end loop;
+      end ungetlstr;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure ungetstr2 =
+    --         s : str255);
+    -- Vrati retezec zpatky.
+    ----------------------------------------------------------------------------------------------
+    begin
+      -- vlastni vlozeni do bufferu
+      while s:length>0 loop
+        ungetchar(s[s:length]);
+        s:length-1;
+        end loop;
+      end ungetstr2;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getpos =
+    --             return longint;
+    -- Vrati aktualni pozici v souboru.
+    ----------------------------------------------------------------------------------------------
+    begin
+      result:=linepos-1;
+      end getpos;
+
+
+
+    ----------------------------------------------------------------------------------------------
+    procedure getinputtype =
+    --               return tinputtype;
+    -- Vrati pouzivany typ vstupu.
+    ----------------------------------------------------------------------------------------------
+    begin
+      result:=input;
+      end getinputtype;
+
+
+
+    end textfile;
+
+
+
+private
+
+--------------------------------------------------------------------------------------------------
+procedure pathfile2 =
+--            name : str255;
+--         idlctrl : boolean:=false)
+--                   return str255;
+-- Dohleda adresar ve kterem se nachazi zadany soubor a vrati jeho jmeno nebo ''
+--------------------------------------------------------------------------------------------------
+var
+  i                : longint;
+  testfile         : file;
+  isfile           : fresult;
+  name2            : str255;
+
+begin
+  -- inicializace
+  isfile:=f_notexist;
+
+  -- pro vsechny zadane adresare
+  for i in header_path:range loop
+
+    -- je vubec zadan adresar
+    if header_path[i]:length>0 then
+      -- sestavit nazev souboru
+      result:=pathfile(header_path[i],name);
+
+      -- zkusit jestli funguje
+      finit(testfile,result);
+      fopen(testfile,fmodesr);
+
+      -- povedlo se?
+      isfile:=fgetres(testfile);
+
+      -- zase ho po sobe uklidit
+      fclose(testfile);
+
+      -- zkontrolovat jeste .idl
+      if idlctrl then
+        -- upravit jmeno souboru
+        name2:=result;
+        while name2[name2:length]<>'.' loop name2:length-1; end loop;
+        name2 & 'idl';
+
+        -- pokusit se soubor otevrit
+        finit(testfile,name2);
+        fopen(testfile,fmodesr);
+
+        -- soubor se povedlo otevrit, takze nepovolit puvodni soubor
+        if fgetres(testfile)=f_ok then
+          isfile:=f_unknown;
+          end if;
+
+        -- zavrit soubor
+        fclose(testfile);
+        end if;
+
+      -- pokud ho lze otevrit mame vyhrano
+      break when isfile=f_ok;
+      end if;
+    end loop;
+
+  -- povedlo se?
+  if isfile<>f_ok then
+    wr({MSG=}000213,lc_warning,formats2('Soubor %1 se nepodarilo najit (chyba %2)',name,itoa(isfile:ord)));
+    result:='';
+    end if;
+  end pathfile2;
+
+
+
+end h2text;
+

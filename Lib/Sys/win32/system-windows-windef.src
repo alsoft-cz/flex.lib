@@ -1,0 +1,343 @@
+----------------------------------------------------------------------------------------------------
+module windef =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /****************************************************************************
+-- *                                                                           *
+-- * windef.h -- Basic Windows Type Definitions                                *
+-- *                                                                           *
+-- * Copyright (c) Microsoft Corporation. All rights reserved.                 *
+-- *                                                                           *
+-- ****************************************************************************/
+const
+  STRICT            = 1;
+
+--  Win32 defines _WIN32 automatically,
+--  but Macintosh doesn't, so if we are using
+--  Win32 Functions, we must do it here
+-- /*
+--  * BASETYPES is defined in ntdef.h if these types are already defined
+--  */
+type
+ULONG             = unsigned 32;
+type
+PULONG            = ^ULONG for machine_pointer use true;
+type
+USHORT            = unsigned 16;
+type
+PUSHORT           = ^USHORT for machine_pointer use true;
+type
+UCHAR             = character 8;
+type
+PUCHAR            = ^UCHAR for machine_pointer use true;
+type
+PSZ               = ^character 8 for machine_pointer use true;
+const
+  MAX_PATH          = 260;
+
+type
+DWORD             = unsigned 32;
+type
+BOOL              = logical 32;
+type
+BYTE              = character 8;
+type
+WORD              = unsigned 16;
+type
+t_FLOAT           = float 32;
+type
+PFLOAT            = ^t_FLOAT for machine_pointer use true;
+type
+PBOOL             = ^BOOL for machine_pointer use true;
+type
+LPBOOL            = ^BOOL for machine_pointer use true;
+type
+PBYTE             = ^BYTE for machine_pointer use true;
+type
+LPBYTE            = ^BYTE for machine_pointer use true;
+type
+PINT              = ^signed 32 for machine_pointer use true;
+type
+LPINT             = ^signed 32 for machine_pointer use true;
+type
+PWORD             = ^WORD for machine_pointer use true;
+type
+LPWORD            = ^WORD for machine_pointer use true;
+type
+LPLONG            = ^signed 32 for machine_pointer use true;
+type
+PDWORD            = ^DWORD for machine_pointer use true;
+type
+LPDWORD           = ^DWORD for machine_pointer use true;
+type
+LPVOID            = ^unchecked for machine_pointer use true;
+type
+LPCVOID           = ^unchecked for machine_pointer use true;
+type
+INT               = signed 32;
+type
+UINT              = unsigned 32;
+type
+PUINT             = ^unsigned 32 for machine_pointer use true;
+#separate winnt;
+-- /* Types use for passing & returning polymorphic values 
+type
+t_WPARAM          = winnt.basetsd.UINT_PTR;
+type
+t_LPARAM          = winnt.basetsd.LONG_PTR;
+type
+t_LRESULT         = winnt.basetsd.LONG_PTR;
+type
+t_HWND            = winnt.t_HANDLE;
+type
+HHOOK             = winnt.t_HANDLE;
+type
+ATOM              = WORD;
+type
+SPHANDLE          = ^winnt.t_HANDLE for machine_pointer use true;
+type
+LPHANDLE          = ^winnt.t_HANDLE for machine_pointer use true;
+type
+t_HGLOBAL         = winnt.t_HANDLE;
+type
+HLOCAL            = winnt.t_HANDLE;
+type
+GLOBALHANDLE      = winnt.t_HANDLE;
+type
+LOCALHANDLE       = winnt.t_HANDLE;
+type
+  t_001 = signed 32;
+
+FARPROC           = ^procedure 
+                      return t_001 for machine_pointer use true;
+type
+  t_002 = signed 32;
+
+NEARPROC          = ^procedure 
+                      return t_002 for machine_pointer use true;
+type
+  t_003 = signed 32;
+
+PROC              = ^procedure 
+                      return t_003 for machine_pointer use true;
+type
+HGDIOBJ           = winnt.t_HANDLE;
+type
+t_HKEY            = winnt.t_HANDLE;
+type
+PHKEY             = ^t_HKEY for machine_pointer use true;
+type
+t_HACCEL          = winnt.t_HANDLE;
+type
+t_HBITMAP         = winnt.t_HANDLE;
+type
+t_HBRUSH          = winnt.t_HANDLE;
+type
+HCOLORSPACE       = winnt.t_HANDLE;
+type
+t_HDC             = winnt.t_HANDLE;
+type
+HGLRC             = winnt.t_HANDLE;
+--  OpenGL
+type
+t_HDESK           = winnt.t_HANDLE;
+type
+t_HENHMETAFILE    = winnt.t_HANDLE;
+type
+HFONT             = winnt.t_HANDLE;
+type
+t_HICON           = winnt.t_HANDLE;
+type
+t_HMENU           = winnt.t_HANDLE;
+type
+HMETAFILE         = winnt.t_HANDLE;
+type
+t_HINSTANCE       = winnt.t_HANDLE;
+type
+t_HMODULE         = t_HINSTANCE;
+-- /* HMODULEs can be used in place of HINSTANCEs 
+type
+HPALETTE          = winnt.t_HANDLE;
+type
+HPEN              = winnt.t_HANDLE;
+type
+t_HRGN            = winnt.t_HANDLE;
+type
+HRSRC             = winnt.t_HANDLE;
+type
+HSTR              = winnt.t_HANDLE;
+type
+t_HTASK           = winnt.t_HANDLE;
+type
+t_HWINSTA         = winnt.t_HANDLE;
+type
+t_HKL             = winnt.t_HANDLE;
+type
+t_HMONITOR        = winnt.t_HANDLE;
+type
+t_HWINEVENTHOOK   = winnt.t_HANDLE;
+type
+HUMPD             = winnt.t_HANDLE;
+type
+t_HFILE           = signed 32;
+type
+t_HCURSOR         = t_HICON;
+-- /* HICONs & HCURSORs are polymorphic 
+type
+COLORREF          = DWORD;
+type
+LPCOLORREF        = ^DWORD for machine_pointer use true;
+type
+  tagRECT           = record
+left            : winnt.LONG;
+top             : winnt.LONG;
+right           : winnt.LONG;
+bottom          : winnt.LONG;
+  end record;
+  RECT              = tagRECT;
+  PRECT             = ^tagRECT;
+  NPRECT            = ^tagRECT;
+  p_RECT            = ^tagRECT;
+
+type
+LPCRECT           = ^RECT for machine_pointer use true;
+type
+  _RECTL            = record
+left            : winnt.LONG;
+top             : winnt.LONG;
+right           : winnt.LONG;
+bottom          : winnt.LONG;
+  end record;
+  RECTL             = _RECTL;
+  PRECTL            = ^_RECTL;
+  LPRECTL           = ^_RECTL;
+
+type
+LPCRECTL          = ^RECTL for machine_pointer use true;
+type
+  tagPOINT          = record
+x               : winnt.LONG;
+y               : winnt.LONG;
+  end record;
+  t_POINT           = tagPOINT;
+  PPOINT            = ^tagPOINT;
+  NPPOINT           = ^tagPOINT;
+  p_POINT           = ^tagPOINT;
+
+type
+  _POINTL           = record
+x               : winnt.LONG;
+y               : winnt.LONG;
+  end record;
+  POINTL            = _POINTL;
+  PPOINTL           = ^_POINTL;
+
+type
+  tagSIZE           = record
+cx              : winnt.LONG;
+cy              : winnt.LONG;
+  end record;
+  SIZE              = tagSIZE;
+  PSIZE             = ^tagSIZE;
+  LPSIZE            = ^tagSIZE;
+
+type
+SIZEL             = SIZE;
+type
+PSIZEL            = ^SIZE for machine_pointer use true;
+LPSIZEL           = ^^SIZE for machine_pointer use true;
+type
+  tagPOINTS         = record
+x               : winnt.SHORT;
+y               : winnt.SHORT;
+  end record;
+  POINTS            = tagPOINTS;
+  PPOINTS           = ^tagPOINTS;
+  LPPOINTS          = ^tagPOINTS;
+
+-- 
+--  File System time stamps are represented with the following structure:
+-- 
+type
+  _FILETIME         = record
+dwLowDateTime   : DWORD;
+dwHighDateTime  : DWORD;
+  end record;
+  t_FILETIME        = _FILETIME;
+  PFILETIME         = ^_FILETIME;
+  p_FILETIME        = ^_FILETIME;
+
+-- /* mode selections for the device mode function 
+const
+  DM_UPDATE         = 1;
+
+const
+  DM_COPY           = 2;
+
+const
+  DM_PROMPT         = 4;
+
+const
+  DM_MODIFY         = 8;
+
+-- /* device capabilities indices 
+const
+  DC_FIELDS         = 1;
+
+const
+  DC_PAPERS         = 2;
+
+const
+  DC_PAPERSIZE      = 3;
+
+const
+  DC_MINEXTENT      = 4;
+
+const
+  DC_MAXEXTENT      = 5;
+
+const
+  DC_BINS           = 6;
+
+const
+  DC_DUPLEX         = 7;
+
+const
+  DC_SIZE           = 8;
+
+const
+  DC_EXTRA          = 9;
+
+const
+  DC_VERSION        = 10;
+
+const
+  DC_DRIVER         = 11;
+
+const
+  DC_BINNAMES       = 12;
+
+const
+  DC_ENUMRESOLUTIONS= 13;
+
+const
+  DC_FILEDEPENDENCIES= 14;
+
+const
+  DC_TRUETYPE       = 15;
+
+const
+  DC_PAPERNAMES     = 16;
+
+const
+  DC_ORIENTATION    = 17;
+
+const
+  DC_COPIES         = 18;
+
+
+end windef;

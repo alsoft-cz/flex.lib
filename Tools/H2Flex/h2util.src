@@ -1,0 +1,2242 @@
+----------------------------------------------------------------------------------------------------
+-- h2util
+----------------------------------------------------------------------------------------------------
+--
+-- Pomocne utility
+--
+----------------------------------------------------------------------------------------------------
+
+module h2util =
+
+with
+  system,str,dir,log,num,macros,lstr,filedef,files,
+  debug,
+  h2def;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure makefilename (
+          filename : str255;                     -- puvodni jmeno souboru
+            newdir : str255;                     -- novy adresar
+            newext : str255)                     -- nova pripona
+                     return str255;
+-- Zadanemu jmenu souboru zmeni priponu
+----------------------------------------------------------------------------------------------------
+procedure getfilename (
+          filename : str255;                     -- puvodni jmeno souboru
+         fileparts : tfileparts := [fp_name])
+                     return str255;
+----------------------------------------------------------------------------------------------------
+procedure is_file (
+          filename : str255;                     -- jmeno souboru
+           idlctrl : boolean:=false)
+                     return boolean;
+-- Zjistit, zda zadany soubor existuje.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure char_to_num (
+                ch : char ) return byte;
+-- Prevod hexadecimlaniho znaku na cislo.
+----------------------------------------------------------------------------------------------------
+procedure write_module (
+                 s : str255 );
+-- Vypis nazvu modulu
+----------------------------------------------------------------------------------------------------
+procedure lex_to_text (
+               lex : tlexelement;                -- lexikalni element
+             value : tlexvalue)                  -- hodnota
+                     return str255;
+-- Prevede lexikalni element do tvaru vhodneho pro cteni.
+----------------------------------------------------------------------------------------------------
+procedure expandstr (
+                 s : str255;
+               len : byte)
+                     return str255;
+-- Pokud to lze, doplni retezec zprava mezerami.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- str
+----------------------------------------------------------------------------------------------------
+procedure str_add (
+              list : ref pstrlist;               -- seznam
+              name : str255;                     -- nazev polozky
+             value : tvalue := [tv_boolean,for b use true]);-- hodnota polozky
+-- prida dalsi jmeno do seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_add2 (
+              list : ref pstrlist2;              -- seznam
+              name : str255;                     -- nazev polozky
+             value : tvalue);                    -- hodnota polozky
+-- prida dalsi jmeno do seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_find (
+              list : ref pstrlist;               -- seznam
+              name : str255;                     -- nazev polozky
+             value : ref tvalue)                 -- hodnota polozky
+                     return boolean;             -- T=polozka nalezena
+-- vyhleda zadane jmeno v seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_find2 (
+              list : ref pstrlist2;              -- seznam
+              name : str255;                     -- nazev polozky
+             value : ref tvalue)                 -- hodnota polozky
+                     return boolean;             -- T=polozka nalezena
+-- vyhleda zadane jmeno v seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_del (
+              list : ref pstrlist;               -- seznam
+              name : str255);                    -- nazev polozky
+-- odstrani jmeno ze seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_del2 (
+              list : ref pstrlist2;              -- seznam
+              name : str255);                    -- nazev polozky
+-- odstrani jmeno ze seznamu
+----------------------------------------------------------------------------------------------------
+procedure str_next (
+              list : ref pstrlist;               -- seznam
+              name : ref str255) 
+                     return boolean;
+-- vyhleda dalsi polozku se zadanym jmenem
+----------------------------------------------------------------------------------------------------
+procedure str_exit (
+              list : ref pstrlist);              -- seznam
+-- znici seznam
+----------------------------------------------------------------------------------------------------
+procedure str_exit2 (
+              list : ref pstrlist2);             -- seznam
+-- znici seznam
+----------------------------------------------------------------------------------------------------
+procedure str_list (
+              list : ref pstrlist);              -- seznam
+----------------------------------------------------------------------------------------------------
+procedure str_list2 (
+              list : ref pstrlist2;              -- seznam
+              name : str255); 
+----------------------------------------------------------------------------------------------------
+procedure normalizelstr (
+              lstr : ref lstring);
+-- prevede retezec z interniho tvaru v C do obycejneho tvaru ve Flexu
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- flist
+----------------------------------------------------------------------------------------------------
+procedure flist_init (
+          filelist : ref pfilelist);
+-- Uvolneni seznamu.
+----------------------------------------------------------------------------------------------------
+procedure flist_add (
+          filelist : ref pfilelist;
+              name : str255); 
+-- Pridani zaznamu s danym jmenem.
+----------------------------------------------------------------------------------------------------
+procedure flist_change (
+          filelist : ref pfilelist;
+              name : str255; 
+            stream : tstream);
+----------------------------------------------------------------------------------------------------
+procedure flist_find (
+          filelist : ref pfilelist;
+              name : str255) 
+                     return boolean;
+-- Vyhledani zaznamu s danym jmenem.
+----------------------------------------------------------------------------------------------------
+procedure flist_next (
+          filelist : ref pfilelist;
+              name : ref str255; 
+            stream : ref tstream)
+                     return boolean;
+-- Vyhleda dalsi zaznam ze seznamu.
+----------------------------------------------------------------------------------------------------
+procedure flist_free (
+          filelist : ref pfilelist);
+-- Uvolneni seznamu.
+----------------------------------------------------------------------------------------------------
+procedure farray_find (
+          filelist : ref tfilearray;
+          filename : str255) 
+                     return boolean;
+-- T=zadany soubor je v seznamu (poli)
+----------------------------------------------------------------------------------------------------
+procedure flist_rename (
+          filelist : ref pfilelist;
+           oldname : str255; 
+           newname : str255); 
+-- prejmenuje polozku v seznamu
+----------------------------------------------------------------------------------------------------
+procedure getsimplename (
+              name : str255) 
+                     return str255; 
+-- vrati skutecne jmeno (za posledni pomlckou)
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- stream
+----------------------------------------------------------------------------------------------------
+procedure stream_to_text (
+            stream : ref tstream)
+                     return str255;
+-- Prevede stream do formatu vhodneho pro cteni.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- value
+----------------------------------------------------------------------------------------------------
+procedure initvalue (value : ref tvalue);
+-- inicializace rekordu
+----------------------------------------------------------------------------------------------------
+procedure initlexvalue (value : ref tlexvalue);
+-- inicializace rekordu
+----------------------------------------------------------------------------------------------------
+procedure copyvalue (v1 : tvalue; v2 : ref tvalue);
+-- kopirovani rekordu v1 -> v2
+----------------------------------------------------------------------------------------------------
+procedure copylexvalue (v1 : tlexvalue; v2 : ref tlexvalue);
+-- kopirovani rekordu v1 -> v2
+----------------------------------------------------------------------------------------------------
+procedure value_to_text (
+             value : tvalue)                     -- hodnota polozky
+                     return str255;
+-- hodnotu prevede na citelny text
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- procs
+----------------------------------------------------------------------------------------------------
+procedure proc_add (
+          proclist : ref tproclist;
+          procname : str255; 
+           libname : str255); 
+-- prida proceduru do seznamu
+----------------------------------------------------------------------------------------------------
+procedure proc_find (
+          proclist : ref tproclist;
+          procname : str255; 
+           libname : ref str255) 
+                     return boolean;
+-- dohleda proceduru v seznamu
+----------------------------------------------------------------------------------------------------
+procedure proc_find2 (
+          proclist : ref tproclist;
+          procname : str255) 
+                     return boolean;
+-- dohleda proceduru v zavislem seznamu
+----------------------------------------------------------------------------------------------------
+procedure proc_free (
+          proclist : ref tproclist);
+-- znici seznamu procedur
+----------------------------------------------------------------------------------------------------
+procedure proc_list (
+          proclist : tproclist);
+-- vypise seznam
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- ctype
+----------------------------------------------------------------------------------------------------
+procedure initctype (
+                     ctype : ref tctype );
+-- inicializace typu promenne
+----------------------------------------------------------------------------------------------------
+procedure modifyctype (
+                     ctype : ref tctype;
+                       lex : tlexelement;
+                     value : tlexvalue);
+-- modifikace typu promenne
+----------------------------------------------------------------------------------------------------
+procedure ctoftype (
+             ctype : tctype;
+            retval : ref lstring);
+-- prevede cdef na vyjadreni typu ve Flexu
+----------------------------------------------------------------------------------------------------
+procedure typedef2typedef (
+              name : str255) 
+                     return str255; 
+-- najde jmeno typu, ze ktereho je odvozen ukazatel
+----------------------------------------------------------------------------------------------------
+procedure controlctypeasparameter (
+            predef : ref str255; 
+             ctype : ref tctype;
+          procname : str255); 
+-- zkontroluje potrebne vlastnosti parametru proceduru
+----------------------------------------------------------------------------------------------------
+procedure controlctypeasreturn (
+            predef : ref str255; 
+             ctype : ref tctype;
+          procname : str255); 
+-- zkontroluje potrebne vlastnosti navratove hodnoty procedury
+----------------------------------------------------------------------------------------------------
+procedure controlidname (
+              name : ref str255); 
+-- zkontroluje zda identifikator neni klicove slovo Flexu a vrati nekonfliktni jmeno
+----------------------------------------------------------------------------------------------------
+procedure controlidbasename (
+             ctype : ref tctype;
+            header : str255); 
+-- zkontroluje zda neni nutne predradit identifikatoru jmeno modulu
+----------------------------------------------------------------------------------------------------
+procedure controlheadername (
+              name : ref str255); 
+-- zkontroluje zda identifikator neni klicove slovo Flexu a vrati nekonfliktni jmeno
+----------------------------------------------------------------------------------------------------
+procedure get_varname (
+                 x : str255; 
+                 i : longint)
+                     return str255; 
+-- Sestavi nazev promenne ve tvaru "x001".
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- ostatni (prevzato z lib1)
+----------------------------------------------------------------------------------------------------
+procedure exec          (exe   : str255;       -- jmeno EXE
+                         param : str255;       -- parametry
+                         wait  : boolean;      -- cekat na dokonceni
+                         exitc : ref integer;  -- exit kod procesu
+                         chyba : ref boolean)  -- priznak chyby
+= #internal 32601;
+-- Spusti externi program. Pri WAIT=False ve Windows neceka na dokonceni.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write2str (
+              name : str255; 
+             value : str255) = 
+----------------------------------------------------------------------------------------------------
+begin
+  if name:length>0 then write2(name & ':'); end if;
+  write2('1: ' & copy(value,1,50));
+  return when value:length<=51;
+  write2('2: ' & copy(value,51,50));
+  return when value:length<=101;
+  write2('3: ' & copy(value,101,50));
+  return when value:length<=151;
+  write2('4: ' & copy(value,151,50));
+  return when value:length<=201;
+  write2('5: ' & copy(value,201,50));
+  return when value:length<=254;
+  write2('6: ' & copy(value,251,50));
+  end write2str;
+
+
+
+private
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_file =
+--        filename : str255;                     -- jmeno souboru
+--         idlctrl : boolean:=false)
+--                   return boolean;
+-- Zjistit, zda zadany soubor existuje.
+-- Pokud idlctrl=T pak soubor neexistuje i v pripade, kdy existuje, ale jeste existuje .idl
+----------------------------------------------------------------------------------------------------
+var
+  ifile            : file;
+
+begin
+  -- docasna zaplata na ignorovani existence souvisejicich .IDL souboru
+  idlctrl:=false;
+
+  -- pokusit se soubor otevrit
+  finit(ifile,filename);
+  fopen(ifile,fmodesr);
+
+  -- soubor se nepovedlo otevrit
+  if fgetres(ifile)<>f_ok then
+    result:=false;
+    return;
+    end if;
+
+  -- zavrit soubor
+  fclose(ifile);
+
+  -- zkontrolovat jeste .idl
+  if idlctrl then
+    -- upravit jmeno souboru
+    while filename[filename:length]<>'.' loop filename:length-1; end loop;
+    filename & 'idl';
+
+    -- pokusit se soubor otevrit
+    finit(ifile,filename);
+    fopen(ifile,fmodesr);
+
+    -- soubor se nepovedlo otevrit
+    if fgetres(ifile)<>f_ok then
+      result:=false;
+      return;
+      end if;
+
+    -- zavrit soubor
+    fclose(ifile);
+    end if;
+
+  -- soubor nalezen
+  result:=true;
+  end is_file;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure normalizelstr =
+--            lstr : ref lstring);
+-- prevede retezec z interniho tvaru v C do obycejneho tvaru ve Flexu
+----------------------------------------------------------------------------------------------------
+var
+  lstr2            : lstring;
+  hoff             : longint;
+
+begin
+  hoff:=lpos('##',lstr,1);
+  while hoff>0 loop
+    ldelete(lstr2,lstr,hoff-1,2);
+    lstr.free;
+    linsert(lstr2,lstr,1);
+
+    -- znovu hledat ##
+    hoff:=lpos('##',lstr,1);
+    end loop;
+  end normalizelstr;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure makefilename =
+--        filename : str255;                     -- puvodni jmeno souboru
+--          newdir : str255;                     -- novy adresar
+--          newext : str255)                     -- nova pripona
+--                   return str255 =
+-- Zadanemu jmenu souboru zmeni priponu
+----------------------------------------------------------------------------------------------------
+var
+  dir              : str255;
+  name             : str255;
+  ext              : str255;
+
+begin
+  -- rozdelit nazev souboru na casti
+  fsplit(filename,dir,name,ext);
+
+  -- pokud je zadan novy adresar
+  if newdir:length>0 then
+    dir:=newdir;
+    end if;
+
+  -- pokud je zadana nova pripona
+  if newext:length>0 then
+    ext:=newext;
+    end if;
+
+  -- seskladat nazev souboru z casti
+  result:=dir & name & ext;
+  end makefilename;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure getfilename =
+--        filename : str255)                     -- puvodni jmeno souboru
+--                   return str255 =
+----------------------------------------------------------------------------------------------------
+var
+  dir              : str255;
+  name             : str255;
+  ext              : str255;
+
+begin
+  -- rozdelit nazev souboru na casti
+  fsplit(filename,dir,name,ext);
+
+  -- vratit pouze nazev
+  result:='';
+  if fp_dir in fileparts then
+    result & dir;
+    end if;
+  if fp_name in fileparts then
+    result & name;
+    end if;
+  if fp_ext in fileparts then
+    result & ext;
+    end if;
+  end getfilename;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure char_to_num =
+-- Prevod hexadecimlaniho znaku na cislo.
+----------------------------------------------------------------------------------------------------
+begin
+  if      ch='0'           then result:= 0;
+    elsif ch='1'           then result:= 1;
+    elsif ch='2'           then result:= 2;
+    elsif ch='3'           then result:= 3;
+    elsif ch='4'           then result:= 4;
+    elsif ch='5'           then result:= 5;
+    elsif ch='6'           then result:= 6;
+    elsif ch='7'           then result:= 7;
+    elsif ch='8'           then result:= 8;
+    elsif ch='9'           then result:= 9;
+    elsif ch='A' or ch='a' then result:=10;
+    elsif ch='B' or ch='b' then result:=11;
+    elsif ch='C' or ch='c' then result:=12;
+    elsif ch='D' or ch='d' then result:=13;
+    elsif ch='E' or ch='e' then result:=14;
+    elsif ch='F' or ch='f' then result:=15;
+    else
+      wr({MSG=}000214,lc_error,'char_to_num(' & ch & ')');
+      raise numeric_error;
+    end if;
+  end char_to_num;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_module =
+-- Vypis nazvu modulu
+----------------------------------------------------------------------------------------------------
+var
+  s2               : str255;
+  i                : longint;
+
+begin
+  -- inicliazace
+  s:='-- ' & s & ' --';
+  s2:=s;
+  for i in 1..s2:length loop
+    s2[i]:='-';
+    end loop;
+
+  -- vlastni vypis
+--  write2(s2);
+  write2(s);
+--  write2(s2);
+  end write_module;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_add =
+--            list : ref ^strlist;               -- seznam
+--            name : str255; 
+--           value : tvalue);
+-- prida dalsi jmeno do seznamu
+----------------------------------------------------------------------------------------------------
+var
+  newitem          : pstrlist;                   -- pridavana polozka
+  curritem         : pstrlist;                   -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  new newitem;
+  newitem^.name:=name;
+  newitem^.next:=nil;
+
+  -- vlastni hodnota
+  copyvalue(value,newitem^.value);
+
+  if list=nil
+    -- prvni polozka v seznamu
+    then
+      list:=newitem;
+    -- pridat na konec seznamu s kontrolou na duplicity
+    else
+      curritem:=list;
+      while curritem<>nil loop
+        -- zkontrolovat, zda nejsme na pridavane (duplicita)
+        if curritem^.name=name then
+          -- pokud se nejedna o specialni pripad
+          if curritem^.value.typ<>tv_extra
+            then
+              -- prepsat hodnotu
+              copyvalue(newitem^.value,curritem^.value);
+            else
+              -- jinak oznamit varovani
+              wr({MSG=}000215,lc_warning,'Typ ' & name & ' je jiz definovan');
+            end if;
+
+          -- znicit novou polozku
+          discard newitem;
+          break;
+          end if;
+
+        -- zkontrolovat, zda nejsme na posledni polozce
+        if curritem^.next=nil then
+          -- zalozit na konec seznamu
+          curritem^.next:=newitem;
+          break;
+          end if;
+
+        -- dalsi polozka
+        curritem:=curritem^.next;
+        end loop;
+    end if;
+  end str_add;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_add2 =
+--            list : ref pstrlist2;              -- seznam
+--            name : str255); 
+-- odstrani jmeno ze seznamu
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  i:=upcase(name[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+
+  str_add(list[i],name,value);
+  end str_add2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_del =
+--            list : ref pstrlist;               -- seznam
+--            name : str255); 
+-- odstrani jmeno ze seznamu
+----------------------------------------------------------------------------------------------------
+var
+  curritem         : pstrlist:=nil;
+  delitem          : pstrlist:=nil;
+  previtem         : pstrlist:=nil;
+
+begin
+  -- prazdny seznam
+  if list=nil then return; end if;
+
+  -- najit v seznamu
+  if list^.name=name
+    then
+      delitem:=list;
+      list:=list^.next;
+    else
+      curritem:=list;
+      while curritem<>nil loop
+        if curritem^.name=name then
+          delitem:=curritem;
+          previtem^.next:=curritem^.next;
+          end if;
+        previtem:=curritem;
+        curritem:=curritem^.next;
+        end loop;
+    end if;
+
+  -- zrusit polozku
+  if delitem<>nil then
+    discard delitem;
+    end if;
+  end str_del;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_del2 =
+--            list : ref pstrlist2;              -- seznam
+--            name : str255); 
+-- odstrani jmeno ze seznamu
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  i:=upcase(name[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+
+  str_del(list[i],name);
+  end str_del2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_list =
+--            list : ref pstrlist);              -- seznam
+----------------------------------------------------------------------------------------------------
+var
+  curritem         : pstrlist:=nil;
+
+begin
+  -- prazdny seznam
+  if list=nil then return; end if;
+
+  curritem:=list;
+  while curritem<>nil loop
+    if curritem^.value.typ=tv_extra
+      then write2(curritem^.name & ' = ' & itoa(curritem^.value.x:ord));
+      else write2(curritem^.name);
+      end if;
+    curritem:=curritem^.next;
+    end loop;
+  end str_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_list2 =
+--            list : ref pstrlist2;              -- seznam
+--            name : str255); 
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  i:=upcase(name[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+
+  str_list(list[i]);
+  end str_list2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_find =
+--            list : ref pstrlist;               -- seznam
+--            name : str255;                     -- nazev polozky
+--           value : ref tvalue)                 -- hodnota polozky
+--                   return boolean;             -- T=polozka nalezena
+-- vyhleda zadane jmeno v seznamu a vrati jeho parametr
+----------------------------------------------------------------------------------------------------
+var
+  curritem         : pstrlist;                   -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  result:=false;
+  value.typ:=tv_nic;
+  
+  curritem:=list;
+  while curritem<>nil loop
+    -- zkontrolovat, zda nejsme na hledane
+    if curritem^.name=name then
+      copyvalue(curritem^.value,value);
+      result:=true;
+      break;
+      end if;
+    -- dalsi polozka
+    curritem:=curritem^.next;
+    end loop;
+  end str_find;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_find2 =
+--            list : ref pstrlist2;              -- seznam
+--            name : str255;                     -- nazev polozky
+--           value : ref str255)                 -- hodnota polozky
+--                   return boolean;             -- T=polozka nalezena
+-- vyhleda zadane jmeno v seznamu a vrati jeho parametr
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  i:=upcase(name[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+
+  result:=str_find(list[i],name,value);
+  end str_find2;
+
+
+
+----------------------------------------------------------------------------------------------------
+--procedure str_change =
+--            list : ^strlist;                   -- seznam
+--            name : str255; 
+--          regexp : boolean:=false;             -- hleda i uvnitr nazvu polozky
+--         newname : str255; 
+--                   return str255; 
+-- vyhleda zadane jmeno v seznamu a vrati jeho parametr
+----------------------------------------------------------------------------------------------------
+--var
+--  curritem         : pstrlist;                   -- prave prohledavana polozka
+--
+--begin
+--  -- inicializace
+--  curritem:=list;
+--  while curritem<>nil loop
+--    -- zkontrolovat, zda nejsme na hledane
+--    if regexp
+--      then
+--        -- nazev polozky muze byt i uvnitr
+--        if pos(name,curritem^.name)>0 then
+--          curritem^.name:=replace(name,newname,curritem^.name);
+--          end if;
+--      else
+--        -- hleda se jen cely nazev polozku
+--        if curritem^.name=name then
+--          curritem^.name:=newname;
+--          break;
+--          end if;
+--      end if;
+--    -- dalsi polozka
+--    curritem:=curritem^.next;
+--    end loop;
+--  end str_change;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_exit =
+--            list : ref pstrlist);              -- seznam
+-- znici seznam
+----------------------------------------------------------------------------------------------------
+var
+  delitem          : pstrlist;                   -- prave mazana polozka
+
+begin
+  while list<>nil loop
+    -- uschovat si mazanou polozku
+    delitem:=list;
+
+    -- posunout ukazatel na dalsi (prvni) zaznam
+    list:=list^.next;
+
+    -- smazat mazanou polozku
+    discard delitem;
+    end loop;
+  end str_exit;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_exit2 =
+--            list : ref pstrlist2);             -- seznam
+-- znici seznam
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;
+
+begin
+  for i in pstrlist2:range loop
+    str_exit(list[i]);
+    end loop;
+  end str_exit2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure str_next =
+--            list : ref pstrlist;               -- seznam
+--            name : ref str255) 
+--                   return boolean;
+-- vyhleda dalsi polozku se zadanym jmenem
+----------------------------------------------------------------------------------------------------
+var
+  curritem         : pstrlist;                   -- prave prohledavana polozka
+
+begin
+  -- inicializace
+  result:=false;
+  curritem:=list;
+
+  -- dohledat posledne nalezenou polozku
+  if name:length>0 then
+    while curritem<>nil loop
+      if curritem^.name=name then
+        curritem:=curritem^.next;
+        break;
+        end if;
+      curritem:=curritem^.next;
+      end loop;
+    end if;
+
+  -- pokud jsme nenasli predchozi polozku, tak je to chyba
+  if curritem=nil then
+    return;
+    end if;
+
+  if curritem<>nil then
+    result:=true;
+    name:=curritem^.name;
+    end if;
+  end str_next;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_add =
+--        filelist : pfilelist;
+--            name : str255; 
+--          stream : tstream);
+-- Pridani zaznamu s danym jmenem.
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+  last             : pfilelist;
+
+begin
+  -- kontrola duplicity
+  flist:=filelist;
+  while flist<>nil loop
+    if flist^.name=name then
+--      write2('flist_add : duplicity ' & name);
+      return;
+      end if;
+    flist:=flist^.next;
+    end loop;
+
+  -- alokace noveho zaznamu
+  new flist;
+  flist^.name:=name;
+  flist^.next:=nil;
+
+  -- pridava se na konec
+  last:=filelist;
+  if last=nil
+    then
+      -- prvni polozka v seznamu
+      filelist:=flist;
+    else
+      -- najit konec seznamu
+      while last^.next<>nil loop
+        last:=last^.next;
+        end loop;
+
+      -- posledni polozka v seznamu
+      last^.next:=flist;
+    end if;
+
+-- -Pavel : 14.06.2002
+--  -- pridava se na zacatek
+--  flist^.next:=filelist;
+--  filelist:=flist;
+  end flist_add;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_find =
+--        filelist : pfilelist;
+--            name : str255) 
+--                   return boolean;
+-- Vyhledani zaznamu s danym jmenem.
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+
+begin
+  -- inicializace
+  result:=false;
+  flist:=filelist;
+
+  while flist<>nil loop
+    if upcasestr(flist^.name)=upcasestr(name) then
+      result:=true;
+      break;
+      end if;
+    flist:=flist^.next;
+    end loop;
+--if result
+--  then write2('flist_find ' & name & ' : true');
+--  else write2('flist_find ' & name & ' : false');
+--  end if;
+  end flist_find;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_change =
+--        filelist : pfilelist;
+--            name : str255; 
+--          stream : tstream);
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+  found            : boolean;
+
+begin
+  -- inicializace
+  flist:=filelist;
+  found:=false;
+
+  -- dohledat posledne nalezenou polozku
+  while flist<>nil loop
+    if flist^.name=name then
+      flist^.stream:=stream;
+      found:=true;
+      break;
+      end if;
+    flist:=flist^.next;
+    end loop;
+
+  -- kontrola
+  if not found then
+    wr({MSG=}000216,lc_error,formats('Polozka %1 nenalezena v seznam',name));
+    raise internal_error;
+    end if;
+  end flist_change;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_rename =
+--        filelist : pfilelist;
+--         oldname : str255; 
+--         newname : str255); 
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+  found            : boolean;
+
+begin
+  -- inicializace
+  flist:=filelist;
+  found:=false;
+
+  -- dohledat posledne nalezenou polozku
+  while flist<>nil loop
+    if flist^.name=oldname then
+      flist^.name:=newname;
+      found:=true;
+      break;
+      end if;
+    flist:=flist^.next;
+    end loop;
+
+  -- kontrola
+  if not found then
+    wr({MSG=}000217,lc_error,formats('flist_rename error : polozka %1 nenalezena v seznam',oldname));
+    raise internal_error;
+    end if;
+  end flist_rename;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_next =
+--        filelist : ref pfilelist;
+--            name : ref str255;
+--          stream : ref tstream)
+--                   return boolean;
+-- Vyhleda dalsi zaznam ze seznamu.
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+
+begin
+  -- inicializace
+  result:=false;
+  flist:=filelist;
+  fillz(stream,stream:size);
+
+  -- dohledat posledne nalezenou polozku
+  if name:length>0 then
+    while flist<>nil loop
+      if flist^.name=name then
+        flist:=flist^.next;
+        break;
+        end if;
+      flist:=flist^.next;
+      end loop;
+    end if;
+
+  -- pokud jsme nenasli predchozi polozku, tak je to chyba
+  if flist=nil then
+    return;
+    end if;
+
+  result:=true;
+  name:=flist^.name;
+  stream:=flist^.stream;
+  stream.name:=name;
+  end flist_next;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_init =
+--        filelist : pfilelist);
+-- Uvolneni seznamu.
+----------------------------------------------------------------------------------------------------
+begin
+  filelist:=nil;
+  end flist_init;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure flist_free =
+--        filelist : pfilelist);
+-- Uvolneni seznamu.
+----------------------------------------------------------------------------------------------------
+var
+  flist            : pfilelist;
+
+begin
+  while filelist<>nil loop
+    flist:=filelist;
+    filelist:=filelist^.next;
+    discard flist;
+    end loop;
+  end flist_free;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure stream_to_text =
+--          stream : ref tstream)
+--                   return str255;
+-- Prevede stream do formatu vhodneho pro cteni.
+----------------------------------------------------------------------------------------------------
+var
+  current          : plex;
+
+begin
+  -- inicializace
+  result:='';
+  current:=stream.first;
+
+  while current<>nil loop
+    result & lex_to_text(current^.lex,current^.value);
+    current:=current^.next;
+    end loop;
+  end stream_to_text;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure lex_to_text =
+--             lex : tlexelement)                -- lexikalni element
+--                   return str255;
+----------------------------------------------------------------------------------------------------
+begin
+  if lex=lex_nul then
+      -- nic
+      result:='lex_nul';
+    elsif lex=lex_eol then
+      -- konec radku
+      result:='lex_eol';
+    elsif lex=lex_eof then
+      -- konec souboru
+      result:='lex_eof';
+    elsif lex=lex_id then
+      -- odentifikator
+      result:='lex_id (' & value.id & ')';
+    elsif lex=lex_num then
+      -- cislo
+      result:='lex_num (' & itoa(value.n) & ')';
+    elsif lex=lex_num2 then
+      -- vetsi cislo
+      result:='lex_num2 (' & uint64_to_string(value.n2) & ')';
+    elsif lex=lex_str then
+      -- retezec
+      result:='lex_str (' & value.s & ')';
+    elsif lex=lex_metaid then
+      -- metaprikaz
+      result:='lex_metaid (' & value.id & ')';
+    elsif lex=lex_comment then
+      -- komentar
+      result:='lex_comment';
+    elsif lex=lex_mlcomment then
+      -- komentar
+      result:='lex_mlcomment';
+    elsif lex=lex_mlcomment2 then
+      -- komentar
+      result:='lex_mlcomment2';
+    elsif lex in [keywords:range] then
+      -- klicove slovo
+      result:=keywords[lex] & ' (' & itoa(lex:ord) & ')';
+    elsif lex in [operators:range] then
+      -- operator
+      result:=operators[lex] & ' (' & itoa(lex:ord) & ')';
+    elsif lex=lex_flex then
+      result:='flex ' & value.x.getstr(1);
+    elsif lex=lex_metaflex then
+      result:='metaflex ' & value.x.getstr(1);
+      result:=copy(result,1,50);
+    elsif lex=lex_unknown then
+      result:='unknown lex ' & value.x.getstr(1);
+    else
+      result:='? lex (' & itoa(lex:ord) & ')';
+    end if;
+  end lex_to_text;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure initvalue =
+-- inicializace rekordu
+----------------------------------------------------------------------------------------------------
+begin
+  value.typ:=tv_nic;
+  value.s.empty;
+  value.e.empty;
+  end initvalue;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure initlexvalue =
+-- inicializace rekordu
+----------------------------------------------------------------------------------------------------
+begin
+  value.x.empty;
+  value.id:='';
+  value.endspace:=false;
+  value.endlpar:=false;
+  value.longer:=false;
+  value.n:=0;
+  fillz(value.n2,tuint64:size);
+  value.radix:=tr_dec;
+  value._unsigned:=false;
+  value._longint:=false;
+  value.s:='';
+  value.ch:=char:(0);
+  value.ch2:=0;
+  end initlexvalue;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copyvalue =
+----------------------------------------------------------------------------------------------------
+begin
+  v2:=v1;
+  -- zkopirovat vse krome lstringu
+  v2.s.entry;
+  v2.s.setname('copy ' & v1.s.getname);
+--  fillz(v2.s,v2.s:size);
+  lcopy(v2.s,v1.s,1,v1.s.getsize);
+
+  v2.e.entry;
+  v2.e.setname('copy ' & v1.e.getname);
+--  fillz(v2.e,v2.e:size);
+  lcopy(v2.e,v1.e,1,v1.e.getsize);
+  end copyvalue;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copylexvalue =
+----------------------------------------------------------------------------------------------------
+begin
+  v2:=v1;
+
+  -- zkopirovat vse krome lstringu
+  v2.x.entry;
+  v2.x.setname('copy ' & v1.x.getname);
+--  fillz(v2.x,v2.x:size);
+  lcopy(v2.x,v1.x,1,v1.x.getsize);
+  end copylexvalue;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure value_to_text =
+--           value : tvalue)                     -- hodnota polozky
+--                   return str255;
+-- hodnotu prevede na citelny text
+----------------------------------------------------------------------------------------------------
+begin
+  -- inicializace
+  result:='';
+
+  case value.typ
+    when tv_nic     do
+      result & 'n/a';
+
+    when tv_extra   do
+      case value.x
+        when tx_through  do result & 'extra: @THROUGH';
+        when tx_ignore   do result & 'extra: @IGNORE';
+        when tx_false    do result & 'extra: @FALSE';
+        when tx_forward1 do result & 'extra: @FORWARD1';
+        when tx_ignore1  do result & 'extra: @IGNORE1';
+        when tx_ignore2  do result & 'extra: @IGNORE2';
+        when tx_forward2 do result & 'extra: @FORWARD2';
+        when others      do result & 'extra: unknown';
+        end case;
+
+    when tv_str     do
+      result & 'str: ' & value.s.getstr(1);
+
+    when tv_boolean do
+      if value.b
+        then result & 'boolean: true';
+        else result & 'boolean: false';
+        end if;
+
+    when tv_longint do
+      result & 'longint: ' & itoa(value.l);
+
+    when tv_expr    do
+      result & 'expr: ';
+      if value.p:length>0
+        then result & '(' & value.p & ') -> ';
+             result & value.e.getstr(1);
+        else result & value.e.getstr(1);
+        end if;
+    end case;
+  end value_to_text;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure proc_add =
+--        proclist : ref tproclist;
+--        procname : str255;
+--         libname : str255);
+-- prida proceduru do seznamu
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+  newitem          : pprocname;
+  curritem         : pprocname;
+
+begin
+  -- inicializace
+  i:=upcase(procname[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+
+  -- alokace noveho zaznamu
+  new newitem;
+  newitem^.name:=procname;
+  newitem^.dll:=libname;
+  newitem^.next:=nil;
+
+  -- pridani polozky do seznamu
+  if proclist[i]=nil
+    then
+      -- prvni polozka v seznamu
+      proclist[i]:=newitem;
+    else
+      -- projit seznam az na konec
+      curritem:=proclist[i];
+      while curritem<>nil loop
+        if upcasestr(curritem^.name)=upcasestr(procname) then
+          wr({MSG=}000218,lc_error,formats('Duplicita procedury %1',procname));
+          return;
+          end if;
+
+        -- zaradit na konec seznamu
+        if curritem^.next=nil then
+          curritem^.next:=newitem;
+          break;
+          end if;
+
+        -- nasledujici polozka
+        curritem:=curritem^.next;
+        end loop;
+    end if;
+  end proc_add;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure wildcardequal (
+    name           : str255;
+    wildcard       : str255)
+                     return boolean =
+-- zjistit zda retezec vyhovuje vcetne *
+----------------------------------------------------------------------------------------------------
+begin
+  -- inicializace
+  result:=false;
+  return when pos('*',wildcard)=0;
+
+  -- zatim umime jen * na konci
+  if pos('*',wildcard)<>wildcard:length then
+    wr({MSG=}000219,lc_error,formats('Nepodporovany znak (*) nebo znak na nespravnem miste',name));
+    raise internal_error;
+    end if;
+
+  -- hvezdicka na konci nas jiz nezajima
+  wildcard:length-1;
+
+  -- shoda ted musi nastat v cele delce retezce
+  result:=wildcard=copy(name,1,wildcard:length);  
+  end wildcardequal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure proc_find =
+--        proclist : ref tproclist;
+--        procname : str255;
+--         libname : ref str255)
+--                   return boolean =
+-- dohleda proceduru v seznamu
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+  curritem         : pprocname;
+
+begin
+  -- inicializace
+  i:=upcase(procname[1]);
+  if i not in ['A'..'Z'] then
+    i:='@';
+    end if;
+  result:=false;
+
+  -- dohledat minulou polozku
+  if libname:length>0
+    then
+      curritem:=proclist[i];
+      while curritem<>nil loop
+        if upcasestr(curritem^.name)=upcasestr(procname) and upcasestr(curritem^.dll)=upcasestr(libname) then
+          break;
+          end if;
+
+        -- nasledujici polozka
+        curritem:=curritem^.next;
+        end loop;
+
+      -- nasla se hledana (predchozi) polozka
+      if curritem=nil
+        then
+          wr({MSG=}000220,lc_warning,formats2('Chyba pri dohledavani predchozi polozky %1 %2',procname,libname));
+          result:=false;
+        else
+          -- nasledujici polozku
+          curritem:=curritem^.next;
+          if curritem=nil
+            then
+              libname:='';
+              result:=false;
+              return;
+            else
+              libname:=curritem^.dll;;
+              result:=true;
+              return;
+            end if;
+        end if;
+    else
+      curritem:=proclist[i];
+      while curritem<>nil loop
+        if upcasestr(curritem^.name)=upcasestr(procname) or wildcardequal(upcasestr(procname),upcasestr(curritem^.name)) then
+          libname:=curritem^.dll;
+          result:=true;
+          return;
+          end if;
+
+        -- nasledujici polozka
+        curritem:=curritem^.next;
+        end loop;
+    end if;
+  end proc_find;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure proc_find2 =
+--        proclist : ref tproclist;
+--        procname : str255)
+--                   return boolean =
+-- dohleda proceduru v zavislem seznamu
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+  curritem         : pprocname;
+
+begin
+  -- inicializace
+  result:=false;
+
+  -- pro vsechny seznamy (v hash tabulce)
+  for i in proclist:range loop
+
+    curritem:=proclist[i];
+    while curritem<>nil loop
+      if upcasestr(curritem^.dll)=upcasestr(procname) then
+        result:=true;
+        return;
+        end if;
+
+      -- nasledujici polozka
+      curritem:=curritem^.next;
+      end loop;
+
+    end loop;
+  end proc_find2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure proc_free =
+--        proclist : ref tproclist);
+-- znici seznamu procedur
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+  delitem          : pprocname;
+
+begin
+  for i in proclist:range loop
+    while proclist[i]<>nil loop
+      delitem:=proclist[i];
+      proclist[i]:=proclist[i]^.next;
+      discard delitem;
+      end loop;
+    end loop;
+  end proc_free;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure proc_list =
+--        proclist : tproclist);
+-- vypise seznam
+----------------------------------------------------------------------------------------------------
+var
+  i                : char;                       -- prave prohledavana polozka
+  curritem         : pprocname;
+
+begin
+  for i in proclist:range loop
+    curritem:=proclist[i];
+    while curritem<>nil loop
+      write2('proclist : ' & curritem^.name & ' = ' & curritem^.dll);
+      curritem:=curritem^.next;
+      end loop;
+    end loop;
+  end proc_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure initctype =
+-- inicializace typu promenne
+----------------------------------------------------------------------------------------------------
+begin
+  ctype._signed:=true;
+
+  ctype.cstype:=ct_nil;
+  ctype._array:=false;
+  ctype._bits:=0;
+  ctype._cdecl:=false;
+  ctype._const:=false;
+  ctype._export:=false;
+  ctype._high:length:=0;
+  ctype._machine:=false;
+  ctype._pointer:=0;
+  ctype._stdcall:=false;
+  ctype._struct:=false;
+  ctype._signed:=true;
+  ctype._size:=0;
+  ctype._import:=false;
+  ctype._noreturn:=false;
+  ctype._return:length:=0;
+  ctype._params.empty;
+  ctype._inout:=tinouts:[];
+  ctype.name:length:=0;
+  ctype._name:length:=0;
+  end initctype;
+
+
+
+--------------------------------------------------------------------------------------------------
+procedure modifyctype =
+-- modifikace typu promenne
+--------------------------------------------------------------------------------------------------
+begin
+  case lex
+    when lex_char do ctype.cstype:=ct_char; ctype._size:=8;
+
+    when lex_const do ctype._const:=true;
+
+    -- tady se nebude pou‘¡vat digits 15 ale float 64
+    when lex_double do ctype.cstype:=ct_digits; ctype._size:=64{15};
+
+    -- tady se nebude pou‘¡vat digits 6 ale float 32
+    when lex_float do ctype.cstype:=ct_digits; ctype._size:=32{6};
+
+    when lex_int do ctype.cstype:=ct_signed; if ctype._size=0 then ctype._size:=32; end if;
+
+    when lex_long do ctype.cstype:=ct_signed; ctype._size:=32;
+
+    when lex_mul do if ctype.cstype=ct_void
+                      then ctype.cstype:=ct_pointer;
+                      else ctype._pointer+1;
+                      end if;
+
+    when lex_short do ctype.cstype:=ct_signed; ctype._size:=16;
+
+    when lex_signed do ctype.cstype:=ct_signed; ctype._signed:=true;
+
+    when lex_struct do ctype._struct:=true;
+
+    when lex_unsigned do ctype.cstype:=ct_signed; ctype._signed:=false;
+
+    when lex_void do ctype.cstype:=ct_void;
+
+    when lex_volatile do ;
+
+    when lex_wchar_t do ctype.cstype:=ct_char; ctype._size:=16;
+
+    -- specialni pripady (__*)
+    when lex_id do
+      if value.id='__int64' then
+          ctype.cstype:=ct_signed; ctype._size:=64; ctype._signed:=true;
+
+        elsif value.id='_cdecl' or value.id='__cdecl' then
+          ctype._cdecl:=true;
+
+        elsif value.id='__stdcall' then
+          ctype._stdcall:=true;
+
+        elsif value.id='in' then
+          ctype._inout+[io_in];
+
+        elsif value.id='optional' then
+          ctype._inout+[io_optional];
+
+        elsif value.id='out' then
+          ctype._inout+[io_out];
+
+        else
+          wr({MSG=}000221,lc_error,'error modifyctype : lex = ' & lex_to_text(lex,value));
+          raise internal_error;
+        end if;
+
+    when others do
+      wr({MSG=}000222,lc_error,'error modifyctype : lex = ' & lex_to_text(lex,value));
+      raise internal_error;
+    end case;
+  end modifyctype;
+
+
+
+--------------------------------------------------------------------------------------------------
+procedure ctoftype =
+-- prevede cdef na vyjadreni typu ve Flexu
+--------------------------------------------------------------------------------------------------
+var
+  i                : longint;
+
+begin
+  retval.empty;
+
+  -- a ted uz vlastni vystup
+  if io_in in ctype._inout then
+    retval.addstr('in ');
+    end if;
+  if io_out in ctype._inout then
+    retval.addstr('out ');
+    end if;
+  if io_optional in ctype._inout then
+    retval.addstr('{out optional} ');
+    end if;
+
+  if io_ref in ctype._inout then
+    retval.addstr('ref ');
+    end if;
+
+-- zapomenuto, vynuceni zmeny se odted dela konfiguraci
+--  -- pokud se jedna o ukazatel na char pak se tim mini ukazatel na array of char
+--  if ctype.cstype=ct_char and ctype._pointer>0 then
+--    ctype._array:=true;
+--    end if;
+
+  -- ukazatel(e)
+  ctype._machine:=ctype._pointer>0;
+  while ctype._pointer>0 loop
+    retval.addstr('^');
+    ctype._pointer-1;
+    end loop;
+
+  -- pole
+  if ctype._array then
+    retval.addstr('array ');
+    if ctype._high:length>0 then
+      retval.addstr('0..' & ctype._high & ' ');
+      end if;
+    retval.addstr('of ');
+    end if;
+
+  case ctype.cstype
+    when ct_nil     do
+      wr({MSG=}000223,lc_error,'error p_typedef : unsupported ctype.cstype = ct_nil');
+      raise internal_error;
+
+    when ct_void    do ; -- result & 'void';
+
+    when ct_signed  do if ctype._signed
+                         then retval.addstr('signed ' & itoa(ctype._size));
+                         else retval.addstr('unsigned ' & itoa(ctype._size));
+                         end if;
+
+    when ct_digits  do retval.addstr('float ' & itoa(ctype._size));
+
+    when ct_char    do retval.addstr('character ' & itoa(ctype._size));
+
+    when ct_pointer do retval.addstr('^unchecked');
+                       retval.addstr(' for machine_pointer use true');
+
+    when ct_proc    do retval.addstr('procedure ' & ctype.name);
+
+                       -- parametry
+                       if ctype._params.getsize>0 then
+                         retval.addstr('(');
+                         ctype._params.setstrsize(200);
+                         for i in 1..ctype._params.getstrcount loop
+                           retval.addstr(ctype._params.getstr(i,false));
+                           end loop;
+                         retval.addstr(')');
+                         end if;
+
+                       -- typ navratove hodnoty
+                       if ctype._return:length>0 then
+                         retval.addstr(crlf & expandstr('',20) & '  return ' & ctype._return);
+                         end if;
+
+                       -- a jeste machine_pointer
+--                       if ctype._machine then
+--                         retval.addstr(' for machine_pointer use true');
+--                         end if;
+
+    when ct_named   do retval.addstr(ctype.name);
+
+                       -- a jeste machine_pointer
+--                       if ctype._machine then
+--                         retval.addstr(' for machine_pointer use true');
+--                         end if;
+
+    end case;
+
+  -- a jeste machine_pointer
+  if ctype._machine then
+    retval.addstr(' for machine_pointer use true');
+    end if;
+
+  if ctype._bits>0 then
+    retval.addstr(' {:' & itoa(ctype._bits) & '}');
+    end if;
+  end ctoftype;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure farray_find =
+--        filelist : tfilearray;
+--        filename : str255)
+--                   return boolean;
+-- T=zadany soubor je v seznamu (poli)
+----------------------------------------------------------------------------------------------------
+var
+  i                : tfilearray:range;
+
+begin
+  -- inicializace
+  result:=false;
+
+  -- pro vsechny polozky v poli
+  for i in filelist:range loop
+    if upcasestr(filelist[i])=upcasestr(filename) then
+      result:=true;
+      break;
+      end if;
+    end loop;
+  end farray_find;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_varname =
+--               x : str255;
+--               i : longint)
+--                   return str255 =
+-- Sestavi nazev promenne ve tvaru "x001".
+----------------------------------------------------------------------------------------------------
+begin
+  result:=x & itoa(i,3,'0');
+  end get_varname;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure expandstr =
+--               s : str255;
+--             len : byte)
+--                   return str255;
+-- Pokud to lze, doplni retezec zprava mezerami.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=s;
+  while result:length<len loop
+    result & ' ';
+    end loop;
+  end expandstr;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure typedef2typedef =
+--            name : str255)
+--                   return str255;
+-- najde jmeno typu, ze ktereho je odvozen ukazatel
+----------------------------------------------------------------------------------------------------
+var
+  value            : tvalue;
+  name2            : str255;
+  name3            : str255;
+
+begin
+  -- inicializace
+  result:='';
+  name2:=name;
+
+  -- parametry parametru nas nezajimaji
+  loop
+    if name2[1]=' ' then
+        name2:=copy(name2,2,255);
+      elsif copy(name2,1,2)='in' then
+        name2:=copy(name2,3,255);
+      elsif copy(name2,1,3)='out' then
+        name2:=copy(name2,4,255);
+      elsif copy(name2,1,5)='{out}' then
+        name2:=copy(name2,6,255);
+      elsif copy(name2,1,8)='optional' then
+        name2:=copy(name2,9,255);
+      else
+        break;
+      end if;
+    end loop;
+
+  -- osetreni specialnich pripadu
+  if copy(name2,1,1)='^' then
+      result:=copy(name2,2,255);
+      return;
+    elsif copy(name2,1,9)='unchecked' then
+      result:='unchecked';
+      return;
+    end if;
+
+  -- dohledat jmeno typu
+  name3:=name2;
+  while pos('.',name3)>0 loop
+    name3:=copy(name3,pos('.',name3)+1,255);
+    end loop;
+  if not str_find2(typedefs,name3,value) then
+    wr({MSG=}000224,lc_warning,'type ' & name & ' (' & name3 & ') not found');
+    result:='{!}' & name;
+    return;
+    end if;
+
+  -- zjistit, zda se od puvodniho lisi jen ukazatelem
+  result:=value.s.getstr(1);
+
+  -- parametry parametru nas opet nezajimaji
+  loop
+    if copy(result,1,3)='in ' then
+        result:=copy(result,4,255);
+      elsif copy(result,1,4)='out ' then
+        result:=copy(result,5,255);
+      elsif copy(result,1,6)='{out} ' then
+        result:=copy(result,7,255);
+      elsif copy(result,1,9)='optional ' then
+        result:=copy(result,10,255);
+      else
+        break;
+      end if;
+    end loop;
+
+  --
+  if result[1]='^'
+    then
+      result:=copy(value.s.getstr(1),2,255);
+
+      -- odstranit jeste zbytek tj. machine_pointer
+      if pos('for machine_pointer use true',result)>0 then
+        result:=copy(result,1,pos('for machine_pointer use true',result)-1);
+        end if;
+
+    elsif copy(result,1,9)='unchecked' then
+      result:='unchecked';
+
+    else
+      wr({MSG=}000225,lc_warning,'type ' & name & ' is not pointer to (' & result &  ')');
+      result:='{!}' & name;
+    end if;
+  end typedef2typedef;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure controlctypeasparameter =
+--          predef : ref str255;
+--           ctype : ref tctype;
+--        procname : str255);
+-- zkontroluje potrebne vlastnosti parametru proceduru
+----------------------------------------------------------------------------------------------------
+var
+  typename         : str255;
+  machine          : boolean;
+  prevname         : str255;
+  gone             : boolean := false;
+
+begin
+  -- inicializace
+  predef:length:=0;
+
+  if ctype._const and ctype._inout=tinouts:[] then
+    ctype._inout + [io_in];
+    ctype._const:=false;
+    end if;
+
+  -- kontrola, zda mame urcen typ parametru
+  if ctype._inout=tinouts:[] then
+--    wr({MSG=}000226,lc_warning,'warning: parameter ' & ctype._name & ' (procedure ' & procname& ') has unknown type (in/out)');
+    end if;
+
+  -- pro vystupni parametr se jeden ukazatel ubira (pridava ho prekladac)
+  if io_out in ctype._inout and then ctype._pointer>0 then
+    ctype._pointer-1;
+    gone:=true;
+    end if;
+
+  -- zjistit zda se jedna o ukazatel
+  machine:=ctype._pointer>0;
+
+  -- jako typ parametru nelze
+  -- zakladni typy
+  if ctype.cstype=ct_signed then
+      -- vymyslet nove jmeno
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & typename & '=';
+      while ctype._pointer>0 loop predef & '^'; ctype._pointer-1; end loop;
+      if ctype._signed
+        then predef & 'signed ' & itoa(ctype._size);
+        else predef & 'unsigned ' & itoa(ctype._size);
+        end if;
+      predef & ';' & crlf;
+
+      -- pouziti noveho typu
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    -- typ character
+    elsif ctype.cstype=ct_char then
+      -- vymyslet nove jmeno
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & typename & '=';
+      while ctype._pointer>0 loop predef & '^'; ctype._pointer-1; end loop;
+      predef & 'character ' & itoa(ctype._size);
+      predef & ';' & crlf;
+
+      -- pouziti noveho typu
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    -- typ ukazatel
+    elsif ctype.cstype=ct_pointer then
+      -- vymyslet nove jmeno
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & typename & '=';
+      while ctype._pointer>0 loop predef & '^'; ctype._pointer-1; end loop;
+      predef & '^unchecked';
+      predef & ' for machine_pointer use true';
+      predef & ';' & crlf;
+
+      -- pouziti noveho typu
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    -- neznamy typ (zname jmeno)
+    elsif ctype.cstype=ct_named and then (ctype._pointer>0 or ctype._array) then
+      -- vymyslet nove jmeno
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & typename & '=';
+      while ctype._pointer>0 loop predef & '^'; ctype._pointer-1; end loop;
+      if ctype._array then
+        predef & 'array ';
+        if ctype._high:length>0 then
+          predef & '0..' & ctype._high & ' ';
+        end if;
+        predef & 'of ';
+        ctype._array:=false;
+        end if;
+      predef & ctype.name;
+      if machine then
+        predef & ' for machine_pointer use true';
+        end if;
+      predef & ';' & crlf;
+
+      -- pouziti noveho typu
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    end if;
+
+  -- uprava out parametru
+  if io_out in ctype._inout and then not gone and then ctype.cstype=ct_named then
+    -- dohledat zdedeny typ
+    prevname:=typedef2typedef(ctype.name);
+
+    -- pokud se neco naslo
+    if prevname:length>0 then
+      -- zjistit zda se nejedna o nepouzitelny typ
+      if copy(prevname,1,8)='array of' or
+         copy(prevname,1,6)='signed' or
+         copy(prevname,1,8)='unsigned' or
+         copy(prevname,1,1)='^'
+        then
+          -- vymyslet nove jmeno
+          typename:=get_varname('t_',gcounter);
+          gcounter+1;
+
+          -- zajistit definici noveho typu
+          predef & typename & '=' & prevname & ';' & crlf;
+          ctype.cstype:=ct_named;
+          ctype.name:=typename;
+
+        else
+          -- prepsat puvodnim typem (bez ukazatele)
+          ctype.name:=prevname;
+        end if;
+      end if;
+    end if;
+  end controlctypeasparameter;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure controlctypeasreturn =
+--          predef : ref str255;
+--           ctype : ref tctype;
+--        procname : str255);
+-- zkontroluje potrebne vlastnosti navratove hodnoty procedury
+----------------------------------------------------------------------------------------------------
+var
+  typename         : str255;
+  templstr         : lstring;
+  machine          : boolean;
+
+begin
+  -- inicializace
+  predef:length:=0;
+  machine:=ctype._pointer>0;
+
+  -- nelze vracet zakladni typy
+  if ctype.cstype=ct_signed then
+      -- vygenerovat nove jmeno typu
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      ctoftype(ctype,templstr);
+      predef & '  ' & typename & ' = ' & templstr.getstr(1,false) & ';' & crlf;
+
+      -- zmenit definici na novy typ
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    elsif ctype.cstype=ct_char then
+      -- vygenerovat nove jmeno typu
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & '  ' & typename & ' = ';
+      while ctype._pointer>0 loop
+        predef & '^';
+        ctype._pointer-1;
+        end loop;
+      predef & 'character ' & itoa(ctype._size) & ';' & crlf;
+
+      -- zmenit definici na novy typ
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    elsif ctype.cstype=ct_pointer then
+      -- vygenerovat nove jmeno typu
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & '  ' & typename & ' = ^unchecked';
+      predef & ' for machine_pointer use true';
+      predef & ';' & crlf;
+
+      -- zmenit definici na novy typ
+      ctype.cstype:=ct_named;
+      ctype.name:=typename;
+
+    elsif ctype.cstype=ct_named and then ctype._pointer>0 then
+      -- vygenerovat nove jmeno typu
+      typename:=get_varname('t_',gcounter);
+      gcounter+1;
+
+      -- definice noveho typu
+      predef & '  ' & typename & ' = ';
+      while ctype._pointer>0 loop
+        predef & '^';
+        ctype._pointer-1;
+        end loop;
+      predef & ctype.name;
+      predef & ' for machine_pointer use true';
+      predef & ';' & crlf;
+
+      -- zmenit definici na novy typ
+      ctype.name:=typename;
+
+    end if;
+  end controlctypeasreturn;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure getsimplename =
+--            name : str255)
+--                   return str255;
+-- vrati skutecne jmeno (za posledni pomlckou)
+-- windows-windef-winnt -> winnt
+----------------------------------------------------------------------------------------------------
+begin
+  result:=name;
+  while pos('-',result)>0 loop
+    result:=copy(result,1+pos('-',result),255);
+    end loop;
+  end getsimplename;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure controlidname =
+--            name : ref str255);
+-- zkontroluje zda identifikator neni klicove slovo Flexu a vrati nekonfliktni jmeno
+----------------------------------------------------------------------------------------------------
+var
+  i                : tflexkeyword;
+
+begin
+  for i in tflexkeyword:range loop
+    if upcasestr(name)=upcasestr(tflexkeywords[i]) then
+      name:='_' & name;
+      break;
+      end if;
+    end loop;
+  end controlidname;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure controlidbasename =
+--           ctype : ref tctype;
+--          header : str255);
+-- zkontroluje zda neni nutne predradit identifikatoru jmeno modulu
+----------------------------------------------------------------------------------------------------
+begin
+  return when ctype.cstype<>ct_named;
+
+  -- !! predelat :-( {%%TODO PAVEL} melo by byt v konfiguraci
+  -- typedef = windef.t_HANDLE = winnt.t_HANDLE
+
+  -- rozsireni identifikatoru o cestu k modulu kde je deklarace
+  if      header='windef' then
+      if      ctype.name='t_HANDLE'              then ctype.name:='winnt.t_HANDLE';
+        elsif ctype.name='LONG'                  then ctype.name:='winnt.LONG';
+        elsif ctype.name='LONG_PTR'              then ctype.name:='winnt.basetsd.LONG_PTR';
+        elsif ctype.name='SHORT'                 then ctype.name:='winnt.SHORT';
+        elsif ctype.name='UINT_PTR'              then ctype.name:='winnt.basetsd.UINT_PTR';
+        end if;
+
+    elsif header='winnt' then
+      if      ctype.name='t_CLSID'               then ctype.name:='guiddef.t_CLSID';
+        elsif ctype.name='DWORD64'               then ctype.name:='basetsd.DWORD64';
+        elsif ctype.name='t_GUID'                then ctype.name:='guiddef.t_GUID';
+        elsif ctype.name='INT_PTR'               then ctype.name:='basetsd.INT_PTR';
+        elsif ctype.name='PSIZE_T'               then ctype.name:='basetsd.PSIZE_T';
+        elsif ctype.name='SIZE_T'                then ctype.name:='basetsd.SIZE_T';
+        elsif ctype.name='ULONG_PTR'             then ctype.name:='basetsd.ULONG_PTR';
+        end if;
+
+    elsif header='winscard' then
+      if      ctype.name='LPCSCARD_IO_REQUEST'   then ctype.name:='winsmcrd.LPCSCARD_IO_REQUEST';
+        elsif ctype.name='LPSCARD_IO_REQUEST'    then ctype.name:='winsmcrd.LPSCARD_IO_REQUEST';
+        elsif ctype.name='SCARD_IO_REQUEST'      then ctype.name:='winsmcrd.SCARD_IO_REQUEST';
+        end if;
+
+    elsif header='wtypes' then
+      if      ctype.name='boolean'               then ctype.name:='rpcndr.boolean';
+        end if;
+
+    end if;
+  end controlidbasename;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure controlheadername =
+--            name : ref str255)
+-- zkontroluje zda identifikator neni klicove slovo Flexu a vrati nekonfliktni jmeno
+----------------------------------------------------------------------------------------------------
+var
+  i                : tflexkeyword;
+  name2            : str255;
+
+begin
+  -- zjistit skutecne jmeno
+  name2:=getsimplename(name);
+
+  -- zkontrolovat
+  for i in tflexkeyword:range loop
+    if upcasestr(name2)=upcasestr(tflexkeywords[i]) then
+      if i=tfk_string then
+          name & 's';
+          return;
+        else
+          wr({MSG=}000227,lc_error,'header error : ' & name & ' je klicove slovo');
+          raise internal_error;
+        end if;
+      end if;
+    end loop;
+  end controlheadername;
+
+
+
+end h2util;
+

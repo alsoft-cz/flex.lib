@@ -1,0 +1,594 @@
+----------------------------------------------------------------------------------------------------
+module private state_machine =
+-- A universal state machine.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_state = 
+-- A single state of the state machine.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual leave_state =
+    -- Vol  u‘ivatelskou sekvenci p©¡kaz– spojenou s v˜stupem ze stavu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vyvol n¡ ud losti spojen‚ s p©echodem ze stavu
+      execute(event_leave_state);
+      end leave_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual enter_state =
+    -- Vol  u‘ivatelskou sekvenci p©¡kaz– spojenou se vstupem do stavu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vyvol n¡ ud lost¡ spojen‚ s p©echodem do stavu
+      execute(event_enter_state);
+      end enter_state;
+
+    end c_state;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_state_machine = 
+-- A universal state machine.
+----------------------------------------------------------------------------------------------------
+
+    var
+      current_state: p_state:=nil;               -- current state
+
+    const
+      mem_step     = 10;                         -- pro zvˆt¨en¡ kapacity ©etˆzce o [mem_step]
+
+    ------------------------------------------------------------------------------------------------
+    static add_state =
+    -- Adds a state [state] to the state machine.
+    -- If the state have been already added to the state machine, [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    var
+      new_state    : t_state;                    -- pro p©id n¡ stavu
+
+    begin
+      -- [state] mus¡ existovat
+      if state=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- stejn˜ stav nesm¡ b˜t p©id n do KA dvakr t
+      if find_state(state)<>0 then
+        execute(event_error);
+        return;
+        end if;
+
+      -- test, zda je po©eba realokovat pameŸ pro dal¨¡ stavy
+      if states^:last=states^:length then
+        -- ADJUST states range states^:last+mem_step;
+        end if;
+
+      -- alokovat p©echody 
+      new new_state.transitions range mem_step;
+
+      -- p©idat ukazatel na stav do z znamu [new_state], jen‘ se stane polo‘kou ©etˆzce stav–
+      new_state.state:=state;
+
+      -- p©idat nov˜ z znam - stav do KA
+      states^ & new_state;
+
+    rollback
+      -- dealokovat p©echody
+      discard new_state.transitions;
+      end add_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_state =
+    -- Sma‘e stav z KA a v¨echny p©echody, kter‚ jsou s n¡m spojeny. Pokud se m  smazat aktivn¡ stav
+    -- KA [current_state], je signalizov n [event_error].
+    -- The state have had to be added to the state machine via the [add_state] method before, 
+    -- otherwise [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    var
+      i_state          : t_unsigned;             -- pozice stavu v ©etˆzci stav–
+      i_transition     : t_unsigned;             -- pozice p©echodu v ©etˆzci p©echod–
+
+    begin
+      -- [current_state] nesm¡ b˜t smaz n
+      if state=current_state then
+        execute(event_error);
+        return;
+        end if;
+
+      -- vyhledat pozici stavu pro vymaz n¡
+      i_state:=find_state(state);
+
+      -- neexistuje stav pro vymaz n¡
+      if i_state=0 then
+        execute(event_error);
+        return;
+        end if;
+
+      -- naj¡t a smazat v¨echy p©echody ve v¨ech stavech vedouc¡ k nekonzistenci
+      for i in states^:range loop
+        -- naj¡t v ©etˆzci p©echod– p©echod vedouc¡ do stavu pro vymaz n¡
+        i_transition:=find_transition(i,state);
+
+        -- test, zda se na¨el p©echod pro vymaz n¡
+        if i_transition>0 then
+          -- vyjmout p©echod
+          {%%TODO(SLICE)}
+          for k in i_transition+1..states^[i].transitions^:length loop
+            states^[i].transitions^[k-1]:=states^[i].transitions^[k];
+            end loop;
+
+          -- ubyl jeden p©echod
+          pred states^[i].transitions^:length;
+
+          -- pokud ©etˆzec p©echod– m  min mem_step polo‘ek voln˜ch a velikost alokovan‚ho
+          -- ©etˆzce je vˆt¨¡ ne‘ mem_step
+          if states^[i].transitions^:length mod mem_step=0 and states^[i].transitions^:last<>mem_step then
+            -- dealokovat p©idanou pamˆŸ p©echod–m
+            -- ADJUST states^[i].transitions range states^[i].transitions:last-mem_step;
+            end if;
+          end if;
+        end loop;
+
+      -- zru¨en¡ p©echod– na stavu, kter˜ se m  smazat
+      discard states^[i_state].transitions;
+      -- zru¨it stav
+      {%%TODO(SLICE)}
+      for i in i_state+1..states^:length loop
+        states^[i-1]:=states^[i];
+        end loop;
+
+      -- ubyl jeden stav
+      pred states^:length;
+
+      -- pokud ©etˆzec stav– m  mem_step polo‘ek voln˜ch
+      if states^:length mod mem_step=0 and states^:last<>mem_step then
+        -- dealokovat p©idanou pamˆŸ stav–m
+        -- ADJUST states range states^:last-mem_step;
+        end if;
+      end remove_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static add_transition =
+    -- Defines a new transition from this state to another state [to_state].
+    -- The transition can be performed only when then transition allowance check [check] returns 
+    -- True, otherwise it is forbidden to perform the transition.
+    -- When a transition from this state to [to_state] was already defined (regardless of the
+    -- transition allowance check), [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    var 
+      _new_transition : t_transition;            -- pomocn  promˆnn  k nav z n¡ recordu na string
+      i_state         : t_unsigned;              -- pozice stavu v ©etˆzci stav–
+
+    begin
+      -- [from_state], [to_state] a [transition_check] mus¡ existovat, jinak error
+      if from_state=nil or to_state=nil or check=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- naj¡t index stavu, ve kter‚m bude za‡¡nat p©echod
+      i_state:=find_state(from_state);
+
+      -- po‡ te‡n¡ stav nebo koncov˜ stav p©echodu neexistuje
+      if i_state=0 or find_state(to_state)=0 then 
+        execute(event_error);
+        return;
+        end if;
+
+      -- testovat na duplicitu p©echodu
+      if find_transition(i_state,to_state)>0 then
+        -- p©echod je ji‘ definov n
+        execute(event_error);
+        return;
+        end if;
+
+      -- pokud pamˆt pro dal¨¡ p©echod nen¡ k dispozici, realokovat vˆt¨¡ pamˆt
+      if states^[i_state].transitions^:last=states^[i_state].transitions^:length then
+        -- ADJUST states^[i_state].transitions range transitions^:last+mem_step;
+        end if;
+
+      -- p©idat p©echod do tohoto stavu
+      {%%TODO(AGGREGATE)}
+      _new_transition.to_state:=to_state;
+      _new_transition.check:=check;
+      states^[i_state].transitions^ & _new_transition;
+
+    rollback
+      -- pokud realokovala se pamˆŸ pro p©echody
+      if states^[i_state].transitions^:length+mem_step=states^[i_state].transitions^:last and
+      states^[i_state].transitions^:last<>mem_step then
+        -- dealokovat p©idanou pamˆŸ p©echod–m
+        -- ADJUST states^[i_state].transitions range states^[i_state].transitions^:last-mem_step;
+        end if;
+      end add_transition;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static remove_transition =
+    -- Removes a transition from [from_state] to another state [to_state].
+    -- The transition have had to be defined via the [add_transition] method before, otherwise
+    -- [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    var
+      i_state      : t_unsigned;                 -- pozice stavu v ©etˆzci stav–
+      i_transition : t_unsigned;                 -- pozice p©echodu v ©etˆzci p©echod–
+
+    begin
+      -- [from_state] a [to_state] i [states] mus¡ existovat, jinak error
+      if from_state=nil or to_state=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- naj¡t stav, ve kter‚m bude za‡¡nat p©echod
+      i_state:=find_state(from_state);
+
+      -- hledat p©echod, kter˜ se m  odstranit
+      i_transition:=find_transition(i_state,to_state);
+
+      -- nebyl nalezen p©echod pro vyjmut¡ z tohoto stavu
+      if i_transition=0 then
+        execute(event_error);
+        return;
+        end if;
+
+      -- odstranit p©echod
+      {%%TODO(SLICE)}
+      for k in i_transition+1..states^[i_state].transitions^:length loop
+        states^[i_state].transitions^[k-1]:=states^[i_state].transitions^[k];
+        end loop;
+
+      -- ubyl jeden p©echod
+      pred states^[i_state].transitions^:length;
+
+      -- pokud ©etˆzec p©echod– m  mem_step polo‘ek voln˜ch a velikost alokovan‚ho ©etˆzce je vˆt¨¡
+      -- ne‘ mem_step
+      if states^[i_state].transitions^:length mod mem_step=0 and states^[i_state].transitions^:last<>mem_step then
+        -- dealokovat p©idanou pamˆŸ p©echod–m
+        -- ADJUST states^[i_state].transitions range states^[i_state].transitions:last-mem_step;
+        end if;
+      end remove_transition;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_first_state =
+    -- Sets the first state of the state machine. 
+    -- The state have had to be added to the state machine via the [add_state] method before, 
+    -- otherwise [event_error] is signaled. The first state of the state machine can be specified 
+    -- only once. If a current state is already determined, [event_error] is signaled.
+    --   Before entering the first state [event_first_state] is signaled. After that, normal event 
+    -- signalig takes place, when the first state is set. That is, all events starting from 
+    -- [event_before_enter_state] are signaled.
+    --   If the first state is a final state as well, [event_final_state] is signaled in the end.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- [state] nen¡ definov n nebo [current_state] ji‘ existuje nebo [state] je mimo KA
+      if state=nil or current_state<>nil or find_state(state)=0 then 
+        execute(event_error);
+        return;
+        end if;
+      
+      -- vyvol n¡ ud lost¡ spojen‚ se vstupem do po‡ te‡n¡ho stavu
+      execute(event_first_state);
+
+      -- nastav¡ po‡ te‡n¡ stav
+      current_state:=state;
+
+      -- vyvol n¡ ud lost¡ spojen‚ se vstupem do po‡ te‡n¡ho stavu
+      enter_state;
+      end set_first_state;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static get_state =
+    -- Returns the current state of the state machine.
+    -- Returns NIL when no state was entered yet.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vr cen¡ aktu ln¡ho stavu
+      result:=current_state;
+      end get_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static is_final_state =
+    -- Checks if the current state is the final state of the state machine. 
+    -- A final state is such a state, from which no transition to another state is defined.
+    -- When no current state is selected, [event_error] is signaled and the subprogram returns 
+    -- False.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- [current_state] mus¡ existovat
+      if current_state=nil then
+        result:=false;
+        execute(event_error);
+        return;
+        end if;
+
+      -- je kone‡n˜ stav, pokud po‡et p©echod– z tohoto stavu je 0
+      result:=states^[find_state(current_state)].transitions^:length=0;
+      end is_final_state;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    virtual can_transition =
+    -- Checks if a transition to some next state can be performed.
+    -- A transition can be performed when there are any transitions from the current state defined
+    -- and when at least one of these transitions passes the corresponding transition allowance
+    -- check.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vr tit, zda se lze dostat p©echodem ze stavu [current_state] do dal¨¡ho stavu
+      result:=find_transition_to_perform(find_state(current_state))<>0;
+      end can_transition;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    static do_transition =
+    -- Performs a transition to some next state.
+    -- The destination state is selected based on the return values of the trasition allowance 
+    -- checks of all defined transitions (in order of definition via calls to the 
+    -- [c_state.add_transition] method). There shall be exactly one transition passing the 
+    -- transition allowance check. This transition is then performed, otherwise [event_error] is 
+    -- signaled.
+    --   This concludes, that when there is no transition defined for the current state, it is
+    -- treated as an error condition. It is up to the user to ensure by calling the [is_final_state]
+    -- that the current state is not the final state so allowing [do_transition] to be called.
+    --   When the final state is entered, [event_final_state] is signaled after the transition is
+    -- completed (that is, after [event_after_enter_state] was signaled).
+    ------------------------------------------------------------------------------------------------
+    var 
+      i_state          : t_unsigned;             -- pozice stavu v ©etˆzci stav–
+      i_transition     : t_unsigned;             -- pozice p©echodu v ©etˆzci stav– pro vykon n¡
+
+    begin
+      -- jestli‘e KA nem  nastaven po‡ te‡n¡ stav, pak error
+      if current_state=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- naj¡t index stavu v ©etˆzci
+      i_state:=find_state(current_state);
+
+      -- naj¡t index p©echodu v [current_state], jim‘ se d  dostat do dal¨¡ho stavu
+      i_transition:=find_transition_to_perform(i_state);
+
+      -- test, zda je p©echod nalezen
+      if i_transition=0 then
+        -- p©echod nen¡ nalezen
+        execute(event_error);  
+        return;
+        end if;
+
+      -- vykonat p©echod
+      -- vyvol n¡ ud lost¡ spojen‚ s p©echodem do jin‚ho stavu
+      leave_state;
+
+      -- nastaven¡ na dal¨¡ stav v KA
+      current_state:=states^[i_state].transitions^[i_transition].to_state;
+      execute(event_transition);
+
+      -- vyvol n¡ ud lost¡ spojen‚ s p©echodem do jin‚ho stavu
+      enter_state;
+
+      -- pokud to je tento nov˜ stav kone‡n˜, vyvolat ud lost dost n¡ se do kone‡n‚ho stavu
+      if is_final_state then 
+        execute(event_final_state);
+        end if;
+      end do_transition;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static run_state_machine =
+    -- Repeatedly performs transitions until a final state has been reached. 
+    -- This provides a default state machine execution model, where all user-specific actions take 
+    -- place within the triggers of the particular events.
+    --   Before calling [run_state_machine], the first state have to be selected via the 
+    -- [set_first_state]. If the first state is the final state as well, the [run_state_machine]
+    -- terminates immediately without performing any action.
+    --   Note that there are no calls to [can_transition] and so [do_transition]s are executed in
+    -- an uninterrupted sequence without any explicit actions or delays between them.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- [current_state] mus¡ existovat
+      if current_state=nil then
+        execute(event_error);
+        return;
+        end if;
+
+      -- vykon van¡ p©echod–, dokud nen¡ kone‡n˜ stav
+      while not is_final_state loop
+        do_transition;
+        end loop;
+      end run_state_machine;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_state =
+    -- Ensures that the given [state] was added to this state machine. If not, [event_error] is
+    -- signaled, otherwise no action is taken.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- stav mus¡ b˜t definov n
+      if find_state(state)=0 then
+        -- stav neexistuje..
+        execute(event_error);
+        return;
+        end if;
+      end check_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_state =
+    -- Vrac¡ index stavu v ©etˆzci stav–. Pokud ‘ dn˜ stav v KA neexistuje - nebyl nalezen, metoda 
+    -- vr t¡ hodnotu 0.
+    ------------------------------------------------------------------------------------------------
+    var
+      state_found  : t_logical:=false;           -- indikuje, zda je stav nalezen
+
+    begin
+      -- [state] i [states] mus¡ b˜t definovan˜
+      if state=nil then
+        result:=0;
+        return;
+        end if;
+
+      -- hledat index stavu [state]
+      -- za‡¡nat hled n¡ na posledn¡m stavu [states]
+      result:=states^:length;
+
+      -- test, zda se jedn  o stav [state]
+      while result>0 and then states^[result].state<>state loop
+        -- posunout na p©edchoz¡ stav
+        pred result;
+        end loop;
+      end find_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_transition =
+    -- Vr t¡ index p©echodu, kter˜ je ur‡en pozic¡ p©echodu ve stavu, kde p©echod za‡¡n  a stavem,
+    -- do kter‚ho se m  p©echod dostat. Pokud p©echod nen¡ nalezen nebo pokud nen¡ nalezen stav,
+    -- z kter‚ho nebo do kter‚ho by mˆl p©echod kon‡it, vrac¡ se hodnota 0 - p©echod nenalezen.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- [i_from_state] a [to_state] mus¡ b˜t definovan˜, [i_from_state] mus¡ ukazovat do ©etˆzce
+      if i_from_state=0 or to_state=nil or i_from_state>states^:length then
+        result:=0;
+        return;
+        end if;
+
+      -- hledat index p©echodu ve stavu na indexu [i_from_state]
+      -- za‡¡nat hled n¡ na posledn¡m p©echodu stavu [i_from_state]
+      result:=states^[i_from_state].transitions^:length;
+
+      -- test, zda p©echod vede do stavu [to_state]
+      while result>0 and then states^[i_from_state].transitions^[result].to_state<>to_state loop
+        -- posunout na p©edchoz¡ p©echod
+        pred result;
+        end loop;
+      end find_transition;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_transition_to_perform =
+    -- Vrac¡ index p©echodu, jen‘ se m–‘e vykonat. Pokud ‘ dn˜ p©echod nen¡ nalezen nebo pokud 
+    -- existuje v¡c ne‘ dva p©echody, jimi‘ se lze dostat dal¨¡ho stavu, 
+    -- vrac¡ se hodnota 0 - p©echod nenalezen.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- index p©echodu ve stavu [i_state], j¡m‘ se d  dostat do dal¨¡ho stavu
+      result:=0;
+
+      -- [i_state] mus¡ ukazovat do ©etˆzce stav–
+      if i_state=0 or i_state>states^:length then
+        -- vrac¡ se index neexistuj¡c¡ho p©echodu (0)
+        return;
+        end if;
+      
+      -- hledat p©echody z [i_state], ze kter˜ch se d  dostat do dal¨¡ho stavu
+      for i_transition in states^[i_state].transitions^:range loop
+        -- test, zda to je hledan˜ p©echod
+        if states^[i_state].transitions^[i_transition].check^(current_state,states^[i_state].
+        transitions^[i_transition].to_state) then
+          -- test, zda jde o druh˜ p©echod
+          if result<>0 then
+            -- 2. p©echod, chyba
+            result:=0;
+            return;
+            end if;
+
+          -- nalezen 1. p©echod
+          result:=i_transition;
+          end if;
+        end loop;
+      end find_transition_to_perform;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static leave_state =
+    -- Vol  ud losti spojen‚ s v˜stupem ze stavu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vyvol n¡ ud lost¡ spojen‚ s p©echodem do jin‚ho stavu
+      execute(event_before_leave_state);
+      current_state^.leave_state;
+      execute(event_after_leave_state);
+      end leave_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static enter_state =
+    -- Vol  ud losti spojen‚ se vstupem do stavu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vyvol n¡ ud lost¡ spojen‚ s p©echodem do jin‚ho stavu
+      execute(event_before_enter_state);
+      current_state^.enter_state;
+      execute(event_after_enter_state);
+      end enter_state;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Pro alokaci pamˆti ©etˆzce stav–.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- alokovat pamˆt pro ©etˆzec stav– v tomto KA
+      new states range mem_step;
+      end entry;
+
+    end c_state_machine;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure transition_always =
+-- Special-purpose transition allowance check: Always allows transition (always returns True).
+----------------------------------------------------------------------------------------------------
+begin
+  -- p©echodem se lze dostat do dal¨¡ho stavu v‘dy
+  result:=true;
+  end transition_always;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure transition_never =
+-- Special-purpose transition allowance check: Always denies transition (always returns False).
+----------------------------------------------------------------------------------------------------
+begin
+  -- p©echodem se nelze dostat do dal¨¡ho stavu nikdy
+  result:=false;
+  end transition_never;
+
+end state_machine;

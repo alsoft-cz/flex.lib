@@ -1,0 +1,217 @@
+----------------------------------------------------------------------------------------------------
+module private streams =
+----------------------------------------------------------------------------------------------------
+
+use
+  system.windows.wincon;
+
+----------------------------------------------------------------------------------------------------
+class private c_console_output_stream =
+-- Console output text stream.
+----------------------------------------------------------------------------------------------------
+var
+    closed         : t_logical;
+    buff           : array 0..3 of t_data_byte;  -- protoze packety muzou byt ruzne rozstrihane po bytech
+    len            : t_offset;
+    handle         : system.windows.windef.winnt.t_handle;
+    handle_redir   : t_logical;
+
+
+  ----------------------------------------------------------------------------------------------------
+  static set_cursor_position (
+    x              : in t_cursor_position_x;     -- horizontal position
+    y              : in t_cursor_position_y) =   -- vertical position
+  ----------------------------------------------------------------------------------------------------
+  var
+    crd            : system.windows.wincon.COORD;
+
+  begin
+    if handle_redir then
+      -- nema smysl posilat
+    else
+      crd.x:=system.windows.windef.winnt.SHORT(x);
+      crd.y:=system.windows.windef.winnt.SHORT(y);
+      if not system.windows.wincon.SetConsoleCursorPosition(handle,crd) then
+        raise program_error;
+        end if;
+      end if;
+    end set_cursor_position;
+
+
+
+  ----------------------------------------------------------------------------------------------------
+  procedure write(
+    s              : in t_char32ustr)  =
+  ----------------------------------------------------------------------------------------------------
+  var
+    wstr         : windows.windef.winnt.pwstr;
+    astr         : windows.windef.winnt.lpstr;
+    written      : system.windows.windef.dword;
+
+  begin
+    -- [writeconsole] cannot handle redirected output, so the application must
+    -- cope with this and use [writefile] instead...
+    if handle_redir
+
+      -- write using [writefile] to a redirected standard output
+      then
+        begin
+          to_ascii_string(s,astr);
+          if not windows.winbase.writefile(handle,{windows.windef.lpcvoid(}astr{)},s:length,written,nil) then
+            -- %%TODO(HANDLEERROR)
+            end if;
+        leave
+          discard astr;
+          end;
+
+      -- otherwise write using the [writeconsole] function
+      else 
+        begin
+          to_system_string(s,wstr);
+          if system.windows.wincon.writeconsolew(handle,wstr,s:length,written,nil) then
+            -- %%TODO(HANDLEERROR)
+            end if;
+        leave
+          discard wstr;
+          end;
+        end if;
+    end write;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin 
+    if closed then
+      raise stream_already_closed;
+      end if;
+    closed:=true;
+    --%%TODO ?
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin 
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=true;
+    end is_reading;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    text           : p_char32ustr;
+    _text          : p_data_array;
+    _data          : p_data_array;
+    _size          : t_offset;
+    _len           : t_unsigned;
+    _max           : t_unsigned;
+    coord          : p_cursor_coordinates;
+
+  begin 
+    if closed then
+      raise stream_already_closed;
+      end if;
+    add_flow(data);
+    if data.style=t_dps_temporary and then data.phint=t_dph_flex_string then
+      read_temporary_text(data,text);
+      write(text^);
+    elsif data.style=t_dps_signal and then data.signal=t_dpss_set_pos then
+      coord:unchecked:=data.other;
+      set_cursor_position(coord^.x,coord^.y);
+    else
+      read_packet(data,_data,_size);
+      _len:=(_size+len) div t_char32:size;
+      _max:=_len*t_char32:size;
+      
+      if _len>0 then
+        new text range _len;
+        _text:unchecked:=text:unchecked;
+        t_unsigned(_text:unchecked) + t_unsigned:size;
+
+        for i in 0 .. (_size+len-1) loop
+          if i<len then
+            _text^[i]:=buff[i];
+          elsif i>=len and i<_max then
+            _text^[i]:=_data^[i-len];
+          else
+            buff[i-_max]:=_data^[i-len];
+            end if;
+          end loop;
+        len:=_size+len-_max;
+        write(text^);
+        discard text;
+      else
+        for i in 0.._size-1 loop
+          buff[len]:=_data^[i];
+          len+1;
+          end loop;
+        end if;
+      end if;
+    discard_packet(data);
+    end write_packet;
+
+
+  ------------------------------------------------------------------------------------------------
+  static init_console =
+  ------------------------------------------------------------------------------------------------
+  var
+    info           : system.windows.winbase._STARTUPINFOW;
+    flags          : t_mod_unsigned32;
+    flag           : t_mod_unsigned32;
+
+  begin
+    --%%TODO MSDN redirection
+    --system.windows.winbase.GetStartupInfoW(info);
+    --flags:unchecked:=info.dwFlags;
+    --flag:=system.windows.winbase.STARTF_USESTDHANDLES;
+    --if (flags and flag)<>0 then
+      handle_redir:=true;
+      --end if;
+    if std_err then
+      handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_error_handle);
+    else
+      handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_output_handle);
+      end if;
+    end init_console;
+  end c_console_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_console_input_stream =
+-- Console input text stream.
+----------------------------------------------------------------------------------------------------
+var
+    handle         : system.windows.windef.winnt.t_handle;
+    handle_redir   : t_logical;
+
+  ------------------------------------------------------------------------------------------------
+  static init_console =
+  ------------------------------------------------------------------------------------------------
+  var
+    info           : system.windows.winbase._STARTUPINFOW;
+    flags          : t_mod_unsigned32;
+    flag           : t_mod_unsigned32;
+
+  begin
+    --%%TODO MSDN redirection
+    --system.windows.winbase.GetStartupInfoW(info);
+    --flags:unchecked:=info.dwFlags;
+    --flag:=system.windows.winbase.STARTF_USESTDHANDLES;
+    --if (flags and flag)<>0 then
+      handle_redir:=true;
+      --end if;
+    handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_input_handle);
+    end init_console;
+  end c_console_input_stream;
+
+end streams;

@@ -1,0 +1,51 @@
+----------------------------------------------------------------------------------------------------
+module public gui =
+-- Graphic User Interface Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- %% Working version
+----------------------------------------------------------------------------------------------------
+
+with
+  standard;
+
+use 
+  system,
+  system.windows,
+  system.windows.windef,
+  system.windows.windef.winnt;
+
+
+type
+  t_system_window_handle = system.windows.windef.winnt.t_handle;
+                                                 -- system provided handle to a window
+  t_system_device_context= system.windows.windef.winnt.t_handle;
+                                                 -- system provided handle to a device context 
+
+  t_point          = record                      -- 2D coordinates
+    x              : t_signed;                   -- x-axis coordinate
+    y              : t_signed;                   -- y-axis coordinate
+    end record;
+
+  t_rectangle      = record                      -- 2D rectangle
+    topleft        : t_point;                    -- topleft point
+    bottomdown     : t_point;                    -- bottomdown point
+    end record;
+
+  t_2d_dimension   = record
+    width          : t_signed;
+    height         : t_signed;
+    end record;
+
+---------------------------------------------------------------------------------------------------
+#separate public resources;
+-- System resources.
+----------------------------------------------------------------------------------------------------
+#separate public device_context;
+-- Low-level drawing operation.
+----------------------------------------------------------------------------------------------------
+#separate public window;
+-- Low-level window operation.
+----------------------------------------------------------------------------------------------------
+
+end gui;

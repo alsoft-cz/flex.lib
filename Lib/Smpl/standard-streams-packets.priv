@@ -1,0 +1,158 @@
+----------------------------------------------------------------------------------------------------
+procedure create_eod =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=t_dps_signal;
+  packet.signal:=t_dpss_eod;
+  end create_eod;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_flush =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=t_dps_signal;
+  packet.signal:=t_dpss_flush;
+  end create_flush;
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_signal =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=t_dps_signal;
+  packet.signal:=signal;
+  packet.signal_data:=userdata;
+  end create_signal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_temporary_text =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=t_dps_temporary;
+  packet.size:=text:length*t_char32:size;
+  packet.data:unchecked:=^text:unchecked;
+  t_unsigned(packet.data:unchecked) + t_unsigned:size;
+  packet.phint:=t_dph_flex_string;
+  end create_temporary_text;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_packet =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=style;
+  packet.size:=size;
+  packet.data:=data;
+  end create_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_to_packet =
+----------------------------------------------------------------------------------------------------
+begin
+  packet.style:=t_dps_heap;
+  packet.size:=size;
+  new packet.data range size;
+  --%%TODO rez polem
+  -- fuj
+  for i in 0..(size-1) loop
+    packet.data^[i]:=data^[i];
+    end loop;
+  end copy_to_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure discard_packet =
+----------------------------------------------------------------------------------------------------
+var
+  heap             : p_data_array;
+
+begin
+  case (packet.style)
+    when t_dps_heap do
+      heap:=packet.data;
+      discard heap;
+    when t_dps_signal do
+      if packet.other<>nil then
+        heap:=packet.signal_data;
+        discard heap;
+        end if;
+    when t_dps_other do
+      packet.other^.dispose^(packet);
+    end case;
+  --packet:=nil;
+  end discard_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure read_packet =
+----------------------------------------------------------------------------------------------------
+begin
+  case (packet.style)
+    when t_dps_other do
+      packet.other^.read^(packet,data,size);
+    when others do
+      data:=packet.data;
+      size:=packet.size;
+    end case;
+  end read_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure read_temporary_text = 
+----------------------------------------------------------------------------------------------------
+var
+    ptr            : t_unsigned;
+
+begin
+  if packet.style<>t_dps_temporary or else packet.phint<>t_dph_flex_string then
+    raise program_error;
+    end if;
+  ptr:unchecked:=packet.data:unchecked;
+  ptr - t_unsigned:size;
+  text:unchecked:=ptr;
+  end read_temporary_text;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_from_packet =
+----------------------------------------------------------------------------------------------------
+var
+  read             : t_offset;
+  pdata            : p_data_array;
+  psize            : t_offset;
+
+begin
+  case (packet.style)
+    when t_dps_other do
+      packet.other^.read^(packet,pdata,psize);
+    when others do
+      pdata:=packet.data;
+      psize:=packet.size;
+    end case;
+
+  read:=psize-poffset;
+  if read>size then
+    read:=size;
+    end if;
+
+  --%%TODO rez polem
+  -- fuj
+  for i in 0..(read-1) loop
+    data^[doffset+i]:=pdata^[poffset+i];
+    end loop;
+
+  doffset + read;
+  poffset + read;
+  end copy_from_packet;

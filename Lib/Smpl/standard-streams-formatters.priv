@@ -1,0 +1,465 @@
+----------------------------------------------------------------------------------------------------
+class private abstract c_stream_generic_writer = 
+----------------------------------------------------------------------------------------------------
+var
+  is_lazy          : t_logical;
+  buffer           : p_data_array;
+  bsize            : t_offset;
+  bpos             : t_offset;
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.init_writer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO(FLEX) call parent method p_stream_writer(^this)^.init_writer(target);
+    _target:=target;
+    _isinicialized:=true;
+    --%%END TODO
+
+    target^.get_lazy_buffer(is_lazy);
+    end init_writer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static flush_internal =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_data_packet;
+
+  begin
+    if buffer<>nil then
+      create_packet(packet,buffer,bpos,t_dps_heap);
+      _target^.write_packet(packet);
+      buffer:=nil;
+      bpos:=0;
+      end if;
+    end flush_internal;
+  
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.set_lazy_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if is_lazy<>lazy then
+      flush_internal;
+      --%%TODO(FLEX) call parent method p_stream_writer(^this)^.set_lazy_buffer(lazy);
+      _target^.set_lazy_buffer(lazy);
+      --%%END TODO
+      end if;
+    end set_lazy_buffer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.flush =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if is_lazy then
+      flush_internal;
+      end if;
+    --%%TODO(FLEX) call parent method p_stream_writer(^this)^.flush();
+    _target^.flush();
+    --%%END TODO
+    end flush;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.get_flow =
+  ------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO(FLEX) call parent method p_stream_writer(^this)^.flush();
+    _target^.get_flow(bytes);
+    --%%END TODO
+    if is_lazy and buffer<>nil then
+      bytes + bpos;
+      end if;
+    end get_flow;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if is_lazy then
+      flush_internal;
+      end if;
+    --%%TODO(FLEX) call parent method p_stream_writer(^this)^.close();
+    _target^.close();
+    --%%END TODO
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static write_internal(
+    data          : in p_data_array;
+    size           : t_unsigned;
+    style          : t_data_packet_style) =
+  ------------------------------------------------------------------------------------------------
+  const
+      --%%TODO tweak
+      lazy_ratio   = 2;
+
+  var
+    packet       : t_data_packet;
+    _data        : p_data_array;
+
+  begin
+    if is_lazy then
+      _data:=data;
+      --%%TODO tweak: mozna vykopirovat zacatek dat do zbytku puvodniho bufferu
+      -- rozhodnout se jestli se novy packet musi poslat zvlast
+      if buffer<>nil and size>bsize-bpos then
+        flush_internal;
+        end if;
+      
+      -- zjisti velikost a pripadne vytvorit bufer
+      if buffer=nil then
+        _target^.get_optimal_packet_size(bsize);
+        -- rozhodnout jestli se to vyplati kopirovat
+        if (size*lazy_ratio)<bsize then
+          new buffer range bsize;
+          bpos:=0;
+          end if;
+        end if;
+      
+      if buffer<>nil then
+        -- kopirovat do bufferu
+        --%%TODO rez polem
+        -- fuj
+        for i in 0..(size-1) loop
+          buffer^[bpos]:=_data^[i];
+          bpos + 1;
+          end loop;
+        if style=t_dps_heap then
+          discard _data;
+          end if;
+      else
+        -- poslat jako samostatny packet
+        create_packet(packet,_data,size,style);
+        _target^.write_packet(packet);
+        end if;
+
+      -- poslay buffer pokud je plny
+      if buffer<>nil and bpos=bsize then
+        flush_internal;
+        end if;
+    else
+      create_packet(packet,data,size,style);
+      _target^.write_packet(packet);
+      end if;
+    end write_internal;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_text =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_data_packet;
+
+  begin
+    if data:length>0 then
+      if is_lazy and buffer<>nil then
+        flush_internal;
+        end if;
+      create_temporary_text(packet,data);
+      _target^.write_packet(packet);
+      end if;
+    end write_text;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static write_byte =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    _data:unchecked:=^data;
+    write_internal(_data,t_data_byte:size,t_dps_temporary);
+    end write_byte;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_unsigned32 =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    _data:unchecked:=^data;
+    write_internal(_data,t_unsigned32:size,t_dps_temporary);
+    end write_unsigned32;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_char32 =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    _data:unchecked:=^data;
+    write_internal(_data,t_char32:size,t_dps_temporary);
+    end write_char32;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    if size>0 then
+      _data:unchecked:=^data;
+      write_internal(_data,size,t_dps_temporary);
+      end if;
+    end write_unchecked;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_heap =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    if size>0 then
+      _data:unchecked:=^data;
+      write_internal(_data,size,t_dps_heap);
+      end if;
+    end write_heap;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_array =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    if data:size>0 then
+      _data:unchecked:=^data[0];
+      write_internal(_data,data:size,t_dps_temporary);
+      end if;
+    end write_array;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static write_string =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    if data:length>0 then
+      _data:unchecked:=^data[1];
+      write_internal(_data,data:length,t_dps_temporary);
+      end if;
+    end write_string;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static write_text_part =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_data_packet;
+    _data        : p_data_array;
+
+  begin
+    if count>0 then
+      _data:unchecked:=^data:unchecked;
+      t_unsigned(_data:unchecked) + t_unsigned:size;
+      write_internal(_data,count*t_char32:size,t_dps_temporary);
+      end if;
+    end write_text_part;
+  end c_stream_generic_writer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_stream_generic_reader =
+----------------------------------------------------------------------------------------------------
+var
+  packet         : t_data_packet;
+  position       : t_offset;
+
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked_internal (
+      data       : out unchecked;              -- p©e‡ten  data
+      sizebytes  : in t_offset;                -- velikost dat, kter  se maj¡ p©e‡¡st
+      readbytes  : out t_offset)               -- velikost ktera byla prectena
+      return t_logical =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data        : p_data_array;
+
+  begin
+    _data:unchecked:=^data;
+    loop
+      if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+        raise stream_end_of_data;
+        end if;
+      if packet.style=t_dps_invalid then
+        _source^.read_packet(packet);
+        end if;
+      if packet.style<>t_dps_signal then
+        copy_from_packet(packet,position,_data,readbytes,sizebytes-readbytes);
+        if position=packet.size then
+          position:=0;
+          discard_packet(packet);
+          packet:=nil;
+          end if;
+      else
+        if packet.signal=t_dpss_eod then
+          result:=true;
+          return;
+          end if;
+        end if;
+      if sizebytes=readbytes then
+        result:=false;
+        break;
+        end if;
+      end loop;
+    end read_unchecked_internal;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static read_byte =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data,data:size,readbytes);
+    end read_byte;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static read_char32 =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data,data:size,readbytes);
+    end read_char32;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static read_unsigned32 =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data,data:size,readbytes);
+    end read_unsigned32;
+
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data,size,readbytes);
+    end read_unchecked;
+  
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static read_array  =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data,data:size,readbytes);
+    end read_array;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static read_string =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data[1],data:last,readbytes);
+    data:length:=readbytes;
+    end read_string;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static read_text =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    result:=read_unchecked_internal(data[1],data:last*t_char32:size,readbytes);
+    data:length:=readbytes div t_char32:size;
+    end read_text;
+  end c_stream_generic_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_stream_binary_writer = 
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked =
+  ------------------------------------------------------------------------------------------------
+  begin
+    p_stream_generic_writer(^this)^.write_unchecked(data,data:size);
+    end write_unchecked;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked_part =
+  ------------------------------------------------------------------------------------------------
+  begin
+    p_stream_generic_writer(^this)^.write_unchecked(data,size);
+    end write_unchecked_part;
+  end c_stream_binary_writer;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_stream_binary_reader = 
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if p_stream_generic_reader(^this)^.read_unchecked(data,size) then
+      raise stream_end_of_data;
+      end if;
+    end read_unchecked;
+  end c_stream_binary_reader;
+

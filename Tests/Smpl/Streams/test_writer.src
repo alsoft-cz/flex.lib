@@ -1,0 +1,33 @@
+#option warning(all,false);
+#option hint(all,false);
+
+program test_writer =
+
+with
+  standard,
+  standard.files,
+  standard.streams,
+  standard.characters,
+  standard.console;
+
+var
+  encoder          : aliased c_character_encoder_utf8;   -- dekoder - ur‡uje k¢dovou str nku vstupn¡ho souboru
+  writer           : aliased c_stream_text_writer;       -- ‡ten ©
+  stream           : aliased c_file_output_stream;       -- vstupn¡ stream
+  twriter          : p_text_writer;                      -- zapisova‡
+
+begin
+  -- vytvo©it soubor
+  stream.create('test_writer.txt',tfss_not_shared,true);
+
+  -- propojit
+  writer.init_text_writer(^stream,^encoder);
+
+  -- z¡skat interface [c_text_writer]
+  twriter:=^c_text_writer:(writer);
+
+  -- zapsat text
+  twriter^.write_line('Ahoj');
+  twriter^.write_line('Vystupni test');
+  twriter^.write_line('Ma celkem tri radky');
+  end test_writer;

@@ -1,0 +1,492 @@
+----------------------------------------------------------------------------------------------------
+-- h2calc
+----------------------------------------------------------------------------------------------------
+--
+-- Kalkulator pro preprocesor
+--
+----------------------------------------------------------------------------------------------------
+
+module h2calc =
+
+with
+  system,str,log,num,
+  debug,
+  h2def,h2text,h2parser,h2util;
+
+
+
+exception
+  internal_through;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure calc_expression (
+               src : ref textfile;               -- zdrojovy soubor
+             value : ref tlexvalue)              -- zpracovany vyraz
+                     return tbranch;
+-- Vyhodnoti vyraz. Vraci jednu z hodnot:
+--   b_false - podminka nevyhovuje (vysledek je 0 (FALSE))
+--   b_true  - podminka vyhovuje (vysledek je 1 (TRUE))
+-- Nebo vyvola vyjimku INTERNAL_THROUGH.
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_defined (
+                id : str255;
+             value : ref tvalue)
+                     return boolean =
+-- Vraci TRUE pokud je identifikator definovan a FALSE pokud neni identifikator definovan. Pokud je
+-- identifikator definovan jako pruchozi (@THROUGH) vyvola vyjimku internal_through.
+----------------------------------------------------------------------------------------------------
+begin
+  -- dohledat identifikator
+  if str_find2(defines,id,value)
+    -- identifikator nalezen
+    then
+      -- zkontrolovat, zda neobsahuje neco extra
+      if value.typ=tv_extra and value.x=tx_through
+        then
+          raise internal_through;
+        elsif value.typ=tv_extra and value.x=tx_false then
+          result:=false;
+        else
+          result:=true;
+        end if;
+
+    -- identifikator nenalezen
+    else
+      result:=false;
+    end if;
+  end p_defined;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_value (
+               lex : tlexelement;
+             value : tlexvalue;
+               res : ref tvalue) =
+-- Vyhodnoti lexikalni element typu lex_id a lex_num
+----------------------------------------------------------------------------------------------------
+begin
+  res.typ:=tv_nic;
+  if lex=lex_id then
+      -- zkontrolovat zda je definovan (jako vedlejsi efekt vrati jeho hodnotu)
+      if p_defined(value.id,res)
+        then
+--          write2('id ' & value.id & ' := ' & value_to_text(res));
+        else
+          -- chyba : identifikator nenalezen
+          wr({MSG=}000001,lc_warning,'p_value error : identifikator ' & value.id & ' neni znam');
+--          res.typ:=tv_nic;
+          res.typ:=tv_extra;
+          res.x:=tx_false;
+        end if;
+    elsif lex=lex_num then
+      -- numericky literal
+      res.typ:=tv_longint;
+      res.l:=value.n;
+    else
+      -- chyba : neznamy lexikalni element
+      wr({MSG=}000002,lc_error,'error p_value : lex = ' & lex_to_text(lex,value));
+      raise internal_error;
+    end if;
+  end p_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_relace (
+               src : ref textfile;               -- zdrojovy soubor
+             value : ref tvalue) =
+-- relace           ::= {negace} jednoduchy_vyraz { relacni_operator jednoduchy_vyraz }
+--                      {negace} funkce {(} identifikator {)}
+-- jednoduchy_vyraz ::= identifikator
+--                      numericky_literal
+--                      ( relace )
+-- relacni_operator ::= < > <= >= == !=
+-- funkce           ::= defined
+----------------------------------------------------------------------------------------------------
+label
+  k1;
+
+var
+  lex1             : tlexelement;
+  lex2             : tlexelement;
+  lexop            : tlexelement;
+  value1           : tlexvalue;
+  value2           : tlexvalue;
+  resvalue1        : tvalue;
+  resvalue2        : tvalue;
+  negace           : boolean:=false;
+
+begin
+  -- inicializace
+  value1.x.setname('p_relace value1.x');
+  value2.x.setname('p_relace value2.x');
+  resvalue1.s.setname('p_relace resvalue1.s');
+  resvalue1.e.setname('p_relace resvalue1.e');
+  resvalue2.s.setname('p_relace resvalue2.s');
+  resvalue2.e.setname('p_relace resvalue2.e');
+
+  -- prvni hodnota
+  get_lex(src,lex1,value1);
+--write2('p_relace .. lex = ' & lex_to_text(lex1,value1));
+
+  -- nejedna se o negaci
+  if lex1=lex_not then
+    -- poznamentat si negaci
+    negace:=true;
+
+    -- a nacist dalsi lexiklani element
+    get_lex(src,lex1,value1);
+    end if;
+
+  if lex1=lex_id and then upcasestr(value1.id)='DEFINED'
+    -- funkce defined
+    then
+      -- nasleduje identifikator (muze byt i v zavorce)
+      get_lex(src,lex1,value1);
+
+      -- pokud je v zavorce
+      if lex1=lex_lpar then
+        -- vycist vlastni identifikator
+        get_lex(src,lex1,value1);
+
+        -- a musi nasledovat konecna zavorka
+        get_lex(src,lex2,value2);
+        if lex2<>lex_rpar then
+          wr({MSG=}000003,lc_error,'error defined : ' & lex_to_text(lex2,value2));
+          raise internal_error;
+          end if;
+        end if;
+
+      -- kontrola zda mame skutecne identifikator
+      if lex1<>lex_id then
+        wr({MSG=}000004,lc_error,'error defined : ' & lex_to_text(lex2,value2));
+        raise internal_error;
+        end if;
+
+      -- tak ted mame v lex1+value1 vlastni identifikator
+      if str_find2(defines,value1.id,resvalue1)
+        then
+          if resvalue1.typ=tv_extra and resvalue1.x=tx_through then
+              -- jedna se o direktivu, ktera by mela byt pruchozi
+              raise internal_through;
+            elsif resvalue1.typ=tv_extra and resvalue1.x=tx_false then
+              -- jinak je vysledkem funkce TRUE
+              value.typ:=tv_boolean;
+              value.b:=false;
+            else
+              -- jinak je vysledkem funkce TRUE
+              value.typ:=tv_boolean;
+              value.b:=true;
+            end if;
+        else
+          -- jinak je vysledkem funkce FALSE
+          value.typ:=tv_boolean;
+          value.b:=false;
+        end if;
+
+    -- jedna se o relacni vyraz
+    elsif lex1=lex_lpar then
+      -- nasleduje zpracovani vyrazu v zavorce
+      p_relace(src,resvalue1);
+
+      -- a nasleduje prava zavorka nebo logicka operace
+      get_lex(src,lex2,value2);
+
+      while lex2 in [lex_and,lex_or] loop
+        -- nasleduje zpracovani vyrazu v zavorce
+        p_relace(src,resvalue2);
+
+        -- zkontrolovat vysledky vyrazu
+        if resvalue1.typ<>tv_boolean then
+          wr({MSG=}000005,lc_error,'error p_relace : resvalue.typ = ' & itoa(resvalue1.typ:ord));
+          raise internal_error;
+          end if;
+        if resvalue2.typ<>tv_boolean then
+          wr({MSG=}000006,lc_error,'error p_relace : resvalue.typ = ' & itoa(resvalue2.typ:ord));
+          raise internal_error;
+          end if;
+
+        -- a vlastni logicka operace
+        case lex2
+          when lex_and do resvalue1.b:=resvalue1.b and resvalue2.b;
+          when lex_or  do resvalue1.b:=resvalue1.b or  resvalue2.b;
+          when others  do ;
+          end case;
+
+        -- a nasleduje prava zavorka nebo logicka operace
+        get_lex(src,lex2,value2);
+        if lex2 not in [lex_and,lex_or,lex_rpar] then
+          wr({MSG=}000007,lc_error,'error p_relace : ' & lex_to_text(lex2,value2));
+          raise internal_error;
+          end if;
+        if lex2=lex_rpar then
+          break;
+          end if;
+        end loop;
+
+      -- a uschovani vysledku
+      copyvalue(resvalue1,value);
+
+    else
+      -- prvni operand
+      p_value(lex1,value1,resvalue1);
+--write2('resvalue : ' & value_to_text(resvalue1));
+
+      -- volitelne nasleduje operator
+      get_lex(src,lex2,value2);
+--write2('lex = ' & lex_to_text(lex2,value2));
+      if lex2 in [lex_lt,lex_gt,lex_eq,lex_not_eq,lex_le,lex_ge]
+        then
+          -- nacist druhy operand
+          get_lex(src,lex1,value1);
+
+          -- zpracovat druhy operand
+          p_value(lex1,value1,resvalue2);
+
+          -- zkontrolovat zda souhlasi typy operandu
+          if resvalue1.typ<>resvalue2.typ then
+            -- zkusit nektere povolene konverze
+
+            -- konverze na boolean (0=false, 1=true)
+          #if #declared h2flex;;
+            if resvalue1.typ=tv_boolean then
+                resvalue1.typ:=tv_longint;
+                if resvalue1.b
+                  then resvalue1.l:=1;
+                  else resvalue1.l:=0;
+                  end if;
+              elsif resvalue2.typ=tv_boolean then
+                resvalue2.typ:=tv_longint;
+                if resvalue2.b
+                  then resvalue2.l:=1;
+                  else resvalue2.l:=0;
+                  end if;
+              elsif resvalue1.typ=tv_extra and then resvalue1.x=tx_false then
+                value.typ:=tv_boolean;
+                value.b:=false;
+                goto k1;
+              elsif resvalue2.typ=tv_extra and then resvalue2.x=tx_false then
+                value.typ:=tv_boolean;
+                value.b:=false;
+                goto k1;
+              end if;
+          #else;
+            if resvalue1.typ=tv_boolean and resvalue2.typ=tv_longint then
+                resvalue2.typ:=tv_boolean;
+                resvalue2.b:=resvalue2.l=1;
+              elsif resvalue1.typ=tv_longint and resvalue2.typ=tv_boolean then
+                resvalue1.typ:=tv_boolean;
+                resvalue1.b:=resvalue1.l=1;
+              elsif resvalue1.typ=tv_extra and then tx_false in resvalue1.x then
+                resvalue1.typ:=tv_boolean;
+                resvalue2.typ:=tv_boolean;
+              elsif resvalue2.typ=tv_extra and then tx_false in resvalue1.x then
+              end if;
+          #endif;
+            end if;
+
+          -- pokud stale nesouhlasi je to chyba
+          if resvalue1.typ<>resvalue2.typ then
+            wr({MSG=}000008,lc_error,'Nekompatibilni operandy ' & itoa(resvalue1.typ:ord) & ' a ' & itoa(resvalue2.typ:ord));
+            raise internal_error;
+            end if;
+
+          -- pokud je to neco jineho nez cislo je to chyba
+          if resvalue1.typ<>tv_longint or resvalue2.typ<>tv_longint then
+            wr({MSG=}000009,lc_error,'Nekompatibilni operandy ' & itoa(resvalue1.typ:ord) & ' a ' & itoa(resvalue2.typ:ord));
+            raise internal_error;
+            end if;
+
+          -- a ted zpracovat ten relacni vyraz
+          value.typ:=tv_boolean;
+          -- <
+          if lex2=lex_lt then
+              -- vlastni porovnani
+              value.b:=resvalue1.l < resvalue2.l;
+
+            -- >
+            elsif lex2=lex_gt then
+              -- vlastni porovnani
+              value.b:=resvalue1.l > resvalue2.l;
+
+            -- ==
+            elsif lex2=lex_eq then
+              -- vlastni porovnani
+              value.b:=resvalue1.l = resvalue2.l;
+
+            -- !=
+            elsif lex2=lex_not_eq then
+              -- vlastni porovnani
+              value.b:=resvalue1.l <> resvalue2.l;
+
+            -- <=
+            elsif lex2=lex_le then
+              -- vlastni porovnani
+              value.b:=resvalue1.l <= resvalue2.l;
+
+            -- >=
+            elsif lex2=lex_ge then
+              -- vlastni porovnani
+              value.b:=resvalue1.l >= resvalue2.l;
+
+            else
+              wr({MSG=}000010,lc_error,'p_relace : neznamy operator ' & lex_to_text(lex2,value2));
+              raise internal_error;
+            end if;
+        else
+          -- pak musi byt vysledkem prvni operand
+          copyvalue(resvalue1,value);
+
+          -- neni to operator
+          put_lex(src,lex2,value2);
+        end if;
+    end if;
+
+k1:
+  -- a zpracovani priznaku negace
+  if negace then
+    value.b:=not value.b;
+    end if;
+  end p_relace;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure calc_expression =
+--             src : ref textfile;               -- zdrojovy soubor
+--           value : ref tlexvalue)              -- zpracovany vyraz
+--                   return tbranch;
+-- Vyhodnoti vyraz. Vraci jednu z hodnot:
+--   e_none - podminka nevyhovuje (vysledek je 0 (FALSE))
+--   e_true - podminka vyhovuje (vysledek je 1 (TRUE))
+--   e_both - podminka obsahuje identifikator s hodnotou @THROUGH
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  lexvalue         : tlexvalue;
+  value1           : tvalue;
+  value2           : tvalue;
+
+begin
+  -- zapamatovat si co budeme zpracovavat
+  skip_eol(src,lex,value);
+  put_lex(src,lex,value);
+  src.ungetlstr(value.x);
+--write2('calc_expression: ' & value.x.getstr(1,false));
+
+  -- jednoduchy vyraz
+--write2('p_relace (1) ...');
+  p_relace(src,value1);
+--write2('p_relace (1) ' & value_to_text(value1));
+
+  loop
+    -- zjistit nasledujici lexikalni element
+    get_lex(src,lex,lexvalue);
+--write2('calc_expression 2: ' & lex_to_text(lex,lexvalue));
+
+    -- neni to konec vyrazu
+    if lex in [lex_eol,lex_eof,lex_comment,lex_mlcomment] then
+      -- nektere lexikalni elementy se musi vratit
+      if lex in [lex_comment,lex_mlcomment] then
+        put_lex(src,lex,lexvalue);
+        end if;
+      break;
+      end if;
+
+    -- je to operator
+    if lex in [lex_and,lex_or]
+      then
+        -- zkontrolovat, zda jiz ted nevime vysledek
+--        if lex=lex_and then
+--          if not value1.b then
+--            -- pokud uz je ted FALSE nikdy se to nezmeni
+--            skip_eol(src,lex,lexvalue);
+--            return;
+--            end if;
+--          end if;
+      else
+        -- neni to operator, tak vratit lexikalni element
+        put_lex(src,lex,lexvalue);
+      end if;
+
+    -- zpracovat dalsi jednoduchy vyraz
+--write2('p_relace (2) ...');
+    p_relace(src,value2);
+--write2('p_relace (2) ' & value_to_text(value2));
+
+    -- predzpracovani
+    if value1.typ=tv_extra and then value1.x=tx_false then
+      value1.typ:=tv_boolean;
+      value1.b:=false;
+      end if;
+    if value2.typ=tv_extra and then value2.x=tx_false then
+      value2.typ:=tv_boolean;
+      value2.b:=false;
+      end if;
+
+    -- zkontrolovat vysledky vyrazu
+    if value1.typ<>tv_boolean then
+      wr({MSG=}000011,lc_error,'error p_relace : value.typ = ' & itoa(value1.typ:ord));
+      if value1.typ=tv_extra then
+        wr({MSG=}000012,lc_error,'error p_relace : value.x = ' & itoa(value1.x:ord));
+        end if;
+      wr({MSG=}000013,lc_debug,'calc_expression: ' & value.x.getstr(1,false));
+      raise internal_error;
+      end if;
+    if value2.typ<>tv_boolean then
+      wr({MSG=}000014,lc_error,'error p_relace : value.typ = ' & itoa(value2.typ:ord));
+      raise internal_error;
+      end if;
+
+    -- a provest vlastni logicky vypocet
+    case lex
+      when lex_and do value1.b:=value1.b and value2.b;
+      when lex_or  do value1.b:=value1.b or value2.b;
+      when others  do ;
+      end case;
+    end loop;
+
+  -- automaticka konverze nekterych typu na jine
+  if value1.typ=tv_extra and then value1.x=tx_false then
+      value1.typ:=tv_boolean;
+      value1.b:=false;
+    elsif value1.typ=tv_longint then
+      if value1.l=0 then
+          value1.typ:=tv_boolean;
+          value1.b:=false;
+        elsif value1.l=1 then
+          value1.typ:=tv_boolean;
+          value1.b:=true;
+        end if;
+    end if;
+
+  -- konverze vysledku na hodnotu
+  if value1.typ<>tv_boolean then
+    wr({MSG=}000015,lc_error,'calc_expression error : value1.typ = ' & itoa(value1.typ:ord));
+    raise internal_error;
+    end if;
+  if value1.b
+    then
+      result:=b_true;
+    else
+      result:=b_false;
+    end if;
+leave
+--write2('calc_expression: result = ' & value_to_text(value1));
+  end calc_expression;
+
+
+
+end h2calc;
+

@@ -1,0 +1,972 @@
+----------------------------------------------------------------------------------------------------
+module winreg =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,winbase;
+
+-- /*++ BUILD Version: 0001    // Increment this if a change has global effects
+-- 
+-- Copyright (c) Microsoft Corporation.  All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     Winreg.h
+-- 
+-- Abstract:
+-- 
+--     This module contains the function prototypes and constant, type and
+--     structure definitions for the Windows 32-Bit Registry API.
+-- 
+-- --*/
+-- 
+--  Requested Key access mask type.
+-- 
+type
+REGSAM            = ACCESS_MASK;
+-- 
+--  Reserved Key Handles.
+-- 
+-- /*NOINC
+const
+  PROVIDER_KEEPS_VALUE_LENGTH= $01;
+
+type
+  val_context       = record
+valuelen        : signed 32;
+value_context   : LPVOID;
+val_buff_ptr    : LPVOID;
+  end record;
+
+type
+  PVALCONTEXT       = ^val_context;
+type
+  t_pvalueA         = record
+pv_valuename    : LPSTR;
+pv_valuelen     : signed 32;
+pv_value_context : LPVOID;
+pv_type         : DWORD;
+  end record;
+  PVALUEA           = t_pvalueA;
+  PPVALUEA          = ^t_pvalueA;
+
+type
+  t_pvalueW         = record
+pv_valuename    : LPWSTR;
+pv_valuelen     : signed 32;
+pv_value_context : LPVOID;
+pv_type         : DWORD;
+  end record;
+  PVALUEW           = t_pvalueW;
+  PPVALUEW          = ^t_pvalueW;
+
+#if #declared UNICODE; then;
+type
+PVALUE            = PVALUEW;
+type
+PPVALUE           = PPVALUEW;
+#else;
+type
+PVALUE            = PVALUEA;
+type
+PPVALUE           = PPVALUEA;
+#end if;
+
+type
+t_001=^DWORD for machine_pointer use true;
+
+QUERYHANDLER      = procedure (
+    keycontext      : LPVOID;
+    val_list        : PVALCONTEXT;
+    num_vals        : DWORD;
+    outputbuffer    : LPVOID;
+    total_outlen    : t_001;
+    input_blen      : DWORD)
+                      return DWORD;
+type
+PQUERYHANDLER     = ^QUERYHANDLER for machine_pointer use true;
+type
+  provider_info     = record
+pi_R0_1val      : PQUERYHANDLER;
+pi_R0_allvals   : PQUERYHANDLER;
+pi_R3_1val      : PQUERYHANDLER;
+pi_R3_allvals   : PQUERYHANDLER;
+pi_flags        : DWORD;
+pi_key_context  : LPVOID;
+  end record;
+  REG_PROVIDER      = provider_info;
+
+type
+  PPROVIDER         = ^provider_info;
+type
+  value_entA        = record
+ve_valuename    : LPSTR;
+ve_valuelen     : DWORD;
+ve_valueptr     : DWORD_PTR;
+ve_type         : DWORD;
+  end record;
+  VALENTA           = value_entA;
+  PVALENTA          = ^value_entA;
+
+type
+  value_entW        = record
+ve_valuename    : LPWSTR;
+ve_valuelen     : DWORD;
+ve_valueptr     : DWORD_PTR;
+ve_type         : DWORD;
+  end record;
+  VALENTW           = value_entW;
+  PVALENTW          = ^value_entW;
+
+#if #declared UNICODE; then;
+type
+VALENT            = VALENTW;
+type
+PVALENT           = PVALENTW;
+#else;
+type
+VALENT            = VALENTA;
+type
+PVALENT           = PVALENTA;
+#end if;
+
+-- /*INC
+-- 
+--  Default values for parameters that do not exist in the Win 3.1
+--  compatible APIs.
+-- 
+-- 
+--  API Prototypes.
+-- 
+procedure RegCloseKey(
+    hKey            : in t_HKEY)
+                      return LONG;
+#pragma convention(RegCloseKey,system);
+#pragma import(RegCloseKey,'RegCloseKey','advapi32.dll');
+
+procedure RegOverridePredefKey(
+    hKey            : in t_HKEY; 
+    hNewHKey        : in t_HKEY)
+                      return LONG;
+#pragma convention(RegOverridePredefKey,system);
+#pragma import(RegOverridePredefKey,'RegOverridePredefKey','advapi32.dll');
+
+procedure RegOpenUserClassesRoot(
+    hToken          : t_HANDLE; 
+    dwOptions       : DWORD; 
+    samDesired      : REGSAM; 
+    phkResult       : PHKEY)
+                      return LONG;
+#pragma convention(RegOpenUserClassesRoot,system);
+#pragma import(RegOpenUserClassesRoot,'RegOpenUserClassesRoot','advapi32.dll');
+
+procedure RegOpenCurrentUser(
+    samDesired      : REGSAM; 
+    phkResult       : PHKEY)
+                      return LONG;
+#pragma convention(RegOpenCurrentUser,system);
+#pragma import(RegOpenCurrentUser,'RegOpenCurrentUser','advapi32.dll');
+
+procedure RegDisablePredefinedCache
+                      return LONG;
+#pragma convention(RegDisablePredefinedCache,system);
+#pragma import(RegDisablePredefinedCache,'RegDisablePredefinedCache','advapi32.dll');
+
+procedure RegConnectRegistryA(
+    lpMachineName   : in LPCSTR; 
+    hKey            : in t_HKEY; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegConnectRegistryA,system);
+#pragma import(RegConnectRegistryA,'RegConnectRegistryA','advapi32.dll');
+
+procedure RegConnectRegistryW(
+    lpMachineName   : in LPCWSTR; 
+    hKey            : in t_HKEY; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegConnectRegistryW,system);
+#pragma import(RegConnectRegistryW,'RegConnectRegistryW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegConnectRegistry;
+  RegConnectRegistryW 
+#end RegConnectRegistry;
+#else;
+#template RegConnectRegistry;
+  RegConnectRegistryA 
+#end RegConnectRegistry;
+#end if;
+
+procedure RegCreateKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegCreateKeyA,system);
+#pragma import(RegCreateKeyA,'RegCreateKeyA','advapi32.dll');
+
+procedure RegCreateKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegCreateKeyW,system);
+#pragma import(RegCreateKeyW,'RegCreateKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegCreateKey;
+  RegCreateKeyW 
+#end RegCreateKey;
+#else;
+#template RegCreateKey;
+  RegCreateKeyA 
+#end RegCreateKey;
+#end if;
+
+procedure RegCreateKeyExA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    Reserved        : in DWORD; 
+    lpClass         : in LPSTR; 
+    dwOptions       : in DWORD; 
+    samDesired      : in REGSAM; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES; 
+    phkResult       : out t_HKEY ; 
+    lpdwDisposition : out DWORD )
+                      return LONG;
+#pragma convention(RegCreateKeyExA,system);
+#pragma import(RegCreateKeyExA,'RegCreateKeyExA','advapi32.dll');
+
+procedure RegCreateKeyExW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    Reserved        : in DWORD; 
+    lpClass         : in LPWSTR; 
+    dwOptions       : in DWORD; 
+    samDesired      : in REGSAM; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES; 
+    phkResult       : out t_HKEY ; 
+    lpdwDisposition : out DWORD )
+                      return LONG;
+#pragma convention(RegCreateKeyExW,system);
+#pragma import(RegCreateKeyExW,'RegCreateKeyExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegCreateKeyEx;
+  RegCreateKeyExW 
+#end RegCreateKeyEx;
+#else;
+#template RegCreateKeyEx;
+  RegCreateKeyExA 
+#end RegCreateKeyEx;
+#end if;
+
+procedure RegDeleteKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR)
+                      return LONG;
+#pragma convention(RegDeleteKeyA,system);
+#pragma import(RegDeleteKeyA,'RegDeleteKeyA','advapi32.dll');
+
+procedure RegDeleteKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR)
+                      return LONG;
+#pragma convention(RegDeleteKeyW,system);
+#pragma import(RegDeleteKeyW,'RegDeleteKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegDeleteKey;
+  RegDeleteKeyW 
+#end RegDeleteKey;
+#else;
+#template RegDeleteKey;
+  RegDeleteKeyA 
+#end RegDeleteKey;
+#end if;
+
+procedure RegDeleteValueA(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCSTR)
+                      return LONG;
+#pragma convention(RegDeleteValueA,system);
+#pragma import(RegDeleteValueA,'RegDeleteValueA','advapi32.dll');
+
+procedure RegDeleteValueW(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCWSTR)
+                      return LONG;
+#pragma convention(RegDeleteValueW,system);
+#pragma import(RegDeleteValueW,'RegDeleteValueW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegDeleteValue;
+  RegDeleteValueW 
+#end RegDeleteValue;
+#else;
+#template RegDeleteValue;
+  RegDeleteValueA 
+#end RegDeleteValue;
+#end if;
+
+procedure RegEnumKeyA(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpName          : out CHARSTR ; 
+    cbName          : in DWORD)
+                      return LONG;
+#pragma convention(RegEnumKeyA,system);
+#pragma import(RegEnumKeyA,'RegEnumKeyA','advapi32.dll');
+
+procedure RegEnumKeyW(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpName          : out WCHARSTR ; 
+    cbName          : in DWORD)
+                      return LONG;
+#pragma convention(RegEnumKeyW,system);
+#pragma import(RegEnumKeyW,'RegEnumKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegEnumKey;
+  RegEnumKeyW 
+#end RegEnumKey;
+#else;
+#template RegEnumKey;
+  RegEnumKeyA 
+#end RegEnumKey;
+#end if;
+
+procedure RegEnumKeyExA(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpName          : out CHARSTR ; 
+    lpcbName        : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpClass         : in out CHARSTR ; 
+    lpcbClass       : in out DWORD ; 
+    lpftLastWriteTime : out _FILETIME)
+                      return LONG;
+#pragma convention(RegEnumKeyExA,system);
+#pragma import(RegEnumKeyExA,'RegEnumKeyExA','advapi32.dll');
+
+procedure RegEnumKeyExW(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpName          : out WCHARSTR ; 
+    lpcbName        : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpClass         : in out WCHARSTR ; 
+    lpcbClass       : in out DWORD ; 
+    lpftLastWriteTime : out _FILETIME)
+                      return LONG;
+#pragma convention(RegEnumKeyExW,system);
+#pragma import(RegEnumKeyExW,'RegEnumKeyExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegEnumKeyEx;
+  RegEnumKeyExW 
+#end RegEnumKeyEx;
+#else;
+#template RegEnumKeyEx;
+  RegEnumKeyExA 
+#end RegEnumKeyEx;
+#end if;
+
+procedure RegEnumValueA(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpValueName     : out CHARSTR ; 
+    lpcbValueName   : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpType          : out DWORD ; 
+    lpData          : out BYTE ; 
+    lpcbData        : in out DWORD )
+                      return LONG;
+#pragma convention(RegEnumValueA,system);
+#pragma import(RegEnumValueA,'RegEnumValueA','advapi32.dll');
+
+procedure RegEnumValueW(
+    hKey            : in t_HKEY; 
+    dwIndex         : in DWORD; 
+    lpValueName     : out WCHARSTR ; 
+    lpcbValueName   : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpType          : out DWORD ; 
+    lpData          : out BYTE ; 
+    lpcbData        : in out DWORD )
+                      return LONG;
+#pragma convention(RegEnumValueW,system);
+#pragma import(RegEnumValueW,'RegEnumValueW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegEnumValue;
+  RegEnumValueW 
+#end RegEnumValue;
+#else;
+#template RegEnumValue;
+  RegEnumValueA 
+#end RegEnumValue;
+#end if;
+
+procedure RegFlushKey(
+    hKey            : in t_HKEY)
+                      return LONG;
+#pragma convention(RegFlushKey,system);
+#pragma import(RegFlushKey,'RegFlushKey','advapi32.dll');
+
+procedure RegGetKeySecurity(
+    hKey            : in t_HKEY; 
+    SecurityInformation : in SECURITY_INFORMATION; 
+    pSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    lpcbSecurityDescriptor : in out DWORD )
+                      return LONG;
+#pragma convention(RegGetKeySecurity,system);
+#pragma import(RegGetKeySecurity,'RegGetKeySecurity','advapi32.dll');
+
+procedure RegLoadKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    lpFile          : in LPCSTR)
+                      return LONG;
+#pragma convention(RegLoadKeyA,system);
+#pragma import(RegLoadKeyA,'RegLoadKeyA','advapi32.dll');
+
+procedure RegLoadKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    lpFile          : in LPCWSTR)
+                      return LONG;
+#pragma convention(RegLoadKeyW,system);
+#pragma import(RegLoadKeyW,'RegLoadKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegLoadKey;
+  RegLoadKeyW 
+#end RegLoadKey;
+#else;
+#template RegLoadKey;
+  RegLoadKeyA 
+#end RegLoadKey;
+#end if;
+
+procedure RegNotifyChangeKeyValue(
+    hKey            : in t_HKEY; 
+    bWatchSubtree   : in BOOL; 
+    dwNotifyFilter  : in DWORD; 
+    hEvent          : in t_HANDLE; 
+    fAsynchronus    : in BOOL)
+                      return LONG;
+#pragma convention(RegNotifyChangeKeyValue,system);
+#pragma import(RegNotifyChangeKeyValue,'RegNotifyChangeKeyValue','advapi32.dll');
+
+procedure RegOpenKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegOpenKeyA,system);
+#pragma import(RegOpenKeyA,'RegOpenKeyA','advapi32.dll');
+
+procedure RegOpenKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegOpenKeyW,system);
+#pragma import(RegOpenKeyW,'RegOpenKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegOpenKey;
+  RegOpenKeyW 
+#end RegOpenKey;
+#else;
+#template RegOpenKey;
+  RegOpenKeyA 
+#end RegOpenKey;
+#end if;
+
+procedure RegOpenKeyExA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    ulOptions       : in DWORD; 
+    samDesired      : in REGSAM; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegOpenKeyExA,system);
+#pragma import(RegOpenKeyExA,'RegOpenKeyExA','advapi32.dll');
+
+procedure RegOpenKeyExW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    ulOptions       : in DWORD; 
+    samDesired      : in REGSAM; 
+    phkResult       : out t_HKEY )
+                      return LONG;
+#pragma convention(RegOpenKeyExW,system);
+#pragma import(RegOpenKeyExW,'RegOpenKeyExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegOpenKeyEx;
+  RegOpenKeyExW 
+#end RegOpenKeyEx;
+#else;
+#template RegOpenKeyEx;
+  RegOpenKeyExA 
+#end RegOpenKeyEx;
+#end if;
+
+procedure RegQueryInfoKeyA(
+    hKey            : in t_HKEY; 
+    lpClass         : out CHARSTR ; 
+    lpcbClass       : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpcSubKeys      : out DWORD ; 
+    lpcbMaxSubKeyLen : out DWORD ; 
+    lpcbMaxClassLen : out DWORD ; 
+    lpcValues       : out DWORD ; 
+    lpcbMaxValueNameLen : out DWORD ; 
+    lpcbMaxValueLen : out DWORD ; 
+    lpcbSecurityDescriptor : out DWORD ; 
+    lpftLastWriteTime : out _FILETIME)
+                      return LONG;
+#pragma convention(RegQueryInfoKeyA,system);
+#pragma import(RegQueryInfoKeyA,'RegQueryInfoKeyA','advapi32.dll');
+
+procedure RegQueryInfoKeyW(
+    hKey            : in t_HKEY; 
+    lpClass         : out WCHARSTR ; 
+    lpcbClass       : in out DWORD ; 
+    lpReserved      : in LPDWORD; 
+    lpcSubKeys      : out DWORD ; 
+    lpcbMaxSubKeyLen : out DWORD ; 
+    lpcbMaxClassLen : out DWORD ; 
+    lpcValues       : out DWORD ; 
+    lpcbMaxValueNameLen : out DWORD ; 
+    lpcbMaxValueLen : out DWORD ; 
+    lpcbSecurityDescriptor : out DWORD ; 
+    lpftLastWriteTime : out _FILETIME)
+                      return LONG;
+#pragma convention(RegQueryInfoKeyW,system);
+#pragma import(RegQueryInfoKeyW,'RegQueryInfoKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegQueryInfoKey;
+  RegQueryInfoKeyW 
+#end RegQueryInfoKey;
+#else;
+#template RegQueryInfoKey;
+  RegQueryInfoKeyA 
+#end RegQueryInfoKey;
+#end if;
+
+procedure RegQueryValueA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    lpValue         : out CHARSTR ; 
+    lpcbValue       : in out LONG )
+                      return LONG;
+#pragma convention(RegQueryValueA,system);
+#pragma import(RegQueryValueA,'RegQueryValueA','advapi32.dll');
+
+procedure RegQueryValueW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    lpValue         : out WCHARSTR ; 
+    lpcbValue       : in out LONG )
+                      return LONG;
+#pragma convention(RegQueryValueW,system);
+#pragma import(RegQueryValueW,'RegQueryValueW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegQueryValue;
+  RegQueryValueW 
+#end RegQueryValue;
+#else;
+#template RegQueryValue;
+  RegQueryValueA 
+#end RegQueryValue;
+#end if;
+
+procedure RegQueryMultipleValuesA(
+    hKey            : in t_HKEY; 
+    val_list        : out value_entA; 
+    num_vals        : in DWORD; 
+    lpValueBuf      : out CHARSTR ; 
+    ldwTotsize      : in out DWORD )
+                      return LONG;
+#pragma convention(RegQueryMultipleValuesA,system);
+#pragma import(RegQueryMultipleValuesA,'RegQueryMultipleValuesA','advapi32.dll');
+
+procedure RegQueryMultipleValuesW(
+    hKey            : in t_HKEY; 
+    val_list        : out value_entW; 
+    num_vals        : in DWORD; 
+    lpValueBuf      : out WCHARSTR ; 
+    ldwTotsize      : in out DWORD )
+                      return LONG;
+#pragma convention(RegQueryMultipleValuesW,system);
+#pragma import(RegQueryMultipleValuesW,'RegQueryMultipleValuesW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegQueryMultipleValues;
+  RegQueryMultipleValuesW 
+#end RegQueryMultipleValues;
+#else;
+#template RegQueryMultipleValues;
+  RegQueryMultipleValuesA 
+#end RegQueryMultipleValues;
+#end if;
+
+procedure RegQueryValueExA(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCSTR; 
+    lpReserved      : in LPDWORD; 
+    lpType          : out DWORD ; 
+    lpData          : in out BYTE ; 
+    lpcbData        : in out DWORD )
+                      return LONG;
+#pragma convention(RegQueryValueExA,system);
+#pragma import(RegQueryValueExA,'RegQueryValueExA','advapi32.dll');
+
+procedure RegQueryValueExW(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCWSTR; 
+    lpReserved      : in LPDWORD; 
+    lpType          : out DWORD ; 
+    lpData          : in out BYTE ; 
+    lpcbData        : in out DWORD )
+                      return LONG;
+#pragma convention(RegQueryValueExW,system);
+#pragma import(RegQueryValueExW,'RegQueryValueExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegQueryValueEx;
+  RegQueryValueExW 
+#end RegQueryValueEx;
+#else;
+#template RegQueryValueEx;
+  RegQueryValueExA 
+#end RegQueryValueEx;
+#end if;
+
+procedure RegReplaceKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    lpNewFile       : in LPCSTR; 
+    lpOldFile       : in LPCSTR)
+                      return LONG;
+#pragma convention(RegReplaceKeyA,system);
+#pragma import(RegReplaceKeyA,'RegReplaceKeyA','advapi32.dll');
+
+procedure RegReplaceKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    lpNewFile       : in LPCWSTR; 
+    lpOldFile       : in LPCWSTR)
+                      return LONG;
+#pragma convention(RegReplaceKeyW,system);
+#pragma import(RegReplaceKeyW,'RegReplaceKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegReplaceKey;
+  RegReplaceKeyW 
+#end RegReplaceKey;
+#else;
+#template RegReplaceKey;
+  RegReplaceKeyA 
+#end RegReplaceKey;
+#end if;
+
+procedure RegRestoreKeyA(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCSTR; 
+    dwFlags         : in DWORD)
+                      return LONG;
+#pragma convention(RegRestoreKeyA,system);
+#pragma import(RegRestoreKeyA,'RegRestoreKeyA','advapi32.dll');
+
+procedure RegRestoreKeyW(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCWSTR; 
+    dwFlags         : in DWORD)
+                      return LONG;
+#pragma convention(RegRestoreKeyW,system);
+#pragma import(RegRestoreKeyW,'RegRestoreKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegRestoreKey;
+  RegRestoreKeyW 
+#end RegRestoreKey;
+#else;
+#template RegRestoreKey;
+  RegRestoreKeyA 
+#end RegRestoreKey;
+#end if;
+
+procedure RegSaveKeyA(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCSTR; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES)
+                      return LONG;
+#pragma convention(RegSaveKeyA,system);
+#pragma import(RegSaveKeyA,'RegSaveKeyA','advapi32.dll');
+
+procedure RegSaveKeyW(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCWSTR; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES)
+                      return LONG;
+#pragma convention(RegSaveKeyW,system);
+#pragma import(RegSaveKeyW,'RegSaveKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegSaveKey;
+  RegSaveKeyW 
+#end RegSaveKey;
+#else;
+#template RegSaveKey;
+  RegSaveKeyA 
+#end RegSaveKey;
+#end if;
+
+procedure RegSetKeySecurity(
+    hKey            : in t_HKEY; 
+    SecurityInformation : in SECURITY_INFORMATION; 
+    pSecurityDescriptor : in PSECURITY_DESCRIPTOR)
+                      return LONG;
+#pragma convention(RegSetKeySecurity,system);
+#pragma import(RegSetKeySecurity,'RegSetKeySecurity','advapi32.dll');
+
+procedure RegSetValueA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR; 
+    dwType          : in DWORD; 
+    lpData          : in LPCSTR; 
+    cbData          : in DWORD)
+                      return LONG;
+#pragma convention(RegSetValueA,system);
+#pragma import(RegSetValueA,'RegSetValueA','advapi32.dll');
+
+procedure RegSetValueW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR; 
+    dwType          : in DWORD; 
+    lpData          : in LPCWSTR; 
+    cbData          : in DWORD)
+                      return LONG;
+#pragma convention(RegSetValueW,system);
+#pragma import(RegSetValueW,'RegSetValueW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegSetValue;
+  RegSetValueW 
+#end RegSetValue;
+#else;
+#template RegSetValue;
+  RegSetValueA 
+#end RegSetValue;
+#end if;
+
+type
+t_002=^BYTE for machine_pointer use true;
+
+procedure RegSetValueExA(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCSTR; 
+    Reserved        : in DWORD; 
+    dwType          : in DWORD; 
+    lpData          : in t_002; 
+    cbData          : in DWORD)
+                      return LONG;
+#pragma convention(RegSetValueExA,system);
+#pragma import(RegSetValueExA,'RegSetValueExA','advapi32.dll');
+
+type
+t_003=^BYTE for machine_pointer use true;
+
+procedure RegSetValueExW(
+    hKey            : in t_HKEY; 
+    lpValueName     : in LPCWSTR; 
+    Reserved        : in DWORD; 
+    dwType          : in DWORD; 
+    lpData          : in t_003; 
+    cbData          : in DWORD)
+                      return LONG;
+#pragma convention(RegSetValueExW,system);
+#pragma import(RegSetValueExW,'RegSetValueExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegSetValueEx;
+  RegSetValueExW 
+#end RegSetValueEx;
+#else;
+#template RegSetValueEx;
+  RegSetValueExA 
+#end RegSetValueEx;
+#end if;
+
+procedure RegUnLoadKeyA(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCSTR)
+                      return LONG;
+#pragma convention(RegUnLoadKeyA,system);
+#pragma import(RegUnLoadKeyA,'RegUnLoadKeyA','advapi32.dll');
+
+procedure RegUnLoadKeyW(
+    hKey            : in t_HKEY; 
+    lpSubKey        : in LPCWSTR)
+                      return LONG;
+#pragma convention(RegUnLoadKeyW,system);
+#pragma import(RegUnLoadKeyW,'RegUnLoadKeyW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegUnLoadKey;
+  RegUnLoadKeyW 
+#end RegUnLoadKey;
+#else;
+#template RegUnLoadKey;
+  RegUnLoadKeyA 
+#end RegUnLoadKey;
+#end if;
+
+-- 
+--  Remoteable System Shutdown APIs
+-- 
+procedure InitiateSystemShutdownA(
+    lpMachineName   : in LPSTR; 
+    lpMessage       : in LPSTR; 
+    dwTimeout       : in DWORD; 
+    bForceAppsClosed : in BOOL; 
+    bRebootAfterShutdown : in BOOL)
+                      return BOOL;
+#pragma convention(InitiateSystemShutdownA,system);
+#pragma import(InitiateSystemShutdownA,'InitiateSystemShutdownA','advapi32.dll');
+
+procedure InitiateSystemShutdownW(
+    lpMachineName   : in LPWSTR; 
+    lpMessage       : in LPWSTR; 
+    dwTimeout       : in DWORD; 
+    bForceAppsClosed : in BOOL; 
+    bRebootAfterShutdown : in BOOL)
+                      return BOOL;
+#pragma convention(InitiateSystemShutdownW,system);
+#pragma import(InitiateSystemShutdownW,'InitiateSystemShutdownW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template InitiateSystemShutdown;
+  InitiateSystemShutdownW 
+#end InitiateSystemShutdown;
+#else;
+#template InitiateSystemShutdown;
+  InitiateSystemShutdownA 
+#end InitiateSystemShutdown;
+#end if;
+
+procedure AbortSystemShutdownA(
+    lpMachineName   : in LPSTR)
+                      return BOOL;
+#pragma convention(AbortSystemShutdownA,system);
+#pragma import(AbortSystemShutdownA,'AbortSystemShutdownA','advapi32.dll');
+
+procedure AbortSystemShutdownW(
+    lpMachineName   : in LPWSTR)
+                      return BOOL;
+#pragma convention(AbortSystemShutdownW,system);
+#pragma import(AbortSystemShutdownW,'AbortSystemShutdownW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template AbortSystemShutdown;
+  AbortSystemShutdownW 
+#end AbortSystemShutdown;
+#else;
+#template AbortSystemShutdown;
+  AbortSystemShutdownA 
+#end AbortSystemShutdown;
+#end if;
+
+-- 
+--  defines for InitiateSystemShutdownEx reason codes
+-- 
+#separate reason;
+--  get the public reasons
+-- 
+--  Then for Historical reasons support some old symbols, internal only
+-- 
+--  MAX Shutdown TimeOut == 10 Years in seconds
+-- 
+procedure InitiateSystemShutdownExA(
+    lpMachineName   : in LPSTR; 
+    lpMessage       : in LPSTR; 
+    dwTimeout       : in DWORD; 
+    bForceAppsClosed : in BOOL; 
+    bRebootAfterShutdown : in BOOL; 
+    dwReason        : in DWORD)
+                      return BOOL;
+#pragma convention(InitiateSystemShutdownExA,system);
+#pragma import(InitiateSystemShutdownExA,'InitiateSystemShutdownExA','advapi32.dll');
+
+procedure InitiateSystemShutdownExW(
+    lpMachineName   : in LPWSTR; 
+    lpMessage       : in LPWSTR; 
+    dwTimeout       : in DWORD; 
+    bForceAppsClosed : in BOOL; 
+    bRebootAfterShutdown : in BOOL; 
+    dwReason        : in DWORD)
+                      return BOOL;
+#pragma convention(InitiateSystemShutdownExW,system);
+#pragma import(InitiateSystemShutdownExW,'InitiateSystemShutdownExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template InitiateSystemShutdownEx;
+  InitiateSystemShutdownExW 
+#end InitiateSystemShutdownEx;
+#else;
+#template InitiateSystemShutdownEx;
+  InitiateSystemShutdownExA 
+#end InitiateSystemShutdownEx;
+#end if;
+
+procedure RegSaveKeyExA(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCSTR; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES; 
+    Flags           : in DWORD)
+                      return LONG;
+#pragma convention(RegSaveKeyExA,system);
+#pragma import(RegSaveKeyExA,'RegSaveKeyExA','advapi32.dll');
+
+procedure RegSaveKeyExW(
+    hKey            : in t_HKEY; 
+    lpFile          : in LPCWSTR; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES; 
+    Flags           : in DWORD)
+                      return LONG;
+#pragma convention(RegSaveKeyExW,system);
+#pragma import(RegSaveKeyExW,'RegSaveKeyExW','advapi32.dll');
+
+#if #declared UNICODE; then;
+#template RegSaveKeyEx;
+  RegSaveKeyExW 
+#end RegSaveKeyEx;
+#else;
+#template RegSaveKeyEx;
+  RegSaveKeyExA 
+#end RegSaveKeyEx;
+#end if;
+
+procedure Wow64Win32ApiEntry(
+    dwFuncNumber    : DWORD; 
+    dwFlag          : DWORD; 
+    dwRes           : DWORD)
+                      return LONG;
+#pragma convention(Wow64Win32ApiEntry,system);
+#pragma import(Wow64Win32ApiEntry,'Wow64Win32ApiEntry','advapi32.dll');
+
+
+end winreg;

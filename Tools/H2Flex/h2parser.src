@@ -1,0 +1,1672 @@
+----------------------------------------------------------------------------------------------------
+-- h2parser
+----------------------------------------------------------------------------------------------------
+--
+-- Parser.
+--
+-- Obsahuje jednoduchy (pro cteni konfigurace) a slozity (pro cteni zdrojaku) parser.
+----------------------------------------------------------------------------------------------------
+
+module h2parser =
+
+with
+  system,str,num,log,lstr,
+  debug,
+  h2def,h2text,h2util;
+
+type
+  tspecsep         = enum
+    ss_pascomment;                               -- - -
+    ss_ccomment;                                 -- / /
+    ss_pasmcomment1;                             -- ( *
+    ss_pasmcomment2;                             -- * )
+    ss_ccomment1;                                -- / *
+    ss_ccomment2;                                -- * /
+    end enum;
+  tspecsepset      = set of tspecsep;
+
+----------------------------------------------------------------------------------------------------
+procedure simple_parser (
+              line : ref str255;                 -- zpracovavany radek
+              cset : charset;                    -- oddelovace
+               cmd : ref str255;                 -- oddeleny prikaz
+             param : ref str255);                -- zbytek nezpracovaneho radku
+-- Velice jednoduchy parser pracujici pouze na definici oddelovacu.
+----------------------------------------------------------------------------------------------------
+procedure get_lex (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue);
+-- Velice slozity parser pracujici na zaklade lexikalni analyzy.
+----------------------------------------------------------------------------------------------------
+procedure put_lex (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : tlexelement;                -- lexikalni element
+             value : ref tlexvalue);
+-- Vlozi zpet lexikalni element.
+----------------------------------------------------------------------------------------------------
+procedure scan_lex (
+               src : ref textfile)               -- zdrojovy soubor
+                     return tlexelement;
+-- Zjisti nasledujici element.
+----------------------------------------------------------------------------------------------------
+procedure skip_eol (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue);
+-- Preskoci vse az do konce radku (vraci lex_eol)
+----------------------------------------------------------------------------------------------------
+procedure skip_mlcomment2 (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue);
+-- Preskoci vse az do konce komentare nebo radku (vraci lex_eol nebo lex_mlcomment2)
+----------------------------------------------------------------------------------------------------
+procedure cpp_to_fpp (
+               cmd : str255; 
+                 s : ref lstring;
+               res : ref lstring);
+-- konverze vyrazu C preprocesoru do Flex preprocesoru
+----------------------------------------------------------------------------------------------------
+procedure num_to_flex (
+               lex : tlexelement;                -- lexikalni element
+             value : ref tlexvalue)              -- hodnota
+                     return str255;
+-- Prevede cislo do tvaru vhodneho pro Flex.
+----------------------------------------------------------------------------------------------------
+procedure lex_symbol_proceed (
+               src : ref textfile;
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue);             -- hodnota
+-- Vyhleda identifikator tohoto typy v direktivach a zpracuje ho.
+----------------------------------------------------------------------------------------------------
+procedure num2_to_flex (
+               lex : tlexelement;                -- lexikalni element
+             value : ref tlexvalue)              -- hodnota
+                     return str255;
+-- Prevede cislo do tvaru vhodneho pro Flex.
+----------------------------------------------------------------------------------------------------
+procedure get_params (
+               src : ref textfile;               -- zdrojovy soubor
+               res : ref lstring);
+-- Nacte ze vstupniho souboru parametry.
+----------------------------------------------------------------------------------------------------
+procedure get_filename (
+               src : ref textfile)               -- zdrojovy soubor
+                     return str255;
+-- Nacte ze vstupniho souboru nazev souboru.
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_filename =
+--             src : ref textfile)               -- zdrojovy soubor
+--                   return str255;
+-- Nacte ze vstupniho souboru nazev souboru.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  c                : char;
+
+begin
+  -- inicializace
+  result:='';
+  value.x.setname('get_filename value.x');
+
+  -- musi nasledovat < nebo "
+  get_lex(src,lex,value);
+
+  if lex=lex_str then
+      -- neni co resit
+      result:=value.s;
+
+    elsif lex=lex_lt then
+      -- precist retezec az do >
+      loop
+        -- precist dalsi znak
+        c:=src.getchar;
+
+        -- retezec je ukoncen >
+        if c='>' then
+          src.ungetchar(c);
+          break;
+          end if;
+
+        -- ulozit se znak
+        result:length+1;
+        result[result:length]:=c;
+        end loop;
+
+      -- musi nasledovat >
+      get_lex(src,lex,value);
+      if lex<>lex_gt then
+        wr({MSG=}000179,lc_error,'chyba get_filename : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+        end if;
+    else
+      wr({MSG=}000180,lc_error,'chyba get_filename : lex = ' & lex_to_text(lex,value));
+      raise internal_error;
+    end if;
+
+  -- pokud nasleduje konec radky tak preskocit
+  get_lex(src,lex,value);
+  if lex<>lex_eol then
+    put_lex(src,lex,value);
+    end if;
+  end get_filename;
+
+
+  
+----------------------------------------------------------------------------------------------------
+procedure get_params =
+--             src : ref textfile;               -- zdrojovy soubor
+--             res : ref lstring) =
+-- Nacte ze vstupniho souboru parametry.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  temp             : lstring;
+
+begin
+  -- inicializace
+  res.empty;
+  temp.empty;
+  temp.setname('get_params temp');
+  value.x.setname('get_params value.x');
+
+  -- zacina se levou zavorkou
+  get_lex(src,lex,value);
+  if lex<>lex_lpar then
+    wr({MSG=}000181,lc_error,'get_params : lex = ' & lex_to_text(lex,value));
+    raise internal_error;
+    end if;
+  res.addstr(operators[lex]);
+
+  loop
+    get_lex(src,lex,value);
+
+    -- konci se pravou zavorkou
+    if lex=lex_rpar then
+        res.addstr(operators[lex]);
+        break;
+
+      elsif lex=lex_lpar then
+        put_lex(src,lex,value);
+
+        get_params(src,temp);
+        res.empty;
+        linsert(temp,res,1);
+
+      elsif lex in [operators:range] then
+        res.addstr(operators[lex] & ' ');
+
+      elsif lex in [keywords:range] then
+        res.addstr(keywords[lex] & ' ');
+
+      elsif lex=lex_id then
+        res.addstr(value.id & ' ');
+
+      elsif lex=lex_num then
+        linsert(value.x,res,res.getsize+1);
+        res.addstr(' ');
+
+      else
+        wr({MSG=}000182,lc_error,'get_params : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+      end if;
+    end loop;
+  end get_params;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure num_to_flex =
+--             lex : tlexelement;                -- lexikalni element
+--           value : tlexvalue)                  -- hodnota
+--                   return str255;
+-- Prevede cislo do tvaru vhodneho pro Flex.
+----------------------------------------------------------------------------------------------------
+var
+  numnum           : longint;
+
+begin
+  if lex<>lex_num then
+    raise internal_error;
+    end if;
+
+  -- urcit pocet mist (hexadecimalni soustavy)
+  if value.n<256 then
+      numnum:=2;
+    elsif value.n<65536 then
+      numnum:=4;
+    else
+      numnum:=0;
+    end if;  
+
+  -- vlastni konverze
+  case value.radix
+    -- decimalni - desitkova
+    when tr_dec do
+      result:=itoa(value.n);
+
+    -- oktalova - osmickova
+    when tr_oct do
+      -- nezname tak predame jako sestnactkovou
+      result:='$' & itoax(value.n,numnum,'0',16);
+
+    -- hexadecimalni - sestnactkova
+    when tr_hex do
+      result:='$' & itoax(value.n,numnum,'0',16);
+
+    end case;
+  end num_to_flex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure num2_to_flex =
+--             lex : tlexelement;                -- lexikalni element
+--           value : tlexvalue)                  -- hodnota
+--                   return str255;
+-- Prevede cislo do tvaru vhodneho pro Flex.
+----------------------------------------------------------------------------------------------------
+begin
+  if lex<>lex_num2 then
+    raise internal_error;
+    end if;
+
+  -- vlastni konverze
+  case value.radix
+    -- decimalni - desitkova
+    when tr_dec do
+      result:=uint64_to_string(value.n2);
+
+    -- oktalova - osmickova
+    when tr_oct do
+      -- nezname tak predame jako sestnactkovou
+      result:='$' & itoax(value.n2.high,8,'0',16) & itoax(value.n2.low,8,'0',16);
+
+    -- hexadecimalni - sestnactkova
+    when tr_hex do
+      result:='$' & itoax(value.n2.high,8,'0',16) & itoax(value.n2.low,8,'0',16);
+
+    end case;
+  end num2_to_flex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure cpp_to_fpp =
+--             cmd : str255; 
+--               s : ref lstring;
+--             res : ref lstring);
+-- konverze vyrazu C preprocesoru do Flex preprocesoru
+----------------------------------------------------------------------------------------------------
+type
+  tendlex          = enum
+    tel_nil;
+    tel_then;
+    tel_end;
+    end enum;
+
+  tconst           = enum
+    tc_nil;
+    tc_woparams;                                 -- nema zadne parametry (neni to textova substituce)
+    tc_simpletype;                               -- obsahuje jen jeden jednoduchy typ
+    tc_onlyone;                                  -- a nic vic (strednik)
+    end enum;
+
+var
+  infile           : textfile;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  semicolons       : longint:=0;
+  bchyba           : boolean;
+  endlex           : tendlex:=tel_nil;           -- T=na konci retezce se prida then;
+  defineid         : str255; 
+  _const           : tconst:=tc_nil;             -- aby to mohla byt konstanta musi byt splneno
+  counter          : longint:=0;
+  comment          : lstring;
+  temp             : lstring;
+  resvalue         : tvalue;
+  inside           : byte;                       -- vnoreni zavorek
+
+begin
+--write2('cpp_to_fpp : ' & cmd & ' ' & s.getstr(1));
+  -- inicializace
+  res.empty;
+  comment.empty;
+  comment.setname('cpp_to_fpp comment');
+  temp.empty;
+  temp.setname('cpp_to_fpp temp');
+  value.x.setname('cpp_to_fpp value.x');
+  inside:=0;
+
+  -- otevrit buffer, chyba se ignoruje
+  infile.open(tit_string,s,bchyba);
+
+  -- zpracovat prikaz
+  if cmd='#if' then
+      res.addstr('#if ');
+      endlex:=tel_then;
+
+    elsif cmd='#ifdef' then
+      res.addstr('#if #declared ');
+      endlex:=tel_then;
+
+    elsif cmd='#ifndef' then
+      res.addstr('#if not #declared ');
+      endlex:=tel_then;
+
+    elsif cmd='#elif' then
+      res.addstr('#elsif ');
+      endlex:=tel_then;
+
+    elsif cmd='#define' then
+      res.addstr('#template ');
+      endlex:=tel_end;
+
+      -- musi nasledovat identifikator
+      get_lex(infile,lex,value);
+      if lex<>lex_id then
+        wr({MSG=}000183,lc_error,'cpp_to_fpp error : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+        end if;
+      defineid:=value.id;
+      res.addstr(defineid);
+
+      -- a volitelne parametry
+      if value.endspace
+        then
+          _const:=succ(_const);
+        else
+        -- je potreba docist zbytek tj. levou zavorku
+        get_lex(infile,lex,value);
+        if lex<>lex_lpar then
+          wr({MSG=}000184,lc_error,'chyba #define ' & value.id & ' : lex = ' & lex_to_text(lex,value));
+          raise internal_error;
+          end if;
+        res.addstr(operators[lex]);
+
+        -- parametry oddelene carkou
+        loop
+          -- nacist lexikalni symbol
+          get_lex(infile,lex,value);
+
+          -- ukoncuje se pravou zavorkou
+          if lex=lex_rpar then
+              res.addstr(operators[lex]);
+              break;
+
+            -- muze nasledovat parametr (identifikator)
+            elsif lex=lex_id then
+              res.addstr(value.id);
+
+            elsif lex in [keywords:range] then
+              res.addstr(keywords[lex]);
+
+            -- carka pro oddeleni parametru
+            elsif lex=lex_comma then
+              res.addstr(',');
+
+            else
+              wr({MSG=}000185,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value));
+              raise internal_error;
+            end if;
+          end loop;
+        end if;
+
+      res.addstr(';' & crlf & '  ');
+
+    else
+      wr({MSG=}000186,lc_error,'cpp_to_fpp error : cmd = ' & cmd);
+      raise internal_error;
+    end if;
+
+  -- nacist prvni lexikalni element
+  get_lex(infile,lex,value);
+  while lex<>lex_eof loop
+    counter+1;
+
+    -- pocitani vnoreni zavorek
+    if lex=lex_lpar then
+        inside+1;
+      elsif lex=lex_rpar then
+        inside-1;
+      end if;
+
+    -- zpracovat lexikalni element
+    if lex=lex_not then
+        res.addstr('not ');
+
+      -- operatory, ktere stejne vypadaji a maji i stejny vyznam
+      elsif lex in [lex_lpar,lex_rpar,lex_lt,lex_gt,lex_eq,lex_le,lex_ge,lex_add,
+                    lex_sub,lex_mul,lex_div,lex_lbra,lex_rbra] then
+        res.addstr(operators[lex] & ' ');
+
+      elsif lex=lex_shl then
+        res.addstr('shl ');
+
+      elsif lex=lex_shr then
+        res.addstr('shr ');
+
+      elsif lex=lex_and then
+        res.addstr('#and then; ');
+
+      elsif lex=lex_or then
+--        if inside=0
+--          then
+--            res.addstr('#or else; ');
+--          else
+            res.addstr('or ');
+--          end if;
+
+      -- identifikator
+      elsif lex=lex_id then
+        -- identifikator
+        if upcasestr(value.id)='DEFINED'
+          then
+            -- muze nasledovat identifikator v zavorkach
+            get_lex(infile,lex,value);
+            if lex=lex_lpar
+              then
+                -- ted teprve bude nasledovat identifikator
+                get_lex(infile,lex,value);
+                if lex<>lex_id then
+                  raise internal_error;
+                  end if;
+
+                if value.id='_WIN32'
+                  then
+                    res.addstr('(#environment target_os_family;=''WIN32'') ');
+                  else
+                    res.addstr('#declared ' & value.id & '; ');
+                  end if;
+
+                -- a jeste vycist pravou zavorku
+                get_lex(infile,lex,value);
+                if lex<>lex_rpar then
+                  raise internal_error;
+                  end if;
+              else
+                if lex<>lex_id then
+                  raise internal_error;
+                  end if;
+
+                if value.id='_WIN32'
+                  then
+                    res.addstr('(#environment target_os_family;=''WIN32'') ');
+                  else
+                    res.addstr('#declared ' & value.id & '; ');
+                  end if;
+              end if;
+          elsif value.id='_WIN32' then
+            -- pokud konci mezerou
+            while res.getchar(res.getsize)=' ' loop
+              res.setsize(res.getsize-1);
+              end loop;
+
+            -- pokud je predchozi slovo #declared pak odstranit
+            lcopy(temp,res,res.getsize-10,10);
+
+            -- a nahradit #environment target_os_family;='WIN32'
+            res.addstr('#environment target_os_family;=''WIN32''');
+
+          else
+            if str_find2(defines,value.id,resvalue)
+              then
+                case resvalue.typ
+                  when tv_extra do
+                    if resvalue.x=tx_through then
+                        res.addstr(value.id & ' ');
+
+                      elsif resvalue.x=tx_ignore then ;
+
+                      else
+                        wr({MSG=}000187,lc_error,'cpp_to_fpp error : tvalue.x = ' & itoa(resvalue.x:ord));
+                        raise internal_error;
+                      end if;
+
+                  when tv_str do
+                    infile.ungetlstr(resvalue.s);
+
+                  when tv_boolean do
+                    if resvalue.b
+                      then res.addstr('true' & ' ');
+                      else res.addstr('false' & ' ');
+                      end if;
+
+                  when tv_longint do
+                    res.addstr(itoa(resvalue.l) & ' ');
+
+                  when tv_expr do
+                    res.addstr('{' & value.id & '(' & resvalue.p& ')} ');
+                    res.addstr(resvalue.e.getstr(1));
+                    res.addstr(' ');
+
+                  when others do
+                    wr({MSG=}000188,lc_error,'cpp_to_fpp error : tvalue.typ = ' & itoa(resvalue.typ:ord));
+                    raise internal_error;
+                  end case;
+              else
+                res.addstr(value.id & ' ');
+              end if;
+          end if;
+
+      -- numericky literal
+      elsif lex=lex_num then
+        res.addstr(num_to_flex(lex,value) & ' ');
+        if _const=tc_woparams then _const:=tc_simpletype; end if;
+
+      elsif lex=lex_num2 then
+        res.addstr(num2_to_flex(lex,value) & ' ');
+        if _const=tc_woparams then _const:=tc_simpletype; end if;
+
+      elsif lex=lex_str then
+        res.addstr('''' & value.s & '''');
+
+      elsif lex=lex_char then
+        res.addstr('"' & value.ch & '" ');
+
+      elsif lex=lex_char2 then
+        res.addstr(itoa(value.ch2));
+        if _const=tc_woparams then _const:=tc_simpletype; end if;
+
+      -- konec radku
+      elsif lex=lex_eol then
+        res.addstr(crlf);
+        
+      -- komentar
+      elsif lex=lex_comment then
+        -- preskocit az do konce radku
+        skip_eol(infile,lex,value);
+
+        -- a zapsat na vystup
+        comment.addstr('-- ');
+        linsert(value.x,comment,comment.getsize+1);
+        comment.addstr(crlf);
+
+        -- do poctu prvku se nepocita
+        counter-1;
+
+      elsif lex=lex_mlcomment then
+        -- preskocit az do konce komentare
+        skip_mlcomment2(infile,lex,value);
+        while lex not in [lex_mlcomment2] loop
+          -- a zapsat na vystup
+          comment.addstr(' -- ');
+          linsert(value.x,comment,comment.getsize+1);
+          comment.addstr(crlf);
+
+          -- a precist dalsi
+          skip_mlcomment2(infile,lex,value);
+          end loop;
+
+        -- do poctu prvku se nepocita
+        counter-1;
+
+      elsif lex=lex_sizeof then
+        get_params(infile,temp);
+        linsert(res,temp,1);
+        res.addstr(':size');
+
+      elsif lex=lex_comma then
+        -- odstranit predchozi mezeru
+        ldellchar(res,' ');
+        res.addstr(operators[lex]);
+
+      elsif lex=lex_of then
+        -- odstranit predchozi mezeru
+        ldellchar(res,' ');
+        res.addstr('.');
+
+      elsif lex=lex_metaid2 then
+        -- odstranit predchozi mezeru
+        ldellchar(res,' ');
+
+      elsif lex=lex_bitor then
+        res.addstr(' or ');
+
+      elsif lex=lex_bitand then
+        res.addstr(' and ');
+
+      elsif lex=lex_compl then
+        res.addstr(' not ');
+
+      elsif lex=lex_question then
+        res.insertstr(1,'if ');
+        res.addstr(' then ');
+
+      elsif lex=lex_col then
+        res.addstr(' else ');
+
+      elsif lex=lex_short then
+        res.addstr('signed 16 ');
+
+      elsif lex=lex_int then
+        res.addstr('signed 32 ');
+
+      elsif lex=lex_long then
+        res.addstr('unsigned 32 ');
+
+      elsif lex=lex_unsigned then
+        -- nacist dalsi cast (char, long atd)
+        get_lex(infile,lex,value);
+        if lex=lex_char then
+            res.addstr('unsigned 8 ');
+          elsif lex=lex_int then
+            res.addstr('unsigned 32 ');
+          elsif lex=lex_long then
+            res.addstr('unsigned 32 ');
+          elsif lex=lex_short then
+            res.addstr('unsigned 16 ');
+          else
+            res.addstr('unsigned 32 ');
+
+            -- vratit nepouzity symbol
+            put_lex(infile,lex,value);
+          end if;
+
+      elsif lex=lex_void then
+        res.addstr('pointer ');
+
+      elsif lex=lex_assign then
+        res.addstr(':=');
+
+      elsif lex=lex_assign_add then
+        res.addstr('+');
+
+      else
+        wr({MSG=}000189,lc_error,'cpp_to_fpp error (' & cmd & s.getstr(1) & ') : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+      end if;
+
+    -- nacist dalsi lexikalni element
+    get_lex(infile,lex,value);
+    end loop;
+
+  -- ukoncit strednikama
+  while semicolons>1 loop
+    res.addstr(';');
+    semicolons-1;
+    end loop;
+
+  -- ukoncit blok
+  case endlex
+    when tel_nil  do ;
+    when tel_then do res.addstr('then;');
+    when tel_end  do res.addstr('' & crlf & '#end ' & defineid & ';');
+    end case;
+
+  -- osetrit pripad const
+  if _const=tc_simpletype and counter=1 then
+--write2('cpp_to_fpp const ' & res.getstr(1,false));
+    -- ted ma tvar #template id \n const \n #end id;
+    -- preskocit vse az do \10
+    lcopy(temp,res,lpos(\10,res)+1,res.getsize);
+    res.empty;
+    linsert(temp,res,1);
+    -- znicit vse za \13
+    lcopy(temp,res,1,lpos(\13,res)-1);
+
+    -- zkopirovat zpet do res
+    res.empty;
+    linsert(temp,res,1);
+
+    -- odstranit mezery
+    ltrimstr(res,temp);
+    res.empty;
+    linsert(temp,res,1);
+
+    -- a sestavit novou odpoved
+    linsert('const ' & defineid & ' = ',res,1);
+    res.addstr(';');
+    end if;
+
+  -- dodelat komentar
+  if comment.getsize>0 then
+    linsert(comment,res,1);
+    end if;
+
+  -- zavrit buffer
+  infile.close;
+--write2('cpp_to_fpp end ' & res.getstr(1));
+
+  -- zjistit zda to vubec chceme
+  if str_find2(defines,defineid,resvalue) then
+    if resvalue.typ=tv_extra and then resvalue.x=tx_ignore then
+      res.free;
+      res.addstr('@IGNORE');
+      end if;
+    end if;
+  end cpp_to_fpp;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_keyword ( id : str255 ) return tlexelement =
+-- Zjisti, zda je zadany retezec klicove slovo
+----------------------------------------------------------------------------------------------------
+var
+  i                : tlexelement;
+
+begin
+  -- inicializace
+  result:=lex_nul;
+
+  -- a hledani hrubou silou
+  for i in keywords:range loop
+    if keywords[i]=id then
+      result:=i;
+      break;
+      end if;
+    end loop;
+  end is_keyword;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_operator ( id : str255 ) return tlexelement =
+-- Zjisti, zda je zadany retezec operator
+----------------------------------------------------------------------------------------------------
+var
+  i                : tlexelement;
+
+begin
+  -- inicializace
+  result:=lex_nul;
+
+  -- a hledani hrubou silou
+  for i in operators:range loop
+    if operators[i]=id then
+      result:=i;
+      break;
+      end if;
+    end loop;
+  end is_operator;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_operator2 ( id : str255 ) return longint =
+-- Zjisti, kolika operatorum vyhovuje zadany retezec
+----------------------------------------------------------------------------------------------------
+var
+  i                : tlexelement;
+
+begin
+  -- inicializace
+  result:=0;
+
+  -- a hledani hrubou silou
+  for i in operators:range loop
+    if copy(operators[i],1,id:length)=id then
+      result+1;
+      end if;
+    end loop;
+  end is_operator2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_num_hex (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+-- Precte ze vstupu hexadecimlani cislo.
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  i                : longint;
+
+begin
+  -- inicializace
+  value.x.empty;
+  c:=src.getchar;
+
+  while c in hexchars loop
+    value.x.addchar(c);
+    c:=src.getchar;
+    end loop;
+
+  -- muze nasledovat UuLl
+  value._longint:=false;
+  value._unsigned:=false;
+  while c in ['L','U','l','u'] loop
+    -- zpracovat
+    if c in ['L','l'] then
+        value._longint:=true;
+      elsif c in ['U','u'] then
+        value._unsigned:=true;
+      end if;
+    c:=src.getchar;
+    end loop;
+
+  -- vratit jiz neplatny znak
+  src.ungetchar(c);
+
+  -- prepocitat na cislo
+  value.radix:=tr_hex;
+
+  -- pokud je cislo delsi nez 8 znaku
+  if value.x.getsize>8
+    then
+      lex:=lex_num2;
+      value.longer:=true;
+      uint64_set32(value.n2,0);
+      for i in 1..value.x.getsize loop
+        uint64_mul32(value.n2,16);
+        uint64_add32(value.n2,char_to_num(value.x.getchar(i)));
+        end loop;
+    else
+      lex:=lex_num;
+      value.n:=0;
+      for i in 1..value.x.getsize loop
+        value.n:=16*value.n+char_to_num(value.x.getchar(i));
+        end loop;
+    end if;
+  end get_num_hex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_num_oct (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+-- Precte ze vstupu cislo v osmickove soustave.
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  i                : longint;
+
+begin
+  -- inicializace
+  value.x.empty;
+  c:=src.getchar;
+
+  while c in ['0','1','2','3','4','5','6','7'] loop
+    -- zpracovat znak
+    value.x.addchar(c);
+    c:=src.getchar;
+
+    -- povoleny jsou maximalne 3 znaky
+    if value.x.getsize=3 then
+      break;
+      end if;
+    end loop;
+
+  -- muze nasledovat UuLl
+  value._longint:=false;
+  value._unsigned:=false;
+  while c in ['L','U','l','u'] loop
+    -- zpracovat
+    if c in ['L','l'] then
+        value._longint:=true;
+      elsif c in ['U','u'] then
+        value._unsigned:=true;
+      end if;
+    c:=src.getchar;
+    end loop;
+
+  -- vratit jiz neplatny znak
+  src.ungetchar(c);
+
+  -- prepocitat na cislo
+  lex:=lex_num;
+  value.radix:=tr_oct;
+  value.n:=0;
+  for i in 1..value.x.getsize loop
+    value.n:=8*value.n+char_to_num(value.x.getchar(i));
+    end loop;
+  end get_num_oct;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_num (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  i                : longint;
+
+begin
+  -- inicializace
+  value.x.empty;
+  c:=src.getchar;
+
+  -- ignorovat uvodni nuly
+  while c='0' loop
+    c:=src.getchar;
+    end loop;
+
+  -- nasleduje-li x pak je cislo zadane v hexadecimalnim tvaru
+  if c in ['x','X']
+    then
+      get_num_hex(src,lex,value);
+    else
+      while c in numchars loop
+        value.x.addchar(c);
+        c:=src.getchar;
+        end loop;
+
+      -- muze nasledovat UuLl
+      value._longint:=false;
+      value._unsigned:=false;
+      while c in ['L','U','l','u'] loop
+        -- zpracovat
+        if c in ['L','l'] then
+            value._longint:=true;
+          elsif c in ['U','u'] then
+            value._unsigned:=true;
+          end if;
+        c:=src.getchar;
+        end loop;
+
+      -- posledni znak patri jiz jinemu symbolu
+      src.ungetchar(c);
+
+      -- a ted prevest retezec na cislo
+      lex:=lex_num;
+      value.n:=0;
+      value.radix:=tr_dec;
+
+      for i in 1..value.x.getsize loop
+        value.n:=10*value.n+char_to_num(value.x.getchar(i));
+        end loop
+    end if;
+  end get_num;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_char (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  i                : longint;
+
+begin
+  -- inicializace
+  value.x.empty;
+  c:=src.getchar;
+
+  -- musi to byt zacatek znakoveho literalu
+  if c<>'''' then
+    raise internal_error;
+    end if;
+
+  loop
+    c:=src.getchar;
+
+    -- konec
+    if c='''' then
+      break;
+
+      -- jakykoliv jiny znak
+      else
+        value.x.addchar(c);
+      end if;
+    end loop;
+
+  if value.x.getsize=1
+    then
+      lex:=lex_char;
+      value.ch:=value.x.getchar(1);
+
+    elsif value.x.getsize<=4 then
+      lex:=lex_char2;
+      value.ch2:=0;
+--write2('get_char : ' & value.x.getstr(1));
+      for i in 1..value.x.getsize loop
+        value.ch2:=256*value.ch2+value.x.getchar(i):ord;
+        end loop;
+
+    else
+      wr({MSG=}000190,lc_error,'get_char error : ' & value.x.getstr(1));
+      raise internal_error;
+    end if;
+
+  -- doplnit apostrofy na zacatek i na konec
+  linsert('''',value.x,1);
+  value.x.addstr('''');
+  end get_char;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_str (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+
+begin
+  -- inicializace
+  value.x.empty;
+  c:=src.getchar;
+
+  -- musi to byt zacatek retezce
+  if c<>'"' then
+    raise internal_error;
+    end if;
+
+  loop
+    c:=src.getchar;
+
+    -- konec retezce
+    if c='"' then
+        break;
+      -- specialni znaky
+      elsif c='\' then
+        -- znak nasledujici za \
+        c:=src.getchar;
+
+        -- single escpape sekvence
+        if c in ['''','"','?','\',
+                 'a','b','f','n','r','t','v'] then
+
+          -- alert (BEL)
+          if c='a' then
+              value.x.addchar(\7);
+
+            -- backspace (BS)
+            elsif c='b' then
+              value.x.addchar(\8);
+
+            -- form feed (FF)
+            elsif c='f' then
+              value.x.addchar(\12);
+
+            -- new line NL (LF)
+            elsif c='n' then
+              value.x.addchar(\10);
+
+            -- carriage return (CR)
+            elsif c='r' then
+              value.x.addchar(\13);
+
+            -- horizontal tab (HT)
+            elsif c='t' then
+              value.x.addchar(\9);
+
+            -- vertical tab (VT)
+            elsif c='v' then
+              value.x.addchar(\11);
+
+            -- znak nasledujici za \ primo
+            else
+              value.x.addchar(c);
+            end if;
+
+          -- znak v oktalove soustave
+          elsif c in ['0','1','2','3','4','5','6','7'] then
+            src.ungetchar(c);
+
+            -- zpracovat cislo v osmickove soustave
+            get_num_oct(src,lex,value);
+
+            -- ulozit reprezentaci tohoto znaku
+            value.x.addchar(char:(value.n));
+
+          -- znak v hexadecimalni soustave
+          elsif c in ['x','X'] then
+
+            -- zpracovat cislo v hexadecimalni soustave
+            get_num_hex(src,lex,value);
+
+            -- ulozit reprezentaci tohoto znaku
+            value.x.addchar(char:(value.n));
+
+          else
+            wr({MSG=}000191,lc_error,'error in get_str(): illegal \ character');
+            raise internal_error;
+          end if;
+      -- jakykoliv jiny znak
+      else
+        value.x.addchar(c);
+      end if;
+    end loop;
+
+  -- ulozeni vysledku
+  if value.x.getsize>250 then
+    wr({MSG=}000192,lc_error,'get_str error : string is too long');
+    raise internal_error;
+    end if;
+
+  lex:=lex_str;
+  value.s:=value.x.getstr(1);
+  value.x.empty;
+  value.x.addstr('"' & value.s & '"');
+  end get_str;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_lex_op (
+               src : ref textfile;               -- zdrojovy soubor
+               lex : ref tlexelement;            -- lexikalni element
+             value : ref tlexvalue) =
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  num              : longint;                    -- pocet vyskytu operatoru
+
+begin
+  -- inicializace
+  value.x.empty;
+
+  loop
+    -- nacist znak do retezce operatoru
+    c:=src.getchar;
+    value.x.addchar(c);
+
+    -- zjistit zda je tento operator jedinecny nebo zda vyzaduje dalsi rozliseni
+    num:=is_operator2(value.x.getstr(1));
+
+    -- existuje pouze jeden
+    if num=1
+      then
+        lex:=is_operator(value.x.getstr(1));
+        break;
+
+      -- neexistuje zadny
+      elsif num=0 then
+        -- posledni znak zase vratit
+        src.ungetchar(c);
+        value.x.setsize(value.x.getsize-1);
+
+        -- a urcit jako operator
+        lex:=is_operator(value.x.getstr(1));
+        break;
+
+      -- vyhovuje vice podminkam
+      else
+        -- pokracovat dale
+      end if;
+
+    end loop;
+  end get_lex_op;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_lex =
+--             src : ref textfile;               -- zdrojovy soubor
+--             lex : ref tlexelement;            -- lexikalni element
+--           value : ref tlexvalue);
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;                       -- precteny znak
+  resvalue         : tvalue;                     -- hodnota hledane direktivy
+
+begin
+  lex:=lex_nul;
+  initlexvalue(value);
+
+  loop
+    c:=src.getchar;
+
+--    -- ignorovat mekke mezery pred symbolem
+--    while c in spaces loop
+--      c:=src.getchar;
+--      end loop;
+
+    -- identifikator nebo klicove slovo
+    if c in idchars1 then
+        value.x.empty;
+        while c in idchars loop
+          value.x.addchar(c);
+          c:=src.getchar;
+          end loop;
+
+        -- pokud to konci \ tak nacist prvni znak na dalsim radku
+        if c='\' then
+          c:=src.getchar;
+          while c in [\13,\10] loop
+            c:=src.getchar;
+            end loop;
+          end if;
+
+        -- priznaky o znaku ukoncujicim identifikator
+        if c in spaces2
+          then value.endspace:=true;
+          else value.endspace:=false;
+          end if;
+        if c in ['(']
+          then value.endlpar:=true;
+          else value.endlpar:=false;
+          end if;
+
+        -- posledni znak patri jiz jinemu symbolu
+        src.ungetchar(c);
+
+        -- mohlo by to byt klicove slovo
+        lex:=is_keyword(value.x.getstr(1));
+
+        -- nebo identifikator
+        if lex=lex_nul then
+          lex:=lex_id;
+          value.id:=value.x.getstr(1);
+          end if;
+
+      -- cislo
+      elsif c in numchars then
+        src.ungetchar(c);
+
+        -- precist cele cislo
+        get_num(src,lex,value);
+
+      -- znakovy literat
+      elsif c='''' then
+        src.ungetchar(c);
+
+        -- precist znakovy literal
+        get_char(src,lex,value);
+
+      -- znakovy agregat (retezec)
+      elsif c='"' then
+        src.ungetchar(c);
+
+        -- precist cely retezec
+        get_str(src,lex,value);
+
+      -- metaprikaz (prikaz preprocesoru)
+      elsif c='#' then
+        lex:=lex_metaid;
+        value.x.addchar(c);
+        c:=src.getchar;
+
+        if c='#'
+          then
+            -- jedna se o ##
+            lex:=lex_metaid2;
+
+            value.x.addchar(c);
+
+          else
+            -- muze nasledovat mezera
+            if c=' ' then
+              c:=src.getchar;
+              end if;
+
+            while c in idchars loop
+              value.x.addchar(c);
+              c:=src.getchar;
+              end loop;
+            src.ungetchar(c);
+
+            -- ulozit si zpracovany text
+            value.id:=value.x.getstr(1);
+          end if;
+
+      -- komentar
+      elsif c='/' then
+        c:=src.getchar;
+        if c='/' then
+            lex:=lex_comment;
+            value.x.addstr('//');
+          elsif c='*' then
+            lex:=lex_mlcomment;
+            value.x.addstr('/*');
+          else
+            src.ungetchar(c);
+            lex:=lex_div;
+            value.x.addchar(c);
+          end if;
+
+      -- operator
+      elsif c in operchars then
+        -- vratit znak do bufferu
+        src.ungetchar(c);
+
+        -- a zjistit operator
+        get_lex_op(src,lex,value);
+
+      -- konec souboru
+      elsif c=\26 then
+        lex:=lex_eof;
+
+      -- konec radku
+      elsif c=\13 then
+        lex:=lex_eol;
+        value.x.addstr(crlf);
+
+      -- ignorovany znak
+      -- !ZAPLATA! prestoze spaces obsahuje \12 obcas nevyhovi teto podmince
+      elsif c in spaces or c=\12 then
+        lex:=lex_nul;
+
+      elsif c='\' then
+        -- preskocit i nasledujici konec radku
+        c:=src.getchar;
+        if c=\13 then
+          c:=src.getchar;
+          if c=\10 then
+            c:=src.getchar;
+            end if;
+          end if;
+        src.ungetchar(c);
+        lex:=lex_nul;
+
+      -- nepripustny znak
+      else
+        wr({MSG=}000193,lc_error,'Nepripustny znak v souboru ' & c & ' (' & itoa(c:ord) & ')');
+        raise internal_error;
+      end if;
+    until lex<>lex_nul;
+-- write2('get_lex: ' & lex_to_text(lex,value));
+  end get_lex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure put_lex =
+--             src : ref textfile;               -- zdrojovy soubor
+--             lex : tlexelement;                -- lexikalni element
+--           value : tlexvalue);
+-- Vlozi zpet lexikalni element.
+----------------------------------------------------------------------------------------------------
+var
+  result           : lstring;
+
+begin
+  -- inicializace
+  result.empty;
+  result.setname('put_lex result');
+
+  if lex=lex_nul then
+      -- nic
+    elsif lex=lex_eol then
+      -- konec radku
+      result.addstr('' & \13);
+    elsif lex=lex_eof then
+      -- konec souboru
+      result.addstr('' & \26);
+    elsif lex=lex_id then
+      -- odentifikator
+      result.addstr(value.id);
+    elsif lex=lex_num then
+      -- cislo
+      result.addstr(itoa(value.n));
+    elsif lex=lex_num2 then
+      -- vetsi cislo
+      result.addstr(uint64_to_string(value.n2));
+    elsif lex=lex_str then
+      -- retezec
+      result.addstr('"' & value.s & '"');
+    elsif lex=lex_metaid then
+      -- metaprikaz
+      result.addstr(value.id);
+    elsif lex=lex_comment then
+      -- komentar
+      result.addstr('//');
+    elsif lex=lex_mlcomment then
+      -- komentar
+      result.addstr('/*');
+    elsif lex=lex_mlcomment2 then
+      -- komentar
+      result.addstr('*/');
+    elsif lex in [keywords:range] then
+      -- klicove slovo
+      result.addstr(keywords[lex]);
+    elsif lex in [operators:range] then
+      -- operator
+      result.addstr(operators[lex]);
+    else
+      result.addstr('? lex (' & itoa(lex:ord) & ')');
+    end if;
+
+  -- vlastni vlozeni do bufferu
+  src.ungetlstr(result);
+  end put_lex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure poss (
+              cset : charset;                    -- oddelovace
+               str : str255)                     -- zpracovavany text
+                     return word =
+-- Najde v retezci prvni znak zadany v sade znaku (oddelovacu).
+----------------------------------------------------------------------------------------------------
+var
+  i                : word;
+
+begin
+  -- inicializace
+  result:=0;
+
+  for i in 1..str:length loop
+    if str[i] in cset then
+      result:=i;
+      break;
+      end if;
+    end loop;
+  end poss;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure simple_parser =
+--            line : ref str255;                 -- zpracovavany radek
+--            cset : charset;                    -- oddelovace
+--             cmd : ref str255;                 -- oddeleny prikaz
+--           param : ref str255);                -- zbytek nezpracovaneho radku
+-- Velice jednoduchy parser pracujici pouze na definici oddelovacu.
+----------------------------------------------------------------------------------------------------
+var
+  seppos           : word;                       -- pozice separatoru v retezci
+
+begin
+  -- inicializace
+  cmd:='';
+  param:='';
+
+  -- specialni pripady - komentare
+  if copy(line,1,2)='--' then
+      cmd:=copy(line,1,2);
+      param:=trimstr(copy(line,3,255));
+      return;
+    elsif copy(line,1,2)='//' then
+      cmd:=copy(line,1,2);
+      param:=trimstr(copy(line,3,255));
+      return;
+    elsif copy(line,1,1)='[' and copy(line,line:length,1)=']' then
+      cmd:=copy(line,1,1);
+      param:=trimstr(copy(line,2,line:length-2));
+      return;
+    end if;
+
+  -- najit separator
+  seppos:=poss(cset,line);
+
+  -- oddeleni nazvu a parametru
+  if seppos=0
+    then
+      cmd:=line;
+    else
+      cmd:=trimstr(copy(line,1,seppos-1));
+      param:=trimstr(copy(line,seppos+1,255));
+    end if;
+  end simple_parser;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure skip_eol =
+--             src : ref textfile;               -- zdrojovy soubor
+--             lex : ref tlexelement;            -- lexikalni element
+--           value : ref tlexvalue);
+-- Preskoci vse az do konce radku (vraci lex_eol), bere ohled na radky koncici \
+----------------------------------------------------------------------------------------------------
+
+var
+  c                : char;
+
+begin
+  value.x.empty;
+  loop
+    c:=src.getchar;
+    if c in [\13,\26]
+      then
+        lex:=lex_eol;
+        break;
+
+      elsif c='\' then
+        -- pokud nasleduje crlf pak se jedna pouze o konec radku
+        c:=src.getchar;
+
+        if c=\13
+          then
+            value.x.addstr(' ');
+          else
+            value.x.addstr('\' & c);
+          end if;
+
+      else
+        -- optimalizace vice mezer
+        if c<>' ' or value.x.getchar(value.x.getsize)<>' ' then
+          value.x.addchar(c);
+          end if;
+      end if;
+    end loop;
+--write2('skip_eol : ' & value.x.getstr(1));
+  end skip_eol;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure skip_mlcomment2 =
+--             src : ref textfile;               -- zdrojovy soubor
+--             lex : ref tlexelement;            -- lexikalni element
+--           value : ref tlexvalue);
+-- Preskoci vse az do konce komentare nebo radku (vraci lex_eol nebo lex_mlcomment2)
+----------------------------------------------------------------------------------------------------
+var
+  c                : char;
+
+begin
+  value.x.empty;
+  loop
+    c:=src.getchar;
+    if c=\13
+      then
+        lex:=lex_eol;
+        break;
+      elsif c='*' then
+        c:=src.getchar;
+        if c='/'
+          then
+            lex:=lex_mlcomment2;
+            break;
+          else
+            src.ungetchar(c);
+            value.x.addchar('*');
+          end if;
+      else
+        value.x.addchar(c);
+      end if;
+    end loop;
+  end skip_mlcomment2;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure lex_symbol_proceed =
+--             src : ref textfile;
+--             lex : ref tlexelement;            -- lexikalni element
+--           value : ref tlexvalue)              -- hodnota
+-- Vyhleda identifikator tohoto typy v direktivach a zpracuje ho.
+----------------------------------------------------------------------------------------------------
+var
+  resvalue         : tvalue;
+
+begin
+  -- provadi se jen pro identifikatory
+  if lex=lex_id then
+    if str_find2(defines,value.id,resvalue) then
+      case resvalue.typ
+        when tv_nic     do ;
+
+        when tv_extra   do ;
+          lex:=lex_nul;
+
+        -- retezec
+        when tv_str     do
+          -- mohlo by to byt klicove slovo
+          lex:=is_keyword(resvalue.s.getstr(1));
+
+          -- nebo identifikator
+          if lex=lex_nul then
+            lex:=lex_id;
+            value.id:=resvalue.s.getstr(1);
+            end if;
+
+        -- boolean
+        when tv_boolean do
+          if resvalue.b
+            then lex:=lex_true;
+            else lex:=lex_false;
+            end if;
+
+        -- longint
+        when tv_longint do
+          lex:=lex_num;
+          value.n:=resvalue.l;
+
+        -- vyraz
+        when tv_expr    do
+          -- zde musi dojit k analyze parametru a spravnemu vypoctu textovych substituci
+          wr({MSG=}000194,lc_error,'lex_symbol_proceed : ' & resvalue.p & ' := ' & resvalue.e.getstr(1));
+          raise internal_error;
+
+        end case;
+      end if;
+    end if;
+  end lex_symbol_proceed;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure scan_lex =
+--             src : ref textfile)               -- zdrojovy soubor
+--                   return tlexelement;
+-- Zjisti nasledujici element.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;                -- lexikalni element
+  value            : tlexvalue;                  -- hodnota
+
+begin
+  -- inicializace
+  value.x.setname('scan_lex value.x');
+
+  -- nacist nasledujici element
+  get_lex(src,lex,value);
+
+  -- vratit ho zptaky
+  put_lex(src,lex,value);
+
+  -- a uschovat si jeho hodnotu
+  result:=lex;
+  end scan_lex;
+
+end h2parser;
+

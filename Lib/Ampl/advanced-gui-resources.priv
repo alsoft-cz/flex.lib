@@ -1,0 +1,203 @@
+----------------------------------------------------------------------------------------------------
+module private resources =
+-- GUI system resources wraper.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with 
+  standard,standard.classes,standard.classes.hash_tables; 
+
+use
+  system,
+  system.windows,
+  system.windows.windef,
+  system.windows.windef.winnt;
+
+-- Forward declarations
+
+
+----------------------------------------------------------------------------------------------------
+class c_resource_list_item = extend c_hash_table_item;
+-- Hash table item.
+----------------------------------------------------------------------------------------------------
+--    var 
+--      data         : c_graphic_resource;         -- resource objcet        
+    end c_resource_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_resource_list  = extend c_hash_table;
+-- List of resources.
+----------------------------------------------------------------------------------------------------
+
+    end c_resource_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_graphic_resource = 
+-- Base graphic resource class.
+----------------------------------------------------------------------------------------------------
+    var
+      resurce_handle    : system.windows.windef.winnt.t_handle;-- system provided handle to the resource
+
+
+    end c_graphic_resource;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_resource_manager =
+-- Storage container for created resources.
+----------------------------------------------------------------------------------------------------
+
+    var 
+      icons        : c_resource_list;
+      brushes      : c_resource_list;
+      pens         : c_resource_list;
+      bitmaps      : c_resource_list;
+      cursors      : c_resource_list;
+      fonts        : c_resource_list;
+
+    ------------------------------------------------------------------------------------------------
+    -- %% TODO a‘ budou tagy tak se v¨echny resourcy budou vytv ©e p©es tenhle jeden create_resource
+    -- mo‘n 
+    --static create_resource =
+    -- Creates resource and inserts it into appropriate list of resources .
+    ------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static create_pen =
+    -- Creates an instance of a pen resource object and returns pointer to it
+    ------------------------------------------------------------------------------------------------
+    var 
+      pen               : p_gr_pen;
+      --logpen            : tsys_logpen;
+      pen_handle        : system.windows.windef.winnt.t_handle;
+
+    begin 
+      -- create new instanci
+      new pen;
+
+      {-- prepare system logical pen
+      logpen.lopnstyle:=pen_style_to_system(_style);
+      logpen.lopnwidth.x:=_width;
+      logpen.lopncolor:=rgb_color_to_system;
+      
+      -- create system ahndle to pen    }  
+      --%%TODO
+      --pen_handle:=system.{.....}.createpen(pen_style_to_system(_style),_width,rgb_color_to_system);
+      --pen^.set_handle(pen_handle);
+
+      -- assign result;
+      result:=pen;
+      end create_pen;
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static create_brush = 
+    -- Creates an instance of a brush resource object and returns pointer to it
+    ------------------------------------------------------------------------------------------------
+    var 
+      brush             : p_gr_brush;
+
+    begin 
+      -- create new instanci
+      new brush;
+
+
+
+      result:=brush;
+      end create_brush;
+    
+
+
+    ------------------------------------------------------------------------------------------------
+    static discard_resource =
+    -- Removes resource from its list and free memory used by it.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end discard_resource;
+
+    end c_resource_manager;
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_brush = 
+-- Brush graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create =
+    -- Creates a brush resource with supplied attributes.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      raise feature_not_implemented;
+      end create;
+
+    end c_gr_brush;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_pen = 
+-- Pen graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create =
+    -- Creates a pen resource with supplied attribute.s
+    ------------------------------------------------------------------------------------------------
+    begin 
+      raise feature_not_implemented;
+      end create;
+
+    end c_gr_pen;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_font = 
+-- Font graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create =
+    -- Creates a font resource with supplied attributes.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      raise feature_not_implemented;
+      end create;
+
+    end c_gr_font;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_bitmap = 
+-- Bitmap graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_bitmap;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_icon = 
+-- Icon graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_icon;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_gr_cursor = 
+-- Cursor graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_cursor;
+
+end resources;

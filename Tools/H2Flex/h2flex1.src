@@ -1,0 +1,1876 @@
+----------------------------------------------------------------------------------------------------
+--
+-- h2flex1
+--
+----------------------------------------------------------------------------------------------------
+
+
+module h2flex1 =
+
+with
+  system,str,filedef,files,txtfiles,log,num,dir,lstr,
+  h2def,h2parser,h2config,h2text,h2util,h2calc,h2stream,
+  debug;
+
+exception
+  internal_error_1;                              -- interni chyba pri zpracovani phase 1
+
+
+----------------------------------------------------------------------------------------------------
+procedure dofile (
+            inname : str255;                     -- vstupni jmeno souboru
+             chyba : ref boolean);
+-- Zpracovani jednoho souboru preprocesorem.
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+  var
+    texectxt       : array texec of str8 := ['none','true','through'];
+    tbranchtxt     : array tbranch of str8 := ['false','true','else'];
+
+----------------------------------------------------------------------------------------------------
+class texecutor =
+-- trida pro zaznam vnorovani jednotlivych vetvi #if
+----------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  procedure push ( name : str255; exec : texec);
+  -- Vnoreni.
+  --------------------------------------------------------------------------------------------------
+  procedure pop;
+  -- Vynoreni.
+  --------------------------------------------------------------------------------------------------
+  procedure set_exec (exec : texec) ;
+  -- Nastaveni stavu exec.
+  --------------------------------------------------------------------------------------------------
+  procedure getexec return texec;
+  -- Zjisteni stavu exec.
+  --------------------------------------------------------------------------------------------------
+  procedure getbranch return texec;
+  -- zjisteni stavu branch.
+  --------------------------------------------------------------------------------------------------
+  procedure flip (branch : tbranch);
+  -- Prepnuti stavu.
+  --------------------------------------------------------------------------------------------------
+  procedure add_extra ( addon : taddon ) ;
+  -- nastaveni zvlastniho priznaku
+  --------------------------------------------------------------------------------------------------
+  procedure get_extra ( addon : taddon ) return boolean;
+  -- zjisteni zvlastniho priznaku
+  --------------------------------------------------------------------------------------------------
+
+  private
+
+  type
+    -- zaznam jednoho vnoreni
+    tcurrstate     = record
+      exec         : texec;                      -- provadeni vetvi
+      -- synteticky priznak
+      branch       : boolean;                    -- T=jsem ve vetvi TRUE
+      addon        : taddons;
+      next         : ^tcurrstate;
+      end record;
+    pcurrstate     = ^tcurrstate;
+
+  var
+    currstate      : pcurrstate;
+    level          : longint;
+
+  --------------------------------------------------------------------------------------------------
+  procedure push =
+  -- Vnoreni
+  --------------------------------------------------------------------------------------------------
+  var
+    newstate       : pcurrstate;
+
+  begin
+    level+1;
+    new newstate;
+    fillz(newstate^,newstate^:size);
+    newstate^.exec:=exec;
+--write2('push : exec = ' & texectxt[exec]);
+    newstate^.branch:=false;
+    newstate^.addon:=[];
+    newstate^.next:=currstate;
+    currstate:=newstate;
+    end push;
+
+  --------------------------------------------------------------------------------------------------
+  procedure pop =
+  -- Vynoreni
+  --------------------------------------------------------------------------------------------------
+  var
+    delstate       : pcurrstate;
+
+  begin
+    level-1;
+    delstate:=currstate;
+    currstate:=currstate^.next;
+    discard delstate;
+    end pop;
+
+  --------------------------------------------------------------------------------------------------
+  procedure set_exec =
+  -- Nastaveni stavu exec.
+  --------------------------------------------------------------------------------------------------
+  begin
+    if currstate=nil
+      then
+        raise internal_error;
+      else
+        currstate^.exec:=exec;
+      end if;
+--write2('set_exec: ' & texectxt[exec]);
+    end set_exec;
+
+  --------------------------------------------------------------------------------------------------
+  procedure getexec =
+  -- Zjisteni stavu exec.
+  --------------------------------------------------------------------------------------------------
+  begin
+    if currstate=nil then
+        -- na 0. urovni se provadi vzdy
+        result:=e_true;
+
+      else
+        result:=currstate^.exec;
+      end if;
+--write2('getexec: ' & texectxt[result]);
+    end getexec;
+
+  --------------------------------------------------------------------------------------------------
+  procedure getbranch =
+  -- Zjisteni stavu branch.
+  --------------------------------------------------------------------------------------------------
+  begin
+    if currstate=nil then
+        -- na 0. urovni se provadi vzdy
+        result:=e_true;
+
+      elsif currstate^.exec in [e_true,e_through] then
+        if currstate^.branch then result:=e_true; else result:=e_none; end if;
+
+      else
+        result:=currstate^.exec;
+      end if;
+--write2('getbranch: ' & texectxt[result]);
+    end getbranch;
+
+  --------------------------------------------------------------------------------------------------
+  procedure flip =
+  -- Prepnuti stavu.
+  --------------------------------------------------------------------------------------------------
+  begin
+--write2('flip : branch = ' & tbranchtxt[branch]);
+    if currstate=nil then
+      raise internal_error_1;
+      end if;
+
+    case branch
+      -- vetev FALSE
+      when b_false do
+        -- jdeme do vetve FALSE
+        currstate^.branch:=false;
+
+      -- vetev TRUE
+      when b_true do
+        -- jdeme do vetve TRUE
+        currstate^.branch:=true;
+        -- poznamenat si, ze uz jsme zpracovali jednu z vetvi teto podminky
+        currstate^.addon+[a_wastrue];
+
+      -- vetev ELSE se rozlisuje pro @THROUGH
+      when b_else do
+        -- zjistit zda se cela #if provadi @THROUGH
+        if currstate^.exec=e_through
+          then
+            currstate^.branch:=true;
+          else
+            -- zjistit, zda uz jsme prosli nekterou z vetvi teto podminky
+            if a_wastrue in currstate^.addon
+              -- ano, takze ELSE se provadet nebude
+              then currstate^.branch:=false;
+              -- ne, takze je nutne provest ELSE
+              else currstate^.branch:=true;
+              end if;
+          end if;
+      end case;
+    end flip;
+
+  --------------------------------------------------------------------------------------------------
+  procedure add_extra =
+  -- nastaveni zvlastniho priznaku
+  --------------------------------------------------------------------------------------------------
+  begin
+    currstate^.addon+[addon];
+    end add_extra;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  procedure get_extra =
+  -- zjisteni zvlastniho priznaku
+  --------------------------------------------------------------------------------------------------
+  begin
+    result:=addon in currstate^.addon;
+    end get_extra;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  entry =
+  -- Konstruktor
+  --------------------------------------------------------------------------------------------------
+  begin
+    currstate:=nil;
+    level:=0;
+    end entry;
+
+  --------------------------------------------------------------------------------------------------
+  exit =
+  -- Destruktor
+  --------------------------------------------------------------------------------------------------
+  begin
+--write2('exit: ' & itoa(level));
+    while currstate<>nil loop
+      pop;
+      end loop;
+    end exit;
+
+  end texecutor;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure hex2dec ( s : str255 ) return str255 =
+-- Prevod hexadecimalniho cisla na decimalni.
+----------------------------------------------------------------------------------------------------
+var
+  l                : longint;
+  i                : longint;
+
+begin
+  -- inicializace
+  l:=0;
+
+  -- vlastni prevod na cislo
+  for i in 1..s:length loop
+    l:=16*l+char_to_num(s[i]);
+    end loop;
+
+  -- vlkastni prevod na retezec
+  result:=itoa(l);
+  end hex2dec;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_define (
+               src : ref textfile;               -- zdrojovy soubor
+           _params : str255;                     -- parametry definice
+             _expr : lstring;                    -- rozlozeni definice
+               res : ref lstring) =
+----------------------------------------------------------------------------------------------------
+var
+  bchyba           : boolean;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  params           : textfile;                   -- parametry
+  expr             : textfile;                   -- textova substituce
+  lex2             : tlexelement;                -- parametry
+  value2           : tlexvalue;                  -- parametry
+  parameters       : pstrlist:=nil;
+  resvalue         : tvalue;
+  temp             : lstring;
+
+begin
+  -- inicializace
+  res.empty;
+  res.setname('p_define res');
+  temp.empty;
+  temp.setname('p_define temp');
+  temp.addstr(_params);
+  params.open(tit_string,temp,bchyba);
+--write2('p_define (' & _params & ') := ' & _expr.getstr(1) & ' ...');
+  temp.free;
+
+  value.x.setname('p_define value.x');
+  value2.x.setname('p_define value2.x');
+  resvalue.s.setname('p_define resvalue.s');
+  resvalue.e.setname('p_define resvalue.e');
+
+  -- musime ze souboru precist levou zavorku
+  get_lex(src,lex,value);
+  if lex<>lex_lpar then
+    wr({MSG=}000053,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+    raise internal_error;
+    end if;
+
+  -- nacist tolik parametru, kolik jich je v params
+  get_lex(params,lex2,value2);
+--write2('params : lex ' & lex_to_text(lex2,value2));
+  while lex2<>lex_eof loop
+    -- ted mame v lex,value mame identifikator promenne
+    if lex2<>lex_id then
+      wr({MSG=}000054,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+      raise internal_error;
+      end if;
+
+    -- ze vstupu jeste nacteme hodnotu te promenne
+    get_lex(src,lex,value);
+--write2('value : lex ' & lex_to_text(lex,value));
+
+    -- hodnotu promenne prevedeme na typ potrebny pro ulozeni
+    if lex=lex_num then
+        resvalue.typ:=tv_longint;
+        resvalue.l:=value.n;
+
+      elsif lex=lex_id then
+        resvalue.typ:=tv_str;
+        resvalue.s.empty;
+        resvalue.s.addstr(value.id);
+
+        -- pokud nasleduje cokoliv krome carky nebo leve zavorky tak pridat do parametru
+        get_lex(src,lex,value);
+        if lex in [lex_comma,lex_rpar]
+          then
+            put_lex(src,lex,value);
+
+          elsif lex in [operators:range] then
+            resvalue.s.addstr(' ' & operators[lex]);
+
+          elsif lex in [keywords:range] then
+            resvalue.s.addstr(' ' & keywords[lex]);
+
+          else
+            wr({MSG=}000055,lc_error,'p-define error : lex = ' & lex_to_text(lex,value) & ' at line ' & itoa(src.getpos));
+            raise internal_error;
+          end if;
+
+      elsif lex in [keywords:range] then
+        resvalue.typ:=tv_str;
+        resvalue.s.empty;
+        resvalue.s.addstr(keywords[lex]);
+
+      else
+        wr({MSG=}000056,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+      end if;
+
+    -- ulozeni vlastni promenne parametru
+    str_add(parameters,value2.id,resvalue);
+--write2('ulozena promenna ' & value2.id & ' := ' & value_to_text(resvalue));
+
+    -- nacist dalsi parametr
+    get_lex(params,lex2,value2);
+--write2('params : lex ' & lex_to_text(lex2,value2));
+    -- pokud je to oddelovac mezi identifikatory tak preskocit
+    if lex2=lex_comma then
+      -- preskocit carku rovnez ve vstupnim souboru
+      get_lex(src,lex,value);
+      if lex<>lex_comma then
+        wr({MSG=}000057,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+        end if;
+
+      -- a nacist vlastni identifikator dalsiho parametru
+      get_lex(params,lex2,value2);
+--write2('params : lex ' & lex_to_text(lex2,value2));
+      if lex2<>lex_id then
+        wr({MSG=}000058,lc_error,'p-define error : lex = ' & lex_to_text(lex2,value2));
+        raise internal_error;
+        end if;
+      end if;
+    end loop;
+
+  -- az do prave zavorky
+  get_lex(src,lex,value);
+  loop
+    if lex=lex_rpar then
+        break;
+
+      elsif lex in [operators:range] then
+        -- ale kam s tim
+        wr({MSG=}000059,lc_error,'p-define error : lex = ' & lex_to_text(lex,value) & ' at line ' & itoa(src.getpos));
+        raise internal_error;
+
+      else
+        wr({MSG=}000060,lc_error,'p-define error : lex = ' & lex_to_text(lex,value) & ' at line ' & itoa(src.getpos));
+        raise internal_error;
+      end if;
+
+    -- dalsi symbol
+    get_lex(src,lex,value);
+    end loop;
+
+  -- tak ted mame zpracovane parametry
+  params.close;
+
+  -- a ted zacneme zpracovavame vyraz
+  expr.open(tit_string,_expr,bchyba);
+  res.empty;
+
+  get_lex(expr,lex,value);
+  loop
+    if lex=lex_eof then
+        -- konec zpracovani
+        break;
+
+      elsif lex=lex_num then
+        res.addstr(itoa(value.n));
+
+      elsif lex=lex_metaid2 then
+        ldellchar(res,' ');
+
+      elsif lex=lex_id then
+        -- pokusit se najit ho v parametrech
+        if str_find(parameters,value.id,resvalue)
+          then
+            -- misto toho vyplyvnout hodnotu parametru
+            case resvalue.typ
+              when tv_longint do
+                res.addstr(itoa(resvalue.l));
+
+              when tv_str     do
+                linsert(resvalue.s,res,res.getsize+1);
+
+              when others     do
+                wr({MSG=}000061,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+                raise internal_error;
+              end case;
+          else
+            -- !!! meli bychom se pokusit najit ho v defines
+            res.addstr(value.id);
+          end if;
+
+--write2(value.id & ' : ' & itoa(value.endspace:ord) & ',' & itoa(value.endlpar:ord));
+--        if not value.endlpar then res & ' '; end if;
+        if value.endspace then res.addstr(' '); end if;
+
+      elsif lex in [operators:range] then
+        res.addstr(operators[lex]);
+
+      elsif lex in [keywords:range] then
+        res.addstr(keywords[lex] & ' ');
+
+      else
+        wr({MSG=}000062,lc_error,'p-define error : lex = ' & lex_to_text(lex,value));
+        raise internal_error;
+      end if;
+
+    -- nacteme dalsi lexikalni symbol
+    get_lex(expr,lex,value);
+    end loop;
+
+  expr.close;
+  str_exit(parameters);
+--write2('p_define : ' & res.getstr(1) & ' end');
+  end p_define;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure dofile =
+--          inname : str255;                     -- vstupni jmeno souboru
+--           chyba : ref boolean);
+-- Zpracovani jednoho souboru preprocesorem.
+----------------------------------------------------------------------------------------------------
+label
+  skipthis;
+
+var
+  execstate        : texecutor;                  -- stavovy automat (vnorene zpracovani)
+  infile           : textfile;                   -- vstupni soubor
+  lex              : tlexelement;                -- lexikalni element
+  value            : tlexvalue;                  -- hodnota
+  value2           : tlexvalue;                  -- hodnota
+  c                : char;                       -- znak pro mezizpracovani
+  bchyba           : boolean;
+  resvalue         : tvalue;                     -- hodnota hledane direktivy
+  calcresult       : tbranch;
+  filename         : str255;                     -- cele jmeno zpracovavaneho souboru
+  control          : longint;
+  counter          : longint:=0;
+  ostream          : tstream;
+  headername       : str255;
+  temp             : lstring;
+  temp1            : lstring;
+  temp2            : lstring;
+  temp3            : lstring;
+  temp4            : lstring;
+  temp5            : lstring;
+  temp6            : lstring;
+  comment          : lstring;
+  idlcontrol       : boolean;                    -- T=bude se kontrolovat existence .idl souboru
+  i                : tfilearray:range;
+  module_temp      : str255;
+  temp_path        : str255;
+  filename2        : str255;
+  header_from      : str255;                     -- cela cesta k aktualni #include
+  value3           : tvalue;                     -- hodnota
+  neededfile       : str255;                     -- zmena poradi zpracovani souboru
+  resvalue2        : tvalue;                     -- hodnota hledaneho typu
+
+begin
+  -- uvodni hlaseni
+  chyba:=false;
+  wr({MSG=}000063,lc_norm,formats('Zpracovava se soubor %1 - phase 1',inname));
+
+  -- otevrit vstupni soubor
+  temp.empty;
+  temp.setname('h2flex1.dofile temp');
+  temp.addstr(inname);
+
+  temp1.setname('h2flex1.dofile temp1');
+  temp2.setname('h2flex1.dofile temp2');
+  temp3.setname('h2flex1.dofile temp3');
+  temp4.setname('h2flex1.dofile temp4');
+  temp5.setname('h2flex1.dofile temp5');
+  temp6.setname('h2flex1.dofile temp6');
+
+  value.x.setname('h2flex1.dofile value.x');
+  value2.x.setname('h2flex1.dofile value2.x');
+  resvalue.s.setname('h2flex1.dofile resvalue.s');
+  resvalue.e.setname('h2flex1.dofile resvalue.e');
+
+  comment.setname('h2flex1.dofile comment');
+
+  infile.open(tit_text,temp,chyba);
+  if chyba then
+write2('soubor ' & temp.getstr(1,false) & ' se nepodarilo otevrit');
+    return;
+    end if;
+  temp.free;
+
+  -- zjistit nazev modulu
+  headername:=getfilename(inname);
+  controlheadername(headername);
+
+  -- zaridit si vlastni stream
+  init_stream(ostream,headername);
+
+  -- zjistit skutecne jmeno (vcetne cesty :-) napr. windows-windef-winnt
+  filename2:length:=0;
+  if not proc_find(header_list,headername,filename2) then
+    wr({MSG=}000064,lc_error,formats('Nepodarilo se urcit jmeno pro soubor %1',filename));
+    raise internal_error;
+    end if;
+
+  -- zaradit do seznamu zpracova[va]nych souboru
+  flist_add(dofiles,getsimplename(filename2));
+
+  -- hlavicka souboru
+--  if verbose_mode then write_module(inname); end if;
+
+  -- prednostne zpracovat vynucene soubory
+  for i in force_file:range loop
+    if force_file[i].p:length>0 then
+      if upcasestr(getfilename(force_file[i].p))=upcasestr(getsimplename(filename2)) then
+        -- vytvorit cestu
+        module_temp:=module_path;
+        module_path & '-' & getfilename(force_file[i].s);
+
+        -- zpracovat
+        proc_add(header_list,getfilename(force_file[i].s),module_path);
+        filename:=pathfile2(force_file[i].s,false);
+        dofile(filename,bchyba);
+        if bchyba then
+          wr({MSG=}000065,lc_error,'Chyba pri zpracovani souboru ' & force_file[i].s);
+          raise internal_error;
+          end if;
+
+        -- a zpet
+        module_path:=module_temp;
+        end if;
+      end if;
+    end loop;
+
+  loop
+    get_lex(infile,lex,value);
+
+    counter+1;
+    if (counter mod 500)=0 then
+--      write2('phase 1 : lex = ' & lex_to_text(lex,value) & ' at line ' & itoa(infile.getpos));
+      end if;
+--write2('phase 1 : lex = ' & lex_to_text(lex,value) & ' at line ' & itoa(infile.getpos));
+
+    -- konec radku
+    if lex=lex_eol then
+        if execstate.getbranch in [e_true,e_through] then
+          save_lex(ostream,lex,value);
+          end if;
+
+      -- konec souboru
+      elsif lex=lex_eof then
+        break;
+
+      -- jednoradkovy komentar
+      elsif lex=lex_comment then
+        -- jedna se o komentar az do konce radku
+        skip_eol(infile,lex,value);
+
+        -- jsme ve vetvi, ktera se provadi?
+        if execstate.getbranch in [e_true,e_through] then
+          linsert('-- ',value.x,1);
+          value.x.addstr(crlf);
+          save_lex(ostream,,value);
+          end if;
+
+      -- viceradkovy komentar
+      elsif lex=lex_mlcomment then
+        -- prvni radek
+        skip_mlcomment2(infile,lex,value);
+
+        -- jsme ve vetevi, ktera se provadi?
+        if execstate.getbranch in [e_true,e_through] then
+          linsert('-- /*',value.x,1);
+          value.x.addstr(crlf);
+          save_lex(ostream,,value);
+          end if;
+
+        -- jedna se o komentar az do */
+        while lex<>lex_mlcomment2 loop
+          skip_mlcomment2(infile,lex,value);
+
+          -- jsme ve vetevi, ktera se neprovadi?
+          if execstate.getbranch in [e_true,e_through] then
+            if lex=lex_mlcomment2
+              then linsert('-- ',value.x,1);
+                   value.x.addstr('*/' & crlf);
+                   save_lex(ostream,,value);
+              else linsert('-- ',value.x,1);
+                   value.x.addstr(crlf);
+                   save_lex(ostream,,value);
+              end if;
+            end if;
+          end loop;
+
+      -- prikaz preprocesoru
+      elsif lex=lex_metaid then
+
+        -- muze se jednat i o metaprikaz ve formatu # if
+        if value.id='#' then
+          -- muze nasledovat prikaz nebo prazdny radek tj. eol
+          get_lex(infile,lex,value);
+
+          -- klicove slovo prevest na identifikator
+          if lex in [keywords:range] then
+            value.id:=keywords[lex];
+            lex:=lex_id;
+            end if;
+          if lex=lex_id then
+              -- slozit z nej prikaz pro dalsi zpracovani
+              lex:=lex_metaid;
+              value.id:='#' & value.id;
+
+            -- prazdny radek
+            elsif lex=lex_eol then
+              -- vratit puvodni smysl
+              lex:=lex_metaid;
+              value.id:='#';
+
+            -- vse ostatni je chyba
+            else
+              wr({MSG=}000066,lc_error,'chyba # lex = ' & lex_to_text(lex,value));
+              raise internal_error_1;
+            end if;
+          end if;
+
+        -- prikazy preprocesoru definovane normou
+        if value.id='#' then
+            ;
+
+          -- mnou definovany prikaz
+          elsif value.id='#exit' then
+            break;
+
+          elsif value.id='#if' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none]
+              then
+--write2('#if: skip_eol');
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                -- jsme ve slepe vetvi
+                execstate.push(value.x.getstr(1),e_none);
+              else
+                -- zde nasleduje vyraz, je potreba ho zpracovat
+                begin
+--write2('#if: calc_');
+                  calcresult:=calc_expression(infile,value);
+--write2('calc_expression ' & value.x.getstr(1) & ' = ' & tbranchtxt[calcresult]);
+                  -- a vlastni vnoreni
+                  execstate.push(value.x.getstr(1),e_true);
+                  -- prepnuti vetve podle vysledku
+                  execstate.flip(calcresult);
+                exception
+                  when internal_through do
+--write2('calc_expression @THROUGH ' & value.x.getstr(1) & ' = ' & tbranchtxt[calcresult]);
+                    -- a vlastni vnoreni
+                    execstate.push(value.x.getstr(1),e_through);
+                    execstate.flip(b_true);
+
+                    -- zapsat do vystupniho souboru
+                    cpp_to_fpp('#if',value.x,temp1);
+                    temp1.addstr(crlf);
+                    save_lex(ostream,lex_metaflex,[for x use temp1]);
+                    temp1.free;
+
+                    -- a poznamenat si provedeni vetve #if
+                    execstate.add_extra(a_wasif);
+
+                    -- a docist zbytek neanalyzovaneho radku
+                    skip_eol(infile,lex,value);
+--write2('#if // ' & value.x);
+                  end;
+              end if;
+
+          elsif value.id='#ifdef' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none]
+              then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                -- jsme ve slepe vetvi
+                execstate.push(value.x.getstr(1),e_none);
+              else
+                -- vycist pozadovanou direktivu
+                get_lex(infile,lex,value);
+                if lex<>lex_id then
+                  wr({MSG=}000067,lc_error,'error #ifdef ' & itoa(lex:ord));
+                  raise internal_error_1;
+                  end if;
+--write2('#ifdef ' & value.id);
+
+                -- zjistit, zda je definovany
+                if str_find2(defines,value.id,resvalue)
+                  then
+--write2(value.id & ' = ' & value_to_text(resvalue));
+                    if resvalue.typ=tv_extra and then resvalue.x=tx_through
+                      then
+                        -- ma prochazet skrz, takze
+                        value.x.empty;
+                        value.x.addstr('#if #declared ' & value.id & '; then;' & crlf);
+                        save_lex(ostream,lex_metaflex,value);
+
+                        -- a vlastni vnoreni
+                        execstate.push('#ifdef ' & value.id,e_through);
+                        execstate.flip(b_true);
+                      else
+                        -- a vlastni vnoreni
+                        execstate.push('#ifdef ' & value.id,e_true);
+                        -- provadi se platna vetev
+                        execstate.flip(b_true);
+                      end if;
+                  else
+                    -- a vlastni vnoreni
+                    execstate.push('#ifdef ' & value.id,e_true);
+                    -- provadi se neplatna vetev
+                    execstate.flip(b_false);
+                  end if;
+
+                -- a za identifikatorem musi nasledovat konec radku
+                get_lex(infile,lex,value);
+                if lex=lex_comment then
+                  skip_eol(infile,lex,value);
+                  end if;
+                if lex<>lex_eol then
+                  wr({MSG=}000068,lc_error,'error #ifdef: ' & lex_to_text(lex,value));
+                  raise internal_error_1;
+                  end if;
+              end if;
+
+          elsif value.id='#ifndef' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                -- jsme ve slepe vetvi
+                execstate.push(value.x.getstr(1),e_none);
+              else
+                -- vycist pozadovanou direktivu
+                get_lex(infile,lex,value);
+
+                -- konverze nekterych klicovych slov na identifikatory
+                if lex in [lex_false,lex_true] then
+                  value.id:=keywords[lex];
+                  lex:=lex_id;
+                  end if;
+
+                if lex<>lex_id then
+                  wr({MSG=}000069,lc_error,'error #ifndef: ' & lex_to_text(lex,value));
+                  raise internal_error_1;
+                  end if;
+
+                -- zjistit, zda je definovana
+                if str_find2(defines,value.id,resvalue)
+                  then
+                    if resvalue.typ=tv_extra and then resvalue.x=tx_through
+                      then
+                        -- ma prochazet skrz, takze
+                        value.x.empty;
+                        value.x.addstr('#if not #declared ' & value.id & '; then;' & crlf);
+                        save_lex(ostream,lex_metaflex,value);
+
+                        -- a vlastni vnoreni
+                        execstate.push('#ifndef ' & value.id,e_through);
+                        execstate.flip(b_true);
+                      else
+                        -- a vlastni vnoreni
+                        execstate.push('#ifndef ' & value.id,e_true);
+                        -- je definovany
+                        execstate.flip(b_false);
+                      end if;
+                  else
+                    -- a vlastni vnoreni
+                    execstate.push('#ifndef ' & value.id,e_true);
+
+                    -- neni definovany
+                    execstate.flip(b_true);
+                  end if;
+
+                -- a za identifikatorem musi nasledovat konec radku
+                get_lex(infile,lex,value);
+--write2('eol : lex = ' & lex_to_text(lex,value));
+
+                if lex=lex_comment then
+                  skip_eol(infile,lex,value);
+                  end if;
+
+                if lex=lex_mlcomment then
+                  -- docist do konce komentare
+                  skip_mlcomment2(infile,lex,value);
+
+                  -- nacist konec radku
+                  get_lex(infile,lex,value);
+                  end if;
+
+                if lex<>lex_eol then
+                  wr({MSG=}000070,lc_error,'error #ifndef : lex = ' & lex_to_text(lex,value));
+                  raise internal_error_1;
+                  end if;
+              end if;
+
+          elsif value.id='#elif' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getexec in [e_none]
+              then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+              else
+                -- zde nasleduje vyraz, je potreba ho zpracovat
+                begin
+                  calcresult:=calc_expression(infile,value);
+--write2('calc_expression ' & value.x.getstr(1) & ' = ' & tbranchtxt[calcresult]);
+
+                  -- zjistit zda jsme jiz neprovedli nejakou vetev
+                  if execstate.get_extra(a_wastrue) then
+                    calcresult:=b_false;
+                    end if;
+
+                  -- prepnuti vetve podle vysledku
+                  execstate.flip(calcresult);
+                exception
+                  when internal_through do
+                    calcresult:=b_true;
+                    if execstate.get_extra(a_wasif)
+                      then
+                        cpp_to_fpp('#elif',value.x,temp2);
+                        temp2.addstr(crlf);
+                        save_lex(ostream,lex_metaflex,[for x use temp2]);
+                        temp2.free;
+                      else
+                        cpp_to_fpp('#if',value.x,temp3);
+                        temp6.addstr(crlf);
+                        save_lex(ostream,lex_metaflex,[for x use temp6]);
+                        execstate.add_extra(a_wasif);
+                        temp6.free;
+                      end if;
+
+                    -- prepnout #if do noveho stavu
+                    execstate.set_exec(e_through);
+                    execstate.flip(calcresult);
+
+                    -- a docist zbytek neanalyzovaneho radku
+                    skip_eol(infile,lex,value);
+                  end;
+              end if;
+
+          elsif value.id='#else' then
+            -- vycist zbytek radku
+            skip_eol(infile,lex,value);
+
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getexec in [e_through] or execstate.get_extra(a_wasif) then
+              value.x.empty;
+              value.x.addstr('#else;' & crlf);
+              save_lex(ostream,lex_metaflex,value);
+              end if;
+
+            -- prepnout na vetev ELSE
+            execstate.flip(b_else);
+
+          elsif value.id='#endif' then
+            -- vycist zbytek radku
+            skip_eol(infile,lex,value);
+
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getexec in [e_through] or execstate.get_extra(a_wasif) then
+              value.x.empty;
+              value.x.addstr('#end if;' & crlf & crlf);
+              save_lex(ostream,lex_metaflex,value);
+              value.x.free;
+              end if;
+
+            -- vynorit se z menu
+            execstate.pop;
+
+          elsif value.id='#include' then
+            if execstate.getbranch in [e_none]
+              then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+              else
+                -- zjistit nazev souboru (headeru)
+                value.s:=get_filename(infile);
+
+                if farray_find(ignore_file,value.s)
+                  then
+                    -- je uveden v seznamu k ignorovani
+                    value2.x.empty;
+                    value2.x.addstr('-- ignored #include <' & value.s & '>' & crlf);
+                    save_lex(ostream,,value2);
+                    value2.x.free;
+
+                  else
+                    -- zjistit, zda jsme ho jiz nezpracovali
+                    resvalue.typ:=tv_nic;
+                    if flist_find(dofiles,getsimplename(getfilename(value.s)))
+                      then
+                        -- neni pozadovana zmena poradi zpracovani
+                        if not proc_find2(needed_list,getfilename(value.s)) then
+                          wr({MSG=}000071,lc_warning,'Duplicitni zpracovani souboru ' & value.s);
+
+                          -- zjistit skutecne vnorene moduly
+                          header_from:length:=0;
+                          if not proc_find(header_list,getfilename(value.s),header_from) then
+                            wr({MSG=}000072,lc_error,'Nenalezena cesta souboru ' & value.s);
+                            raise internal_error_1;
+                            end if;
+
+                          -- odstranit hlavni header
+                          header_from:=copy(header_from,1+pos('-',header_from),255);
+                          temp_path:length:=0;
+
+                          -- sestavit seznam
+                          while header_from:length>0 loop
+                            -- oddelit dalsi nazev modulu
+                            if pos('-',header_from)>0
+                              then module_temp:=copy(header_from,1,pos('-',header_from)-1);
+                                   header_from:=copy(header_from,1+pos('-',header_from),255);
+                              else module_temp:=header_from;
+                                   header_from:length:=0;
+                              end if;
+
+                            -- pridat do cesty
+                            if temp_path:length=0
+                              then temp_path:=module_temp;
+                              else temp_path & '-' & module_temp;
+                              end if;
+
+                            -- a ulozit
+                            value.id:='#include';
+                            value.s:=temp_path;
+                            controlheadername(value.s);
+                            save_lex(ostream,lex_metaid,value);
+                            save_lex(ostream,lex_str,value);
+                            save_lex(ostream,lex_eol,value);
+                            end loop;
+                          end if;
+                      else
+                        -- inicializace pro dohledani v seznamu
+                        neededfile:length:=0;
+
+                        -- zde je potreba vyresit zavislosti mezi soubory tj. pokud je potreba
+                        -- zpracovat nejaky soubor pred jinym souborem
+                        if proc_find(needed_list,getfilename(value.s),neededfile) then
+                          -- predzpracovani
+                          neededfile & '.h';
+                          filename:=pathfile2(neededfile,idlcontrol);
+
+                          -- urceni nove cesty
+                          module_temp:=module_path;
+                          module_path & '-' & getfilename(neededfile);
+
+                          -- do souboru je potreba vnorit jeste bez nadrazeneho souboru
+                          value.x.empty;
+                          neededfile:=getfilename(neededfile);
+                          controlheadername(neededfile);
+                          value.x.addstr('#separate ' & neededfile & ';' & crlf);
+                          save_lex(ostream,,value);
+                          value.x.free;
+
+                          -- zapamatovat si skutecne jmeno souboru
+                          controlheadername(module_path);
+                          proc_add(header_list,getfilename(neededfile),module_path);
+
+                          -- vlastni zpracovani souboru
+                          dofile(filename,bchyba);
+                          if bchyba then
+                            break;
+                            end if;
+
+                          -- vraceni puvodni cesty
+                          module_path:=module_temp;
+
+                          wr({MSG=}000073,lc_norm,formats('Pokracuje se ve zpracovani souboru %1',inname));
+                          -- hlavicka souboru
+--                          write_module(inname);
+                          end if;
+
+                        -- neni zpracovani vynucene?
+                        idlcontrol:=true;
+                        for i in force_file:range loop
+                          if force_file[i].s=value.s then
+                            -- soubor nalezen, zpracovani je vynucene
+                            idlcontrol:=false;
+                            break;
+                            end if;
+                          end loop;
+
+                        -- dohledat cele jmeno souboru
+                        -- pokud je zpracovani vynucene, nekontrolovat .idl soubor
+                        filename:=pathfile2(value.s,idlcontrol);
+
+                        -- ted uz musime zpracovat vlastni retezec udavajici jmeno souboru
+                        if filename:length=0
+                          then
+                            -- soubor se nenasel
+                            value.x.empty;
+                            value.x.addstr('-- skip #include <' & value.s & '>' & ' not found' & crlf);
+                            save_lex(ostream,,value);
+                          else
+                            -- urceni nove cesty
+                            module_temp:=module_path;
+                            module_path & '-' & getfilename(value.s);
+
+                            -- do souboru je potreba vnorit jeste bez nadrazeneho souboru
+                            value.x.empty;
+                            value.s:=getfilename(value.s);
+                            controlheadername(value.s);
+                            value.x.addstr('#separate ' & value.s & ';' & crlf);
+                            save_lex(ostream,,value);
+                            value.x.free;
+
+                            -- zapamatovat si skutecne jmeno souboru
+                            controlheadername(module_path);
+                            proc_add(header_list,getfilename(value.s),module_path);
+
+                            -- vlastni zpracovani souboru
+                            dofile(filename,bchyba);
+                            if bchyba then
+                              break;
+                              end if;
+
+                            -- vraceni puvodni cesty
+                            module_path:=module_temp;
+
+                            wr({MSG=}000074,lc_norm,formats('Pokracuje se ve zpracovani souboru %1',inname));
+                            -- hlavicka souboru
+                            write_module(inname);
+                          end if;
+                      end if;
+                  end if;
+              end if;
+
+          elsif value.id='#define' then
+--write2('#define : getbranch = ' & texectxt[execstate.getbranch]);
+--write2('#define : getexec   = ' & texectxt[execstate.getexec]);
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+              elsif execstate.getexec in [e_through] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                -- zbytek prevest do souboru
+                cpp_to_fpp('#define',value.x,temp4);
+                if temp4.getstr(1,false)<>'@IGNORE' then
+                  temp4.addstr(crlf);
+                  save_lex(ostream,,[for x use temp4]);
+                  temp4.free;
+                  end if;
+
+              else
+                -- vycist pozadovanou direktivu
+                get_lex(infile,lex,value);
+                if lex<>lex_id then
+                  wr({MSG=}000075,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value));
+                  raise internal_error_1;
+                  end if;
+
+-- vypsat si zpracov van˜ define na debugterm
+-- write2('#define: lex = ' & lex_to_text(lex,value));
+                -- zjistit, zda je tato direktiva definovana
+                if str_find2(defines,value.id,resvalue) then
+                  if resvalue.typ=tv_extra and then resvalue.x=tx_through then
+                      -- prevod textove substituce do flexu
+                      skip_eol(infile,lex,value2);
+
+                      value.x.empty;
+                      value.x.addstr('#template ' & value.id & ';' & crlf);
+                      save_lex(ostream,,value);
+                      value.x.free;
+
+                      value2.x.addstr(crlf);
+                      save_lex(ostream,,value2);
+                      value.x.free;
+
+                      value.x.empty;
+                      value.x.addstr('#end ' & value.id & ';' & crlf);
+                      save_lex(ostream,,value);
+                      value.x.free;
+                      goto skipthis;
+
+                    elsif resvalue.typ=tv_extra and then resvalue.x=tx_const_def then
+                      -- p©esko‡it do konce © dku 
+                      skip_eol(infile,lex,value);
+
+                      -- pripravit se na vystup
+                      value.x.empty;
+                      value.x.addstr('const' & crlf);
+                      value.x.addstr('  ' & value.id);
+write2('Vlo‘en ©etˆzec id ' & value.id);
+                      value.x.addstr(' : ');
+
+                      -- a vlo‘it ©etˆzec na‡ten˜ z ini filu.
+                      value.x.addstr(resvalue.s.getstr(1,false));
+                      value.x.addstr(';' & crlf & crlf);
+write2('Vlo‘en ©etˆzec value ' & resvalue.s.getstr(1,false));
+write2('A celkovˆ =' & value.x.getstr(1,false));
+
+                      save_lex(ostream,,value);
+                      value.x.free;
+                      goto skipthis;
+
+                    elsif resvalue.typ=tv_extra and then resvalue.x=tx_const then
+                      -- pripravit se na vystup
+                      value.x.empty;
+                      value.x.addstr('const' & crlf);
+                      value.x.addstr('  ' & value.id);
+
+                      -- 0
+                      -- (0x80000000L)
+                      -- ((DWORD)-10)
+                      -- ((HANDLE)(LONG_PTR)-1)
+                      get_lex(infile,lex,value2);
+
+                      -- 1
+                      if lex=lex_num then
+                        value.x.addstr(' = ' & itoax(value2.n,,,16));
+                        value.x.addstr(';' & crlf & crlf);
+                        save_lex(ostream,,value);
+                        value.x.free;
+
+                        get_lex(infile,lex,value2);
+                        -- koment © na konci © dku zahod¡me
+                        if lex=
+                        lex_comment then
+                          skip_eol(infile,lex,value);
+                          lex:=lex_eol;
+                          end if;
+                        if lex<>lex_eol then
+                          wr({MSG=}000228,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+                        goto skipthis;
+                        end if;
+
+                      if lex<>lex_lpar then
+                        wr({MSG=}000076,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+                      get_lex(infile,lex,value2);
+
+                      -- (0x1L)
+                      if lex=lex_num then
+                        if value2.longer
+                          then
+                            case value2.radix 
+                              when tr_dec do value.x.addstr(' = ' & uint64_to_string(value2.n2));
+write2('number value = ' & uint64_to_string(value2.n2));
+                               when tr_hex do value.x.addstr(' = $' & uint64_to_radix_string(value2.n2,16));
+write2('number 16 value = ' & uint64_to_radix_string(value2.n2,16));
+                              when tr_oct do value.x.addstr(' = 8$' & uint64_to_radix_string(value2.n2,8));
+write2('number 8 value = ' & uint64_to_radix_string(value2.n2,8));
+                              end case;
+                          else 
+                          value.x.addstr(' = $' & itoax(value2.n,,,16));
+                          end if;
+
+                        get_lex(infile,lex,value2);
+                        if lex<>lex_rpar then
+                          wr({MSG=}000229,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+                        value.x.addstr(';' & crlf & crlf);
+                        save_lex(ostream,,value);
+                        value.x.free;
+
+                        get_lex(infile,lex,value2);
+                        if lex<>lex_eol then
+                          wr({MSG=}000230,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+                        goto skipthis;
+                        end if;
+
+                      if lex<>lex_lpar then
+                        wr({MSG=}000077,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+
+                      -- nasleduje typ
+                      get_lex(infile,lex,value2);
+                      if lex<>lex_id then
+                        wr({MSG=}000078,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+
+                      -- typ muze mit vnuceno jine jmeno
+                      if str_find2(defines,value2.id,resvalue2)
+                        then
+                          if resvalue2.typ=tv_str
+                            then
+                              if resvalue2.s.getstrcount>1 then
+                                wr({MSG=}000231,lc_error,'string too long');
+--write2str(value.id,resvalue.s.getstr(1,false));
+                                raise internal_error_1;
+                                end if;
+                              -- RadekR 25.8.2003 : Tady by to chtˆlo je¨tˆ rozparsovat to co dostaneme a
+                              -- aby jsem mohli ©¡ct jesli je to jenom typ nebo p©etypovan  konstanta
+                              value.x.addstr(' : ' & resvalue2.s.getstr(1,false));
+                            else
+                              wr({MSG=}000232,lc_error,'unknown define type ' & itoa(resvalue.typ:ord));
+                              raise internal_error_1;
+                            end if;
+                        else
+                          value.x.addstr(' : ' & value2.id);
+                        end if;
+
+                      -- nasleduje )
+                      get_lex(infile,lex,value2);
+                      if lex<>lex_rpar then
+                        wr({MSG=}000079,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+
+                      -- nasleduje cislo
+                      value.x.addstr(' = ');
+                      get_lex(infile,lex,value2);
+
+                      -- volitelne dalsi pretypovani zahazujeme
+                      if lex=lex_lpar then
+                        -- nasleduje typ
+                        get_lex(infile,lex,value2);
+                        if lex<>lex_id then
+                          wr({MSG=}000080,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+
+                        -- nasleduje prava zavorka
+                        get_lex(infile,lex,value2);
+                        if lex<>lex_rpar then
+                          wr({MSG=}000081,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+
+                        -- nacist dalsi element
+                        get_lex(infile,lex,value2);
+                        end if;
+
+                      if lex=lex_sub then
+                        get_lex(infile,lex,value2);
+                        -- volitelne znamenko
+                        if lex<>lex_num then
+                          wr({MSG=}000082,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+                        value.x.addstr('$' & itoax(-value2.n,,,16) & ';' & crlf);
+                      elsif lex=lex_add then
+                        get_lex(infile,lex,value2);
+                        -- volitelne znamenko
+                        if lex<>lex_num then
+                          wr({MSG=}000000,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                          raise internal_error_1;
+                          end if;
+                        value.x.addstr('$' & itoax(value2.n,,,16) & ';' & crlf);
+                      else
+                          -- volitelne znamenko
+                          if lex<>lex_num then
+                            wr({MSG=}000083,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                            raise internal_error_1;
+                            end if;
+                          value.x.addstr('$' & itoax(value2.n,,,16) & ';' & crlf);
+                        end if;
+
+                      -- nasleduje )
+                      get_lex(infile,lex,value2);
+                      if lex<>lex_rpar then
+                        wr({MSG=}000084,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+
+                      -- nasleduje crlf
+                      get_lex(infile,lex,value2);
+                      if lex<>lex_eol then
+                        wr({MSG=}000085,lc_error,'#define : lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                        end if;
+
+                      value.x.addstr(crlf);
+                      save_lex(ostream,,value);
+                      value.x.free;
+                      goto skipthis;
+
+                    -- je definovana
+                    elsif resvalue.typ=tv_str then
+                      if resvalue.s.getstrcount>1 then
+                        wr({MSG=}000086,lc_error,'string too long');
+write2str(value.id,resvalue.s.getstr(1,false));
+                        raise internal_error_1;
+                        end if;
+                      value.id:=resvalue.s.getstr(1,false);
+
+                    else
+                      -- zkontrolovat zda jsou stejneho typu a maji stejnou hodnotu
+                      wr({MSG=}000087,lc_warning,'Identifikator ' & value.id & ' jiz existuje, ignoruje se');
+                    end if;
+                  end if;
+
+                -- inicializace pro ukladani vysledku
+                resvalue.typ:=tv_str;
+                resvalue.s.empty;
+
+                -- zjistit, zda je to jiz konec zacatku definice, popr. ulozit parametry
+                if not value.endspace then
+                  resvalue.typ:=tv_expr;
+                  resvalue.p:='';
+                  -- je potreba docist zbytek tj. levou zavorku
+                  get_lex(infile,lex,value2);
+                  if lex<>lex_lpar then
+                    wr({MSG=}000088,lc_error,'chyba #define ' & value.id & ' : lex = ' & lex_to_text(lex,value2));
+                    raise internal_error_1;
+                    end if;
+
+                  -- parametry oddelene carkou
+                  loop
+                    -- nacist lexikalni symbol
+                    get_lex(infile,lex,value2);
+
+                    -- ukoncuje se pravou zavorkou
+                    if lex=lex_rpar then
+                        break;
+
+                      -- muze nasledovat parametr (identifikator)
+                      elsif lex=lex_id then
+                        resvalue.p & value2.id;
+
+                      elsif lex in [keywords:range] then
+                        resvalue.p & keywords[lex];
+
+                      -- carka pro oddeleni parametru
+                      elsif lex=lex_comma then
+                        resvalue.p & ',';
+
+                      else
+                        wr({MSG=}000089,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value2));
+                        raise internal_error_1;
+                      end if;
+                    end loop;
+                  end if;
+
+                -- zjistit, zda se jedna o textovou substituci nebo jen o definici direktivy
+                get_lex(infile,lex,value2);
+
+                -- preskocit komentare (ale schovat si je)
+                comment.empty;
+                while lex in [lex_comment,lex_mlcomment] loop
+                  if lex=lex_comment then
+                      skip_eol(infile,lex,value);
+                      linsert(value.x,comment,comment.getsize+1);
+
+                    elsif lex=lex_mlcomment then
+                      loop
+                        skip_mlcomment2(infile,lex,value);
+                        linsert(value.x,comment,comment.getsize+1);
+                        break when lex=lex_mlcomment2;
+                        end loop;
+
+                    end if;
+
+                  -- nacist dalsi
+                  get_lex(infile,lex,value2);
+                  end loop;
+
+                -- ale co s nimi pak
+
+                -- pokud jsou zadany parametry nemuze to byt obycejna substituce
+                if lex in [lex_eol,lex_comment,lex_mlcomment] then
+                    -- jedna se pouze o direktivu, ale hodnotu uz mame urcenou
+                    str_add2(defines,value.id,resvalue);
+
+                    -- vratit co nepotrebujeme
+                    if lex in [lex_comment,lex_mlcomment] then
+                      put_lex(infile,lex,value2);
+                      end if;
+
+                  elsif lex=lex_num then
+                    -- zjistit zda jiz neni definovana
+                    if str_find2(consts,value.id,value3)
+                      then
+                        wr({MSG=}000090,lc_warning,formats('const %1 jiz existuje',value.id));
+                      else
+                        -- jedna se o konstantu
+                        value.x.empty;
+                        value.x.addstr('const' & crlf);
+                        value.x.addstr('  ' & expandstr(value.id,18) & '= ' & num_to_flex(lex,value2) & ';');
+                        value.x.addstr(crlf & crlf);
+                        save_lex(ostream,,value);
+
+                        -- zaradit do definice konstant
+                        value3.typ:=tv_longint;
+                        value3.l:=value2.n;
+                        str_add2(consts,value.id,value3);
+                      end if;
+
+                    -- ted uz musi nasledovat konec radku
+                    get_lex(infile,lex,value2);
+                    if lex=lex_comment then
+                        skip_eol(infile,lex,value2);
+                        comment.addstr('-- **');
+                        linsert(value2.x,comment,comment.getsize+1);
+                      elsif lex=lex_mlcomment then
+                        comment.addstr('-- **');
+                        loop
+                          skip_mlcomment2(infile,lex,value2);
+                          linsert(value2.x,comment,comment.getsize+1);
+                          if lex=lex_mlcomment2 then
+                            comment.addstr('*/' & crlf);
+                            break;
+                            end if;
+                          comment.addstr(crlf & '--');
+                          end loop;
+                        get_lex(infile,lex,value2);
+                      end if;
+                    if lex not in [lex_eol] then
+                      wr({MSG=}000091,lc_error,'chyba #define ' & value.id & ' : lex = ' & lex_to_text(lex,value2));
+                      raise internal_error_1;
+                      end if;
+
+                  elsif lex=lex_char1 then
+                    -- jedna se o konstantu
+                    value.x.empty;
+                    value.x.addstr('const' & crlf);
+                    value.x.addstr('  ' & expandstr(value.id,18) & '= ' & '''' & value2.ch & '''' & ';');
+                    value.x.addstr(crlf & crlf);
+                    save_lex(ostream,,value);
+
+                    -- ted uz musi nasledovat konec radku
+                    get_lex(infile,lex,value2);
+                    if lex in [lex_comment,lex_mlcomment] then
+                      skip_eol(infile,lex,value2);
+                      end if;
+                    if lex not in [lex_eol] then
+                      wr({MSG=}000092,lc_error,'chyba #define ' & value.id & ' : lex = ' & lex_to_text(lex,value2));
+                      raise internal_error_1;
+                      end if;
+
+                  elsif lex=lex_char2 then
+                    -- jedna se o konstantu
+                    value.x.empty;
+                    value.x.addstr('const' & crlf);
+                    value.x.addstr('  ' & expandstr(value.id,18) & '= ' & itoa(value2.ch2) & ';');
+                    value.x.addstr(crlf & crlf);
+                    save_lex(ostream,,value);
+
+                    -- ted uz musi nasledovat konec radku
+                    get_lex(infile,lex,value2);
+                    if lex in [lex_comment,lex_mlcomment] then
+                      skip_eol(infile,lex,value2);
+                      end if;
+                    if lex not in [lex_eol] then
+                      wr({MSG=}000093,lc_error,'chyba #define ' & value.id & ' : lex = ' & lex_to_text(lex,value2));
+                      raise internal_error_1;
+                      end if;
+
+                  elsif resvalue.typ=tv_str then
+                    control:=0;
+
+                    -- jedna se o jednoduchou textovou substituci
+                    while lex not in [lex_eol,lex_comment] loop
+                      -- klicove slovo prevest na identifikator
+                      if lex in [keywords:range] then
+                        value2.id:=keywords[lex];
+                        lex:=lex_id;
+                        end if;
+
+                      -- zpracovat
+                      if lex=lex_id then
+                          resvalue.s.addstr(value2.id);
+                          if value.endspace then
+                            resvalue.s.addchar(' ');
+                            end if;
+
+                        -- retezec
+                        elsif lex=lex_str then
+                          resvalue.s.addchar('"');
+                          resvalue.s.addstr(value2.s);
+                          resvalue.s.addchar('"');
+
+                        -- cislo
+                        elsif lex=lex_num then
+--                          resvalue.s & num_to_flex(lex,value2);
+                          linsert(value2.x,resvalue.s,resvalue.s.getsize+1);
+
+                        -- vetsi cislo
+                        elsif lex=lex_num2 then
+--                          resvalue.s & num2_to_flex(lex,value2);
+                          linsert(value2.x,resvalue.s,resvalue.s.getsize+1);
+
+                        -- ( {} [
+                        elsif lex in [lex_lpar,lex_lcurly,lex_lbra] then
+                          resvalue.s.addstr(operators[lex]);
+                          control+1;
+
+                        -- ) } ]
+                        elsif lex in [lex_rpar,lex_rcurly,lex_rbra] then
+                          resvalue.s.addstr(operators[lex]);
+                          control-1;
+
+                        -- ostatni operatory
+                        elsif lex in [lex_scol,lex_col,lex_add,lex_sub,lex_mul,lex_div,lex_mod,lex_xor,
+                                      lex_bitand,lex_bitor,lex_compl,lex_not,lex_assign,lex_lt,lex_gt,
+                                      lex_assign_add,lex_assign_sub,lex_assign_mul,lex_assign_div,lex_assign_mod,lex_xor_eq,lex_and_eq,lex_or_eq,
+                                      lex_shl,lex_shr,lex_eq,lex_not_eq,lex_le,lex_ge,
+                                      lex_and,lex_or,lex_inc,lex_dec,lex_comma,lex_of2,lex_of,lex_question] then
+                          resvalue.s.addstr(operators[lex]);
+
+                        -- spojeni bez mezer
+                        elsif lex=lex_metaid2 then
+                          -- je potreba delat az pri rozvinuti
+                          resvalue.s.addstr('##');
+
+                        elsif lex=lex_mlcomment then
+                          skip_mlcomment2(infile,lex,value);
+                          if lex<>lex_mlcomment2 then
+                            wr({MSG=}000094,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value));
+                            raise internal_error_1;
+                            end if;
+
+                        else
+                          wr({MSG=}000095,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value));
+                          raise internal_error_1;
+                        end if;
+
+                      -- nacist dalsi lexikalni element
+                      get_lex(infile,lex,value2);
+                      end loop;
+
+                    -- pokud koncime komentarem tak ho vycist
+                    if lex in [lex_comment] then
+                      skip_eol(infile,lex,value);
+                      end if;
+
+                    -- kontrola parovani zavorek
+                    if control<>0 then
+                      wr({MSG=}000096,lc_warning,'chyba #define: control = ' & itoa(control));
+                      end if;
+
+                    -- a zapamatovat si to
+                    str_add2(defines,value.id,resvalue);
+
+                  else
+                    -- jedna se o slozitejsi textovou substituci [s parametry]
+                    resvalue.e.empty;
+                    control:=0;
+
+                    -- jedna se o textovou substituci
+                    while lex not in [lex_eol,lex_comment] loop
+                      -- klicove slovo prevest na identifikator
+                      if lex in [keywords:range] then
+                        value2.id:=keywords[lex];
+                        lex:=lex_id;
+                        end if;
+
+                      -- zpracovat
+                      if lex=lex_id then
+                          resvalue.e.addstr(value2.id);
+                          if value2.endspace then
+                            resvalue.e.addchar(' ');
+                            end if;
+
+                        -- retezec
+                        elsif lex=lex_str then
+                          resvalue.e.addchar('"');
+                          resvalue.e.addstr(value2.s);
+                          resvalue.e.addchar('"');
+
+                        -- cislo
+                        elsif lex=lex_num then
+                          resvalue.e.addstr(num_to_flex(lex,value2));
+                          resvalue.e.addchar(' ');
+
+                        -- vetsi cislo
+                        elsif lex=lex_num2 then
+                          resvalue.e.addstr(num2_to_flex(lex,value2));
+                          resvalue.e.addchar(' ');
+
+                        -- ( {} [
+                        elsif lex in [lex_lpar,lex_lcurly,lex_lbra] then
+                          resvalue.e.addstr(operators[lex]);
+                          control+1;
+
+                        -- ) } ]
+                        elsif lex in [lex_rpar,lex_rcurly,lex_rbra] then
+                          resvalue.e.addstr(operators[lex]);
+                          control-1;
+
+                        -- ostatni operatory
+                        elsif lex in [lex_scol,lex_col,lex_add,lex_sub,lex_mul,lex_div,lex_mod,lex_xor,
+                                      lex_bitand,lex_bitor,lex_compl,lex_not,lex_assign,lex_lt,lex_gt,
+                                      lex_assign_add,lex_assign_sub,lex_assign_mul,lex_assign_div,lex_assign_mod,lex_xor_eq,lex_and_eq,lex_or_eq,
+                                      lex_shl,lex_shr,lex_eq,lex_not_eq,lex_le,lex_ge,
+                                      lex_and,lex_or,lex_inc,lex_dec,lex_comma,lex_of2,lex_of,lex_question] then
+                          resvalue.e.addstr(operators[lex]);
+
+                        -- spojeni bez mezer
+                        elsif lex=lex_metaid2 then ;
+
+                        elsif lex=lex_mlcomment then
+                          skip_mlcomment2(infile,lex,value);
+                          if lex<>lex_mlcomment2 then
+                            wr({MSG=}000097,lc_error,'chyba #define: lex = ' & lex_to_text(lex,value));
+                            raise internal_error_1;
+                            end if;
+
+                        else
+                          wr({MSG=}000098,lc_error,'#define error : lex = ' & lex_to_text(lex,value));
+                          raise internal_error_1;
+                        end if;
+
+                      -- nacist dalsi lexikalni element
+                      get_lex(infile,lex,value2);
+                      end loop;
+
+                    -- pokud koncime komentarem tak ho vycist
+                    if lex in [lex_comment] then
+                      skip_eol(infile,lex,value);
+                      end if;
+
+                    -- kontrola parovani zavorek
+                    if control<>0 then
+                      wr({MSG=}000099,lc_warning,'chyba #define: control = ' & itoa(control));
+                      end if;
+
+                    -- a zapamatovat si to
+                    str_add2(defines,value.id,resvalue);
+--write2('#define ' & value.id & ' := ' & value_to_text(resvalue));
+                  end if;
+              end if;
+
+          elsif value.id='#undef' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+              elsif execstate.getbranch in [e_true] then
+                -- vycist pozadovanou direktivu
+                get_lex(infile,lex,value);
+
+                -- znicit direktivu
+                str_del2(defines,value.id);
+
+                -- preskocit az do konce
+                skip_eol(infile,lex,value);
+              else
+                -- preskocit az do konce
+                skip_eol(infile,lex,value);
+
+                linsert('-- #undef ',value.x,1);
+                save_lex(ostream,,value);
+              end if;
+
+          elsif value.id='#line' then
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+              elsif execstate.getbranch in [e_through] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                -- zapsat do souboru
+                linsert('-- #line ',value.x,1);
+                value.x.addstr(crlf);
+                save_lex(ostream,,value);
+
+              else
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+                linsert('-- #line ',value.x,1);
+                value.x.addstr(crlf);
+                save_lex(ostream,,value);
+              end if;
+
+          elsif value.id='#error' then
+--write2('#error : getbranch = ' & texectxt[execstate.getbranch]);
+--write2('#error : getexec = ' & texectxt[execstate.getexec]);
+            -- zjistit, zda jsme v provadene vetvi
+            if execstate.getbranch in [e_none] then
+                -- vycist zbytek radku
+                skip_eol(infile,lex,value);
+
+              elsif execstate.getexec in [e_through] then
+                -- vycist zbytek radku a prevest do Flexu
+                skip_eol(infile,lex,value);
+
+                linsert('#error ''',value.x,1);
+                value.x.addstr(''';' & crlf);
+                save_lex(ostream,,value);
+
+              else
+-- zajimaji nas direktivy
+                -- provest tj. vyhlasit chyby
+                skip_eol(infile,lex,value);
+                wr({MSG=}000100,lc_error,'#error ' & value.x.getstr(1));
+                raise internal_error_1;
+              end if;
+
+          elsif value.id='#pragma' then
+            skip_eol(infile,lex,value);
+
+            linsert('-- #pragma ',value.x,1);
+            value.x.addstr(crlf);
+            save_lex(ostream,,value);
+
+          -- neznamy prikaz preprocesoru
+          else
+            wr({MSG=}000101,lc_error,'neznamy prikaz preprocesoru: ' & value.id);
+            raise internal_error_1;
+          end if;
+
+      -- pokud jsme v neprovadene vetvi, tak vse krome meta ignorovat
+      elsif execstate.getbranch in [e_none] then
+        -- vycist zbytek radku
+        skip_eol(infile,lex,value);
+
+      -- identifikator muze byt textova substituce
+      elsif lex=lex_id then
+        if str_find2(defines,value.id,resvalue)
+          then
+--write2('identificator ' & value.id & ' defined (type ' & itoa(resvalue.typ:ord) & ')');
+            case resvalue.typ
+              when tv_nic do
+                wr({MSG=}000102,lc_error,value.id & ' ' & value_to_text(resvalue));
+                raise internal_error;
+
+              when tv_extra do
+                case resvalue.x
+                  when tx_through  do
+                    save_lex(ostream,lex,value);
+                  when tx_ignore    do ;
+                  when tx_false     do ;
+                  when tx_forward1  do ;
+                  when tx_ignore1   do ;
+                  when tx_ignore2   do ;
+                  when tx_forward2  do ;
+                  when tx_const     do ;
+                  when tx_const_def do ;
+                  end case;
+
+              when tv_str do
+                -- dodatecne zpracovani
+                normalizelstr(resvalue.s);
+
+                infile.ungetlstr(resvalue.s);
+
+              when tv_boolean do
+                wr({MSG=}000103,lc_error,value.id & ' ' & value_to_text(resvalue));
+                raise internal_error;
+
+              when tv_longint do
+                value.x.empty;
+                value.x.addstr(itoa(resvalue.l));
+                save_lex(ostream,,value);
+
+              when tv_expr do
+                if value.endlpar or scan_lex(infile)=lex_lpar
+                  then
+                    -- a identifikator konci ( takze je to textova substituce
+                    p_define(infile,resvalue.p,resvalue.e,temp5);
+                    infile.ungetlstr(temp5);
+                    temp5.free;
+                  else
+                    -- nekonci zavorkou takze to neni textova substituce
+                    if value.x.getsize>255 then
+                      wr({MSG=}000104,lc_error,'string too long');
+                      raise internal_error_1;
+                      end if;
+                    value.id:=value.x.getstr(1,false);
+                    save_lex(ostream,lex_id,value);
+                  end if;
+
+              end case;
+          else
+            save_lex(ostream,lex,value);
+          end if;
+
+      -- jinak vse ostatni prepsat do vystupniho souboru
+      else
+        save_lex(ostream,lex,value);
+      end if;
+skipthis:
+    -- znicit pozustatky zpracovani
+    value.x.free;
+    end loop;
+
+  -- komentar holt bude az za
+  value.x.empty;
+  linsert(comment,value.x,1);
+  comment.free;
+  save_lex(ostream,,value);
+  value.x.free;
+
+  -- ulozit si stream pro dalsi pouziti
+  save_stream(ostream,makefilename(filename2,work_path,phase_ext));
+  write_stream(ostream,makefilename(filename2,work_path,'.text' & phase_ext));
+
+  -- vse bez chyby
+  chyba:=false;
+
+leave
+
+  -- uzavrit vstupni soubor
+  infile.close;
+
+  flist_change(dofiles,getsimplename(filename2),ostream);
+
+  wr({MSG=}000105,lc_norm,formats('Zpracovan soubor %1 - phase 1',inname));
+  end dofile;
+
+
+
+end h2flex1;
+

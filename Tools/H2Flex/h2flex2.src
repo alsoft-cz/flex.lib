@@ -1,0 +1,3261 @@
+----------------------------------------------------------------------------------------------------
+-- h2flex2
+----------------------------------------------------------------------------------------------------
+
+
+module h2flex2 =
+
+with
+  system,str,filedef,files,txtfiles,log,num,lstr,
+  h2def,h2parser,h2text,h2util,h2stream,
+  debug;
+
+exception
+  internal_error_2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure dofile (
+           istream : ref tstream;                -- vstupni stream
+           ostream : ref tstream;                -- vystupni stream
+             chyba : ref boolean);
+-- Zpracovani jednoho souboru vlastnim prekladacem.
+----------------------------------------------------------------------------------------------------
+
+
+
+type
+  tdeclspec        = enum
+    ds_align;                                    -- align(num)
+    ds_dllimport;                                -- dllimport
+    ds_noreturn;                                 -- noreturn
+    end enum;
+  tdeclspecs       = set of tdeclspec;
+
+  ttypedef         = record
+    declspec       : tdeclspecs;
+    align          : byte;
+    end record;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_struct (
+           istream : ref tstream;                -- vstupni stream
+           ostream : ref tstream;                -- vystupni stream
+            predef : ref lstring;                -- potrebne deklarace
+            inside : boolean;                    -- T=jedna se o vnorenou deklaraci
+          declspec : ttypedef := [for declspec use tdeclspecs:[]];
+       forposition : boolean := false;
+            _const : boolean := false);          -- T=const
+-- Zpracovava struct.
+----------------------------------------------------------------------------------------------------
+procedure p_union (
+           istream : ref tstream;                -- vstupni stream
+           ostream : ref tstream;                -- vystupni stream
+            inside : boolean);                   -- T=jedna se o vnorenou definici
+-- Zpracovava union.
+----------------------------------------------------------------------------------------------------
+procedure p_enum (
+           istream : ref tstream;                -- vstupni stream
+           ostream : ref tstream);               -- vystupni stream
+-- Zpracovava enum.
+----------------------------------------------------------------------------------------------------
+procedure optimalize_stream (
+           istream : ref tstream;
+           counter : ref longint);
+-- vyradi vsechny po sobe jdouci elementy
+-- #if #endif
+-- #if #else #endif
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure optimalize_stream =
+--         istream : ref tstream;
+--         counter : ref longint) =
+-- vyradi vsechny po sobe jdouci elementy
+-- #if #endif
+-- #if #else #endif
+----------------------------------------------------------------------------------------------------
+var
+  ostream          : tstream;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  lex2             : tlexelement;
+  value2           : tlexvalue;
+  lex3             : tlexelement;
+  value3           : tlexvalue;
+  lex4             : tlexelement;
+  value4           : tlexvalue;
+  command          : str255;
+  command2         : str255;
+  command3         : str255;
+  command4         : str255;
+
+begin
+  -- inicializace
+  counter:=0;
+  rewind_stream(istream);
+  init_stream(ostream);
+
+  loop
+    load_lex(istream,lex,value);
+    if lex=lex_eof then
+        break;
+
+      elsif lex=lex_metaflex then
+        command:=value.x.getstr(1,false);
+
+        -- pokud se jedna o #if
+        if copy(command,1,3)='#if'
+          then
+            -- nacist dalsi element
+            load_lex(istream,lex2,value2);
+            if lex2=lex_metaflex
+              then
+                command2:=value2.x.getstr(1,false);
+
+                -- pokud se jedna o #endif
+                if copy(command2,1,8)='#end if;'
+                  then
+                    -- zase jedna povedena optimalizace
+                    counter+1;
+
+                  elsif copy(command2,1,6)='#elsif' then
+                    load_lex(istream,lex3,value3);
+                    if lex3=lex_metaflex
+                      then
+                        command3:=value3.x.getstr(1,false);
+
+                        -- pokud se jedna o #endif
+                        if copy(command3,1,6)='#else;'
+                          then
+                            load_lex(istream,lex4,value4);
+                            if lex4=lex_metaflex
+                              then
+                                command4:=value4.x.getstr(1,false);
+
+                                if copy(command4,1,8)='#end if;'
+                                  then
+                                    counter+1;
+                                  else
+                                    save_lex(ostream,lex,value);
+                                    prev_lex(istream{lex2,value2});
+                                    prev_lex(istream{lex3,value3});
+                                    prev_lex(istream{lex4,value4});
+                                  end if;
+
+                              else
+                                save_lex(ostream,lex,value);
+                                prev_lex(istream{lex2,value2});
+                                prev_lex(istream{lex3,value3});
+                                prev_lex(istream{lex4,value4});
+                              end if;
+
+                          else
+                            save_lex(ostream,lex,value);
+                            prev_lex(istream{,lex2,value2});
+                            prev_lex(istream{,lex3,value3});
+                          end if;
+                      else
+                        save_lex(ostream,lex,value);
+                        prev_lex(istream{,lex2,value2});
+                        prev_lex(istream{,lex3,value3});
+                      end if;
+
+                  elsif copy(command2,1,6)='#else;' then
+                    load_lex(istream,lex3,value3);
+                    if lex3=lex_metaflex
+                      then
+                        command3:=value3.x.getstr(1,false);
+
+                        -- pokud se jedna o #endif
+                        if copy(command3,1,8)='#end if;'
+                          then ;
+                            -- zase jedna povedena optimalizace
+                            counter+1;
+
+                          else
+                            save_lex(ostream,lex,value);
+                            prev_lex(istream{,lex2,value2});
+                            prev_lex(istream{,lex3,value3});
+                          end if;
+                      else
+                        save_lex(ostream,lex,value);
+                        prev_lex(istream{,lex2,value2});
+                        prev_lex(istream{,lex3,value3});
+                      end if;
+
+                  else
+                    save_lex(ostream,lex,value);
+                    prev_lex(istream{,lex2,value2});
+                  end if;
+
+              else
+                save_lex(ostream,lex,value);
+                prev_lex(istream{,lex2,value2});
+              end if;
+
+          else
+            save_lex(ostream,lex,value);
+          end if;
+
+      else
+        save_lex(ostream,lex,value);
+      end if;
+    end loop;
+
+  -- finalizace
+  free_stream(istream);
+  rewind_stream(ostream);
+  loop
+    load_lex(ostream,lex,value);
+    break when lex=lex_eof;
+    save_lex(istream,lex,value);
+    end loop;
+  end optimalize_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_include (
+           istream : ref tstream;
+           ostream : ref tstream;
+             _with : boolean) =
+-- Z celeho souboru zpracuje pouze #include - z nej vytvori with seznam souboru a podminek
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  libcounter       : longint:=1;                 -- T=prvni knihovna v seznamu
+  value2           : tlexvalue;
+  withstream       : tstream;                    -- stream obsahujici pouze #if, #else, #endif a #include
+  optcounter       : longint;                    -- pocet provedenych optimalizaci
+  withname         : pprocname:=nil;
+  modname          : str255;
+  forced           : boolean := false;
+
+begin
+  -- inicializace
+  init_stream(withstream,istream.name & ' (include)');
+
+  -- zaradit moduly vynucene konfiguraci
+  modname:='';
+  if proc_find(with_list,istream.name,modname) then
+    -- zapsat vynuceny modul ke zpracovani
+    value2.id:='#include';
+    value2.s:=modname;
+
+    -- skutecny nazev modulu (odstranit .h)
+    if pos('.',value2.s)>0 then
+      value2.s:=copy(value2.s,1,pos('.',value2.s)-1);
+      end if;
+
+    -- ulozit k dalsimu zpracovani
+    save_lex(withstream,lex_metaid,value2);
+
+    -- aktualizovat pocet
+    libcounter+1;
+    forced:=true;
+    end if;
+
+  -- stream se bude zpracovavat od zacatku
+  rewind_stream(istream);
+
+  loop
+    -- nacist dalsi lexikalni element
+    load_lex(istream,lex,value);
+
+    if lex=lex_eof then
+        break;
+
+      -- #include prikaz
+      elsif lex=lex_metaid then
+        if value.id='#include'
+          then
+            load_lex(istream,lex,value);
+            if lex<>lex_str then
+              wr({MSG=}000106,lc_error,'error p_include : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+              end if;
+
+            -- odstranit uvozovky ze zacatku a konce retezce
+            if value.s[1]='"' then
+              value.s:=copy(value.s,2,value.s:length-1);
+              end if;
+            if value.s[value.s:length]='"' then
+              value.s:length-1;
+              end if;
+
+            -- odstranit '.h' z konce retezce
+            if value.s[value.s:length-1]='.' and value.s[value.s:length] in ['h','H'] then
+              value.s:length-2;
+              end if;
+
+            -- zapsat hlavicku
+            if not forced then
+              value2.id:='#include';
+              value2.s:=value.s;
+              save_lex(withstream,lex_metaid,value2);
+
+              -- aktualizovat pocet
+              libcounter+1;
+              end if;
+          else
+            wr({MSG=}000107,lc_error,'error p_include : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+
+      -- meta prikaz
+      elsif lex=lex_metaflex then
+        save_lex(withstream,lex,value);
+
+      -- vse ostatni nas nezajima (preskocit)
+      else ;
+
+      end if;
+    end loop;
+
+  -- pokud jsme nasli alespon jeden modul
+  if libcounter>1 then
+    -- optimalizace streamu (smazani vsech #if [#else] #endif)
+    loop
+      optimalize_stream(withstream,optcounter);
+      break when optcounter=0;
+      end loop;
+
+    -- with
+    if _with then
+      value2.x.empty;
+      value2.x.addstr('with' & crlf);
+      save_lex(ostream,,value2);
+      value2.x.free;
+      end if;
+
+    -- a ted zapsat do vystupniho stream
+    rewind_stream(withstream);
+
+    loop
+      load_lex(withstream,lex,value);
+
+      if lex=lex_eof then
+          break;
+
+        elsif lex=lex_metaid then
+          -- dalsi zpracovany modul
+          libcounter-1;
+
+          if _with
+            then
+              value2.x.empty;
+              value2.x.addstr('    ' & value.s);
+              if libcounter=1
+                then value2.x.addstr(';');
+                else value2.x.addstr(',');
+                end if;
+              value2.x.addstr(crlf);
+              save_lex(ostream,,value2);
+              value2.x.free;
+            else
+              value2.x.empty;
+              value2.x.addstr('#separate ' & value.s & ';' & crlf);
+              save_lex(ostream,,value2);
+              value2.x.free;
+            end if;
+
+        elsif lex=lex_metaflex then
+          save_lex(ostream,lex,value);
+        end if;
+      end loop;
+
+    -- a prazdny radek
+    value2.x.empty;
+    value2.x.addstr(crlf);
+    save_lex(ostream,,value2);
+    value2.x.free;
+    end if;
+
+  free_stream(withstream);
+  end p_include;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_typedef1 (
+           istream : ref tstream;                -- vstupni stream
+            predef : ref lstring;                -- preddefinovane typy
+          typename : ref strarray;               -- jmeno typu
+           typedef : ref strarray;               -- definice typu
+           counter : ref strarray:range) =       -- kde zacit se zapisem
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  cdef             : tctype;
+  typedef2         : str255;
+  paramcount       : longint:=1;
+  typearray        : str255;
+  isnamed          : boolean:=false;
+  value2           : tvalue;
+  cdef2            : tctype;
+  parcount         : longint;                    -- citac vnorenych zavorek
+  procstream       : tstream;
+  parentcount      : byte:=0;                    -- pocet zavorek
+                                                 -- 1 = parametry
+                                                 -- 2 = nazev a parametry (zpracovava nazev)
+                                                 -- 3 = nazev a paremetry (zpracovava parametry)
+  parentinside     : byte:=0;
+  templstr         : lstring;
+  i                : longint;
+  ignore           : boolean;
+  pretype          : str255;
+
+begin
+--write2('......... p_typedef1 .........');
+  -- inicializace
+  typedef2:='';
+  initctype(cdef);
+  initctype(cdef2);
+  pretype:length:=0;
+  predef.empty;
+
+  -- lexikalni element
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  -- vycist definici a jmeno typu
+  loop
+    if lex=lex_scol then
+        if cdef.cstype=ct_nil
+          then
+            while cdef._pointer>0 loop
+              typedef[counter].s:='^' & typedef[counter].s;
+              cdef._pointer-1;
+              end loop;
+          else
+            -- zkontrolovat kolizi na klicove slovo Flexu
+            controlidname(typename[counter].s);
+
+            -- zkontrolovat zda neni potreba vnutit mu cestu k definici typu
+            controlidbasename(cdef,istream.name);
+
+            -- zjistit zda se vubec ma zpracovavat
+            ignore:=false;
+            if str_find2(typedefs,typename[counter].s,value2) then
+              if value2.typ=tv_extra and then value2.x=tx_ignore then
+                  ignore:=true;
+
+                elsif value2.typ=tv_extra and then value2.x=tx_ignore2 then
+                  -- ale priste jeste nezpracovat
+                  str_del2(typedefs,typename[counter].s);
+                  value2.x:=tx_ignore1;
+                  str_add2(typedefs,typename[counter].s,value2);
+
+                elsif value2.typ=tv_extra and then value2.x=tx_ignore1 then
+                  -- ale priste jiz zpracovat
+                  str_del2(typedefs,typename[counter].s);
+                  value2.x:=tx_ignore;
+                  str_add2(typedefs,typename[counter].s,value2);
+
+                elsif value2.typ=tv_str then
+                  -- vnutit vlastni vyklad
+                  initctype(cdef);
+                  cdef.cstype:=ct_named;
+                  cdef.name:=value2.s.getstr(1,false);
+                end if;
+              end if;
+
+            -- neni-li typ pojmenovan, pak ho nevypustime ven
+            if typename[counter].s:length=0 then
+              ignore:=true;
+              end if;
+
+            if ignore
+              then
+                typename[counter].s:length:=0;
+                typedef[counter].s:length:=0;
+                predef.empty;
+              else
+                ctoftype(cdef,templstr);
+                if templstr.getsize=0 then
+                  templstr.addstr('record end record');
+                  end if;
+                templstr.setstrsize(220);
+                for i in 1..templstr.getstrcount loop
+                  typedef[counter].s:=templstr.getstr(i,false);
+                  if i<templstr.getstrcount then
+                    typedef[counter].next:=true;
+                    counter+1;
+                    end if;
+                  end loop;
+                templstr.free;
+              end if;
+          end if;
+
+        -- ukoncit zpracovani
+        break;
+
+      -- klicova slova C
+      elsif lex in [lex_char,lex_const,lex_double,lex_float,lex_int,lex_long,lex_mul,lex_signed,
+                    lex_short,lex_unsigned,lex_void,lex_wchar_t] then
+        modifyctype(cdef,lex,value);
+
+      -- _cdecl
+      elsif lex=lex_id and then value.id='_cdecl' then
+        modifyctype(cdef,lex,value);
+
+      -- __int64
+      elsif lex=lex_id and then value.id='__int64' then
+        modifyctype(cdef,lex,value);
+
+      -- in a out se zde ignoruji - funguji pouze v p_proc
+      elsif lex=lex_id and then (value.id='in' or value.id='out') then ;
+
+      -- identifikator
+      elsif lex=lex_id then
+
+        -- sestavit typ
+        if cdef.cstype=ct_nil
+          then
+            -- pojmenovani
+            cdef.cstype:=ct_named;
+            cdef.name:=value.id;
+          else
+            -- typ je jiz urcen, takze jen pojmenovani
+            ctoftype(cdef,templstr);
+            if templstr.getsize>255 then
+              wr({MSG=}000108,lc_error,'string too long');
+              raise internal_error_2;
+              end if;
+            typedef[counter].s:=templstr.getstr(1,false);
+            templstr.free;
+            typename[counter].s:=value.id;
+          end if;
+
+        -- poznamenat si, ze uz mame nazev
+        isnamed:=true;
+
+      -- obsazeni v bitech
+      elsif lex=lex_col then
+        -- nasleduje cislo vyjadrujici pocet bitu
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_num then
+          wr({MSG=}000109,lc_error,'error p_typedef1 : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+        cdef._bits:=value.n;
+
+      -- procedura nebo funkce
+      elsif lex=lex_lpar then
+        -- vratit zavorku
+        prev_lex(istream);
+
+        -- inicializace
+        init_stream(procstream,'temporary procedure');
+        parentcount:=0;
+        parentinside:=0;
+
+        -- kontrola typu navratove hodnoty
+        controlctypeasreturn(pretype,cdef,'');
+        if pretype:length>0 then
+          predef.addstr(pretype);
+          end if;
+
+        -- zmena navratove hodnoty na proceduru
+        ctoftype(cdef,templstr);
+        initctype(cdef);
+        cdef.cstype:=ct_proc;
+        if templstr.getsize>255 then
+          wr({MSG=}000110,lc_error,'string too long');
+          raise internal_error_2;
+          end if;
+        cdef._return:=templstr.getstr(1,false);
+        templstr.free;
+
+        -- docist vse az do ; ignorovat jen konce radku
+        loop
+          load_lex(istream,lex,value,[lex_eol]);
+--write2('p_typedef1 ( ' & lex_to_text(lex,value));
+
+          -- vse ostatni ulozit do pripraveneho streamu
+          save_lex(procstream,lex,value);
+
+          if lex=lex_scol then
+              -- vratit zpet
+              prev_lex(istream);
+
+              -- vyskocit ze smycky
+              break;
+
+            elsif lex=lex_lpar then
+              if parentinside=0 then
+                parentcount+1;
+                end if;
+              parentinside+1;
+
+            elsif lex=lex_rpar then
+              parentinside-1;
+
+            end if;
+          end loop;
+
+        -- a az potom analyzovat
+        rewind_stream(procstream);
+
+        loop
+          load_lex(procstream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('p_typedef1 ( ' & lex_to_text(lex,value));
+
+          if lex=lex_scol then
+              break;
+
+            -- ( nazev funkce
+            elsif lex=lex_lpar and parentcount=2 then
+              loop
+                load_lex(procstream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('p_typedef1 1( ' & lex_to_text(lex,value));
+
+                if lex=lex_rpar then
+                    break;
+
+                  elsif lex=lex_mul then modifyctype(cdef,lex,value);
+
+                  elsif lex=lex_id and then value.id='__stdcall' then modifyctype(cdef,lex,value);
+
+                  elsif lex=lex_id then
+                    typename[counter].s & value.id;
+
+                  else
+                    wr({MSG=}000111,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+                    raise internal_error_2;
+                  end if;
+                end loop;
+
+              -- a ted lze zpracovat parametry
+              parentcount+1;
+
+            -- ( parametry
+            elsif lex=lex_lpar and parentcount<>2 then
+              loop
+                load_lex(procstream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('p_typedef1 2( ' & lex_to_text(lex,value));
+
+                if lex=lex_rpar then
+                    -- vyjimka, existuji i procedury bez parametru, ktere vypadaji takto ()
+                    if cdef2.cstype not in [ct_nil,ct_void] then
+                      -- obohaceni o cestu modulu
+                      controlidbasename(cdef2,istream.name);
+
+                      -- kontrola na vhodnost parametru
+                      controlidname(cdef2._name);
+                      controlctypeasparameter(pretype,cdef2,typename[counter].s);
+                      if pretype:length>0 then
+                        predef.addstr(pretype);
+                        end if;
+
+                      -- nema-li pak vymyslet docasne jmeno
+                      if cdef2._name:length=0 then
+                        cdef2._name:=get_varname('_',paramcount);
+                        end if;
+
+                      -- urcit typ parametru
+                      ctoftype(cdef2,templstr);
+
+                      cdef._params.addstr(crlf & '    ' & expandstr(cdef2._name,15) & ' : ');
+                      if templstr.getsize>255 then
+                        wr({MSG=}000112,lc_error,'string too long');
+                        raise internal_error_2;
+                        end if;
+                      cdef._params.addstr(templstr.getstr(1,false));
+                      templstr.free;
+                      paramcount+1;
+                      end if;
+                    initctype(cdef2);
+                    break;
+
+                  -- ,
+                  elsif lex=lex_comma then
+                    controlidbasename(cdef2,istream.name);
+
+                    -- kontrola na vhodnost parametru
+                    controlidname(cdef2._name);
+                    controlctypeasparameter(pretype,cdef2,typename[counter].s);
+                    if pretype:length>0 then
+                      predef.addstr(pretype);
+                      end if;
+
+                    -- dodelat predchozi
+                    if cdef2._name:length=0 then
+                      cdef2._name:=get_varname('_',paramcount);
+                      end if;
+                    ctoftype(cdef2,templstr);
+                    cdef._params.addstr(crlf & '    ' & expandstr(cdef2._name,15) & ' : ');
+                    if templstr.getsize>255 then
+                      wr({MSG=}000113,lc_error,'string too long');
+                      raise internal_error_2;
+                      end if;
+                    cdef._params.addstr(templstr.getstr(1,false));
+                    templstr.free;
+                    cdef._params.addstr(';');
+                    paramcount+1;
+
+                    -- a muzeme zacit novou
+                    initctype(cdef2);
+
+                  elsif lex in [lex_char,lex_const,lex_double,lex_float,lex_int,lex_long,lex_mul,
+                                lex_short,lex_signed,lex_struct,lex_unsigned,lex_void,lex_wchar_t] then
+                    modifyctype(cdef2,lex,value);
+
+                  -- in out optional
+                  elsif lex=lex_id and then value.id='in' then
+                    modifyctype(cdef2,lex,value);
+
+                  elsif lex=lex_id and then value.id='optional' then
+                    modifyctype(cdef2,lex,value);
+
+                  elsif lex=lex_id and then value.id='out' then
+                    modifyctype(cdef2,lex,value);
+
+                  -- lex_id
+                  elsif lex=lex_id then
+                    if cdef2.cstype=ct_nil
+                      then
+                        cdef2.cstype:=ct_named;
+                        cdef2.name & value.id;
+                      else
+                        cdef2._name & value.id;
+                      end if;
+
+                  -- [
+                  elsif lex=lex_lbra then
+                    cdef2._array:=true;
+
+                    -- zjistit index
+                    load_lex(procstream,lex,value);
+
+                    if lex=lex_rbra then
+                        -- pole je bez znameho indexu :-(
+                        cdef2._high:='';
+
+                      elsif lex=lex_num then
+                        -- index je cislo
+                        cdef2._high:=itoa(value.n-1);
+
+                      else
+                        wr({MSG=}000114,lc_error,'error p_typedef [] : lex = ' & lex_to_text(lex,value));
+                        raise internal_error_2;
+                      end if;
+
+                    -- docist ]
+                    if lex<>lex_rbra then
+                      load_lex(procstream,lex,value);
+                      if lex<>lex_rbra then
+                        wr({MSG=}000115,lc_error,'error p_typedef [] : lex = ' & lex_to_text(lex,value));
+                        raise internal_error_2;
+                        end if;
+                      end if;
+
+                  else
+                    wr({MSG=}000116,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+                    raise internal_error_2;
+                  end if;
+                end loop;
+
+            else
+              wr({MSG=}000117,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+            end if;
+          end loop;
+
+        -- zrusit
+        free_stream(procstream);
+
+      -- definice pole [
+      elsif lex=lex_lbra then
+        cdef._array:=true;
+        loop
+          -- nasleduje cislo
+          load_lex(istream,lex,value);
+
+          if lex=lex_rbra then
+              break;
+
+            elsif lex=lex_num then
+              cdef._high:=itoa(value.n-1);
+
+            elsif lex=lex_id then
+              cdef._high:=value.id & '-1';
+
+            elsif lex=lex_add then
+              cdef._high & '+';
+
+            else
+              wr({MSG=}000118,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+            end if;
+          end loop;
+
+      -- definice dva v jednom :-)
+      elsif lex=lex_comma then
+--write2('p_typedef lex_comma');
+
+        if str_find2(typedefs,typename[counter].s,value2) then
+          if value2.typ=tv_extra and then value2.x=tx_ignore then
+              ignore:=true;
+
+            elsif value2.typ=tv_extra and then value2.x=tx_ignore2 then
+              -- ale priste jeste nezpracovat
+              str_del2(typedefs,typename[counter].s);
+              value2.x:=tx_ignore1;
+              str_add2(typedefs,typename[counter].s,value2);
+
+            elsif value2.typ=tv_extra and then value2.x=tx_ignore1 then
+              -- ale priste jiz zpracovat
+              str_del2(typedefs,typename[counter].s);
+              value2.x:=tx_ignore;
+              str_add2(typedefs,typename[counter].s,value2);
+
+            elsif value2.typ=tv_str then
+              -- vnutit vlastni vyklad
+              initctype(cdef);
+              cdef.cstype:=ct_named;
+              cdef.name:=value2.s.getstr(1,false);
+            end if;
+          end if;
+
+        -- sestavit vysledek predchozi definice (pokud jiz neni sestaven)
+        if cdef.cstype=ct_nil
+          then
+            while cdef._pointer>0 loop
+              typedef[counter].s:='^' & typedef[counter].s;
+              cdef._pointer-1;
+              end loop;
+          else
+            ctoftype(cdef,templstr);
+            if templstr.getsize>255 then
+              wr({MSG=}000119,lc_error,'string too long');
+              raise internal_error_2;
+              end if;
+            typedef[counter].s:=templstr.getstr(1,false);
+            templstr.free;
+          end if;
+
+        -- presunout se na dalsi definici
+        counter+1;
+
+        -- a zkopirovat soucasnou definici typu
+        typename[counter].s:=typedef[counter-1].s;
+
+        -- ale odstranit ukazatele
+        while typename[counter].s[1]='^' loop
+          typename[counter].s:=copy(typename[counter].s,2,255);
+          end loop;
+
+      else
+        wr({MSG=}000120,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+      end if;
+
+    -- nacist dalsi symbol
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end loop;
+--write2('p_typedef1 = ' & typename[counter] & ' : ' & typedef[counter]);
+  counter+1;
+  end p_typedef1;
+
+
+
+------------------------------------------------------------------------------
+procedure lpos2 (
+  sub        : str255;               -- hledany podretezec
+  ls         : lstring;              -- dlouhy retezec
+  from       : integer:=1;           -- od jake pozice
+  begin_pos  : boolean:=false)       -- T=pozice prvniho znaku F=pozice nasl.
+               return longint =
+-- nalezeni podretezce v dlouhem retezci
+------------------------------------------------------------------------------
+var
+  i            : integer;
+  j            : byte;
+
+begin
+  -- predpoklad
+  result:=0;
+
+  -- kontrola na prazdne retezce
+  if sub:length=0 or ls.getsize=0 then
+    return;
+    end if;
+
+  -- nemuze se tam podretezec vejit
+  if sub:length>ls.getsize then
+    return;
+    end if;
+
+  -- kontrola na from
+  if from<1 or from>ls.getsize then
+    return;
+    end if;
+
+  i:=from;
+  j:=1;
+
+--  writetest({MSG=}000121,formatsx('Hledam podretezec "%1" v retezci "%2" (%3) (%4)',
+--            filtrstr(sub),filtrstr(lstostr(ls)),itoa(ls.getsize),itoa(integer:(ls.getchar(ls.getsize)))));
+  while i<=ls.getsize loop
+
+    -- vyhodnoceni znaku
+    if sub[j]=ls.getchar(i)
+     then j+1;
+     else i:=i-j+1;                              -- nastavit nove prohledavani 'i-j+1;' nefunguje
+          j:=1;
+     end if;
+
+    -- nasli jsme to co jsme hledali
+    if j>sub:length then
+write2('nalezena shoda: i=' & itoa(i) & ', length=' & itoa(sub:length));
+      if begin_pos
+        then result:=i-sub:length+1;
+        else result:=i;
+        end if;
+write2('lpos2 returns ' & itoa(result));
+      return;
+      end if;
+
+    -- dalsi znak
+    i+1;
+    end loop;
+
+--leave
+--  writetest({MSG=}000122,formatsx('Vysledek hledani: %1',itoa(result)));
+  end lpos2;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_struct =
+--         istream : ref tstream;                -- vstupni stream
+--         ostream : ref tstream;                -- vystupni stream
+--          predef : ref lstring;                -- potrebne deklarace
+--          inside : boolean;                    -- T=jedna se o vnorenou deklaraci
+--        declspec : ttypedef := [for declspec use tdeclspecs:[]];
+--     forposition : boolean := false;
+--          _const : boolean := false) =
+-- Zpracovava struct.
+----------------------------------------------------------------------------------------------------
+label
+  skipcurlies;
+
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  counter          : strarray:range:=strarray:first;
+
+  typename2        : strarray;                   -- slozky recordu
+  typedef2         : strarray;
+  counter2         : strarray:range:=strarray:first;
+
+  typename3        : strarray;                   -- odvozene typy
+  typedef3         : strarray;
+  counter3         : strarray:range:=strarray:first;
+
+  temp             : lstring;
+  ostream2         : tstream;
+  i                : strarray:range;
+  value2           : tvalue;
+  cdef             : tctype;
+  tempname         : str255;
+  ignore           : boolean;
+  istype           : boolean := false;
+  pretype          : lstring;
+  prevcounter      : strarray:range;
+  temp2            : longint;                    -- pozice : v dlouhem retezci
+
+  mydebug          : boolean := false;
+
+begin
+  -- inicializace
+  initctype(cdef);
+  predef.empty;
+  tempname:length:=0;
+  pretype.empty;
+
+  -- inicializace
+  for i in strarray:first..strarray:last loop
+    typename2[i]:=[for s use '', for next use false];
+    typename2[i]:=[for s use '', for next use false];
+    typedef2[i]:=[for s use '', for next use false];
+    typename3[i]:=[for s use '', for next use false];
+    typedef3[i]:=[for s use '', for next use false];
+    end loop;
+
+  -- lexikalni element
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  -- volitelne muze nasledovat __declspec
+  if lex=lex_id and then value.id='__declspec' then
+    -- nacist levou zavorku
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    if lex<>lex_lpar then
+      wr({MSG=}000123,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+      raise internal_error_2;
+      end if;
+
+    -- nacist vlastni cislo
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    if lex=lex_id and then value.id='align' then
+        -- nacist levou zavorku
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_lpar then
+          wr({MSG=}000124,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+
+        -- nacist cislo
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_num then
+          wr({MSG=}000125,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+
+        -- nacist pravou zavorku
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_rpar then
+          wr({MSG=}000126,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+
+      else
+        wr({MSG=}000127,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+      end if;
+
+    -- nacist pravou zavorku
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    if lex<>lex_rpar then
+      wr({MSG=}000128,lc_error,'error p_struct : declspec : lex = ' & lex_to_text(lex,value));
+      raise internal_error_2;
+      end if;
+
+    -- nacist dalsi lexikalni element
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end if;
+
+  -- volitelne nasleduje identifikator (nazev struktury)
+  if lex=lex_id then
+    -- kontrola value.id
+    if str_find2(typedefs,value.id,value2) then
+      if value2.typ=tv_extra and value2.x=tx_forward1 then
+          -- zaridit forward deklaraci
+          predef.addstr('  ' & value.id & ';' & crlf);
+          istype:=true;
+
+          -- znicit ze seznamu
+          str_del2(typedefs,value.id);
+
+        elsif value2.typ=tv_extra and value2.x=tx_forward2 then
+
+          -- zaridit forward deklaraci
+          predef.addstr('  ' & value.id & ';' & crlf);
+          istype:=true;
+
+          -- znicit ze seznamu
+          str_del2(typedefs,value.id);
+          value2.x:=tx_forward1;
+          str_add2(typedefs,value.id,value2);
+
+        elsif value2.typ=tv_extra and value2.x=tx_ignore then
+          -- ? ve zkracene verzi by nemel delat nic
+          ignore:=true;
+
+        elsif value2.typ=tv_extra and value2.x=tx_ignore1 then
+
+          -- znicit ze seznamu
+          str_del2(typedefs,value.id);
+          tempname:=value.id;
+
+          -- nacist dalsi element
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+          if lex<>lex_id then
+            wr({MSG=}000129,lc_error,'p_struct error : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+            end if;
+
+          -- pridat novy zaznam
+          value2.typ:=tv_str;
+          value2.s.empty;
+          value2.s.addstr(value.id);
+          str_add2(typedefs,tempname,value2);
+          value2.s.free;
+          tempname:Length:=0;
+
+        elsif value2.typ=tv_extra and value2.x=tx_ignore2 then
+
+          -- znicit ze seznamu
+          str_del2(typedefs,value.id);
+          tempname:=value.id;
+
+          -- pridat se snizenym citacem
+          value2.typ:=tv_extra;
+          value2.x:=tx_ignore1;
+          str_add2(typedefs,tempname,value2);
+          tempname:length:=0;
+
+        elsif value2.typ=tv_str then
+          value.id:=value2.s.getstr(1,false);
+
+        else
+          wr({MSG=}000130,lc_error,'neosetreny typedef ' & value.id);
+write2('value2=' & value_to_text(value2));
+          raise internal_error_2;
+        end if;
+      end if;
+
+    -- ulozeni
+    tempname:=value.id;
+    typename3[counter3].s:=value.id;
+    controlidname(typename3[counter3].s);
+    counter3+1;
+
+    -- nacist dalsi element
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+    -- specialni pripad forward definice
+    if lex=lex_id and then value.id=tempname then
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      end if;
+    end if;
+
+  -- dopredne deklarace
+  if lex=lex_scol then
+    value.x.empty;
+    value.x.addstr('type' & crlf);
+    value.x.addstr('  ' & typename3[typename3:first].s & ';' & crlf & crlf);
+    save_lex(ostream,,value);
+    value.x.free;
+    return;
+
+  -- bez definice polozek uvnitr rekordu
+  elsif lex<>lex_lcurly then
+    -- naprava veci predchozich
+    counter3-1;
+    if _const then
+      typedef3[counter3].s & 'const ';
+      end if;
+    typedef3[counter3].s & typename3[counter3].s;
+    typename3[counter3].s:length:=0;
+
+    -- jedna se o zjednodusenou strukturu (bez {})
+    loop
+      if lex=lex_scol then
+          if typedef3[counter3].s='^' then
+            typedef3[counter3].s & tempname;
+            end if;
+          break;
+
+        elsif lex=lex_comma then
+          if typedef3[counter3].s='^' then
+            typedef3[counter3].s & tempname;
+            end if;
+          counter3+1;
+
+        elsif lex=lex_mul then
+          typedef3[counter3].s:='^' & typedef3[counter3].s;
+
+        elsif lex=lex_id then
+          typename3[counter3].s & value.id;
+
+        else
+          wr({MSG=}000131,lc_error,'error p_struct : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+        end if;
+
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      end loop;
+
+    -- protoze se jedna o specificky pripad, delame si vystup sami
+
+    -- zpracovani je ukonceno
+    value.x.empty;
+    for i in 1..counter3 loop
+
+      -- kontrola zda vubec ma dojit k vystupu
+      ignore:=false;
+      if str_find2(typedefs,typename3[i].s,value2) then
+        if value2.typ=tv_extra and then value2.x=tx_ignore then
+            ignore:=true;
+
+          elsif value2.typ=tv_extra and then value2.x=tx_ignore2 then
+            -- ted nezpracovavat
+            ignore:=true;
+
+            -- a priste jeste nezpracovat
+            str_del2(typedefs,typename3[i].s);
+            value2.x:=tx_ignore1;
+            str_add2(typedefs,typename3[i].s,value2);
+
+          elsif value2.typ=tv_extra and then value2.x=tx_ignore1 then
+            -- ted nezpracovavat
+            ignore:=true;
+
+            -- a priste jiz zpracovat
+            str_del2(typedefs,typename3[i].s);
+            value2.x:=tx_ignore;
+            str_add2(typedefs,typename3[i].s,value2);
+
+          elsif value2.typ=tv_extra and then value2.x=tx_forward1 then
+            -- ted nezpracovavat
+            ignore:=true;
+
+            -- a zpracovat si je ted
+            if not istype then
+              value.x.addstr('type' & crlf);
+              istype:=true;
+              end if;
+            value.x.addstr(typename3[i].s);
+            value.x.addstr(';' & crlf);
+
+            str_del2(typedefs,typename3[i].s);
+
+          elsif value2.typ=tv_extra and then value2.x=tx_forward2 then
+            -- ted nezpracovavat
+            ignore:=true;
+
+            -- a zpracovat si je ted
+            if not istype then
+              value.x.addstr('type' & crlf);
+              istype:=true;
+              end if;
+            value.x.addstr(typename3[i].s);
+            value.x.addstr(';' & crlf);
+
+            str_del2(typedefs,value.id);
+            value2.x:=tx_forward1;
+            str_add2(typedefs,typename3[i].s,value2);
+          end if;
+        end if;
+
+      -- popr. uprava definice
+      if str_find2(typedefs,typedef3[i].s,value2) then
+        if value2.typ=tv_extra and then value2.x=tx_ignore1 then
+            -- a zpracovat si je ted
+            typedef3[i].s:length:=0;
+
+            str_del2(typedefs,typedef3[i].s);
+          end if;
+        end if;
+
+      if not ignore then
+        if not inside then
+          if not istype then
+            value.x.addstr('type' & crlf);
+            istype:=true;
+            end if;
+          end if;
+        -- zaplata - oprava
+        if typename3[i].s:length=0 and typedef3[i].s:length>0 then
+          typename3[i].s:=typedef3[i].s;
+          typedef3[i].s:length:=0;
+          end if;
+        value.x.addstr('  ' & expandstr(typename3[i].s,17));
+        if typedef3[i].s:length>0 then
+          if inside
+            then value.x.addstr(' : ' & typedef3[i].s);
+            else value.x.addstr(' = ' & typedef3[i].s);
+            end if;
+          end if;
+        value.x.addstr(';' & crlf );
+        end if;
+      end loop;
+    save_lex(ostream,,value);
+    value.x.free;
+
+    -- zpracovani ukonceno
+    return;
+    end if;
+
+  -- leva slozena zavorka
+  -- tady se bude az do prave slozene zavorky opakovat typ identifikator a strednik
+  loop
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('lex : ' & lex_to_text(lex,value));
+
+    -- const preskocit
+    _const:=false;
+    if lex=lex_const then
+      _const:=true;
+
+      -- a nacist nasledujici element pro rozpoznani
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      end if;
+
+    if lex=lex_rcurly then
+--write2('} -> p_struct end');
+        break;
+
+      -- struct
+      elsif lex=lex_struct then
+        init_stream(ostream2);
+
+        -- vlastni zpracovani
+        p_struct(istream,ostream2,predef,true);
+        if predef.getsize>0 then
+          value.x.empty;
+          value.x.addstr('type' & crlf);
+          linsert(predef,value.x,value.x.getsize);
+          save_lex(ostream,,value);
+          value.x.free;
+          predef.free;
+          end if;
+
+        -- konverze zpet do textu
+        stream_to_str(ostream2,temp);
+
+        -- a jeste odstranit posledni ;[13][10]
+        while temp.getchar(temp.getsize) in [';',\13,\10] loop
+          temp.setsize(temp.getsize-1);
+          end loop;
+
+        -- nacpat zpet do radek
+        temp.setstrsize(200);
+        for i in 1..temp.getstrcount loop
+          typedef2[counter].s:=temp.getstr(i,false);
+          typedef2[counter].next:=i<temp.getstrcount;
+          counter+1;
+          end loop;
+        temp.free;
+
+        -- a zrusit stream
+        free_stream(ostream2);
+
+      -- union
+      elsif lex=lex_union then
+        init_stream(ostream2);
+
+        -- vlastni zpracovani
+        p_union(istream,ostream2,true);
+
+        -- konverze zpet do textu
+        temp.empty;
+        temp.setstrsize(200);
+        stream_to_str(ostream2,temp);
+
+        -- a jeste odstranit posledni ;[13][10]
+        while temp.getchar(temp.getsize) in [';',\13,\10] loop
+          temp.setsize(temp.getsize-1);
+          end loop;
+
+        for i in 1..temp.getstrcount loop
+          typedef2[counter].s:=temp.getstr(i,false);
+          typedef2[counter].next:=i<temp.getstrcount;
+          counter+1;
+          end loop;
+        temp.free;
+
+        -- a zrusit stream
+        free_stream(ostream2);
+
+      -- enum
+      elsif lex=lex_enum then
+        init_stream(ostream2);
+
+        -- vlastni zpracovani
+        p_enum(istream,ostream2);
+
+        -- konverze zpet do textu
+        stream_to_str(ostream2,temp);
+        temp.setstrsize(200);
+        for i in 1..temp.getstrcount loop
+          typename2[counter].s:=temp.getstr(i,false);
+          counter+1;
+          end loop;
+        temp.free;
+
+        -- a zrusit stream
+        free_stream(ostream2);
+
+      -- definice
+      else
+        -- vratit se a nechat zpracovat jako identifikator
+        prev_lex(istream);
+
+        -- zpracovat jeden radek definice
+        prevcounter:=counter;
+        p_typedef1(istream,pretype,typename2,typedef2,counter);
+        if pretype.getsize>0 then
+          linsert(pretype,predef,predef.getsize);
+          pretype.free;
+          end if;
+
+        -- odstranit pripadne machine_pointer
+        -- sestavit si vysledny retezec
+        temp.empty;
+        for counter2 in prevcounter..counter-1 loop
+          -- neformatovat!!! uz musi byt naformatovano
+          if typename2[counter2].s:length>0 then
+            temp.addstr(expandstr(typename2[counter2].s,15));
+            temp.addstr(' : ');
+            end if;
+
+          -- pridat typ
+          if typedef2[counter2].s:length>0 then
+            -- vlastni vystup
+            temp.addstr(typedef2[counter2].s);
+            if not typedef2[counter2].next then
+                temp.addstr(';' & crlf);
+              end if;
+            end if;
+
+          -- znicit puvodni obsah
+          typename2[counter2].s:length:=0;
+          typedef2[counter2].s:length:=0;
+          typedef2[counter2].next:=false;
+          end loop;
+
+        -- odstranit nechtenou konvenci
+        loop
+          -- najit retezec
+          temp2:=lpos(' for machine_pointer use true',temp,,true);
+          break when temp2=0;
+
+          -- smazat retezec
+          temp.deletestr(temp2,length(' for machine_pointer use true'));
+          end loop;
+
+        -- a zapsat zpatky
+        counter:=prevcounter;
+        if temp.getsize>0 then
+          temp.setstrsize(200);
+
+          -- nejdrive urcit jmeno prvniho typu
+          temp2:=lpos(' : ',temp,,true);
+          if temp2=0 then
+            wr({MSG=}000132,lc_error,'error p_struct');
+            raise internal_error_2;
+            end if;
+          typename2[counter].s:=temp.getstr(1,false);
+          -- vse az do mezery pred : je jmeno typu
+          typename2[counter].s:=copy(typename2[counter].s,1,temp2-1);
+          -- vse az do mezery za : uz nas nezajima
+          temp.deletestr(1,temp2+2);
+
+          -- a jeste odstranit posledni ;[13][10]
+          while temp.getchar(temp.getsize) in [';',\13,\10] loop
+            temp.setsize(temp.getsize-1);
+            end loop;
+
+          for counter2 in 1..temp.getstrcount loop
+            typedef2[counter].s:=temp.getstr(counter2,false);
+            typedef2[counter].next:=counter2<>temp.getstrcount;
+            counter+1;
+            end loop;
+          end if;
+        temp.free;
+
+      end if;
+    end loop;
+
+  -- az do prave slozene zavorky
+  if lex<>lex_rcurly then
+    wr({MSG=}000133,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  -- volitelne nasleduje identifikator (nazev struktury)
+  if lex=lex_mul then
+    typedef3[counter3].s & '^';
+
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end if;
+
+  if lex=lex_id then
+    -- pouze pokud se jmeno lisi od predchoziho jmena
+    if upcasestr(value.id)<>upcasestr(typename3[typename3:first].s) then
+      typename3[counter3].s:=value.id;
+      controlidname(typename3[counter3].s);
+      counter3+1;
+      end if;
+
+    -- nacist dalsi element
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end if;
+
+  -- volitelne nasleduje pole
+  if lex=lex_lbra then
+    cdef._array:=true;
+    loop
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      if lex=lex_rbra then
+          -- nasledujici element
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+          break;
+
+        elsif lex=lex_num then
+          cdef._high:=itoa(value.n-1);
+
+        else
+          wr({MSG=}000134,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+        end if;
+      end loop;
+    end if;
+
+  -- vicenasobna pouziti
+  if lex=lex_comma then
+    loop
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+      if lex=lex_scol then
+          if typename3[counter3].s:length>0 then
+            counter3+1;
+            end if;
+          break;
+
+        elsif lex=lex_comma then
+          counter3+1;
+
+        elsif lex=lex_id and then value.id='near' then ;
+
+        elsif lex=lex_id and then value.id='far' then ;
+
+        elsif lex=lex_id then
+          typename3[counter3].s & value.id;
+
+        elsif lex=lex_mul then
+          typedef3[counter3].s & '^';
+
+        else
+          wr({MSG=}000135,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+        end if;
+      end loop;
+    end if;
+
+skipcurlies:
+  -- a strednik
+  if lex<>lex_scol then
+    wr({MSG=}000136,lc_error,'error p_typedef : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  -- zjistit zda neni urcen k ignorovani
+  if typename3[typename3:first].s:length>0 then
+    if str_find2(typedefs,typename3[typename3:first].s,value2) then
+      if value2.typ=tv_extra and then value2.x=tx_ignore then
+        return;
+        end if;
+      end if;
+    end if;
+
+  -- preddefinovane typy
+  if predef.getsize>0 then
+    value.x.empty;
+    value.x.addstr('type' & crlf);
+    linsert(predef,value.x,value.x.getsize);
+    save_lex(ostream,,value);
+    value.x.free;
+    predef.empty;
+    end if;
+
+  -- a ted vlastni vystup
+  if not inside then
+    value.x.empty;
+    value.x.addstr('type' & crlf);
+    save_lex(ostream,,value);
+    value.x.free;
+    end if;
+
+  if counter3=typename3:first then
+      ;
+    else
+      value.x.empty;
+      value.x.addstr('  ' & expandstr(typename3[typename3:first].s,17));
+      if inside
+        then value.x.addstr(' :');
+             if cdef._array then
+               value.x.addstr('array 0..' & cdef._high & ' of ');
+               end if;
+        else value.x.addstr(' =');
+        end if;
+      value.x.addstr(' record' & crlf);
+      save_lex(ostream,,value);
+      value.x.free;
+    end if;
+
+  -- vlastni polozky recordu
+  for counter2 in strarray:first..counter loop
+    if typename2[counter2].s:length>0 or typedef2[counter2].s:length>0 then
+      value.x.empty;
+      -- neformatovat!!! uz musi byt naformatovano
+      if typename2[counter2].s:length>0 then
+        value.x.addstr(expandstr(typename2[counter2].s,15));
+        value.x.addstr(' : ');
+        end if;
+
+      if typedef2[counter2].s:length>0 then
+        -- vlastni vystup
+        value.x.addstr(typedef2[counter2].s);
+        if not typedef2[counter2].next then
+            value.x.addstr(';' & crlf);
+          end if;
+        end if;
+      save_lex(ostream,,value);
+      value.x.free;
+      end if;
+    end loop;
+
+  if counter3=typename3:first then
+      ;
+    else
+      value.x.empty;
+      value.x.addstr('  end record');
+      if forposition then
+        value.x.addstr(' for position use 0');
+        end if;
+      value.x.addstr(';');
+      value.x.addstr(crlf);
+      if ds_align in declspec.declspec then
+        value.x.addstr('-- for instance_alignment use ' & itoa(declspec.align) & crlf);
+        end if;
+      save_lex(ostream,,value);
+      value.x.free;
+    end if;
+
+  -- definice 2 a vice v jednom
+  if counter3>typename3:first then
+    for i in typename3:first+1..counter3-1 loop
+      if typename3[i].s:length>0 then
+        -- zapis definice do streamu
+        value.x.empty;
+        value.x.addstr('  ' & expandstr(typename3[i].s,17) & ' = ' & typedef3[i].s & typename3[typename3:first].s & ';' & crlf);
+        save_lex(ostream,,value);
+        value.x.free;
+
+        -- zaznam do typedef
+        value2.typ:=tv_str;
+        value2.s.empty;
+        value2.s.addstr(typedef3[i].s & typename3[typename3:first].s);
+        str_add2(typedefs,typename3[i].s,value2);
+        value2.s.free;
+        end if;
+      end loop;
+    end if;
+
+  if not inside then
+    value.x.empty;
+    value.x.addstr(crlf);
+    save_lex(ostream,,value);
+    value.x.free;
+    end if;
+--write2('p_struct end');
+  end p_struct;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_union =
+--         istream : ref tstream;                -- vstupni stream
+--         ostream : ref tstream;                -- vystupni stream
+--          inside : boolean) =                  -- T=jedna se o vnorenou definici
+-- Zpracovava union.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  -- jednotlive jmena unionu
+  typename3        : strarray;
+  typedef3         : strarray;
+  counter3         : strarray:range:=strarray:first;
+  -- jednotlive slozky unionu
+  ostream2         : array strarray:range of tstream;
+  counter          : strarray:range:=strarray:first;
+  typename2        : strarray;                   -- slozky recordu
+  typedef2         : strarray;
+  counter2         : strarray:range:=strarray:first;
+  i                : strarray:range;
+  value2           : tvalue;
+  predef           : lstring;
+
+begin
+  -- inicializace
+  for i in strarray:first..strarray:last loop
+    init_stream(ostream2[i]);
+    typename3[i]:=[for s use '', for next use false];
+    typedef3[i]:=[for s use '', for next use false];
+    typename2[i]:=[for s use '', for next use false];
+    typedef2[i]:=[for s use '', for next use false];
+    end loop;
+  predef.empty;
+
+  -- nasleduje identifikator
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+  if lex=lex_id
+    then
+      if inside
+        then
+          -- pro vnorene rekordy se tento nazev nepouziva
+        else
+          typename3[counter3].s & value.id;
+          counter3+1;
+        end if;
+    else
+      prev_lex(istream);
+    end if;
+--write2('p_union ' & typename3[typename3:first] & ' ...');
+
+  -- nasleduje leva slozena zavorka
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  if lex=lex_lcurly
+    then
+      loop
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex=lex_rcurly then
+    --write2('} -> p_union end');
+            break;
+
+          -- nepotrebne ignorovat
+          elsif lex in [lex_eol] then
+            ;
+
+          -- vnoreny rekord
+          elsif lex=lex_struct then
+    --write2('struct -> p_struct');
+            p_struct(istream,ostream2[counter],predef,true,,true);
+            if predef.getsize>0 then
+              wr({MSG=}000137,lc_warning,'neosetreny predef');
+              raise internal_error;
+              end if;
+            counter+1;
+
+          -- asi obycejna deklarace
+          else
+            prev_lex(istream);
+
+            -- zjistit deklaraci
+            counter2:=strarray:first;
+            p_typedef1(istream,predef,typename2,typedef2,counter2);
+
+            -- odstranit nechtene machine_pointer
+            typedef2[typedef2:first].s:=removeall('for machine_pointer use true',typedef2[typedef2:first].s);
+
+            -- sestavit deklaraci pro ostream2
+            value.x.empty;
+            if inside
+              then value.x.addstr('      ' & expandstr(typename2[strarray:first].s,13));
+              else value.x.addstr('  ' & expandstr(typename2[strarray:first].s,15));
+              end if;
+            value.x.addstr(' : ' & typedef2[strarray:first].s);
+            value.x.addstr(' for position use 0');
+            value.x.addstr(';' & crlf);
+            save_lex(ostream2[counter],,value);
+            value.x.free;
+            counter+1;
+          end if;
+        end loop;
+
+      -- jmeno typu unionu
+      loop
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        if lex=lex_scol then
+            if typename3[counter3].s:length>0 then
+              counter3+1;
+              end if;
+            break;
+
+          elsif lex=lex_id then
+            controlidname(value.id);
+            typename3[counter3].s & value.id;
+
+          elsif lex=lex_comma then
+            counter3+1;
+
+          elsif lex=lex_mul then
+            typedef3[counter3].s & '^';
+
+          else
+            wr({MSG=}000138,lc_error,'error p_union : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+        end loop;
+
+      -- a ted uz muzeme sestavit zdrojak
+      if inside
+        then
+          value.x.empty;
+          if counter3=typename3:first
+            then value.x.addstr(expandstr(get_varname('t_',gcounter),16) & ' : record' & crlf);
+                 gcounter+1;
+            else value.x.addstr(expandstr(typename3[typename3:first].s,16) & ' : record' & crlf);
+            end if;
+          save_lex(ostream,,value);
+          value.x.free;
+        else
+          value.x.empty;
+          value.x.addstr('type' & crlf);
+          save_lex(ostream,,value);
+
+          value.x.empty;
+          if counter3=typename3:first
+            then value.x.addstr('  ' & get_varname('t_',gcounter) & ' = record' & crlf);
+                 gcounter+1;
+            else value.x.addstr('  ' & typename3[typename3:first].s & ' = record' & crlf);
+            end if;
+          save_lex(ostream,,value);
+          value.x.free;
+        end if;
+
+      -- jednotlive polozky
+      for i in strarray:first..strarray:last loop
+        if not stream_empty(ostream2[i]) then
+          -- zde zaradit jednotlive slozky
+          copy_stream(ostream2[i],ostream);
+          end if;
+        end loop;
+
+      -- ukonceni definice
+      value.x.empty;
+      if inside then
+        value.x.addstr('  ');
+        end if;
+      value.x.addstr('  end record;' & crlf);
+      if not inside then
+        value.x.addstr(crlf);
+        end if;
+      save_lex(ostream,,value);
+      value.x.free;
+
+      -- definice jmen union
+      if counter3>typename3:first then
+        for i in typename3:first+1..counter3-1 loop
+          value.x.empty;
+          value.x.addstr('  ' & expandstr(typename3[i].s,17) & ' = ' & typedef3[i].s & typename3[typename3:first].s);
+          value.x.addstr(';' & crlf);
+          save_lex(ostream,,value);
+          value.x.free;
+
+          -- zaznam do typedef
+          value2.typ:=tv_str;
+          value2.s.empty;
+          value2.s.addstr(typedef3[i].s & typename3[typename3:first].s);
+          str_add2(typedefs,typename3[i].s,value2);
+          value2.s.free;
+          end loop;
+        end if;
+
+    else
+      -- pouze zjednodusena definice typu
+      loop
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex=lex_scol then
+            if typename3[counter3].s:length>0 then
+              counter3+1;
+              end if;
+            break;
+
+          elsif lex=lex_mul then
+            typedef3[counter3].s & '^';
+
+          elsif lex=lex_id then
+            typedef3[counter3].s & value.id;
+
+          else
+            wr({MSG=}000139,lc_error,'error p_union : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+        end loop;
+
+      -- jednoducha definice, for cyklus neni potreba
+      value.x.empty;
+      value.x.addstr('type' & crlf);
+      value.x.addstr(typename3[counter3-1].s & ' = ' & typedef3[counter3-1].s & typename3[typename3:first].s & ';');
+      value.x.free;
+    end if;
+
+leave
+  for i in strarray:first..strarray:last loop
+    free_stream(ostream2[i]);
+    end loop;
+--write2('p_union end');
+  end p_union;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_const (
+           istream : ref tstream;
+           ostream : ref tstream) =
+-- zpracovani const
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  typename         : strarray;
+  typedef          : str255;
+  value            : tlexvalue;
+  value2           : str255:='';
+  counter          : strarray:range:=strarray:first;
+  i                : strarray:range;
+  value3           : tvalue;
+  ignore           : boolean;
+  cdef             : tctype;
+
+begin
+  -- inicializace
+  for i in strarray:range loop
+    typename[i]:=[for s use '', for next use false];
+    end loop;
+  initctype(cdef);
+
+  -- jmeno typu
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+  if lex<>lex_id then
+    wr({MSG=}000140,lc_error,'error p_const : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  -- kontrola typu
+  cdef.cstype:=ct_named;
+  cdef.name:=value.id;
+  controlidbasename(cdef,istream.name);
+  typedef:=cdef.name;
+
+  loop
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+    if lex=lex_scol then
+        break;
+
+      elsif lex=lex_comma then
+        counter+1;
+
+      -- identifikator = jmeno konstanty
+      elsif lex=lex_id then
+        typename[counter].s & value.id;
+
+      -- volitelne nasleduje hodnota teto konstanty
+      if lex=lex_assign then
+        -- jedna se jen o definici konstanty
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_id then
+          wr({MSG=}000141,lc_error,'error p_const : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+        value2:=value.id;
+        end if;
+
+      else
+        wr({MSG=}000142,lc_error,'error p_const : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+      end if;
+    end loop;
+
+  -- co s tim budeme delat
+  ignore:=false;
+  if str_find2(consts,typename[typename:first].s,value3) then
+    if value3.typ=tv_extra and then value3.x=tx_ignore then
+      ignore:=true;
+      end if;
+    end if;
+
+  -- sestavit vysledek
+  value.x.empty;
+  value.x.addstr('const' & crlf);
+
+  -- definice vice v jednom
+  if counter>strarray:first
+    then
+      for i in strarray:first..counter loop
+        value.x.addstr('  ' & expandstr(typename[i].s,17));
+        value.x.addstr(' : ' & typedef & ';' & crlf);
+        end loop;
+    else
+      value.x.addstr('  ' & expandstr(typename[strarray:first].s,17));
+      value.x.addstr(' : ' & typedef);
+      -- volitelne hodnota konstanty
+      if value2:length>0 then
+        value.x.addstr(' := ' & value2);
+        end if;
+      value.x.addstr(';' & crlf & crlf);
+    end if;
+  if not ignore then
+    save_lex(ostream,,value);
+    end if;
+  value.x.free;
+  end p_const;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_typedef (
+           istream : ref tstream;
+           ostream : ref tstream;
+          declspec : ttypedef := [for declspec use tdeclspecs:[]]) =
+-- zpracovani typedef
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  typename         : strarray;
+  typedef          : strarray;
+  counter          : strarray:range:=strarray:first;
+  i                : strarray:range:=strarray:first;
+  p_const          : boolean:=false;
+  value2           : tvalue;
+  isfirst          : boolean:=true;
+  predef           : lstring;
+
+begin
+--write2('p_typedef ...');
+  -- inicializace
+  for i in strarray:range loop
+    typename[i]:=[for s use '', for next use false];
+    typedef[i]:=[for s use '', for next use false];
+    end loop;
+
+  -- lexikalni element
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  -- const
+  if lex=lex_const then
+    p_const:=true;
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end if;
+
+
+  -- specialni pripady se osetruji jinde
+  if lex=lex_struct then
+--write2('struct -> p_struct');
+      p_struct(istream,ostream,predef,false,declspec,,p_const);
+      if predef.getsize>0 then
+        if isfirst then
+          -- ulozit do vystupniho stream
+          value.x.empty;
+          value.x.addstr('type' & crlf);
+          save_lex(ostream,,value);
+          value.x.free;
+
+          isfirst:=false;
+          end if;
+
+        value.x.empty;
+        lset(predef,value.x,0);
+        value.x.addstr(crlf);
+        save_lex(ostream,,value);
+        value.x.free;
+        predef.free;
+        end if;
+
+    elsif lex=lex_union then
+--write2('union -> p_union');
+      p_union(istream,ostream,false);
+
+    elsif lex=lex_enum then
+--write2('enum -> p_enum');
+      p_enum(istream,ostream);
+
+    else
+      prev_lex(istream);
+
+      p_typedef1(istream,predef,typename,typedef,counter);
+      if predef.getsize>0 then
+        if isfirst then
+          -- ulozit do vystupniho stream
+          value.x.empty;
+          value.x.addstr('type' & crlf);
+          save_lex(ostream,,value);
+          value.x.free;
+
+          isfirst:=false;
+          end if;
+
+        value.x.empty;
+        lset(predef,value.x,0);
+        value.x.addstr(crlf);
+        save_lex(ostream,,value);
+        value.x.free;
+        predef.free;
+        end if;
+
+      for i in typename:first..counter-1 loop
+        if typename[i].s:length>0 or typedef[i].s:length>0 then
+          -- hlavicka jen pred prvni definici
+          if isfirst then
+            -- ulozit do vystupniho stream
+            value.x.empty;
+            value.x.addstr('type' & crlf);
+            save_lex(ostream,,value);
+            value.x.free;
+
+            isfirst:=false;
+            end if;
+
+          value.x.empty;
+          if typename[i].s:length>0 then
+            value.x.addstr(expandstr(typename[i].s,17));
+            end if;
+          if typename[i].s:length>0 and typedef[i].s:length>0 then
+            value.x.addstr(' = ');
+            end if;
+          if typedef[i].s:length>0 then
+            value.x.addstr(typedef[i].s);
+            if not typedef[i].next then
+              value.x.addstr(';' & crlf);
+              end if;
+            end if;
+          save_lex(ostream,,value);
+          value.x.free;
+
+          -- uschovat pro mozne dalsi pouziti
+          if typedef[i].s:length>0 then
+            value2.s.empty;
+            value2.s.addstr(typedef[i].s);
+            str_add2(typedefs,typename[i].s,value2);
+            value2.s.free;
+            end if;
+          end if;
+        end loop;
+    end if;
+--write2('p_typedef end');
+  end p_typedef;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_declspec (
+           istream : ref tstream;                -- vstupni stream
+          declspec : ref ttypedef) =
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+
+begin
+  -- leva zavorka
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+  if lex<>lex_lpar then
+    wr({MSG=}000143,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  -- klicove slovo
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+  if lex<>lex_id then
+    wr({MSG=}000144,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  -- align(lex_num)
+  if value.id='align' then
+      declspec.declspec+[ds_align];
+      -- nasleduje leva zavorka
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      if lex<>lex_lpar then
+        wr({MSG=}000145,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+        end if;
+
+      -- nasleduje cislo
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      if lex<>lex_num then
+        wr({MSG=}000146,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+        end if;
+      declspec.align:=value.n;
+
+      -- nasleduje prava zavorka
+      load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+      if lex<>lex_rpar then
+        wr({MSG=}000147,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+        end if;
+
+    -- dllimport
+    elsif value.id='dllimport' then
+      declspec.declspec+[ds_dllimport];
+
+    elsif value.id='noreturn' then
+      declspec.declspec+[ds_noreturn];
+
+    else
+      wr({MSG=}000148,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+      raise internal_error_2;
+    end if;
+
+  -- prava zavorka
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+  if lex<>lex_rpar then
+    wr({MSG=}000149,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  end p_declspec;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_proc (
+           istream : ref tstream;                -- vstupni stream
+           ostream : ref tstream) =              -- vystupni stream
+-- Zpracovava proceduru
+----------------------------------------------------------------------------------------------------
+var
+  procstream       : tstream;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  parentcount      : byte:=0;                    -- citac levych zavorek
+  cdef             : tctype;                     -- udaje o procedure
+  cdef2            : tctype;                     -- udaje o prave zpracovavanem parametru
+  paramcount       : longint;                    -- citac parametru
+  value2           : tlexvalue;
+  dllname          : str255;                     -- jmeno DLL ve kterem je procedura obsazena
+  cdef3            : tctype;                     -- udaje o typu navratove hodnoty
+  parentinside     : byte:=0;                    -- T=jsme uvnitr zavorek
+  cdef4            : tctype;                     -- udaje o parametru zpracovavaneho parametru procedura
+  paramcounter2    : longint:=0;                 -- citac parametru
+  pretype          : str255;
+  istype           : boolean:=false;             -- T=type uz bylo pouzito
+  templstr         : lstring;
+  i                : longint;
+  realname         : str255;
+  ignore           : boolean;
+  curlycount       : byte:=0;
+  value3           : tvalue;
+
+begin
+  -- inicializace
+  init_stream(procstream);
+  initctype(cdef);
+  initctype(cdef3);
+  ignore:=false;
+
+  -- nacist stream (az do prvniho stredniku)
+  loop
+    load_lex(istream,lex,value,[lex_eol]);
+
+    -- inline ihned zahazujeme
+    if lex=lex_lcurly then
+      curlycount+1;
+      loop
+        load_lex(istream,lex,value,[lex_eol]);
+
+        -- leva slozena zavorka
+        if lex=lex_lcurly then
+            curlycount+1;
+
+          -- prava slozena zavorka
+          elsif lex=lex_rcurly then
+            curlycount-1;
+
+            -- posledni prava slozena zavorka
+            break when curlycount=0;
+          end if;
+        end loop;
+
+      -- a vubec nezpracujeme
+      return;  
+      end if;
+
+    save_lex(procstream,lex,value);
+
+    if lex=lex_scol then
+        break;
+
+      elsif lex=lex_lpar then
+        -- citac levych zavorek
+        if parentinside=0 then
+          parentcount+1;
+          end if;
+        parentinside+1;
+
+      elsif lex=lex_rpar then
+        -- citac levych zavorek
+        parentinside-1;
+
+      end if;
+    end loop;
+
+  -- skocit na zacatek stream
+  rewind_stream(procstream);
+
+  -- jedna se o proceduru
+  cdef.cstype:=ct_proc;
+
+  -- zpracovani
+  loop
+    load_lex(procstream,lex,value);
+    if lex=lex_scol then
+        break;
+
+      elsif lex=lex_id and then (value.id='_cdecl' or value.id='__cdecl') then
+        cdef._cdecl:=true;
+
+      elsif lex=lex_id and then (value.id='declspec' or value.id='__declspec') then
+        load_lex(procstream,lex,value);
+        if lex<>lex_lpar then
+          wr({MSG=}000150,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+        load_lex(procstream,lex,value);
+        if lex<>lex_id then
+          wr({MSG=}000151,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+        if value.id='dllimport' then
+            cdef._import:=true;
+
+          elsif value.id='noreturn' then
+            cdef._noreturn:=true;
+
+          else
+            wr({MSG=}000152,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+        load_lex(procstream,lex,value);
+        if lex<>lex_rpar then
+          wr({MSG=}000153,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+        -- declspec( neni ta zavorka, ktera nas zajima
+        parentcount-1;
+
+      elsif lex=lex_id and then value.id='__stdcall' then
+        cdef._stdcall:=true;
+
+      elsif lex=lex_id and then value.id='__forceinline' then
+        ignore:=true;
+
+      elsif lex=lex_id then
+        -- muze jit o navratovou hodnotu nebo jmeno procedury?
+        if cdef3.cstype=ct_nil
+          then cdef3.cstype:=ct_named;
+               cdef3.name & value.id;
+          else cdef.name & value.id;
+          end if;
+
+      elsif lex in [lex_char,lex_const,lex_double,lex_float,lex_int,lex_long,lex_mul,
+                    lex_short,lex_signed,lex_struct,lex_unsigned,lex_void,lex_wchar_t] then
+        modifyctype(cdef3,lex,value);
+
+      -- leva zavorka nasledovana jmenem procedury
+      elsif lex=lex_lpar and parentcount=2 then
+        loop
+          load_lex(procstream,lex,value);
+          if lex=lex_rpar then
+              break;
+            else
+              wr({MSG=}000154,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+            end if;
+          end loop;
+
+        -- jmeno bylo zpracovano, takze ted uz prijdou jen parametry
+        parentcount+1;
+
+      -- leva zavorka nasledovana parametry
+      elsif lex=lex_lpar and parentcount<>2 then
+        -- inicializace
+        initctype(cdef2);
+        paramcount:=1;
+
+        dllname:='';
+        if not proc_find(proclist,cdef.name,dllname) then
+          dllname:length:=0;
+          end if;
+        if dllname='@IGNORE' then
+          ignore:=true;
+          end if;
+
+        loop
+          load_lex(procstream,lex,value);
+          if lex=lex_rpar then
+              -- uprava moznych prazdnych zavorek
+              if cdef2.cstype not in [ct_nil,ct_void] then
+                controlidbasename(cdef2,istream.name);
+
+                -- vymyslet parametru jmeno, pokud zadne nema
+                if cdef2._name:length=0 then
+                  cdef2._name:=get_varname('_',paramcount);
+                  end if;
+
+                -- dodatecna kontrola a pretypovani
+                controlctypeasparameter(pretype,cdef2,cdef.name);
+                if pretype:length>0 then
+                  value2.x.empty;
+                  if not istype then
+                    value2.x.addstr('type' & crlf);
+                    istype:=true;
+                    end if;
+                  value2.x.addstr(pretype & crlf);
+                  if not ignore then
+                    save_lex(ostream,,value2);
+                    end if;
+                  value2.x.free;
+                  end if;
+
+                -- kontrola duplicity jmena a typu
+                if cdef2.cstype=ct_named and then upcasestr(cdef2._name)=upcasestr(cdef2.name) then
+                  cdef2._name & '_x';
+                  end if;
+
+                -- urcit typ
+                ctoftype(cdef2,templstr);
+
+                -- zkontrolovat zda neni vynucen typ parametru
+                if str_find2(parameters,cdef.name & ':' & cdef2._name,value3) then
+                  if value3.typ=tv_str
+                    then
+                      -- vnutit vlastni typ parametru
+                      templstr.empty;
+                      templstr.addstr(value3.s.getstr(1,false));
+                    else
+                      wr({MSG=}000000,lc_error,'parameter: ' & cdef.name & ':' & cdef2._name);
+                      raise internal_error_2;
+                    end if;
+                  end if;
+
+                -- zpracovat aktualni parametr
+                cdef._params.addstr(crlf & '    ' & expandstr(cdef2._name,15) & ' : ');
+                if templstr.getsize>255 then
+                  wr({MSG=}000155,lc_error,'string too long');
+                  raise internal_error_2;
+                  end if;
+                cdef._params.addstr(templstr.getstr(1,false));
+                templstr.free;
+                end if;
+              break;
+
+            elsif lex=lex_comma then
+              controlidbasename(cdef2,istream.name);
+
+              -- vymyslet parametru jmeno, pokud zadne nema
+              if cdef2._name:length=0 then
+                cdef2._name:=get_varname('_',paramcount);
+                end if;
+
+              -- dodatecna kontrola a pretypovani
+              controlctypeasparameter(pretype,cdef2,cdef.name);
+              if pretype:length>0 then
+                value2.x.empty;
+                if not istype then
+                  value2.x.addstr('type' & crlf);
+                  istype:=true;
+                  end if;
+                value2.x.addstr(pretype & crlf);
+                if not ignore then
+                  save_lex(ostream,,value2);
+                  end if;
+                value2.x.free;
+                end if;
+
+              -- zjistit zda nasleduje dalsi parametr
+              load_lex(procstream,lex,value);
+              prev_lex(procstream);
+
+              -- kontrola duplicity jmena a typu
+              if cdef2.cstype=ct_named and then upcasestr(cdef2._name)=upcasestr(cdef2.name) then
+                cdef2._name & '_x';
+                end if;
+
+              -- urcit nazev typu
+              ctoftype(cdef2,templstr);
+
+              -- zkontrolovat zda neni vynucen typ parametru
+              if str_find2(parameters,cdef.name & ':' & cdef2._name,value3) then
+                if value3.typ=tv_str
+                  then
+                    -- vnutit vlastni typ parametru
+                    templstr.empty;
+                    templstr.addstr(value3.s.getstr(1,false));
+                  else
+                    wr({MSG=}000000,lc_error,'parameter: ' & cdef.name & ':' & cdef2._name);
+                    raise internal_error_2;
+                  end if;
+                end if;
+
+              -- zpracovat aktualni parametr
+              cdef._params.addstr(crlf & '    ' & expandstr(cdef2._name,15) & ' : ');
+              if templstr.getsize>255 then
+                wr({MSG=}000156,lc_error,'string too long');
+                raise internal_error_2;
+                end if;
+              cdef._params.addstr(templstr.getstr(1,false));
+              if lex<>lex_rpar then
+                cdef._params.addstr('; ');
+                end if;
+              templstr.free;
+
+              paramcount+1;
+              initctype(cdef2);
+
+            elsif lex=lex_flex then
+              save_lex(ostream,lex,value);
+
+            elsif lex in [lex_char,lex_const,lex_double,lex_float,lex_int,lex_long,lex_mul,
+                          lex_short,lex_signed,lex_struct,lex_unsigned,lex_void,lex_volatile,
+                          lex_wchar_t] then
+              modifyctype(cdef2,lex,value);
+
+            elsif lex=lex_id and then (value.id='in' or value.id='out' or value.id='optional') then
+              modifyctype(cdef2,lex,value);
+
+            elsif lex=lex_id then
+              -- kontrola na klicove slovo Flexu
+              controlidname(value.id);
+
+              -- muze se jednat o typ nebo jmeno
+              if cdef2.cstype=ct_nil
+                then
+                  cdef2.cstype:=ct_named;
+                  cdef2.name:=value.id;
+                else
+                  cdef2._name & value.id;
+                end if;
+
+            elsif lex=lex_lbra then
+              cdef2._array:=true;
+
+              load_lex(procstream,lex,value);
+              if lex<>lex_rbra then
+                wr({MSG=}000157,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+                raise internal_error_2;
+                end if;
+
+            -- parametr je procedura
+            elsif lex=lex_lpar then
+              -- kontrola typu navratove hodnoty
+              controlctypeasreturn(pretype,cdef2,'');
+              if pretype:length>0 then
+                value2.x.empty;
+                if not istype then
+                  value2.x.addstr('type' & crlf);
+                  istype:=true;
+                  end if;
+                value2.x.addstr(pretype & crlf);
+                save_lex(ostream,,value2);
+                value2.x.free;
+                end if;
+
+              -- ted je v cdef jeji navratovy typ
+              ctoftype(cdef2,templstr);
+              initctype(cdef2);
+              cdef2.cstype:=ct_proc;
+              if templstr.getsize>255 then
+                wr({MSG=}000158,lc_error,'string too long');
+                raise internal_error_2;
+                end if;
+              cdef2._return:=templstr.getstr(1,false);
+              templstr.free;
+
+              -- predpokladame, ze v prvni dvojici () je typ (nazev)
+              loop
+                load_lex(procstream,lex,value);
+
+                if lex=lex_rpar then
+                    break;
+
+                  elsif lex=lex_mul then
+                    cdef2._pointer+1;
+
+                  elsif lex=lex_id and then value.id='__cdecl' then
+                    cdef2._cdecl:=true;
+
+                  else
+                    wr({MSG=}000159,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+                    raise internal_error_2;
+                  end if;
+                end loop;
+
+              -- musi nasledovat zase (
+              load_lex(procstream,lex,value);
+              if lex<>lex_lpar then
+                wr({MSG=}000160,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+                raise internal_error_2;
+                end if;
+
+              -- ve druhe dvojici jsou parametry
+              initctype(cdef4);
+              paramcounter2:=1;
+              loop
+                load_lex(procstream,lex,value);
+
+                if lex=lex_rpar then
+                    if cdef4.cstype<>ct_nil then
+                      ctoftype(cdef4,templstr);
+                      cdef4._params.addstr(crlf & get_varname('_',paramcounter2) & ' : ');
+                      if templstr.getsize>255 then
+                        wr({MSG=}000161,lc_error,'string too long');
+                        raise internal_error_2;
+                        end if;
+                      cdef4._params.addstr(templstr.getstr(1,false));
+                      templstr.free;
+                      end if;
+                    break;
+
+                  elsif lex in [lex_char,lex_const,lex_double,lex_float,lex_int,lex_long,lex_mul,
+                                lex_short,lex_signed,lex_struct,lex_unsigned,lex_void,lex_wchar_t] then
+                    modifyctype(cdef4,lex,value);
+
+                  elsif lex=lex_comma then
+                    ctoftype(cdef4,templstr);
+                    cdef4._params.addstr(crlf & get_varname('_',paramcounter2) & ' : ');
+                    if templstr.getsize>255 then
+                      wr({MSG=}000162,lc_error,'string too long');
+                      raise internal_error_2;
+                      end if;
+                    cdef4._params.addstr(templstr.getstr(1,false));
+                    templstr.free;
+                    paramcounter2+1;
+
+                  else
+                    wr({MSG=}000163,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+                    raise internal_error_2;
+                  end if;
+                end loop;
+
+            else
+              wr({MSG=}000164,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+            end if;
+          end loop;
+
+      else
+        wr({MSG=}000165,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+write2('p_proc: ' & cdef.name);
+        raise internal_error_2;
+      end if;
+    end loop;
+
+  -- dohledat DLL knihu dane procedury
+  dllname:='';
+  if not proc_find(proclist,cdef.name,dllname) then
+    dllname:length:=0;
+    end if;
+
+  -- nektere procedury ignorujeme zamerne (konfiguraci)
+  if dllname='@IGNORE' then
+    return;
+    end if;
+
+  -- sestavit typ navratove hodnoty
+  controlidbasename(cdef3,istream.name);
+
+  controlctypeasreturn(pretype,cdef3,'');
+  if pretype:length>0 then
+    value2.x.empty;
+    if not istype then
+      value2.x.addstr('type' & crlf);
+      istype:=true;
+      end if;
+    value2.x.addstr(pretype & crlf);
+    save_lex(ostream,,value2);
+    value2.x.free;
+    end if;
+
+  ctoftype(cdef3,templstr);
+  if templstr.getsize>255 then
+    wr({MSG=}000166,lc_error,'string too long');
+    raise internal_error_2;
+    end if;
+  cdef._return:=templstr.getstr(1,false);
+  templstr.free;
+
+  -- kontrola na klicove slovo Flexu, v realname je skutecne jmeno 
+  realname:=cdef.name;
+  controlidname(cdef.name);
+
+  -- a ted sestaveni vlastni procedury
+  ctoftype(cdef,templstr);
+
+  value2.x.empty;
+  templstr.setstrsize(200);
+  for i in 1..templstr.getstrcount loop
+    value2.x.addstr(templstr.getstr(i,false));
+    end loop;
+  templstr.free;
+  value2.x.addstr(';' & crlf);
+  save_lex(ostream,,value2);
+  value2.x.free;
+
+  -- #pragma convention(FindFirstFile,stdcall);
+  if cdef._stdcall then
+    value2.x.empty;
+    value2.x.addstr('#pragma convention(' & cdef.name & ',system);' & crlf);
+    save_lex(ostream,,value2);
+    value2.x.free;
+    end if;
+
+  -- neni procedura oznacena jako nevhodna
+  if dllname='@IGNORE' then
+    return;
+    end if;
+
+  -- #pragma import(FindFirstFile,'FindFirstFile','KERNEL32.DLL');
+  if dllname:length>0 or cdef._import then
+    value2.x.empty;
+    value2.x.addstr('#pragma import(');
+    value2.x.addstr(cdef.name & ',');
+    value2.x.addstr('''' & realname & '''' & ',');
+    value2.x.addstr('''' & dllname & '''' & ');' & crlf);
+    save_lex(ostream,,value2);
+    value2.x.free;
+    end if;
+
+  -- #pragma no_return(FindFirstFile);
+  if cdef._noreturn then
+    value2.x.empty;
+    value2.x.addstr('#pragma no_return(' & cdef.name & ');' & crlf);
+    save_lex(ostream,,value2);
+    value2.x.free;
+    end if;
+
+  -- a ukoncit prazdnym radkem (pro prehlednost)
+  value2.x.empty;
+  value2.x.addstr(crlf);
+  save_lex(ostream,,value2);
+  value2.x.free;
+
+  -- finalizace
+leave
+  free_stream(procstream);
+  end p_proc;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure p_enum =
+--         istream : ref tstream;                -- vstupni stream
+--         ostream : ref tstream);               -- vystupni stream
+-- Zpracovava enum.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+  value2           : tlexvalue;
+  value3           : tlexvalue;
+  typename2        : strarray;                   -- jmena a definice polozek
+  counter2         : strarray:range:=strarray:first;
+  typedef2         : strarray;
+  typename3        : strarray;                   -- jmena a definice vlastniho enumu
+  counter3         : strarray:range:=strarray:first;
+  typedef3         : strarray;
+  i                : strarray:range:=strarray:first;
+  values           : tvalue;
+
+begin
+  -- inicializace
+  for i in strarray:range loop
+    typename2[i]:=[for s use '', for next use false];
+    typedef2[i]:=[for s use '', for next use false];
+    typename3[i]:=[for s use '', for next use false];
+    typedef3[i]:=[for s use '', for next use false];
+    end loop;
+  load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+  -- volitelne identifikator
+  if lex=lex_id then
+    typename3[counter3].s & value.id;
+    counter3+1;
+
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+    end if;
+--write2('p_enum ' & typename_ & '...');
+
+  -- leva slozena zavorka
+  if lex<>lex_lcurly then
+    wr({MSG=}000167,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+    raise internal_error_2;
+    end if;
+
+  -- identifikatory oddelene carkou
+  loop
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+    if lex=lex_rcurly then
+--write2('} -> p_enum end');
+        break;
+
+      elsif lex=lex_comma then
+        counter2+1;
+
+      -- identifikator [= hodnota]
+      elsif lex=lex_id then
+        typename2[counter2].s & value.id;
+
+      -- volitelne muze nasledovat + a hodnota
+      elsif lex=lex_add then
+        -- nacist hodnotu
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        if lex=lex_num then
+            typedef2[counter2].s & num_to_flex(lex,value);
+
+          else
+            wr({MSG=}000168,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+
+      -- volitelne muze nasledovat | a hodnota
+      elsif lex=lex_bitor then
+        -- nacist hodnotu
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        if lex=lex_num then
+            typedef2[counter2].s & ' or ' & num_to_flex(lex,value);
+
+          elsif lex=lex_id then
+            typedef2[counter2].s & ' or ' & value.id;
+
+          else
+            wr({MSG=}000169,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+
+      -- volitelne muze nasledovat << a hodnota
+      elsif lex=lex_shl then
+        -- nacist hodnotu
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        if lex=lex_num then
+            typedef2[counter2].s & ' shl ' & num_to_flex(lex,value);
+
+          else
+            wr({MSG=}000170,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+
+      -- volitelne muze nasledovat = a hodnota
+      elsif lex=lex_assign then
+        -- nacist hodnotu
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        if lex=lex_num then
+            -- a vypocist spravnou hodnotu
+            typedef2[counter2].s & num_to_flex(lex,value);
+
+          elsif lex=lex_id then
+            typedef2[counter2].s & value.id & ':ord';
+
+            -- zaplata: dokud nebude fungovat :ord
+            typename2[counter2].s:='-- ' & typename2[counter2].s;
+
+          elsif lex=lex_sub then
+            load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+            if lex=lex_num then
+              typedef2[counter2].s & '-' & num_to_flex(lex,value);
+
+              else
+                wr({MSG=}000171,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+                raise internal_error_2;
+              end if;
+
+          else
+            wr({MSG=}000172,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+            raise internal_error_2;
+          end if;
+
+      else
+        wr({MSG=}000173,lc_error,'error p_enum : lex = ' & lex_to_text(lex,value));
+        raise internal_error_2;
+      end if;
+    end loop;
+
+  -- bude nasledovat jmeno typu popr. vice typu (ukazatel)
+  loop
+    load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+    if lex=lex_scol then
+        if typename3[counter3].s:length>0 then
+          counter3+1;
+          end if;
+        break;
+
+      elsif lex=lex_comma then
+        counter3+1;
+
+      elsif lex=lex_id then
+        if value.id<>typename3[typename3:first].s then
+          typename3[counter3].s & value.id;
+          end if;
+
+      elsif lex=lex_mul then
+        typedef3[counter3].s & '^';
+
+      end if;
+    end loop;
+
+  -- sestaveni vysledku
+  value.x.empty;
+  value.x.addstr('type' & crlf);
+  if counter3=typename3:first
+    then value.x.addstr(expandstr(get_varname('t_',gcounter),18) & '= enum' & crlf);
+         gcounter+1;
+    else value.x.addstr(expandstr(typename3[typename3:first].s,18) & '= enum' & crlf);
+    end if;
+  save_lex(ostream,,value);
+  value.x.free;
+
+  -- vlastni polozky
+  for i in typename2:first..counter2 loop
+    if typename2[i].s:length>0 then
+      if typedef2[i].s:length>0
+        then value.x.empty;
+             value.x.addstr('    ' & expandstr(typename2[i].s,15) & ' for ord use ' & typedef2[i].s & ';' & crlf);
+             save_lex(ostream,,value);
+             value.x.free;
+        else value.x.empty;
+             value.x.addstr('    ' & typename2[i].s & ';' & crlf);
+             save_lex(ostream,,value);
+             value.x.free;
+        end if;
+      end if;
+    end loop;
+
+  value.x.empty;
+  value.x.addstr('  end enum for size use 4;' & crlf);
+  save_lex(ostream,,value);
+  value.x.free;
+
+  -- dodatecne deklarace (2 v jednom a vice)
+  if counter3>typename3:first then
+    for i in typename3:first+1..counter3-1 loop
+      value.x.empty;
+      value.x.addstr('  ' & expandstr(typename3[i].s,17) & ' = ' & typedef3[i].s & typename3[typename3:first].s & ';' & crlf);
+      save_lex(ostream,,value);
+      value.x.free;
+
+      -- zaznam do typedef
+      values.typ:=tv_str;
+      values.s.empty;
+      values.s.addstr(typedef3[i].s & typename3[typename3:first].s);
+      str_add2(typedefs,typename3[i].s,values);
+      values.s.free;
+      end loop;
+    end if;
+  end p_enum;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure dofile =
+--         istream : ref tstream;                -- vstupni stream
+--         ostream : ref tstream;                -- vystupni stream
+--           chyba : ref boolean);
+-- Zpracovani jednoho souboru vlastnim prekladacem.
+----------------------------------------------------------------------------------------------------
+label
+  skipstruct;
+  
+var
+  modulename       : str255;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  value2           : tlexvalue;
+  counter          : longint:=0;
+  declspec         : ttypedef;
+  insidecount      : longint;
+  ignore           : boolean;
+  value3           : tvalue;
+  isscol           : boolean;
+  islcurly         : boolean;
+  optcounter       : longint;
+  predef           : lstring;
+  incounter        : byte;
+  hcounter         : byte;
+
+begin
+  -- inicializace
+  chyba:=true;
+  fillz(declspec,declspec:size);
+  gcounter:=1;
+
+  -- uvodni hlaseni
+  wr({MSG=}000174,lc_norm,formats('Zpracovava se soubor %1 - phase 2',istream.name));
+
+  -- optimalizace na vstupu
+  loop
+    optimalize_stream(istream,optcounter);
+    break when optcounter=0;
+    end loop;
+
+  init_stream(ostream,istream.name);
+
+  -- hlavicka souboru
+  write_module(istream.name);
+
+  -- zjistit nazev modulu
+  modulename:=getsimplename(getfilename(istream.name));
+
+  -- hlavicka souboru
+  value.x.empty;
+  value.x.addstr(fillstr('-',100) & crlf);
+  save_lex(ostream,,value);
+
+  value.x.empty;
+  value.x.addstr('module ' & modulename & ' =' & crlf);
+  save_lex(ostream,,value);
+  value.x.free;
+
+  -- header
+  for hcounter in 1..9 loop
+    -- pouze neprazdne
+    if header_header[hcounter]:length>0 then
+      value.x.empty;
+      value.x.addstr('--');
+      -- . je zastupce pro prazdny radek
+      if header_header[hcounter]<>'.' then
+        value.x.addstr(' ' & header_header[hcounter]);
+        end if;
+      value.x.addstr(crlf);
+      save_lex(ostream,,value);
+      value.x.free;
+      end if;
+    end loop;
+
+  value.x.empty;
+  value.x.addstr(fillstr('-',100) & crlf & crlf);
+  save_lex(ostream,,value);
+
+  -- with
+  if modulename='windows' or modulename='Windows'
+    then p_include(istream,ostream,false);
+    else p_include(istream,ostream,true);
+    end if;
+
+  rewind_stream(istream);
+  loop
+--write2('----------------------------------------');
+    load_lex(istream,lex,value,[lex_eol]);
+
+    counter+1;
+    if (counter mod 500)=0 then
+--      write2('phase 2 : lex = ' & lex_to_text(lex,value));
+      end if;
+--write2('phase 2 : lex = ' & lex_to_text(lex,value));
+
+    if lex=lex_eof then
+        break;
+
+      -- veci vhodne k preskoceni
+      elsif lex in [lex_flex,lex_metaflex] then
+        save_lex(ostream,lex,value);
+
+      -- typedef
+      elsif lex=lex_typedef then
+        p_typedef(istream,ostream,declspec);
+        fillz(declspec,declspec:size);
+
+      -- enum
+      elsif lex=lex_enum then
+        p_enum(istream,ostream);
+
+      -- extern
+      elsif lex=lex_extern then
+        -- zjistit co bude extern
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+        -- declspec
+        if lex=lex_id and then (value.id='declspec' or value.id='__declspec') then
+            prev_lex(istream);
+
+            p_proc(istream,ostream);
+
+          -- const
+          elsif lex=lex_const then
+            p_const(istream,ostream);
+
+          else
+            prev_lex(istream);
+
+            p_typedef(istream,ostream);
+          end if;
+
+      -- __declspec
+      elsif lex=lex_id and then (value.id='declspec' or value.id='__declspec') then
+        p_declspec(istream,declspec);
+
+      -- __inline
+      elsif lex=lex_id and then (value.id='_inline' or value.id='__inline') then
+        -- preskocit vse az do leve slozene zavorky
+        loop
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+          if lex=lex_lcurly then
+              break;
+            end if;
+          end loop;
+
+        -- a ted vse az do prave slozene zavorky
+        insidecount:=1;
+        loop
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('__inline skip lex ' & lex_to_text(lex,value));
+          if lex=lex_rcurly then
+              insidecount-1;
+              if insidecount=0 then
+                break;
+                end if;
+
+            elsif lex=lex_lcurly then
+              insidecount+1;
+            end if;
+          end loop;
+
+        -- !!! a co ted s tim
+
+      -- __inline
+      elsif lex=lex_id and then value.id='__forceinline' then
+        -- preskocit vse az do leve slozene zavorky
+        loop
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+          if lex=lex_lcurly then
+              break;
+            end if;
+          end loop;
+
+        -- a ted vse az do prave slozene zavorky
+        insidecount:=1;
+        loop
+          load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('__inline skip lex ' & lex_to_text(lex,value));
+          if lex=lex_rcurly then
+              insidecount-1;
+              if insidecount=0 then
+                break;
+                end if;
+
+            elsif lex=lex_lcurly then
+              insidecount+1;
+            end if;
+          end loop;
+
+        -- !!! a co ted s tim
+
+      -- preskocit, uz je to zpracovane
+      elsif lex=lex_metaid and value.id='#include' then
+        -- nacist jeste jmeno includovaneho souboru
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+        if lex<>lex_str then
+          wr({MSG=}000175,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+          raise internal_error_2;
+          end if;
+
+      elsif lex=lex_struct then
+        -- zde se musi poznat, zda struct uvozuje definici recordu nebo navratovy typ procedury
+        load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+--write2('pre lex1 = ' & lex_to_text(lex,value));
+
+        -- zjistit zda se to vubec bude zpracovavat
+        ignore:=false;
+        if str_find2(typedefs,value.id,value3) then
+          if value3.typ=tv_extra and then value3.x=tx_ignore then
+            ignore:=true;
+            end if;
+          end if;
+
+        if ignore
+          then
+            -- nacist az do leve slozene
+            load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+            if lex=lex_scol then
+                goto skipstruct;
+
+              elsif lex<>lex_lcurly then
+                wr({MSG=}000176,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+                raise internal_error_2;
+              end if;
+            incounter:=0;
+
+            -- nacist az do prave slozene
+            loop
+              load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+
+              if lex=lex_rcurly and incounter=0 then
+                  break;
+
+                elsif lex=lex_rcurly then
+                  incounter-1;
+
+                elsif lex=lex_lcurly then
+                  incounter+1;
+
+                else ;
+
+                end if;
+
+              end loop;
+
+            -- nacist strednik a je to
+            load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+skipstruct:
+            if lex<>lex_scol then
+              wr({MSG=}000177,lc_error,'phase 2 error : lex = ' & lex_to_text(lex,value));
+              raise internal_error_2;
+              end if;
+
+          else
+            -- zpracovavat se to bude, tak ted zjistit zda to bude p_struct nebo p_proc
+            isscol:=false;
+            islcurly:=false;
+            load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+            if lex=lex_scol then isscol:=true; end if;
+            if lex=lex_lcurly then islcurly:=true; end if;
+            load_lex(istream,lex,value,[lex_eol,lex_flex,lex_metaflex]);
+            if lex=lex_scol then isscol:=true; end if;
+            if lex=lex_lcurly then islcurly:=true; end if;
+
+            -- vratit elementy zpatky
+            prev_lex(istream,[lex_eol,lex_flex,lex_metaflex]);
+            prev_lex(istream,[lex_eol,lex_flex,lex_metaflex]);
+            prev_lex(istream,[lex_eol,lex_flex,lex_metaflex]);
+
+            if isscol or islcurly
+              then
+                p_struct(istream,ostream,predef,false);
+                if predef.getsize>0 then
+                  value.x.empty;
+                  value.x.addstr('type' & crlf);
+                  linsert(predef,value.x,value.x.getsize);
+                  save_lex(ostream,,value);
+                  value.x.free;
+                  predef.free;
+                  end if;
+
+              else
+                -- vratit i struct protoze je soucasti navratoveho typu)
+                prev_lex(istream,[lex_eol,lex_flex,lex_metaflex]);
+
+                p_proc(istream,ostream);
+              end if;
+          end if;
+
+      else
+        -- vratit posledni element
+        prev_lex(istream);
+
+        -- zbyva uz jen definice procedur (a funkci)
+        p_proc(istream,ostream);
+      end if;
+    end loop;
+
+  -- paticka souboru
+  value.x.empty;
+  value.x.addstr(crlf & 'end ' & modulename & ';' & crlf);
+  save_lex(ostream,,value);
+
+  chyba:=false;
+
+leave
+  wr({MSG=}000178,lc_norm,formats('Zpracovan soubor %1 - phase 2',ostream.name));
+  end dofile;
+
+
+
+end h2flex2;
+

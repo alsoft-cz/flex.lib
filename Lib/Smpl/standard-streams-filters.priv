@@ -1,0 +1,525 @@
+----------------------------------------------------------------------------------------------------
+class private abstract c_stream_reader_filter = 
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.is_eod =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=c_input_stream:(this).is_eod;
+    end is_eod;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_input_stream:(this).close;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.get_flow =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_input_stream:(this).get_flow(bytes);
+    end get_flow;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.set_optimal_packet_size =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_input_stream:(this).set_optimal_packet_size(bytes);
+    end set_optimal_packet_size;
+
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.get_optimal_packet_size =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_input_stream:(this).get_optimal_packet_size(bytes);
+    end get_optimal_packet_size;
+  end c_stream_reader_filter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_stream_writer_filter = 
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=c_output_stream:(this).is_reading;
+    end is_reading;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).close;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.flush =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).flush;
+    end flush;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.get_flow =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).get_flow(bytes);
+    end get_flow;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.set_optimal_packet_size =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).set_optimal_packet_size(bytes);
+    end set_optimal_packet_size;
+
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.get_optimal_packet_size =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).get_optimal_packet_size(bytes);
+    end get_optimal_packet_size;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.get_lazy_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).get_lazy_buffer(lazy);
+    end get_lazy_buffer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_writer.set_lazy_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_output_stream:(this).set_lazy_buffer(lazy);
+    end set_lazy_buffer;
+  end c_stream_writer_filter;
+
+
+----------------------------------------------------------------------------------------------------
+class private c_input_stream_buffer =
+----------------------------------------------------------------------------------------------------
+var
+  que            : c_queue;
+  eod            : t_logical;
+  closed         : t_logical;
+
+  --------------------------------------------------------------------------------------------------
+  static drop_packets =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    -- dokud je neco ve fronte, zahazuju to
+    while que.try_accept_any_msg(packet,t_wait_immediate) loop
+      data:=p_data_packet(packet)^;
+      discard packet;
+      discard_packet(data);
+      end loop;
+    end drop_packets;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- testuju legalnost pozadavku
+    if closed then
+      raise stream_already_closed;
+      end if;
+    closed:=true;
+
+    -- zabiju pomocne cerpadlo
+    c_task:(this).kill;
+    
+    --zavru zdroj
+    _source^.close();
+    
+    -- uvolnim packety v bufferu
+    drop_packets;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod  =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+
+    -- vratim jestli uz byl precten end of data packet
+    result:=eod;
+    end is_eod;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_pointer;
+
+  begin
+    -- otestuju opravn3enost pozadavku
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+
+    -- cekam na packet
+    que.accept_any_msg(packet);
+    data:=p_data_packet(packet)^;
+ 
+    -- zapocitam prutok
+    c_input_stream:(this).add_flow(data);
+
+    -- zjistim jestli uz byl posledni
+    if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      eod:=true;
+      end if;
+
+    -- uvolnim handle na packet
+    discard packet;
+    end read_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_task.run =
+  ------------------------------------------------------------------------------------------------
+  var
+    data         : t_data_packet;
+    packet       : p_data_packet;
+
+  begin
+    loop
+      -- vytvorim handle na packet
+      new packet;
+      -- prectu packet ze zdroje
+      _source^.read_packet(data);
+      -- zkopiruju handle pripadne i data packetu
+      if packet^.style=t_dps_temporary then
+        copy_to_packet(packet^,data.data,data.size);
+      else
+        packet^:=data;
+        end if;
+      -- pripojim packet nakonec fronty
+      que.append_msg(packet);
+      -- jestli to byl eod, koncim
+      if packet^.style=t_dps_signal and then packet^.signal=t_dpss_eod then
+        break;
+        end if;
+      end loop;
+    end run;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static init_input_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- inicializuju zdroj
+    init_reader(source);
+    -- spoustim cerpadlo
+    c_task:(this).start;
+    end init_input_buffer;
+  end c_input_stream_buffer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_output_stream_buffer =
+----------------------------------------------------------------------------------------------------
+var
+  que            : c_queue;
+  isreading      : t_logical;
+  closed         : t_logical;
+
+  --------------------------------------------------------------------------------------------------
+  static drop_packets =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    -- dokud je neco ve fronte, zahazuju to
+    while que.try_accept_any_msg(packet,t_wait_immediate) loop
+      data:=p_data_packet(packet)^;
+      discard packet;
+      discard_packet(data);
+      end loop;
+    end drop_packets;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+
+    -- jestli druha strana stale cte
+    if isreading then
+      -- pockam az cerpadlo vytlaci packety ven
+      c_output_stream:(this).flush;
+      -- zastavim cerpadlo
+      c_task:(this).kill;
+      end if;
+
+    closed:=true;
+
+    -- uvolnit packety a data ktere druha strana odmitla precist
+    drop_packets;
+
+    -- zavrit cil
+    _target^.close;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    --zjistim jestli druha strana zatim jeste poslouchha
+    result:=isreading;
+    end is_reading;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : p_data_packet;
+
+  begin
+    -- zjistim opravnenost pozadavku
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if not isreading then
+      raise stream_other_side;
+      end if;
+
+    -- vytvorim handle na packet
+    new packet;
+
+    -- zkopiruju handle nebo i data packetu
+    if data.style=t_dps_temporary then
+      copy_to_packet(packet^,data.data,data.size);
+    else
+      packet^:=data;
+      end if;
+
+    --%%TODO join short packets
+    
+    que.append_msg(packet);
+
+    -- jestli to byl flush, cekam az cerpadlo vytlaci data ven
+    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+      que.wait_empty;
+      end if;
+
+    --zapocitam prutok
+    c_output_stream:(this).add_flow(data);
+    --data:=nil;
+    end write_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_task.run =
+  -- pomocne cerpadlo
+  ------------------------------------------------------------------------------------------------
+  var
+    data         : t_pointer;
+    packet       : t_data_packet;
+
+  begin
+    loop
+      -- cekam na packet
+      que.accept_any_msg(data);
+      packet:=p_data_packet(data)^;
+
+      -- uvolnim handle packetu
+      discard data;
+
+      -- tlacim packet na cil
+      _target^.write_packet(packet);
+
+      -- jestli byl posledni koncim
+      if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+        break;
+        end if;
+      
+      discard data;
+      end loop;
+    end run;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static init_output_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- pripojim cil
+    init_writer(target);
+
+    -- zapnu cerpadlo
+    c_task:(this).start;
+    end init_output_buffer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  entry = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    isreading:=true;
+    end entry;
+  end c_output_stream_buffer;
+
+
+---------------------------------------------------------------------------------------------------
+class private c_input_stream_redirector =
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    _source^.close();
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet =
+  ------------------------------------------------------------------------------------------------
+  begin
+    _source^.read_packet(data);
+    end read_packet;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=_source^.is_eod();
+    end is_eod;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_input_redirector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_reader(source);
+    end init_input_redirector;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static change_input_redirector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_reader(source);
+    end change_input_redirector;
+  end c_input_stream_redirector;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_output_stream_redirector =
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    _target^.close();
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  begin
+    _target^.write_packet(data);
+    end write_packet;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=_target^.is_reading();
+    end is_reading;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_output_redirector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_writer(target);
+    end init_output_redirector;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static change_output_redirector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_writer(target);
+    end change_output_redirector;
+  end c_output_stream_redirector;
+
+
+
+
+
+

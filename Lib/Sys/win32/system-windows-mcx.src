@@ -1,0 +1,489 @@
+----------------------------------------------------------------------------------------------------
+module mcx =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef;
+
+-- /************************************************************************
+-- *                                                                       *
+-- *   mcx.h -- This module defines the 32-Bit Windows MCX APIs            *
+-- *                                                                       *
+-- *   Copyright (c) 1990-1999, Microsoft Corp. All rights reserved.       *
+-- *                                                                       *
+-- ************************************************************************/
+-- #pragma  once
+type
+  _MODEMDEVCAPS     = record
+dwActualSize    : DWORD;
+dwRequiredSize  : DWORD;
+dwDevSpecificOffset : DWORD;
+dwDevSpecificSize : DWORD;
+dwModemProviderVersion : DWORD;
+dwModemManufacturerOffset : DWORD;
+dwModemManufacturerSize : DWORD;
+dwModemModelOffset : DWORD;
+dwModemModelSize : DWORD;
+dwModemVersionOffset : DWORD;
+dwModemVersionSize : DWORD;
+dwDialOptions   : DWORD;
+dwCallSetupFailTimer : DWORD;
+dwInactivityTimeout : DWORD;
+dwSpeakerVolume : DWORD;
+dwSpeakerMode   : DWORD;
+dwModemOptions  : DWORD;
+dwMaxDTERate    : DWORD;
+dwMaxDCERate    : DWORD;
+abVariablePortion : array 0..0 of BYTE;
+  end record;
+  MODEMDEVCAPS      = _MODEMDEVCAPS;
+  PMODEMDEVCAPS     = ^_MODEMDEVCAPS;
+  LPMODEMDEVCAPS    = ^_MODEMDEVCAPS;
+
+type
+  _MODEMSETTINGS    = record
+dwActualSize    : DWORD;
+dwRequiredSize  : DWORD;
+dwDevSpecificOffset : DWORD;
+dwDevSpecificSize : DWORD;
+dwCallSetupFailTimer : DWORD;
+dwInactivityTimeout : DWORD;
+dwSpeakerVolume : DWORD;
+dwSpeakerMode   : DWORD;
+dwPreferredModemOptions : DWORD;
+dwNegotiatedModemOptions : DWORD;
+dwNegotiatedDCERate : DWORD;
+abVariablePortion : array 0..0 of BYTE;
+  end record;
+  MODEMSETTINGS     = _MODEMSETTINGS;
+  PMODEMSETTINGS    = ^_MODEMSETTINGS;
+  LPMODEMSETTINGS   = ^_MODEMSETTINGS;
+
+--  Dial Options
+const
+  DIALOPTION_BILLING= $40;
+
+const
+  DIALOPTION_QUIET  = $80;
+
+const
+  DIALOPTION_DIALTONE= $0100;
+
+--  SpeakerVolume for MODEMDEVCAPS
+const
+  MDMVOLFLAG_LOW    = $01;
+
+const
+  MDMVOLFLAG_MEDIUM = $02;
+
+const
+  MDMVOLFLAG_HIGH   = $04;
+
+--  SpeakerVolume for MODEMSETTINGS
+const
+  MDMVOL_LOW        = $00;
+
+const
+  MDMVOL_MEDIUM     = $01;
+
+const
+  MDMVOL_HIGH       = $02;
+
+--  SpeakerMode for MODEMDEVCAPS
+const
+  MDMSPKRFLAG_OFF   = $01;
+
+const
+  MDMSPKRFLAG_DIAL  = $02;
+
+const
+  MDMSPKRFLAG_ON    = $04;
+
+const
+  MDMSPKRFLAG_CALLSETUP= $08;
+
+--  SpeakerMode for MODEMSETTINGS
+const
+  MDMSPKR_OFF       = $00;
+
+const
+  MDMSPKR_DIAL      = $01;
+
+const
+  MDMSPKR_ON        = $02;
+
+const
+  MDMSPKR_CALLSETUP = $03;
+
+--  Modem Options
+const
+  MDM_COMPRESSION   = $01;
+
+const
+  MDM_ERROR_CONTROL = $02;
+
+const
+  MDM_FORCED_EC     = $04;
+
+const
+  MDM_CELLULAR      = $08;
+
+const
+  MDM_FLOWCONTROL_HARD= $10;
+
+const
+  MDM_FLOWCONTROL_SOFT= $20;
+
+const
+  MDM_CCITT_OVERRIDE= $40;
+
+const
+  MDM_SPEED_ADJUST  = $80;
+
+const
+  MDM_TONE_DIAL     = $0100;
+
+const
+  MDM_BLIND_DIAL    = $0200;
+
+const
+  MDM_V23_OVERRIDE  = $0400;
+
+const
+  MDM_DIAGNOSTICS   = $0800;
+
+-- =========================================================================
+-- 
+-- 
+--  EXTENDED MODEM OPTIONS INFORMATION
+-- 
+--  THE following macros define additional bits in dwPreferredModemOptions.
+-- 
+--  These bits specify information relevant to making ISDN and GSM
+--  calls, such as which protocol to use.
+-- 
+-- =========================================================================
+const
+  MDM_MASK_BEARERMODE= $F000;
+
+const
+  MDM_SHIFT_BEARERMODE= 12;
+
+const
+  MDM_MASK_PROTOCOLID= $F0000;
+
+const
+  MDM_SHIFT_PROTOCOLID= 16;
+
+const
+  MDM_MASK_PROTOCOLDATA= $FF00000;
+
+const
+  MDM_SHIFT_PROTOCOLDATA= 20;
+
+-- 
+--  PROTOCOLINFO is the union of PROTOCOLID and PROTOCOLDATA ...
+-- 
+-- 
+--  EXTENDEDINFO is the union of BEARERMODE and PROTOCOLINFO
+-- 
+-- 
+--  MDM_GET_PROTOCOLINFO gets the protocol-id and info bits in
+--  their IN-PLACE form (preserving their place in dwModemPreferredOptions)
+-- 
+-- 
+--  MDM_SET_PROTOCOLINFO takes as its argument the protocol-id and info bits in
+--  their IN-PLACE form (final position within dwModemPreferredOptions)
+-- 
+-- 
+--  MDM_GEN_PROTOCOLINFO generates the the protocol-id and info bits in
+--  their IN-PLACE form (final position within dwModemPreferredOptions).
+-- 
+-- 
+--  MDM_GET_EXTENDEDIONFO gets the bearermode and protocol information in
+--  their IN-PLACE form (preserving their place in dwModemPreferredOptions)
+-- 
+-- 
+--  MDM_SET_PROTOCOLINFO takes as its argument the bearermode and
+--  protocol bits in their IN-PLACE form (final position within
+--  dwModemPreferredOptions)
+-- 
+-- 
+--  MDM_GEN_EXTENDEDINFO generates the bearermode and protocol information
+--  in their IN-PLACE form (final position within dwModemPreferredOptions0.
+-- 
+-- =========================================================================
+--  BEARER MODES
+-- =========================================================================
+-- 
+const
+  MDM_BEARERMODE_ANALOG= $00;
+
+const
+  MDM_BEARERMODE_ISDN= $01;
+
+const
+  MDM_BEARERMODE_GSM= $02;
+
+-- =========================================================================
+--  PROTOCOL IDs
+-- =========================================================================
+-- 
+const
+  MDM_PROTOCOLID_DEFAULT= $00;
+
+const
+  MDM_PROTOCOLID_HDLCPPP= $01;
+
+const
+  MDM_PROTOCOLID_V128= $02;
+
+const
+  MDM_PROTOCOLID_X75= $03;
+
+const
+  MDM_PROTOCOLID_V110= $04;
+
+const
+  MDM_PROTOCOLID_V120= $05;
+
+const
+  MDM_PROTOCOLID_AUTO= $06;
+
+const
+  MDM_PROTOCOLID_ANALOG= $07;
+
+const
+  MDM_PROTOCOLID_GPRS= $08;
+
+const
+  MDM_PROTOCOLID_PIAFS= $09;
+
+-- =========================================================================
+--  HDLC PPP PROTOCOL INFORMATION
+-- =========================================================================
+-- 
+--  Following are specific to the HDLC-PPP protocol.
+--  The shifts are w.r.t. the start of the PROTOCOLDATA field.
+const
+  MDM_SHIFT_HDLCPPP_SPEED= $00;
+
+const
+  MDM_MASK_HDLCPPP_SPEED= $07;
+
+const
+  MDM_HDLCPPP_SPEED_DEFAULT= $00;
+
+const
+  MDM_HDLCPPP_SPEED_64K= $01;
+
+const
+  MDM_HDLCPPP_SPEED_56K= $02;
+
+const
+  MDM_SHIFT_HDLCPPP_AUTH= $03;
+
+const
+  MDM_HDLCPPP_AUTH_DEFAULT= $00;
+
+const
+  MDM_HDLCPPP_AUTH_NONE= $01;
+
+const
+  MDM_HDLCPPP_AUTH_PAP= $02;
+
+const
+  MDM_HDLCPPP_AUTH_CHAP= $03;
+
+const
+  MDM_HDLCPPP_AUTH_MSCHAP= $04;
+
+const
+  MDM_SHIFT_HDLCPPP_ML= $06;
+
+const
+  MDM_HDLCPPP_ML_DEFAULT= $00;
+
+const
+  MDM_HDLCPPP_ML_NONE= $01;
+
+const
+  MDM_HDLCPPP_ML_2  = $02;
+
+-- =========================================================================
+--  V120 PROTOCOL INFORMATION
+-- 
+--  The shifts are w.r.t. the start of the PROTOCOLDATA field.
+-- 
+-- =========================================================================
+const
+  MDM_SHIFT_V120_SPEED= $00;
+
+const
+  MDM_MASK_V120_SPEED= $07;
+
+const
+  MDM_V120_SPEED_DEFAULT= $00;
+
+const
+  MDM_V120_SPEED_64K= $01;
+
+const
+  MDM_V120_SPEED_56K= $02;
+
+const
+  MDM_SHIFT_V120_ML = $06;
+
+const
+  MDM_V120_ML_DEFAULT= $00;
+
+const
+  MDM_V120_ML_NONE  = $01;
+
+const
+  MDM_V120_ML_2     = $02;
+
+-- =========================================================================
+--  X75 PROTOCOL INFORMATION
+-- 
+--  The shifts are w.r.t. the start of the PROTOCOLDATA field.
+-- 
+-- =========================================================================
+const
+  MDM_SHIFT_X75_DATA= $00;
+
+const
+  MDM_MASK_X75_DATA = $07;
+
+const
+  MDM_X75_DATA_DEFAULT= $00;
+
+const
+  MDM_X75_DATA_64K  = $01;
+
+const
+  MDM_X75_DATA_128K = $02;
+
+const
+  MDM_X75_DATA_T_70 = $03;
+
+const
+  MDM_X75_DATA_BTX  = $04;
+
+-- =========================================================================
+--  V110 PROTOCOL INFORMATION
+-- 
+--  The shifts are w.r.t. the start of the PROTOCOLDATA field.
+-- 
+-- =========================================================================
+const
+  MDM_SHIFT_V110_SPEED= $00;
+
+const
+  MDM_MASK_V110_SPEED= $0F;
+
+const
+  MDM_V110_SPEED_DEFAULT= $00;
+
+const
+  MDM_V110_SPEED_1DOT2K= $01;
+
+const
+  MDM_V110_SPEED_2DOT4K= $02;
+
+const
+  MDM_V110_SPEED_4DOT8K= $03;
+
+const
+  MDM_V110_SPEED_9DOT6K= $04;
+
+const
+  MDM_V110_SPEED_12DOT0K= $05;
+
+const
+  MDM_V110_SPEED_14DOT4K= $06;
+
+const
+  MDM_V110_SPEED_19DOT2K= $07;
+
+const
+  MDM_V110_SPEED_28DOT8K= $08;
+
+const
+  MDM_V110_SPEED_38DOT4K= $09;
+
+const
+  MDM_V110_SPEED_57DOT6K= $0A;
+
+-- =========================================================================
+--  AUTO PROTOCOL INFORMATION (ie, when the protocol is detected automatically)
+-- 
+--  The shifts are w.r.t. the start of the PROTOCOLDATA field.
+-- 
+-- =========================================================================
+-- 
+--  Following are specific to the AUTO-protocol
+-- 
+const
+  MDM_SHIFT_AUTO_SPEED= $00;
+
+const
+  MDM_MASK_AUTO_SPEED= $07;
+
+const
+  MDM_AUTO_SPEED_DEFAULT= $00;
+
+const
+  MDM_SHIFT_AUTO_ML = $06;
+
+const
+  MDM_AUTO_ML_DEFAULT= $00;
+
+const
+  MDM_AUTO_ML_NONE  = $01;
+
+const
+  MDM_AUTO_ML_2     = $02;
+
+-- =========================================================================
+--  ANALOG PROTOCOL INFORMATION (Applicable only to GSM)
+-- =========================================================================
+-- 
+--  Following are specific to GSM Analog protocol
+-- 
+const
+  MDM_ANALOG_RLP_ON = $00;
+
+const
+  MDM_ANALOG_RLP_OFF= $01;
+
+const
+  MDM_ANALOG_V34    = $02;
+
+-- 
+--  v34 anolog for isdn
+-- 
+-- =========================================================================
+--  GPRS PROTOCOL INFORMATION (Applicable only to GSM)
+-- =========================================================================
+-- 
+--  Following are specific to GPRS protocol
+-- 
+-- =========================================================================
+--  PIAFS PROTOCOL INFORMATION
+-- =========================================================================
+-- 
+--  Following are specific to PIAFS protocol
+-- 
+const
+  MDM_PIAFS_INCOMING= 0;
+
+const
+  MDM_PIAFS_OUTGOING= 1;
+
+
+end mcx;

@@ -1,0 +1,2910 @@
+----------------------------------------------------------------------------------------------------
+module winioctl =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,guiddef,basetsd;
+
+-- /*++ BUILD Version: 0015    // Increment this if a change has global effects
+-- 
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     winioctl.h
+-- 
+-- Abstract:
+-- 
+--     This module defines the 32-Bit Windows Device I/O control codes.
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- 
+--  Device interface class GUIDs.
+-- 
+--  need these GUIDs outside conditional includes so that user can
+--  #include <winioctl.h> in precompiled header
+--  #include <initguid.h> in a single source file
+--  #include <winioctl.h> in that source file a second time to instantiate the GUIDs
+-- 
+-- 
+--  Make sure FAR is defined...
+-- 
+-- 
+--  Obsolete device interface class GUID names.
+--  (use of above GUID_DEVINTERFACE_* names is recommended).
+-- 
+--  begin_ntddk begin_wdm begin_nthal begin_ntifs
+-- 
+--  Define the various device type values. Note that values used by Microsoft
+--  Corporation are in the range 0-32767, and 32768-65535 are reserved for use
+--  by customers.
+-- 
+const
+  FILE_DEVICE_BEEP  = $01;
+
+const
+  FILE_DEVICE_CD_ROM= $02;
+
+const
+  FILE_DEVICE_CD_ROM_FILE_SYSTEM= $03;
+
+const
+  FILE_DEVICE_CONTROLLER= $04;
+
+const
+  FILE_DEVICE_DATALINK= $05;
+
+const
+  FILE_DEVICE_DFS   = $06;
+
+const
+  FILE_DEVICE_DISK  = $07;
+
+const
+  FILE_DEVICE_DISK_FILE_SYSTEM= $08;
+
+const
+  FILE_DEVICE_FILE_SYSTEM= $09;
+
+const
+  FILE_DEVICE_INPORT_PORT= $0A;
+
+const
+  FILE_DEVICE_KEYBOARD= $0B;
+
+const
+  FILE_DEVICE_MAILSLOT= $0C;
+
+const
+  FILE_DEVICE_MIDI_IN= $0D;
+
+const
+  FILE_DEVICE_MIDI_OUT= $0E;
+
+const
+  FILE_DEVICE_MOUSE = $0F;
+
+const
+  FILE_DEVICE_MULTI_UNC_PROVIDER= $10;
+
+const
+  FILE_DEVICE_NAMED_PIPE= $11;
+
+const
+  FILE_DEVICE_NETWORK= $12;
+
+const
+  FILE_DEVICE_NETWORK_BROWSER= $13;
+
+const
+  FILE_DEVICE_NETWORK_FILE_SYSTEM= $14;
+
+const
+  FILE_DEVICE_NULL  = $15;
+
+const
+  FILE_DEVICE_PARALLEL_PORT= $16;
+
+const
+  FILE_DEVICE_PHYSICAL_NETCARD= $17;
+
+const
+  FILE_DEVICE_PRINTER= $18;
+
+const
+  FILE_DEVICE_SCANNER= $19;
+
+const
+  FILE_DEVICE_SERIAL_MOUSE_PORT= $1A;
+
+const
+  FILE_DEVICE_SERIAL_PORT= $1B;
+
+const
+  FILE_DEVICE_SCREEN= $1C;
+
+const
+  FILE_DEVICE_SOUND = $1D;
+
+const
+  FILE_DEVICE_STREAMS= $1E;
+
+const
+  FILE_DEVICE_TAPE  = $1F;
+
+const
+  FILE_DEVICE_TAPE_FILE_SYSTEM= $20;
+
+const
+  FILE_DEVICE_TRANSPORT= $21;
+
+const
+  FILE_DEVICE_UNKNOWN= $22;
+
+const
+  FILE_DEVICE_VIDEO = $23;
+
+const
+  FILE_DEVICE_VIRTUAL_DISK= $24;
+
+const
+  FILE_DEVICE_WAVE_IN= $25;
+
+const
+  FILE_DEVICE_WAVE_OUT= $26;
+
+const
+  FILE_DEVICE_8042_PORT= $27;
+
+const
+  FILE_DEVICE_NETWORK_REDIRECTOR= $28;
+
+const
+  FILE_DEVICE_BATTERY= $29;
+
+const
+  FILE_DEVICE_BUS_EXTENDER= $2A;
+
+const
+  FILE_DEVICE_MODEM = $2B;
+
+const
+  FILE_DEVICE_VDM   = $2C;
+
+const
+  FILE_DEVICE_MASS_STORAGE= $2D;
+
+const
+  FILE_DEVICE_SMB   = $2E;
+
+const
+  FILE_DEVICE_KS    = $2F;
+
+const
+  FILE_DEVICE_CHANGER= $30;
+
+const
+  FILE_DEVICE_SMARTCARD= $31;
+
+const
+  FILE_DEVICE_ACPI  = $32;
+
+const
+  FILE_DEVICE_DVD   = $33;
+
+const
+  FILE_DEVICE_FULLSCREEN_VIDEO= $34;
+
+const
+  FILE_DEVICE_DFS_FILE_SYSTEM= $35;
+
+const
+  FILE_DEVICE_DFS_VOLUME= $36;
+
+const
+  FILE_DEVICE_SERENUM= $37;
+
+const
+  FILE_DEVICE_TERMSRV= $38;
+
+const
+  FILE_DEVICE_KSEC  = $39;
+
+const
+  FILE_DEVICE_FIPS  = $3A;
+
+const
+  FILE_DEVICE_INFINIBAND= $3B;
+
+-- 
+--  Macro definition for defining IOCTL and FSCTL function control codes. Note
+--  that function codes 0-2047 are reserved for Microsoft Corporation, and
+--  2048-4095 are reserved for customers.
+-- 
+-- 
+--  Macro to extract device type out of the device io control code
+-- 
+-- 
+--  Define the method codes for how buffers are passed for I/O and FS controls
+-- 
+const
+  METHOD_BUFFERED   = 0;
+
+const
+  METHOD_IN_DIRECT  = 1;
+
+const
+  METHOD_OUT_DIRECT = 2;
+
+const
+  METHOD_NEITHER    = 3;
+
+-- 
+--  Define some easier to comprehend aliases:
+--  METHOD_DIRECT_TO_HARDWARE (writes, aka METHOD_IN_DIRECT)
+--  METHOD_DIRECT_FROM_HARDWARE (reads, aka METHOD_OUT_DIRECT)
+-- 
+-- 
+--  Define the access check value for any access
+-- 
+-- 
+--  The FILE_READ_ACCESS and FILE_WRITE_ACCESS constants are also defined in
+--  ntioapi.h as FILE_READ_DATA and FILE_WRITE_DATA. The values for these
+--  constants *MUST* always be in sync.
+-- 
+-- 
+--  FILE_SPECIAL_ACCESS is checked by the NT I/O system the same as FILE_ANY_ACCESS.
+--  The file systems, however, may add additional access checks for I/O and FS controls
+--  that use this value.
+-- 
+const
+  FILE_ANY_ACCESS   = 0;
+
+--  end_ntddk end_wdm end_nthal end_ntifs
+-- 
+--  IoControlCode values for storage devices
+-- 
+-- 
+--  The following device control codes are common for all class drivers. They
+--  should be used in place of the older IOCTL_DISK, IOCTL_CDROM and IOCTL_TAPE
+--  common codes
+-- 
+-- 
+--  These ioctl codes are obsolete. They are defined here to avoid resuing them
+--  and to allow class drivers to respond to them more easily.
+-- 
+-- 
+--  IOCTL_STORAGE_GET_HOTPLUG_INFO
+-- 
+type
+  _STORAGE_HOTPLUG_INFO = record
+Size            : DWORD;
+MediaRemovable  : BOOLEAN;
+MediaHotplug    : BOOLEAN;
+DeviceHotplug   : BOOLEAN;
+WriteCacheEnableOverride : BOOLEAN;
+  end record;
+  STORAGE_HOTPLUG_INFO = _STORAGE_HOTPLUG_INFO;
+  PSTORAGE_HOTPLUG_INFO = ^_STORAGE_HOTPLUG_INFO;
+
+-- 
+--  IOCTL_STORAGE_GET_DEVICE_NUMBER
+-- 
+--  input - none
+-- 
+--  output - STORAGE_DEVICE_NUMBER structure
+--  The values in the STORAGE_DEVICE_NUMBER structure are guaranteed
+--  to remain unchanged until the system is rebooted. They are not
+--  guaranteed to be persistant across boots.
+-- 
+type
+  _STORAGE_DEVICE_NUMBER = record
+DeviceType      : DWORD;
+DeviceNumber    : DWORD;
+PartitionNumber : DWORD;
+  end record;
+  STORAGE_DEVICE_NUMBER = _STORAGE_DEVICE_NUMBER;
+  PSTORAGE_DEVICE_NUMBER = ^_STORAGE_DEVICE_NUMBER;
+
+-- 
+--  Define the structures for scsi resets
+-- 
+type
+  _STORAGE_BUS_RESET_REQUEST = record
+PathId          : BYTE;
+  end record;
+  STORAGE_BUS_RESET_REQUEST = _STORAGE_BUS_RESET_REQUEST;
+  PSTORAGE_BUS_RESET_REQUEST = ^_STORAGE_BUS_RESET_REQUEST;
+
+-- 
+--  Break reservation is sent to the Adapter/FDO with the given lun information.
+-- 
+type
+  STORAGE_BREAK_RESERVATION_REQUEST = record
+Length          : DWORD;
+_unused         : BYTE;
+PathId          : BYTE;
+TargetId        : BYTE;
+Lun             : BYTE;
+  end record;
+  PSTORAGE_BREAK_RESERVATION_REQUEST = ^STORAGE_BREAK_RESERVATION_REQUEST;
+
+-- 
+--  IOCTL_STORAGE_MEDIA_REMOVAL disables the mechanism
+--  on a storage device that ejects media. This function
+--  may or may not be supported on storage devices that
+--  support removable media.
+-- 
+--  TRUE means prevent media from being removed.
+--  FALSE means allow media removal.
+-- 
+type
+  _PREVENT_MEDIA_REMOVAL = record
+PreventMediaRemoval : BOOLEAN;
+  end record;
+  PREVENT_MEDIA_REMOVAL = _PREVENT_MEDIA_REMOVAL;
+  PPREVENT_MEDIA_REMOVAL = ^_PREVENT_MEDIA_REMOVAL;
+
+-- 
+--  This is the format of TARGET_DEVICE_CUSTOM_NOTIFICATION.CustomDataBuffer
+--  passed to applications by the classpnp autorun code (via IoReportTargetDeviceChangeAsynchronous).
+-- 
+type
+  _CLASS_MEDIA_CHANGE_CONTEXT = record
+MediaChangeCount : DWORD;
+NewState        : DWORD;
+  end record;
+  CLASS_MEDIA_CHANGE_CONTEXT = _CLASS_MEDIA_CHANGE_CONTEXT;
+  PCLASS_MEDIA_CHANGE_CONTEXT = ^_CLASS_MEDIA_CHANGE_CONTEXT;
+
+--  begin_ntminitape
+type
+  _TAPE_STATISTICS  = record
+Version         : DWORD;
+Flags           : DWORD;
+RecoveredWrites : LARGE_INTEGER;
+UnrecoveredWrites : LARGE_INTEGER;
+RecoveredReads  : LARGE_INTEGER;
+UnrecoveredReads : LARGE_INTEGER;
+CompressionRatioReads : BYTE;
+CompressionRatioWrites : BYTE;
+  end record;
+  TAPE_STATISTICS   = _TAPE_STATISTICS;
+  PTAPE_STATISTICS  = ^_TAPE_STATISTICS;
+
+const
+  RECOVERED_WRITES_VALID= $01;
+
+const
+  UNRECOVERED_WRITES_VALID= $02;
+
+const
+  RECOVERED_READS_VALID= $04;
+
+const
+  UNRECOVERED_READS_VALID= $08;
+
+const
+  WRITE_COMPRESSION_INFO_VALID= $10;
+
+const
+  READ_COMPRESSION_INFO_VALID= $20;
+
+type
+  _TAPE_GET_STATISTICS = record
+Operation       : DWORD;
+  end record;
+  TAPE_GET_STATISTICS = _TAPE_GET_STATISTICS;
+  PTAPE_GET_STATISTICS = ^_TAPE_GET_STATISTICS;
+
+const
+  TAPE_RETURN_STATISTICS= 0;
+
+const
+  TAPE_RETURN_ENV_INFO= 1;
+
+const
+  TAPE_RESET_STATISTICS= 2;
+
+-- 
+--  IOCTL_STORAGE_GET_MEDIA_TYPES_EX will return an array of DEVICE_MEDIA_INFO
+--  structures, one per supported type, embedded in the GET_MEDIA_TYPES struct.
+-- 
+type
+_STORAGE_MEDIA_TYPE= enum
+    DDS_4mm         for ord use $20;
+    MiniQic;
+    Travan;
+    QIC;
+    MP_8mm;
+    AME_8mm;
+    AIT1_8mm;
+    DLT;
+    NCTP;
+    IBM_3480;
+    IBM_3490E;
+    IBM_Magstar_3590;
+    IBM_Magstar_MP;
+    STK_DATA_D3;
+    SONY_DTF;
+    DV_6mm;
+    DMI;
+    SONY_D2;
+    CLEANER_CARTRIDGE;
+    CD_ROM;
+    CD_R;
+    CD_RW;
+    DVD_ROM;
+    DVD_R;
+    DVD_RW;
+    MO_3_RW;
+    MO_5_WO;
+    MO_5_RW;
+    MO_5_LIMDOW;
+    PC_5_WO;
+    PC_5_RW;
+    PD_5_RW;
+    ABL_5_WO;
+    PINNACLE_APEX_5_RW;
+    SONY_12_WO;
+    PHILIPS_12_WO;
+    HITACHI_12_WO;
+    CYGNET_12_WO;
+    KODAK_14_WO;
+    MO_NFR_525;
+    NIKON_12_RW;
+    IOMEGA_ZIP;
+    IOMEGA_JAZ;
+    SYQUEST_EZ135;
+    SYQUEST_EZFLYER;
+    SYQUEST_SYJET;
+    AVATAR_F2;
+    MP2_8mm;
+    DST_S;
+    DST_M;
+    DST_L;
+    VXATape_1;
+    VXATape_2;
+    STK_9840;
+    LTO_Ultrium;
+    LTO_Accelis;
+    DVD_RAM;
+    AIT_8mm;
+    ADR_1;
+    ADR_2;
+    STK_9940;
+  end enum for size use 4;
+  STORAGE_MEDIA_TYPE = _STORAGE_MEDIA_TYPE;
+  PSTORAGE_MEDIA_TYPE = ^_STORAGE_MEDIA_TYPE;
+const
+  MEDIA_ERASEABLE   = $01;
+
+const
+  MEDIA_WRITE_ONCE  = $02;
+
+const
+  MEDIA_READ_ONLY   = $04;
+
+const
+  MEDIA_READ_WRITE  = $08;
+
+const
+  MEDIA_WRITE_PROTECTED= $0100;
+
+const
+  MEDIA_CURRENTLY_MOUNTED= $80000000;
+
+-- 
+--  Define the different storage bus types
+--  Bus types below 128 (0x80) are reserved for Microsoft use
+-- 
+type
+_STORAGE_BUS_TYPE = enum
+    BusTypeUnknown  for ord use $00;
+    BusTypeScsi;
+    BusTypeAtapi;
+    BusTypeAta;
+    BusType1394;
+    BusTypeSsa;
+    BusTypeFibre;
+    BusTypeUsb;
+    BusTypeRAID;
+    BusTypeMaxReserved for ord use $7F;
+  end enum for size use 4;
+  STORAGE_BUS_TYPE  = _STORAGE_BUS_TYPE;
+  PSTORAGE_BUS_TYPE = ^_STORAGE_BUS_TYPE;
+type
+  _DEVICE_MEDIA_INFO = record
+DeviceSpecific   : record
+  DiskInfo          : record
+Cylinders       : LARGE_INTEGER;
+MediaType       : STORAGE_MEDIA_TYPE;
+TracksPerCylinder : DWORD;
+SectorsPerTrack : DWORD;
+BytesPerSector  : DWORD;
+NumberMediaSides : DWORD;
+MediaCharacteristics : DWORD;
+  end record for position use 0;
+  RemovableDiskInfo : record
+Cylinders       : LARGE_INTEGER;
+MediaType       : STORAGE_MEDIA_TYPE;
+TracksPerCylinder : DWORD;
+SectorsPerTrack : DWORD;
+BytesPerSector  : DWORD;
+NumberMediaSides : DWORD;
+MediaCharacteristics : DWORD;
+  end record for position use 0;
+  TapeInfo          : record
+MediaType       : STORAGE_MEDIA_TYPE;
+MediaCharacteristics : DWORD;
+CurrentBlockSize : DWORD;
+BusType         : STORAGE_BUS_TYPE;
+BusSpecificData  : record
+  ScsiInformation   : record
+MediumType      : BYTE;
+DensityCode     : BYTE;
+  end record for position use 0;
+    end record;
+  end record for position use 0;
+    end record;
+  end record;
+  DEVICE_MEDIA_INFO = _DEVICE_MEDIA_INFO;
+  PDEVICE_MEDIA_INFO = ^_DEVICE_MEDIA_INFO;
+
+type
+  _GET_MEDIA_TYPES  = record
+DeviceType      : DWORD;
+MediaInfoCount  : DWORD;
+MediaInfo       : array 0..0 of DEVICE_MEDIA_INFO;
+  end record;
+  GET_MEDIA_TYPES   = _GET_MEDIA_TYPES;
+  PGET_MEDIA_TYPES  = ^_GET_MEDIA_TYPES;
+
+-- 
+--  IOCTL_STORAGE_PREDICT_FAILURE
+-- 
+--  input - none
+-- 
+--  output - STORAGE_PREDICT_FAILURE structure
+--  PredictFailure returns zero if no failure predicted and non zero
+--  if a failure is predicted.
+-- 
+--  VendorSpecific returns 512 bytes of vendor specific information
+--  if a failure is predicted
+-- 
+type
+  _STORAGE_PREDICT_FAILURE = record
+PredictFailure  : DWORD;
+VendorSpecific  : array 0..511 of BYTE;
+  end record;
+  STORAGE_PREDICT_FAILURE = _STORAGE_PREDICT_FAILURE;
+  PSTORAGE_PREDICT_FAILURE = ^_STORAGE_PREDICT_FAILURE;
+
+--  end_ntminitape
+-- 
+--  IoControlCode values for disk devices.
+-- 
+-- 
+--  IOCTL support for SMART drive fault prediction.
+-- 
+-- 
+--  New IOCTLs for GUID Partition tabled disks.
+-- 
+-- 
+--  Called to flush cached information that the driver may have about this
+--  device's characteristics. Not all drivers cache characteristics, and not
+--  cached properties can be flushed. This simply serves as an update to the
+--  driver that it may want to do an expensive reexamination of the device's
+--  characteristics now (fixed media size, partition table, etc...)
+-- 
+-- 
+--  Special IOCTLs needed to support PC-98 machines in Japan
+-- 
+-- 
+--  The following device control codes are common for all class drivers. The
+--  functions codes defined here must match all of the other class drivers.
+-- 
+--  Warning: these codes will be replaced in the future by equivalent
+--  IOCTL_STORAGE codes
+-- 
+-- 
+--  Define the partition types returnable by known disk drivers.
+-- 
+const
+  PARTITION_ENTRY_UNUSED= $00;
+
+const
+  PARTITION_FAT_12  = $01;
+
+const
+  PARTITION_XENIX_1 = $02;
+
+const
+  PARTITION_XENIX_2 = $03;
+
+const
+  PARTITION_FAT_16  = $04;
+
+const
+  PARTITION_EXTENDED= $05;
+
+const
+  PARTITION_HUGE    = $06;
+
+const
+  PARTITION_IFS     = $07;
+
+const
+  PARTITION_OS2BOOTMGR= $0A;
+
+const
+  PARTITION_FAT32   = $0B;
+
+const
+  PARTITION_FAT32_XINT13= $0C;
+
+const
+  PARTITION_XINT13  = $0E;
+
+const
+  PARTITION_XINT13_EXTENDED= $0F;
+
+const
+  PARTITION_PREP    = $41;
+
+const
+  PARTITION_LDM     = $42;
+
+const
+  PARTITION_UNIX    = $63;
+
+const
+  VALID_NTFT        = $C0;
+
+-- 
+--  The high bit of the partition type code indicates that a partition
+--  is part of an NTFT mirror or striped array.
+-- 
+const
+  PARTITION_NTFT    = $80;
+
+-- 
+--  The following macro is used to determine which partitions should be
+--  assigned drive letters.
+-- 
+-- ++
+-- 
+--  BOOLEAN
+--  IsRecognizedPartition(
+--  IN DWORD PartitionType
+--  )
+-- 
+--  Routine Description:
+-- 
+--  This macro is used to determine to which partitions drive letters
+--  should be assigned.
+-- 
+--  Arguments:
+-- 
+--  PartitionType - Supplies the type of the partition being examined.
+-- 
+--  Return Value:
+-- 
+--  The return value is TRUE if the partition type is recognized,
+--  otherwise FALSE is returned.
+-- 
+-- --
+-- ++
+-- 
+--  BOOLEAN
+--  IsContainerPartition(
+--  IN DWORD PartitionType
+--  )
+-- 
+--  Routine Description:
+-- 
+--  This macro is used to determine to which partition types are actually
+--  containers for other partitions (ie, extended partitions).
+-- 
+--  Arguments:
+-- 
+--  PartitionType - Supplies the type of the partition being examined.
+-- 
+--  Return Value:
+-- 
+--  The return value is TRUE if the partition type is a container,
+--  otherwise FALSE is returned.
+-- 
+-- --
+-- ++
+-- 
+--  BOOLEAN
+--  IsFTPartition(
+--  IN DWORD PartitionType
+--  )
+-- 
+--  Routine Description:
+-- 
+--  This macro is used to determine if the given partition is an FT
+--  partition.
+-- 
+--  Arguments:
+-- 
+--  PartitionType - Supplies the type of the partition being examined.
+-- 
+--  Return Value:
+-- 
+--  The return value is TRUE if the partition type is an FT partition,
+--  otherwise FALSE is returned.
+-- 
+-- --
+-- 
+--  Define the media types supported by the driver.
+-- 
+type
+_MEDIA_TYPE       = enum
+    Unknown;
+    F5_1Pt2_512;
+    F3_1Pt44_512;
+    F3_2Pt88_512;
+    F3_20Pt8_512;
+    F3_720_512;
+    F5_360_512;
+    F5_320_512;
+    F5_320_1024;
+    F5_180_512;
+    F5_160_512;
+    RemovableMedia;
+    FixedMedia;
+    F3_120M_512;
+    F3_640_512;
+    F5_640_512;
+    F5_720_512;
+    F3_1Pt2_512;
+    F3_1Pt23_1024;
+    F5_1Pt23_1024;
+    F3_128Mb_512;
+    F3_230Mb_512;
+    F8_256_128;
+    F3_200Mb_512;
+    F3_240M_512;
+    F3_32M_512;
+  end enum for size use 4;
+  MEDIA_TYPE        = _MEDIA_TYPE;
+  PMEDIA_TYPE       = ^_MEDIA_TYPE;
+-- 
+--  Define the input buffer structure for the driver, when
+--  it is called with IOCTL_DISK_FORMAT_TRACKS.
+-- 
+type
+  _FORMAT_PARAMETERS = record
+MediaType       : MEDIA_TYPE;
+StartCylinderNumber : DWORD;
+EndCylinderNumber : DWORD;
+StartHeadNumber : DWORD;
+EndHeadNumber   : DWORD;
+  end record;
+  FORMAT_PARAMETERS = _FORMAT_PARAMETERS;
+  PFORMAT_PARAMETERS = ^_FORMAT_PARAMETERS;
+
+-- 
+--  Define the BAD_TRACK_NUMBER type. An array of elements of this type is
+--  returned by the driver on IOCTL_DISK_FORMAT_TRACKS requests, to indicate
+--  what tracks were bad during formatting. The length of that array is
+--  reported in the `Information' field of the I/O Status Block.
+-- 
+type
+BAD_TRACK_NUMBER  = WORD;
+type
+PBAD_TRACK_NUMBER = ^WORD for machine_pointer use true;
+-- 
+--  Define the input buffer structure for the driver, when
+--  it is called with IOCTL_DISK_FORMAT_TRACKS_EX.
+-- 
+type
+  _FORMAT_EX_PARAMETERS = record
+MediaType       : MEDIA_TYPE;
+StartCylinderNumber : DWORD;
+EndCylinderNumber : DWORD;
+StartHeadNumber : DWORD;
+EndHeadNumber   : DWORD;
+FormatGapLength : WORD;
+SectorsPerTrack : WORD;
+SectorNumber    : array 0..0 of WORD;
+  end record;
+  FORMAT_EX_PARAMETERS = _FORMAT_EX_PARAMETERS;
+  PFORMAT_EX_PARAMETERS = ^_FORMAT_EX_PARAMETERS;
+
+-- 
+--  The following structure is returned on an IOCTL_DISK_GET_DRIVE_GEOMETRY
+--  request and an array of them is returned on an IOCTL_DISK_GET_MEDIA_TYPES
+--  request.
+-- 
+type
+  _DISK_GEOMETRY    = record
+Cylinders       : LARGE_INTEGER;
+MediaType       : MEDIA_TYPE;
+TracksPerCylinder : DWORD;
+SectorsPerTrack : DWORD;
+BytesPerSector  : DWORD;
+  end record;
+  DISK_GEOMETRY     = _DISK_GEOMETRY;
+  PDISK_GEOMETRY    = ^_DISK_GEOMETRY;
+
+-- 
+--  This wmi guid returns a DISK_GEOMETRY structure
+-- 
+-- 
+--  The following structure is returned on an IOCTL_DISK_GET_PARTITION_INFO
+--  and an IOCTL_DISK_GET_DRIVE_LAYOUT request. It is also used in a request
+--  to change the drive layout, IOCTL_DISK_SET_DRIVE_LAYOUT.
+-- 
+type
+  _PARTITION_INFORMATION = record
+StartingOffset  : LARGE_INTEGER;
+PartitionLength : LARGE_INTEGER;
+HiddenSectors   : DWORD;
+PartitionNumber : DWORD;
+PartitionType   : BYTE;
+BootIndicator   : BOOLEAN;
+RecognizedPartition : BOOLEAN;
+RewritePartition : BOOLEAN;
+  end record;
+  PARTITION_INFORMATION = _PARTITION_INFORMATION;
+  PPARTITION_INFORMATION = ^_PARTITION_INFORMATION;
+
+-- 
+--  The following structure is used to change the partition type of a
+--  specified disk partition using an IOCTL_DISK_SET_PARTITION_INFO
+--  request.
+-- 
+type
+  _SET_PARTITION_INFORMATION = record
+PartitionType   : BYTE;
+  end record;
+  SET_PARTITION_INFORMATION = _SET_PARTITION_INFORMATION;
+  PSET_PARTITION_INFORMATION = ^_SET_PARTITION_INFORMATION;
+
+-- 
+--  The following structures is returned on an IOCTL_DISK_GET_DRIVE_LAYOUT
+--  request and given as input to an IOCTL_DISK_SET_DRIVE_LAYOUT request.
+-- 
+type
+  _DRIVE_LAYOUT_INFORMATION = record
+PartitionCount  : DWORD;
+Signature       : DWORD;
+PartitionEntry  : array 0..0 of PARTITION_INFORMATION;
+  end record;
+  DRIVE_LAYOUT_INFORMATION = _DRIVE_LAYOUT_INFORMATION;
+  PDRIVE_LAYOUT_INFORMATION = ^_DRIVE_LAYOUT_INFORMATION;
+
+-- 
+--  The following structure is passed in on an IOCTL_DISK_VERIFY request.
+--  The offset and length parameters are both given in bytes.
+-- 
+type
+  _VERIFY_INFORMATION = record
+StartingOffset  : LARGE_INTEGER;
+Length          : DWORD;
+  end record;
+  VERIFY_INFORMATION = _VERIFY_INFORMATION;
+  PVERIFY_INFORMATION = ^_VERIFY_INFORMATION;
+
+-- 
+--  The following structure is passed in on an IOCTL_DISK_REASSIGN_BLOCKS
+--  request.
+-- 
+type
+  _REASSIGN_BLOCKS  = record
+Reserved        : WORD;
+Count           : WORD;
+BlockNumber     : array 0..0 of DWORD;
+  end record;
+  REASSIGN_BLOCKS   = _REASSIGN_BLOCKS;
+  PREASSIGN_BLOCKS  = ^_REASSIGN_BLOCKS;
+
+-- 
+--  Support for GUID Partition Table (GPT) disks.
+-- 
+-- 
+--  There are currently two ways a disk can be partitioned. With a traditional
+--  AT-style master boot record (PARTITION_STYLE_MBR) and with a new, GPT
+--  partition table (PARTITION_STYLE_GPT). RAW is for an unrecognizable
+--  partition style. There are a very limited number of things you can
+--  do with a RAW partititon.
+-- 
+type
+_PARTITION_STYLE  = enum
+    PARTITION_STYLE_MBR;
+    PARTITION_STYLE_GPT;
+    PARTITION_STYLE_RAW;
+  end enum for size use 4;
+  PARTITION_STYLE   = _PARTITION_STYLE;
+-- 
+--  The following structure defines information in a GPT partition that is
+--  not common to both GPT and MBR partitions.
+-- 
+type
+  _PARTITION_INFORMATION_GPT = record
+PartitionType   : t_GUID;
+PartitionId     : t_GUID;
+Attributes      : DWORD64;
+Name            : array 0..35 of WCHAR;
+  end record;
+  PARTITION_INFORMATION_GPT = _PARTITION_INFORMATION_GPT;
+  PPARTITION_INFORMATION_GPT = ^_PARTITION_INFORMATION_GPT;
+
+-- 
+--  The following are GPT partition attributes applicable for any
+--  partition type. These attributes are not OS-specific
+-- 
+-- 
+--  The following are GPT partition attributes applicable when the
+--  PartitionType is PARTITION_BASIC_DATA_GUID.
+-- 
+-- 
+--  The following structure defines information in an MBR partition that is not
+--  common to both GPT and MBR partitions.
+-- 
+type
+  _PARTITION_INFORMATION_MBR = record
+PartitionType   : BYTE;
+BootIndicator   : BOOLEAN;
+RecognizedPartition : BOOLEAN;
+HiddenSectors   : DWORD;
+  end record;
+  PARTITION_INFORMATION_MBR = _PARTITION_INFORMATION_MBR;
+  PPARTITION_INFORMATION_MBR = ^_PARTITION_INFORMATION_MBR;
+
+-- 
+--  The structure SET_PARTITION_INFO_EX is used with the ioctl
+--  IOCTL_SET_PARTITION_INFO_EX to set information about a specific
+--  partition. Note that for MBR partitions, you can only set the partition
+--  signature, whereas GPT partitions allow setting of all fields that
+--  you can get.
+-- 
+type
+SET_PARTITION_INFORMATION_MBR = SET_PARTITION_INFORMATION;
+type
+SET_PARTITION_INFORMATION_GPT = PARTITION_INFORMATION_GPT;
+type
+  _SET_PARTITION_INFORMATION_EX = record
+PartitionStyle  : PARTITION_STYLE;
+t_001            : record
+      Mbr           : SET_PARTITION_INFORMATION_MBR for position use 0;
+      Gpt           : SET_PARTITION_INFORMATION_GPT for position use 0;
+    end record;
+  end record;
+  SET_PARTITION_INFORMATION_EX = _SET_PARTITION_INFORMATION_EX;
+  PSET_PARTITION_INFORMATION_EX = ^_SET_PARTITION_INFORMATION_EX;
+
+-- 
+--  The structure CREATE_DISK_GPT with the ioctl IOCTL_DISK_CREATE_DISK
+--  to initialize an virgin disk with an empty GPT partition table.
+-- 
+type
+  _CREATE_DISK_GPT  = record
+DiskId          : t_GUID;
+MaxPartitionCount : DWORD;
+  end record;
+  CREATE_DISK_GPT   = _CREATE_DISK_GPT;
+  PCREATE_DISK_GPT  = ^_CREATE_DISK_GPT;
+
+-- 
+--  The structure CREATE_DISK_MBR with the ioctl IOCTL_DISK_CREATE_DISK
+--  to initialize an virgin disk with an empty MBR partition table.
+-- 
+type
+  _CREATE_DISK_MBR  = record
+Signature       : DWORD;
+  end record;
+  CREATE_DISK_MBR   = _CREATE_DISK_MBR;
+  PCREATE_DISK_MBR  = ^_CREATE_DISK_MBR;
+
+type
+  _CREATE_DISK      = record
+PartitionStyle  : PARTITION_STYLE;
+t_002            : record
+      Mbr           : CREATE_DISK_MBR for position use 0;
+      Gpt           : CREATE_DISK_GPT for position use 0;
+    end record;
+  end record;
+  CREATE_DISK       = _CREATE_DISK;
+  PCREATE_DISK      = ^_CREATE_DISK;
+
+-- 
+--  The structure GET_LENGTH_INFORMATION is used with the ioctl
+--  IOCTL_DISK_GET_LENGTH_INFO to obtain the length, in bytes, of the
+--  disk, partition, or volume.
+-- 
+type
+  _GET_LENGTH_INFORMATION = record
+Length          : LARGE_INTEGER;
+  end record;
+  GET_LENGTH_INFORMATION = _GET_LENGTH_INFORMATION;
+  PGET_LENGTH_INFORMATION = ^_GET_LENGTH_INFORMATION;
+
+-- 
+--  The PARTITION_INFORMATION_EX structure is used with the
+--  IOCTL_DISK_GET_DRIVE_LAYOUT_EX, IOCTL_DISK_SET_DRIVE_LAYOUT_EX,
+--  IOCTL_DISK_GET_PARTITION_INFO_EX and IOCTL_DISK_GET_PARTITION_INFO_EX calls.
+-- 
+type
+  _PARTITION_INFORMATION_EX = record
+PartitionStyle  : PARTITION_STYLE;
+StartingOffset  : LARGE_INTEGER;
+PartitionLength : LARGE_INTEGER;
+PartitionNumber : DWORD;
+RewritePartition : BOOLEAN;
+t_003            : record
+      Mbr           : PARTITION_INFORMATION_MBR for position use 0;
+      Gpt           : PARTITION_INFORMATION_GPT for position use 0;
+    end record;
+  end record;
+  PARTITION_INFORMATION_EX = _PARTITION_INFORMATION_EX;
+  PPARTITION_INFORMATION_EX = ^_PARTITION_INFORMATION_EX;
+
+-- 
+--  GPT specific drive layout information.
+-- 
+type
+  _DRIVE_LAYOUT_INFORMATION_GPT = record
+DiskId          : t_GUID;
+StartingUsableOffset : LARGE_INTEGER;
+UsableLength    : LARGE_INTEGER;
+MaxPartitionCount : DWORD;
+  end record;
+  DRIVE_LAYOUT_INFORMATION_GPT = _DRIVE_LAYOUT_INFORMATION_GPT;
+  PDRIVE_LAYOUT_INFORMATION_GPT = ^_DRIVE_LAYOUT_INFORMATION_GPT;
+
+-- 
+--  MBR specific drive layout information.
+-- 
+type
+  _DRIVE_LAYOUT_INFORMATION_MBR = record
+Signature       : DWORD;
+  end record;
+  DRIVE_LAYOUT_INFORMATION_MBR = _DRIVE_LAYOUT_INFORMATION_MBR;
+  PDRIVE_LAYOUT_INFORMATION_MBR = ^_DRIVE_LAYOUT_INFORMATION_MBR;
+
+-- 
+--  The structure DRIVE_LAYOUT_INFORMATION_EX is used with the
+--  IOCTL_SET_DRIVE_LAYOUT_EX and IOCTL_GET_DRIVE_LAYOUT_EX calls.
+-- 
+type
+  _DRIVE_LAYOUT_INFORMATION_EX = record
+PartitionStyle  : DWORD;
+PartitionCount  : DWORD;
+t_004            : record
+      Mbr           : DRIVE_LAYOUT_INFORMATION_MBR for position use 0;
+      Gpt           : DRIVE_LAYOUT_INFORMATION_GPT for position use 0;
+    end record;
+PartitionEntry  : array 0..0 of PARTITION_INFORMATION_EX;
+  end record;
+  DRIVE_LAYOUT_INFORMATION_EX = _DRIVE_LAYOUT_INFORMATION_EX;
+  PDRIVE_LAYOUT_INFORMATION_EX = ^_DRIVE_LAYOUT_INFORMATION_EX;
+
+-- 
+--  The DISK_GEOMETRY_EX structure is returned on issuing an
+--  IOCTL_DISK_GET_DRIVE_GEOMETRY_EX ioctl.
+-- 
+type
+_DETECTION_TYPE   = enum
+    DetectNone;
+    DetectInt13;
+    DetectExInt13;
+  end enum for size use 4;
+  DETECTION_TYPE    = _DETECTION_TYPE;
+type
+  _DISK_INT13_INFO  = record
+DriveSelect     : WORD;
+MaxCylinders    : DWORD;
+SectorsPerTrack : WORD;
+MaxHeads        : WORD;
+NumberDrives    : WORD;
+  end record;
+  DISK_INT13_INFO   = _DISK_INT13_INFO;
+  PDISK_INT13_INFO  = ^_DISK_INT13_INFO;
+
+type
+  _DISK_EX_INT13_INFO = record
+ExBufferSize    : WORD;
+ExFlags         : WORD;
+ExCylinders     : DWORD;
+ExHeads         : DWORD;
+ExSectorsPerTrack : DWORD;
+ExSectorsPerDrive : DWORD64;
+ExSectorSize    : WORD;
+ExReserved      : WORD;
+  end record;
+  DISK_EX_INT13_INFO = _DISK_EX_INT13_INFO;
+  PDISK_EX_INT13_INFO = ^_DISK_EX_INT13_INFO;
+
+type
+  _DISK_DETECTION_INFO = record
+SizeOfDetectInfo : DWORD;
+DetectionType   : DETECTION_TYPE;
+t_005            : record
+Int13           : DISK_INT13_INFO;
+ExInt13         : DISK_EX_INT13_INFO;
+    end record;
+  end record;
+  DISK_DETECTION_INFO = _DISK_DETECTION_INFO;
+  PDISK_DETECTION_INFO = ^_DISK_DETECTION_INFO;
+
+type
+  _DISK_PARTITION_INFO = record
+SizeOfPartitionInfo : DWORD;
+PartitionStyle  : PARTITION_STYLE;
+t_006            : record
+  Mbr               : record
+Signature       : DWORD;
+CheckSum        : DWORD;
+  end record for position use 0;
+  Gpt               : record
+DiskId          : t_GUID;
+  end record for position use 0;
+    end record;
+  end record;
+  DISK_PARTITION_INFO = _DISK_PARTITION_INFO;
+  PDISK_PARTITION_INFO = ^_DISK_PARTITION_INFO;
+
+-- 
+--  The Geometry structure is a variable length structure composed of a
+--  DISK_GEOMETRY_EX structure followed by a DISK_PARTITION_INFO structure
+--  followed by a DISK_DETECTION_DATA structure.
+-- 
+type
+  _DISK_GEOMETRY_EX = record
+Geometry        : DISK_GEOMETRY;
+DiskSize        : LARGE_INTEGER;
+Data            : array 0..0 of BYTE;
+  end record;
+  DISK_GEOMETRY_EX  = _DISK_GEOMETRY_EX;
+  PDISK_GEOMETRY_EX = ^_DISK_GEOMETRY_EX;
+
+-- 
+--  IOCTL_DISK_CONTROLLER_NUMBER returns the controller and disk
+--  number for the handle. This is used to determine if a disk
+--  is attached to the primary or secondary IDE controller.
+-- 
+type
+  _DISK_CONTROLLER_NUMBER = record
+ControllerNumber : DWORD;
+DiskNumber      : DWORD;
+  end record;
+  DISK_CONTROLLER_NUMBER = _DISK_CONTROLLER_NUMBER;
+  PDISK_CONTROLLER_NUMBER = ^_DISK_CONTROLLER_NUMBER;
+
+-- 
+--  IOCTL_DISK_SET_CACHE allows the caller to get or set the state of the disk
+--  read/write caches.
+-- 
+--  If the structure is provided as the input buffer for the ioctl the read &
+--  write caches will be enabled or disabled depending on the parameters
+--  provided.
+-- 
+--  If the structure is provided as an output buffer for the ioctl the state
+--  of the read & write caches will be returned. If both input and outut buffers
+--  are provided the output buffer will contain the cache state BEFORE any
+--  changes are made
+-- 
+type
+DISK_CACHE_RETENTION_PRIORITY= enum
+    EqualPriority;
+    KeepPrefetchedData;
+    KeepReadData;
+  end enum for size use 4;
+type
+  _DISK_CACHE_INFORMATION = record
+ParametersSavable : BOOLEAN;
+ReadCacheEnabled : BOOLEAN;
+WriteCacheEnabled : BOOLEAN;
+ReadRetentionPriority : DISK_CACHE_RETENTION_PRIORITY;
+WriteRetentionPriority : DISK_CACHE_RETENTION_PRIORITY;
+DisablePrefetchTransferLength : WORD;
+PrefetchScalar  : BOOLEAN;
+t_007            : record
+  ScalarPrefetch    : record
+Minimum         : WORD;
+Maximum         : WORD;
+MaximumBlocks   : WORD;
+  end record for position use 0;
+  BlockPrefetch     : record
+Minimum         : WORD;
+Maximum         : WORD;
+  end record for position use 0;
+    end record;
+  end record;
+  DISK_CACHE_INFORMATION = _DISK_CACHE_INFORMATION;
+  PDISK_CACHE_INFORMATION = ^_DISK_CACHE_INFORMATION;
+
+-- 
+--  IOCTL_DISK_GROW_PARTITION will update the size of a partition
+--  by adding sectors to the length. The number of sectors must be
+--  predetermined by examining PARTITION_INFORMATION.
+-- 
+type
+  _DISK_GROW_PARTITION = record
+PartitionNumber : DWORD;
+BytesToGrow     : LARGE_INTEGER;
+  end record;
+  DISK_GROW_PARTITION = _DISK_GROW_PARTITION;
+  PDISK_GROW_PARTITION = ^_DISK_GROW_PARTITION;
+
+-- /////////////////////////////////////////////////////
+--  //
+--  The following structures define disk performance //
+--  statistics: specifically the locations of all the //
+--  reads and writes which have occured on the disk. //
+--  //
+--  To use these structures, you must issue an IOCTL_ //
+--  DISK_HIST_STRUCTURE (with a DISK_HISTOGRAM) to //
+--  obtain the basic histogram information. The //
+--  number of buckets which must allocated is part of //
+--  this structure. Allocate the required number of //
+--  buckets and call an IOCTL_DISK_HIST_DATA to fill //
+--  in the data //
+--  //
+-- /////////////////////////////////////////////////////
+const
+  HIST_NO_OF_BUCKETS= 24;
+
+type
+  _HISTOGRAM_BUCKET = record
+Reads           : DWORD;
+Writes          : DWORD;
+  end record;
+  HISTOGRAM_BUCKET  = _HISTOGRAM_BUCKET;
+  PHISTOGRAM_BUCKET = ^_HISTOGRAM_BUCKET;
+
+type
+  _DISK_HISTOGRAM   = record
+DiskSize        : LARGE_INTEGER;
+Start           : LARGE_INTEGER;
+_End            : LARGE_INTEGER;
+Average         : LARGE_INTEGER;
+AverageRead     : LARGE_INTEGER;
+AverageWrite    : LARGE_INTEGER;
+Granularity     : DWORD;
+Size            : DWORD;
+ReadCount       : DWORD;
+WriteCount      : DWORD;
+Histogram       : PHISTOGRAM_BUCKET;
+  end record;
+  DISK_HISTOGRAM    = _DISK_HISTOGRAM;
+  PDISK_HISTOGRAM   = ^_DISK_HISTOGRAM;
+
+-- /////////////////////////////////////////////////////
+--  //
+--  The following structures define disk debugging //
+--  capabilities. The IOCTLs are directed to one of //
+--  the two disk filter drivers. //
+--  //
+--  DISKPERF is a utilty for collecting disk request //
+--  statistics. //
+--  //
+--  SIMBAD is a utility for injecting faults in //
+--  IO requests to disks. //
+--  //
+-- /////////////////////////////////////////////////////
+-- 
+--  The following structure is exchanged on an IOCTL_DISK_GET_PERFORMANCE
+--  request. This ioctl collects summary disk request statistics used
+--  in measuring performance.
+-- 
+type
+  _DISK_PERFORMANCE = record
+BytesRead       : LARGE_INTEGER;
+BytesWritten    : LARGE_INTEGER;
+ReadTime        : LARGE_INTEGER;
+WriteTime       : LARGE_INTEGER;
+IdleTime        : LARGE_INTEGER;
+ReadCount       : DWORD;
+WriteCount      : DWORD;
+QueueDepth      : DWORD;
+SplitCount      : DWORD;
+QueryTime       : LARGE_INTEGER;
+StorageDeviceNumber : DWORD;
+StorageManagerName : array 0..7 of WCHAR;
+  end record;
+  DISK_PERFORMANCE  = _DISK_PERFORMANCE;
+  PDISK_PERFORMANCE = ^_DISK_PERFORMANCE;
+
+-- 
+--  This structure defines the disk logging record. When disk logging
+--  is enabled, one of these is written to an internal buffer for each
+--  disk request.
+-- 
+type
+  _DISK_RECORD      = record
+ByteOffset      : LARGE_INTEGER;
+StartTime       : LARGE_INTEGER;
+EndTime         : LARGE_INTEGER;
+VirtualAddress  : PVOID;
+NumberOfBytes   : DWORD;
+DeviceNumber    : BYTE;
+ReadRequest     : BOOLEAN;
+  end record;
+  DISK_RECORD       = _DISK_RECORD;
+  PDISK_RECORD      = ^_DISK_RECORD;
+
+-- 
+--  The following structure is exchanged on an IOCTL_DISK_LOG request.
+--  Not all fields are valid with each function type.
+-- 
+type
+  _DISK_LOGGING     = record
+Function        : BYTE;
+BufferAddress   : PVOID;
+BufferSize      : DWORD;
+  end record;
+  DISK_LOGGING      = _DISK_LOGGING;
+  PDISK_LOGGING     = ^_DISK_LOGGING;
+
+-- 
+--  Disk logging functions
+-- 
+--  Start disk logging. Only the Function and BufferSize fields are valid.
+-- 
+const
+  DISK_LOGGING_START= 0;
+
+-- 
+--  Stop disk logging. Only the Function field is valid.
+-- 
+const
+  DISK_LOGGING_STOP = 1;
+
+-- 
+--  Return disk log. All fields are valid. Data will be copied from internal
+--  buffer to buffer specified for the number of bytes requested.
+-- 
+const
+  DISK_LOGGING_DUMP = 2;
+
+-- 
+--  DISK BINNING
+-- 
+--  DISKPERF will keep counters for IO that falls in each of these ranges.
+--  The application determines the number and size of the ranges.
+--  Joe Lin wanted me to keep it flexible as possible, for instance, IO
+--  sizes are interesting in ranges like 0-4096, 4097-16384, 16385-65536, 65537+.
+-- 
+const
+  DISK_BINNING      = 3;
+
+-- 
+--  Bin types
+-- 
+type
+_BIN_TYPES        = enum
+    RequestSize;
+    RequestLocation;
+  end enum for size use 4;
+  BIN_TYPES         = _BIN_TYPES;
+-- 
+--  Bin ranges
+-- 
+type
+  _BIN_RANGE        = record
+StartValue      : LARGE_INTEGER;
+Length          : LARGE_INTEGER;
+  end record;
+  BIN_RANGE         = _BIN_RANGE;
+  PBIN_RANGE        = ^_BIN_RANGE;
+
+-- 
+--  Bin definition
+-- 
+type
+  _PERF_BIN         = record
+NumberOfBins    : DWORD;
+TypeOfBin       : DWORD;
+BinsRanges      : array 0..0 of BIN_RANGE;
+  end record;
+  PERF_BIN          = _PERF_BIN;
+  PPERF_BIN         = ^_PERF_BIN;
+
+-- 
+--  Bin count
+-- 
+type
+  _BIN_COUNT        = record
+BinRange        : BIN_RANGE;
+BinCount        : DWORD;
+  end record;
+  BIN_COUNT         = _BIN_COUNT;
+  PBIN_COUNT        = ^_BIN_COUNT;
+
+-- 
+--  Bin results
+-- 
+type
+  _BIN_RESULTS      = record
+NumberOfBins    : DWORD;
+BinCounts       : array 0..0 of BIN_COUNT;
+  end record;
+  BIN_RESULTS       = _BIN_RESULTS;
+  PBIN_RESULTS      = ^_BIN_RESULTS;
+
+-- 
+--  Data structures for SMART drive fault prediction.
+-- 
+--  GETVERSIONINPARAMS contains the data returned from the
+--  Get Driver Version function.
+-- 
+-- ignored #include <pshpack1.h>
+type
+  _GETVERSIONINPARAMS = record
+bVersion        : BYTE;
+bRevision       : BYTE;
+bReserved       : BYTE;
+bIDEDeviceMap   : BYTE;
+fCapabilities   : DWORD;
+dwReserved      : array 0..3 of DWORD;
+  end record;
+  GETVERSIONINPARAMS = _GETVERSIONINPARAMS;
+  PGETVERSIONINPARAMS = ^_GETVERSIONINPARAMS;
+  LPGETVERSIONINPARAMS = ^_GETVERSIONINPARAMS;
+
+-- ignored #include <poppack.h>
+-- 
+--  Bits returned in the fCapabilities member of GETVERSIONINPARAMS
+-- 
+const
+  CAP_ATA_ID_CMD    = 1;
+
+const
+  CAP_ATAPI_ID_CMD  = 2;
+
+const
+  CAP_SMART_CMD     = 4;
+
+-- 
+--  IDE registers
+-- 
+-- ignored #include <pshpack1.h>
+type
+  _IDEREGS          = record
+bFeaturesReg    : BYTE;
+bSectorCountReg : BYTE;
+bSectorNumberReg : BYTE;
+bCylLowReg      : BYTE;
+bCylHighReg     : BYTE;
+bDriveHeadReg   : BYTE;
+bCommandReg     : BYTE;
+bReserved       : BYTE;
+  end record;
+  IDEREGS           = _IDEREGS;
+  PIDEREGS          = ^_IDEREGS;
+  LPIDEREGS         = ^_IDEREGS;
+
+-- ignored #include <poppack.h>
+-- 
+--  Valid values for the bCommandReg member of IDEREGS.
+-- 
+const
+  ATAPI_ID_CMD      = $A1;
+
+const
+  ID_CMD            = $EC;
+
+const
+  SMART_CMD         = $B0;
+
+--  Requires valid bFeaturesReg,
+--  bCylLowReg, and bCylHighReg
+-- 
+--  Cylinder register defines for SMART command
+-- 
+const
+  SMART_CYL_LOW     = $4F;
+
+const
+  SMART_CYL_HI      = $C2;
+
+-- 
+--  SENDCMDINPARAMS contains the input parameters for the
+--  Send Command to Drive function.
+-- 
+-- ignored #include <pshpack1.h>
+type
+  _SENDCMDINPARAMS  = record
+cBufferSize     : DWORD;
+irDriveRegs     : IDEREGS;
+bDriveNumber    : BYTE;
+bReserved       : array 0..2 of BYTE;
+dwReserved      : array 0..3 of DWORD;
+bBuffer         : array 0..0 of BYTE;
+  end record;
+  SENDCMDINPARAMS   = _SENDCMDINPARAMS;
+  PSENDCMDINPARAMS  = ^_SENDCMDINPARAMS;
+  LPSENDCMDINPARAMS = ^_SENDCMDINPARAMS;
+
+-- ignored #include <poppack.h>
+-- 
+--  Status returned from driver
+-- 
+-- ignored #include <pshpack1.h>
+type
+  _DRIVERSTATUS     = record
+bDriverError    : BYTE;
+bIDEError       : BYTE;
+bReserved       : array 0..1 of BYTE;
+dwReserved      : array 0..1 of DWORD;
+  end record;
+  t_DRIVERSTATUS    = _DRIVERSTATUS;
+  PDRIVERSTATUS     = ^_DRIVERSTATUS;
+  LPDRIVERSTATUS    = ^_DRIVERSTATUS;
+
+-- ignored #include <poppack.h>
+-- 
+--  bDriverError values
+-- 
+const
+  SMART_NO_ERROR    = 0;
+
+const
+  SMART_IDE_ERROR   = 1;
+
+const
+  SMART_INVALID_FLAG= 2;
+
+const
+  SMART_INVALID_COMMAND= 3;
+
+const
+  SMART_INVALID_BUFFER= 4;
+
+const
+  SMART_INVALID_DRIVE= 5;
+
+const
+  SMART_INVALID_IOCTL= 6;
+
+const
+  SMART_ERROR_NO_MEM= 7;
+
+const
+  SMART_INVALID_REGISTER= 8;
+
+const
+  SMART_NOT_SUPPORTED= 9;
+
+const
+  SMART_NO_IDE_DEVICE= 10;
+
+--  although drive number is valid
+-- 
+--  SMART sub commands for execute offline diags
+-- 
+const
+  SMART_OFFLINE_ROUTINE_OFFLINE= 0;
+
+const
+  SMART_SHORT_SELFTEST_OFFLINE= 1;
+
+const
+  SMART_EXTENDED_SELFTEST_OFFLINE= 2;
+
+const
+  SMART_ABORT_OFFLINE_SELFTEST= 127;
+
+const
+  SMART_SHORT_SELFTEST_CAPTIVE= 129;
+
+const
+  SMART_EXTENDED_SELFTEST_CAPTIVE= 130;
+
+-- ignored #include <pshpack1.h>
+type
+  _SENDCMDOUTPARAMS = record
+cBufferSize     : DWORD;
+DriverStatus    : t_DRIVERSTATUS;
+bBuffer         : array 0..0 of BYTE;
+  end record;
+  SENDCMDOUTPARAMS  = _SENDCMDOUTPARAMS;
+  PSENDCMDOUTPARAMS = ^_SENDCMDOUTPARAMS;
+  LPSENDCMDOUTPARAMS = ^_SENDCMDOUTPARAMS;
+
+-- ignored #include <poppack.h>
+const
+  READ_ATTRIBUTE_BUFFER_SIZE= 512;
+
+const
+  IDENTIFY_BUFFER_SIZE= 512;
+
+const
+  READ_THRESHOLD_BUFFER_SIZE= 512;
+
+const
+  SMART_LOG_SECTOR_SIZE= 512;
+
+-- 
+--  Feature register defines for SMART "sub commands"
+-- 
+const
+  READ_ATTRIBUTES   = $D0;
+
+const
+  READ_THRESHOLDS   = $D1;
+
+const
+  ENABLE_DISABLE_AUTOSAVE= $D2;
+
+const
+  SAVE_ATTRIBUTE_VALUES= $D3;
+
+const
+  EXECUTE_OFFLINE_DIAGS= $D4;
+
+const
+  SMART_READ_LOG    = $D5;
+
+const
+  SMART_WRITE_LOG   = $D6;
+
+const
+  ENABLE_SMART      = $D8;
+
+const
+  DISABLE_SMART     = $D9;
+
+const
+  RETURN_SMART_STATUS= $DA;
+
+const
+  ENABLE_DISABLE_AUTO_OFFLINE= $DB;
+
+const
+  MAX_VOLUME_ID_SIZE= 36;
+
+const
+  MAX_VOLUME_TEMPLATE_SIZE= 40;
+
+const
+  VENDOR_ID_LENGTH  = 8;
+
+const
+  PRODUCT_ID_LENGTH = 16;
+
+const
+  REVISION_LENGTH   = 4;
+
+const
+  SERIAL_NUMBER_LENGTH= 32;
+
+-- 
+--  Common structures describing elements.
+-- 
+type
+_ELEMENT_TYPE     = enum
+    AllElements;
+    ChangerTransport;
+    ChangerSlot;
+    ChangerIEPort;
+    ChangerDrive;
+    ChangerDoor;
+    ChangerKeypad;
+    ChangerMaxElement;
+  end enum for size use 4;
+  ELEMENT_TYPE      = _ELEMENT_TYPE;
+  PELEMENT_TYPE     = ^_ELEMENT_TYPE;
+type
+  _CHANGER_ELEMENT  = record
+ElementType     : ELEMENT_TYPE;
+ElementAddress  : DWORD;
+  end record;
+  CHANGER_ELEMENT   = _CHANGER_ELEMENT;
+  PCHANGER_ELEMENT  = ^_CHANGER_ELEMENT;
+
+type
+  _CHANGER_ELEMENT_LIST = record
+Element         : CHANGER_ELEMENT;
+NumberOfElements : DWORD;
+  end record;
+  CHANGER_ELEMENT_LIST = _CHANGER_ELEMENT_LIST;
+  PCHANGER_ELEMENT_LIST = ^_CHANGER_ELEMENT_LIST;
+
+-- 
+--  Definitions for IOCTL_CHANGER_GET_PARAMETERS
+-- 
+-- 
+--  Definitions for Features0 of GET_CHANGER_PARAMETERS
+-- 
+const
+  CHANGER_BAR_CODE_SCANNER_INSTALLED= $01;
+
+const
+  CHANGER_INIT_ELEM_STAT_WITH_RANGE= $02;
+
+const
+  CHANGER_CLOSE_IEPORT= $04;
+
+const
+  CHANGER_OPEN_IEPORT= $08;
+
+const
+  CHANGER_STATUS_NON_VOLATILE= $10;
+
+const
+  CHANGER_EXCHANGE_MEDIA= $20;
+
+const
+  CHANGER_CLEANER_SLOT= $40;
+
+const
+  CHANGER_LOCK_UNLOCK= $80;
+
+const
+  CHANGER_CARTRIDGE_MAGAZINE= $0100;
+
+const
+  CHANGER_MEDIUM_FLIP= $0200;
+
+const
+  CHANGER_POSITION_TO_ELEMENT= $0400;
+
+const
+  CHANGER_REPORT_IEPORT_STATE= $0800;
+
+--  in the IE Port.
+const
+  CHANGER_STORAGE_DRIVE= $1000;
+
+const
+  CHANGER_STORAGE_IEPORT= $2000;
+
+const
+  CHANGER_STORAGE_SLOT= $4000;
+
+const
+  CHANGER_STORAGE_TRANSPORT= $8000;
+
+const
+  CHANGER_DRIVE_CLEANING_REQUIRED= $10000;
+
+--  initiated by an application.
+const
+  CHANGER_PREDISMOUNT_EJECT_REQUIRED= $20000;
+
+--  move / exchange command can be issued to the drive.
+const
+  CHANGER_CLEANER_ACCESS_NOT_VALID= $40000;
+
+const
+  CHANGER_PREMOUNT_EJECT_REQUIRED= $80000;
+
+--  before a move / exchange command can be issued with the drive as src/dst.
+const
+  CHANGER_VOLUME_IDENTIFICATION= $100000;
+
+const
+  CHANGER_VOLUME_SEARCH= $200000;
+
+const
+  CHANGER_VOLUME_ASSERT= $400000;
+
+const
+  CHANGER_VOLUME_REPLACE= $800000;
+
+const
+  CHANGER_VOLUME_UNDEFINE= $1000000;
+
+const
+  CHANGER_SERIAL_NUMBER_VALID= $4000000;
+
+--  and unique.
+const
+  CHANGER_DEVICE_REINITIALIZE_CAPABLE= $8000000;
+
+const
+  CHANGER_KEYPAD_ENABLE_DISABLE= $10000000;
+
+const
+  CHANGER_DRIVE_EMPTY_ON_DOOR_ACCESS= $20000000;
+
+const
+  CHANGER_RESERVED_BIT= $80000000;
+
+-- 
+--  Definitions for Features1 of GET_CHANGER_PARAMETERS
+-- 
+const
+  CHANGER_PREDISMOUNT_ALIGN_TO_SLOT= $80000001;
+
+const
+  CHANGER_PREDISMOUNT_ALIGN_TO_DRIVE= $80000002;
+
+const
+  CHANGER_CLEANER_AUTODISMOUNT= $80000004;
+
+const
+  CHANGER_TRUE_EXCHANGE_CAPABLE= $80000008;
+
+const
+  CHANGER_SLOTS_USE_TRAYS= $80000010;
+
+const
+  CHANGER_RTN_MEDIA_TO_ORIGINAL_ADDR= $80000020;
+
+const
+  CHANGER_CLEANER_OPS_NOT_SUPPORTED= $80000040;
+
+const
+  CHANGER_IEPORT_USER_CONTROL_OPEN= $80000080;
+
+const
+  CHANGER_IEPORT_USER_CONTROL_CLOSE= $80000100;
+
+const
+  CHANGER_MOVE_EXTENDS_IEPORT= $80000200;
+
+const
+  CHANGER_MOVE_RETRACTS_IEPORT= $80000400;
+
+-- 
+--  Definitions for MoveFrom, ExchangeFrom, and PositionCapabilities
+-- 
+const
+  CHANGER_TO_TRANSPORT= $01;
+
+const
+  CHANGER_TO_SLOT   = $02;
+
+const
+  CHANGER_TO_IEPORT = $04;
+
+const
+  CHANGER_TO_DRIVE  = $08;
+
+-- 
+--  Definitions for LockUnlockCapabilities
+-- 
+const
+  LOCK_UNLOCK_IEPORT= $01;
+
+const
+  LOCK_UNLOCK_DOOR  = $02;
+
+const
+  LOCK_UNLOCK_KEYPAD= $04;
+
+type
+  _GET_CHANGER_PARAMETERS = record
+Size            : DWORD;
+NumberTransportElements : WORD;
+NumberStorageElements : WORD;
+NumberCleanerSlots : WORD;
+NumberIEElements : WORD;
+NumberDataTransferElements : WORD;
+NumberOfDoors   : WORD;
+FirstSlotNumber : WORD;
+FirstDriveNumber : WORD;
+FirstTransportNumber : WORD;
+FirstIEPortNumber : WORD;
+FirstCleanerSlotAddress : WORD;
+MagazineSize    : WORD;
+DriveCleanTimeout : DWORD;
+Features0       : DWORD;
+Features1       : DWORD;
+MoveFromTransport : BYTE;
+MoveFromSlot    : BYTE;
+MoveFromIePort  : BYTE;
+MoveFromDrive   : BYTE;
+ExchangeFromTransport : BYTE;
+ExchangeFromSlot : BYTE;
+ExchangeFromIePort : BYTE;
+ExchangeFromDrive : BYTE;
+LockUnlockCapabilities : BYTE;
+PositionCapabilities : BYTE;
+Reserved1       : array 0..1 of BYTE;
+Reserved2       : array 0..1 of DWORD;
+  end record;
+  GET_CHANGER_PARAMETERS = _GET_CHANGER_PARAMETERS;
+  PGET_CHANGER_PARAMETERS = ^_GET_CHANGER_PARAMETERS;
+
+-- 
+--  Definitions for IOCTL_CHANGER_GET_PRODUCT_DATA
+-- 
+type
+  _CHANGER_PRODUCT_DATA = record
+VendorId        : array 0..VENDOR_ID_LENGTH-1 of BYTE;
+ProductId       : array 0..PRODUCT_ID_LENGTH-1 of BYTE;
+Revision        : array 0..REVISION_LENGTH-1 of BYTE;
+SerialNumber    : array 0..SERIAL_NUMBER_LENGTH-1 of BYTE;
+DeviceType      : BYTE;
+  end record;
+  CHANGER_PRODUCT_DATA = _CHANGER_PRODUCT_DATA;
+  PCHANGER_PRODUCT_DATA = ^_CHANGER_PRODUCT_DATA;
+
+-- 
+--  Definitions for IOCTL_CHANGER_SET_ACCESS
+-- 
+const
+  LOCK_ELEMENT      = 0;
+
+const
+  UNLOCK_ELEMENT    = 1;
+
+const
+  EXTEND_IEPORT     = 2;
+
+const
+  RETRACT_IEPORT    = 3;
+
+type
+  _CHANGER_SET_ACCESS = record
+Element         : CHANGER_ELEMENT;
+Control         : DWORD;
+  end record;
+  CHANGER_SET_ACCESS = _CHANGER_SET_ACCESS;
+  PCHANGER_SET_ACCESS = ^_CHANGER_SET_ACCESS;
+
+-- 
+--  Definitions for IOCTL_CHANGER_GET_ELEMENT_STATUS
+-- 
+-- 
+--  Input buffer.
+-- 
+type
+  _CHANGER_READ_ELEMENT_STATUS = record
+ElementList     : CHANGER_ELEMENT_LIST;
+VolumeTagInfo   : BOOLEAN;
+  end record;
+  CHANGER_READ_ELEMENT_STATUS = _CHANGER_READ_ELEMENT_STATUS;
+  PCHANGER_READ_ELEMENT_STATUS = ^_CHANGER_READ_ELEMENT_STATUS;
+
+-- 
+--  Output buffer.
+-- 
+type
+  _CHANGER_ELEMENT_STATUS = record
+Element         : CHANGER_ELEMENT;
+SrcElementAddress : CHANGER_ELEMENT;
+Flags           : DWORD;
+ExceptionCode   : DWORD;
+TargetId        : BYTE;
+Lun             : BYTE;
+Reserved        : WORD;
+PrimaryVolumeID : array 0..MAX_VOLUME_ID_SIZE-1 of BYTE;
+AlternateVolumeID : array 0..MAX_VOLUME_ID_SIZE-1 of BYTE;
+  end record;
+  CHANGER_ELEMENT_STATUS = _CHANGER_ELEMENT_STATUS;
+  PCHANGER_ELEMENT_STATUS = ^_CHANGER_ELEMENT_STATUS;
+
+-- 
+--  Output buffer. This is same as CHANGER_ELEMENT_STATUS with
+--  the addition of product info fields. New applications should
+--  use this struct instead of the older CHANGER_ELEMENT_STATUS
+-- 
+type
+  _CHANGER_ELEMENT_STATUS_EX = record
+Element         : CHANGER_ELEMENT;
+SrcElementAddress : CHANGER_ELEMENT;
+Flags           : DWORD;
+ExceptionCode   : DWORD;
+TargetId        : BYTE;
+Lun             : BYTE;
+Reserved        : WORD;
+PrimaryVolumeID : array 0..MAX_VOLUME_ID_SIZE-1 of BYTE;
+AlternateVolumeID : array 0..MAX_VOLUME_ID_SIZE-1 of BYTE;
+VendorIdentification : array 0..VENDOR_ID_LENGTH-1 of BYTE;
+ProductIdentification : array 0..PRODUCT_ID_LENGTH-1 of BYTE;
+SerialNumber    : array 0..SERIAL_NUMBER_LENGTH-1 of BYTE;
+  end record;
+  CHANGER_ELEMENT_STATUS_EX = _CHANGER_ELEMENT_STATUS_EX;
+  PCHANGER_ELEMENT_STATUS_EX = ^_CHANGER_ELEMENT_STATUS_EX;
+
+-- 
+--  Possible flag values
+-- 
+const
+  ELEMENT_STATUS_FULL= $01;
+
+const
+  ELEMENT_STATUS_IMPEXP= $02;
+
+const
+  ELEMENT_STATUS_EXCEPT= $04;
+
+const
+  ELEMENT_STATUS_ACCESS= $08;
+
+const
+  ELEMENT_STATUS_EXENAB= $10;
+
+const
+  ELEMENT_STATUS_INENAB= $20;
+
+const
+  ELEMENT_STATUS_PRODUCT_DATA= $40;
+
+const
+  ELEMENT_STATUS_LUN_VALID= $1000;
+
+const
+  ELEMENT_STATUS_ID_VALID= $2000;
+
+const
+  ELEMENT_STATUS_NOT_BUS= $8000;
+
+const
+  ELEMENT_STATUS_INVERT= $400000;
+
+const
+  ELEMENT_STATUS_SVALID= $800000;
+
+const
+  ELEMENT_STATUS_PVOLTAG= $10000000;
+
+const
+  ELEMENT_STATUS_AVOLTAG= $20000000;
+
+-- 
+--  ExceptionCode values.
+-- 
+const
+  ERROR_LABEL_UNREADABLE= $01;
+
+const
+  ERROR_LABEL_QUESTIONABLE= $02;
+
+const
+  ERROR_SLOT_NOT_PRESENT= $04;
+
+const
+  ERROR_DRIVE_NOT_INSTALLED= $08;
+
+const
+  ERROR_TRAY_MALFUNCTION= $10;
+
+const
+  ERROR_INIT_STATUS_NEEDED= $11;
+
+const
+  ERROR_UNHANDLED_ERROR= $FFFFFFFF;
+
+-- 
+--  Definitions for IOCTL_CHANGER_INITIALIZE_ELEMENT_STATUS
+-- 
+type
+  _CHANGER_INITIALIZE_ELEMENT_STATUS = record
+ElementList     : CHANGER_ELEMENT_LIST;
+BarCodeScan     : BOOLEAN;
+  end record;
+  CHANGER_INITIALIZE_ELEMENT_STATUS = _CHANGER_INITIALIZE_ELEMENT_STATUS;
+  PCHANGER_INITIALIZE_ELEMENT_STATUS = ^_CHANGER_INITIALIZE_ELEMENT_STATUS;
+
+-- 
+--  Definitions for IOCTL_CHANGER_SET_POSITION
+-- 
+type
+  _CHANGER_SET_POSITION = record
+Transport       : CHANGER_ELEMENT;
+Destination     : CHANGER_ELEMENT;
+Flip            : BOOLEAN;
+  end record;
+  CHANGER_SET_POSITION = _CHANGER_SET_POSITION;
+  PCHANGER_SET_POSITION = ^_CHANGER_SET_POSITION;
+
+-- 
+--  Definitions for IOCTL_CHANGER_EXCHANGE_MEDIUM
+-- 
+type
+  _CHANGER_EXCHANGE_MEDIUM = record
+Transport       : CHANGER_ELEMENT;
+Source          : CHANGER_ELEMENT;
+Destination1    : CHANGER_ELEMENT;
+Destination2    : CHANGER_ELEMENT;
+Flip1           : BOOLEAN;
+Flip2           : BOOLEAN;
+  end record;
+  CHANGER_EXCHANGE_MEDIUM = _CHANGER_EXCHANGE_MEDIUM;
+  PCHANGER_EXCHANGE_MEDIUM = ^_CHANGER_EXCHANGE_MEDIUM;
+
+-- 
+--  Definitions for IOCTL_CHANGER_MOVE_MEDIUM
+-- 
+type
+  _CHANGER_MOVE_MEDIUM = record
+Transport       : CHANGER_ELEMENT;
+Source          : CHANGER_ELEMENT;
+Destination     : CHANGER_ELEMENT;
+Flip            : BOOLEAN;
+  end record;
+  CHANGER_MOVE_MEDIUM = _CHANGER_MOVE_MEDIUM;
+  PCHANGER_MOVE_MEDIUM = ^_CHANGER_MOVE_MEDIUM;
+
+-- 
+--  Definitions for IOCTL_QUERY_VOLUME_TAGS
+-- 
+-- 
+--  Input buffer.
+-- 
+type
+  _CHANGER_SEND_VOLUME_TAG_INFORMATION = record
+StartingElement : CHANGER_ELEMENT;
+ActionCode      : DWORD;
+VolumeIDTemplate : array 0..MAX_VOLUME_TEMPLATE_SIZE-1 of BYTE;
+  end record;
+  CHANGER_SEND_VOLUME_TAG_INFORMATION = _CHANGER_SEND_VOLUME_TAG_INFORMATION;
+  PCHANGER_SEND_VOLUME_TAG_INFORMATION = ^_CHANGER_SEND_VOLUME_TAG_INFORMATION;
+
+-- 
+--  Output buffer.
+-- 
+type
+  _READ_ELEMENT_ADDRESS_INFO = record
+NumberOfElements : DWORD;
+ElementStatus   : array 0..0 of CHANGER_ELEMENT_STATUS;
+  end record;
+  READ_ELEMENT_ADDRESS_INFO = _READ_ELEMENT_ADDRESS_INFO;
+  PREAD_ELEMENT_ADDRESS_INFO = ^_READ_ELEMENT_ADDRESS_INFO;
+
+-- 
+--  Possible ActionCode values. See Features0 of CHANGER_GET_PARAMETERS for compatibility with
+--  the current device.
+-- 
+const
+  SEARCH_ALL        = $00;
+
+const
+  SEARCH_PRIMARY    = $01;
+
+const
+  SEARCH_ALTERNATE  = $02;
+
+const
+  SEARCH_ALL_NO_SEQ = $04;
+
+const
+  SEARCH_PRI_NO_SEQ = $05;
+
+const
+  SEARCH_ALT_NO_SEQ = $06;
+
+const
+  ASSERT_PRIMARY    = $08;
+
+const
+  ASSERT_ALTERNATE  = $09;
+
+const
+  REPLACE_PRIMARY   = $0A;
+
+const
+  REPLACE_ALTERNATE = $0B;
+
+const
+  UNDEFINE_PRIMARY  = $0C;
+
+const
+  UNDEFINE_ALTERNATE= $0D;
+
+-- 
+--  Changer diagnostic test related definitions
+-- 
+type
+_CHANGER_DEVICE_PROBLEM_TYPE= enum
+    DeviceProblemNone;
+    DeviceProblemHardware;
+    DeviceProblemCHMError;
+    DeviceProblemDoorOpen;
+    DeviceProblemCalibrationError;
+    DeviceProblemTargetFailure;
+    DeviceProblemCHMMoveError;
+    DeviceProblemCHMZeroError;
+    DeviceProblemCartridgeInsertError;
+    DeviceProblemPositionError;
+    DeviceProblemSensorError;
+    DeviceProblemCartridgeEjectError;
+    DeviceProblemGripperError;
+    DeviceProblemDriveError;
+  end enum for size use 4;
+  CHANGER_DEVICE_PROBLEM_TYPE = _CHANGER_DEVICE_PROBLEM_TYPE;
+  PCHANGER_DEVICE_PROBLEM_TYPE = ^_CHANGER_DEVICE_PROBLEM_TYPE;
+-- 
+--  The following values follow the escape designator in the
+--  data stream if the LSRMST_INSERT mode has been turned on.
+-- 
+-- 
+--  Following this value is the contents of the line status
+--  register, and then the character in the RX hardware when
+--  the line status register was encountered.
+-- 
+-- 
+--  Following this value is the contents of the line status
+--  register. No error character follows
+-- 
+-- 
+--  Following this value is the contents of the modem status
+--  register.
+-- 
+-- 
+--  Bit values for FIFO Control Register
+-- 
+-- 
+--  Bit values for Modem Control Register
+-- 
+-- 
+--  The following is a list of the native file system fsctls followed by
+--  additional network file system fsctls. Some values have been
+--  decommissioned.
+-- 
+--  decommissioned fsctl value 9
+--  decommissioned fsctl value 13
+--  decommissioned fsctl value 17
+--  decommissioned fsctl value 18
+--  decomissioned fsctl value 31
+--  decommissioned fsctl value 33
+--  decommissioned fsctl value 34
+--  decommissioned fsctl value 36
+--  decommissioned fsctl value 37
+--  decommissioned fsctl value 52
+--  decommissioned fsctl value 67
+--  decommissioned fsctl value 70
+-- 
+--  The following long list of structs are associated with the preceeding
+--  file system fsctls.
+-- 
+-- 
+--  Structure for FSCTL_IS_PATHNAME_VALID
+-- 
+type
+  _PATHNAME_BUFFER  = record
+PathNameLength  : DWORD;
+Name            : array 0..0 of WCHAR;
+  end record;
+  PATHNAME_BUFFER   = _PATHNAME_BUFFER;
+  PPATHNAME_BUFFER  = ^_PATHNAME_BUFFER;
+
+-- 
+--  Structure for FSCTL_QUERY_BPB_INFO
+-- 
+type
+  _FSCTL_QUERY_FAT_BPB_BUFFER = record
+First0x24BytesOfBootSector : array 0..35 of BYTE;
+  end record;
+  FSCTL_QUERY_FAT_BPB_BUFFER = _FSCTL_QUERY_FAT_BPB_BUFFER;
+  PFSCTL_QUERY_FAT_BPB_BUFFER = ^_FSCTL_QUERY_FAT_BPB_BUFFER;
+
+-- 
+--  Structures for FSCTL_GET_NTFS_VOLUME_DATA.
+--  The user must pass the basic buffer below. Ntfs
+--  will return as many fields as available in the extended
+--  buffer which follows immediately after the VOLUME_DATA_BUFFER.
+-- 
+type
+  NTFS_VOLUME_DATA_BUFFER = record
+VolumeSerialNumber : LARGE_INTEGER;
+NumberSectors   : LARGE_INTEGER;
+TotalClusters   : LARGE_INTEGER;
+FreeClusters    : LARGE_INTEGER;
+TotalReserved   : LARGE_INTEGER;
+BytesPerSector  : DWORD;
+BytesPerCluster : DWORD;
+BytesPerFileRecordSegment : DWORD;
+ClustersPerFileRecordSegment : DWORD;
+MftValidDataLength : LARGE_INTEGER;
+MftStartLcn     : LARGE_INTEGER;
+Mft2StartLcn    : LARGE_INTEGER;
+MftZoneStart    : LARGE_INTEGER;
+MftZoneEnd      : LARGE_INTEGER;
+  end record;
+  PNTFS_VOLUME_DATA_BUFFER = ^NTFS_VOLUME_DATA_BUFFER;
+
+type
+  NTFS_EXTENDED_VOLUME_DATA = record
+ByteCount       : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+  end record;
+  PNTFS_EXTENDED_VOLUME_DATA = ^NTFS_EXTENDED_VOLUME_DATA;
+
+-- 
+--  Structure for FSCTL_GET_VOLUME_BITMAP
+-- 
+type
+  STARTING_LCN_INPUT_BUFFER = record
+StartingLcn     : LARGE_INTEGER;
+  end record;
+  PSTARTING_LCN_INPUT_BUFFER = ^STARTING_LCN_INPUT_BUFFER;
+
+type
+  VOLUME_BITMAP_BUFFER = record
+StartingLcn     : LARGE_INTEGER;
+BitmapSize      : LARGE_INTEGER;
+Buffer          : array 0..0 of BYTE;
+  end record;
+  PVOLUME_BITMAP_BUFFER = ^VOLUME_BITMAP_BUFFER;
+
+-- 
+--  Structure for FSCTL_GET_RETRIEVAL_POINTERS
+-- 
+type
+  STARTING_VCN_INPUT_BUFFER = record
+StartingVcn     : LARGE_INTEGER;
+  end record;
+  PSTARTING_VCN_INPUT_BUFFER = ^STARTING_VCN_INPUT_BUFFER;
+
+type
+  RETRIEVAL_POINTERS_BUFFER = record
+ExtentCount     : DWORD;
+StartingVcn     : LARGE_INTEGER;
+  Extents           :array 0..0 of  record
+NextVcn         : LARGE_INTEGER;
+Lcn             : LARGE_INTEGER;
+  end record;
+  end record;
+  PRETRIEVAL_POINTERS_BUFFER = ^RETRIEVAL_POINTERS_BUFFER;
+
+-- 
+--  Structures for FSCTL_GET_NTFS_FILE_RECORD
+-- 
+type
+  NTFS_FILE_RECORD_INPUT_BUFFER = record
+FileReferenceNumber : LARGE_INTEGER;
+  end record;
+  PNTFS_FILE_RECORD_INPUT_BUFFER = ^NTFS_FILE_RECORD_INPUT_BUFFER;
+
+type
+  NTFS_FILE_RECORD_OUTPUT_BUFFER = record
+FileReferenceNumber : LARGE_INTEGER;
+FileRecordLength : DWORD;
+FileRecordBuffer : array 0..0 of BYTE;
+  end record;
+  PNTFS_FILE_RECORD_OUTPUT_BUFFER = ^NTFS_FILE_RECORD_OUTPUT_BUFFER;
+
+-- 
+--  Structure for FSCTL_MOVE_FILE
+-- 
+type
+  MOVE_FILE_DATA    = record
+FileHandle      : t_HANDLE;
+StartingVcn     : LARGE_INTEGER;
+StartingLcn     : LARGE_INTEGER;
+ClusterCount    : DWORD;
+  end record;
+  PMOVE_FILE_DATA   = ^MOVE_FILE_DATA;
+
+-- 
+--  Structures for FSCTL_FIND_FILES_BY_SID
+-- 
+type
+  FIND_BY_SID_DATA  = record
+Restart         : DWORD;
+Sid             : t_SID;
+  end record;
+  PFIND_BY_SID_DATA = ^FIND_BY_SID_DATA;
+
+type
+  FIND_BY_SID_OUTPUT = record
+NextEntryOffset : DWORD;
+FileIndex       : DWORD;
+FileNameLength  : DWORD;
+FileName        : array 0..0 of WCHAR;
+  end record;
+  PFIND_BY_SID_OUTPUT = ^FIND_BY_SID_OUTPUT;
+
+-- 
+--  The following structures apply to Usn operations.
+-- 
+-- 
+--  Structure for FSCTL_ENUM_USN_DATA
+-- 
+type
+  MFT_ENUM_DATA     = record
+StartFileReferenceNumber : DWORDLONG;
+LowUsn          : t_USN;
+HighUsn         : t_USN;
+  end record;
+  PMFT_ENUM_DATA    = ^MFT_ENUM_DATA;
+
+-- 
+--  Structure for FSCTL_CREATE_USN_JOURNAL
+-- 
+type
+  CREATE_USN_JOURNAL_DATA = record
+MaximumSize     : DWORDLONG;
+AllocationDelta : DWORDLONG;
+  end record;
+  PCREATE_USN_JOURNAL_DATA = ^CREATE_USN_JOURNAL_DATA;
+
+-- 
+--  Structure for FSCTL_READ_USN_JOURNAL
+-- 
+type
+  READ_USN_JOURNAL_DATA = record
+StartUsn        : t_USN;
+ReasonMask      : DWORD;
+ReturnOnlyOnClose : DWORD;
+Timeout         : DWORDLONG;
+BytesToWaitFor  : DWORDLONG;
+UsnJournalID    : DWORDLONG;
+  end record;
+  PREAD_USN_JOURNAL_DATA = ^READ_USN_JOURNAL_DATA;
+
+-- 
+--  The initial Major.Minor version of the Usn record will be 2.0.
+--  In general, the MinorVersion may be changed if fields are added
+--  to this structure in such a way that the previous version of the
+--  software can still correctly the fields it knows about. The
+--  MajorVersion should only be changed if the previous version of
+--  any software using this structure would incorrectly handle new
+--  records due to structure changes.
+-- 
+--  The first update to this will force the structure to version 2.0.
+--  This will add the extended information about the source as
+--  well as indicate the file name offset within the structure.
+-- 
+--  The following structure is returned with these fsctls.
+-- 
+--  FSCTL_READ_USN_JOURNAL
+--  FSCTL_READ_FILE_USN_DATA
+--  FSCTL_ENUM_USN_DATA
+-- 
+type
+  USN_RECORD        = record
+RecordLength    : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+FileReferenceNumber : DWORDLONG;
+ParentFileReferenceNumber : DWORDLONG;
+Usn             : t_USN;
+TimeStamp       : LARGE_INTEGER;
+Reason          : DWORD;
+SourceInfo      : DWORD;
+SecurityId      : DWORD;
+FileAttributes  : DWORD;
+FileNameLength  : WORD;
+FileNameOffset  : WORD;
+FileName        : array 0..0 of WCHAR;
+  end record;
+  PUSN_RECORD       = ^USN_RECORD;
+
+-- 
+--  Structure for FSCTL_QUERY_USN_JOUNAL
+-- 
+type
+  USN_JOURNAL_DATA  = record
+UsnJournalID    : DWORDLONG;
+FirstUsn        : t_USN;
+NextUsn         : t_USN;
+LowestValidUsn  : t_USN;
+MaxUsn          : t_USN;
+MaximumSize     : DWORDLONG;
+AllocationDelta : DWORDLONG;
+  end record;
+  PUSN_JOURNAL_DATA = ^USN_JOURNAL_DATA;
+
+-- 
+--  Structure for FSCTL_DELETE_USN_JOURNAL
+-- 
+type
+  DELETE_USN_JOURNAL_DATA = record
+UsnJournalID    : DWORDLONG;
+DeleteFlags     : DWORD;
+  end record;
+  PDELETE_USN_JOURNAL_DATA = ^DELETE_USN_JOURNAL_DATA;
+
+-- 
+--  Structure for FSCTL_MARK_HANDLE
+-- 
+type
+  MARK_HANDLE_INFO  = record
+UsnSourceInfo   : DWORD;
+VolumeHandle    : t_HANDLE;
+HandleInfo      : DWORD;
+  end record;
+  PMARK_HANDLE_INFO = ^MARK_HANDLE_INFO;
+
+-- 
+--  Flags for the additional source information above.
+-- 
+--  USN_SOURCE_DATA_MANAGEMENT - Service is not modifying the external view
+--  of any part of the file. Typical case is HSM moving data to
+--  and from external storage.
+-- 
+--  USN_SOURCE_AUXILIARY_DATA - Service is not modifying the external view
+--  of the file with regard to the application that created this file.
+--  Can be used to add private data streams to a file.
+-- 
+--  USN_SOURCE_REPLICATION_MANAGEMENT - Service is modifying a file to match
+--  the contents of the same file which exists in another member of the
+--  replica set.
+-- 
+-- 
+--  Flags for the HandleInfo field above
+-- 
+--  MARK_HANDLE_PROTECT_CLUSTERS - disallow any defragmenting (FSCTL_MOVE_FILE) until the
+--  the handle is closed
+-- 
+-- 
+--  Structure for FSCTL_SECURITY_ID_CHECK
+-- 
+type
+  BULK_SECURITY_TEST_DATA = record
+DesiredAccess   : ACCESS_MASK;
+SecurityIds     : array 0..0 of DWORD;
+  end record;
+  PBULK_SECURITY_TEST_DATA = ^BULK_SECURITY_TEST_DATA;
+
+-- 
+--  Output flags for the FSCTL_IS_VOLUME_DIRTY
+-- 
+-- 
+--  Structures for FSCTL_FILE_PREFETCH
+-- 
+type
+  _FILE_PREFETCH    = record
+_Type           : DWORD;
+Count           : DWORD;
+Prefetch        : array 0..0 of DWORDLONG;
+  end record;
+  FILE_PREFETCH     = _FILE_PREFETCH;
+  PFILE_PREFETCH    = ^_FILE_PREFETCH;
+
+const
+  FILE_PREFETCH_TYPE_FOR_CREATE= $01;
+
+--  Structures for FSCTL_FILESYSTEM_GET_STATISTICS
+-- 
+--  Filesystem performance counters
+-- 
+type
+  _FILESYSTEM_STATISTICS = record
+FileSystemType  : WORD;
+Version         : WORD;
+SizeOfCompleteStructure : DWORD;
+UserFileReads   : DWORD;
+UserFileReadBytes : DWORD;
+UserDiskReads   : DWORD;
+UserFileWrites  : DWORD;
+UserFileWriteBytes : DWORD;
+UserDiskWrites  : DWORD;
+MetaDataReads   : DWORD;
+MetaDataReadBytes : DWORD;
+MetaDataDiskReads : DWORD;
+MetaDataWrites  : DWORD;
+MetaDataWriteBytes : DWORD;
+MetaDataDiskWrites : DWORD;
+  end record;
+  FILESYSTEM_STATISTICS = _FILESYSTEM_STATISTICS;
+  PFILESYSTEM_STATISTICS = ^_FILESYSTEM_STATISTICS;
+
+--  values for FS_STATISTICS.FileSystemType
+const
+  FILESYSTEM_STATISTICS_TYPE_NTFS= 1;
+
+const
+  FILESYSTEM_STATISTICS_TYPE_FAT= 2;
+
+-- 
+--  File System Specific Statistics Data
+-- 
+type
+  _FAT_STATISTICS   = record
+CreateHits      : DWORD;
+SuccessfulCreates : DWORD;
+FailedCreates   : DWORD;
+NonCachedReads  : DWORD;
+NonCachedReadBytes : DWORD;
+NonCachedWrites : DWORD;
+NonCachedWriteBytes : DWORD;
+NonCachedDiskReads : DWORD;
+NonCachedDiskWrites : DWORD;
+  end record;
+  FAT_STATISTICS    = _FAT_STATISTICS;
+  PFAT_STATISTICS   = ^_FAT_STATISTICS;
+
+type
+  _NTFS_STATISTICS  = record
+LogFileFullExceptions : DWORD;
+OtherExceptions : DWORD;
+MftReads        : DWORD;
+MftReadBytes    : DWORD;
+MftWrites       : DWORD;
+MftWriteBytes   : DWORD;
+  MftWritesUserLevel : record
+Write           : WORD;
+Create          : WORD;
+SetInfo         : WORD;
+Flush           : WORD;
+  end record;
+MftWritesFlushForLogFileFull : WORD;
+MftWritesLazyWriter : WORD;
+MftWritesUserRequest : WORD;
+Mft2Writes      : DWORD;
+Mft2WriteBytes  : DWORD;
+  Mft2WritesUserLevel : record
+Write           : WORD;
+Create          : WORD;
+SetInfo         : WORD;
+Flush           : WORD;
+  end record;
+Mft2WritesFlushForLogFileFull : WORD;
+Mft2WritesLazyWriter : WORD;
+Mft2WritesUserRequest : WORD;
+RootIndexReads  : DWORD;
+RootIndexReadBytes : DWORD;
+RootIndexWrites : DWORD;
+RootIndexWriteBytes : DWORD;
+BitmapReads     : DWORD;
+BitmapReadBytes : DWORD;
+BitmapWrites    : DWORD;
+BitmapWriteBytes : DWORD;
+BitmapWritesFlushForLogFileFull : WORD;
+BitmapWritesLazyWriter : WORD;
+BitmapWritesUserRequest : WORD;
+  BitmapWritesUserLevel : record
+Write           : WORD;
+Create          : WORD;
+SetInfo         : WORD;
+  end record;
+MftBitmapReads  : DWORD;
+MftBitmapReadBytes : DWORD;
+MftBitmapWrites : DWORD;
+MftBitmapWriteBytes : DWORD;
+MftBitmapWritesFlushForLogFileFull : WORD;
+MftBitmapWritesLazyWriter : WORD;
+MftBitmapWritesUserRequest : WORD;
+  MftBitmapWritesUserLevel : record
+Write           : WORD;
+Create          : WORD;
+SetInfo         : WORD;
+Flush           : WORD;
+  end record;
+UserIndexReads  : DWORD;
+UserIndexReadBytes : DWORD;
+UserIndexWrites : DWORD;
+UserIndexWriteBytes : DWORD;
+LogFileReads    : DWORD;
+LogFileReadBytes : DWORD;
+LogFileWrites   : DWORD;
+LogFileWriteBytes : DWORD;
+  Allocate          : record
+Calls           : DWORD;
+Clusters        : DWORD;
+Hints           : DWORD;
+RunsReturned    : DWORD;
+HintsHonored    : DWORD;
+HintsClusters   : DWORD;
+Cache           : DWORD;
+CacheClusters   : DWORD;
+CacheMiss       : DWORD;
+CacheMissClusters : DWORD;
+  end record;
+  end record;
+  NTFS_STATISTICS   = _NTFS_STATISTICS;
+  PNTFS_STATISTICS  = ^_NTFS_STATISTICS;
+
+-- 
+--  Structure for FSCTL_SET_OBJECT_ID, FSCTL_GET_OBJECT_ID, and FSCTL_CREATE_OR_GET_OBJECT_ID
+-- 
+-- #pragma  warning(push)
+-- #pragma  warning(disable:4201) // unnamed struct
+type
+  _FILE_OBJECTID_BUFFER = record
+ObjectId        : array 0..15 of BYTE;
+t_008            : record
+BirthVolumeId   : array 0..15 of BYTE;
+BirthObjectId   : array 0..15 of BYTE;
+DomainId        : array 0..15 of BYTE;
+      ExtendedInfo  : array 0..47 of BYTE for position use 0;
+    end record;
+  end record;
+  FILE_OBJECTID_BUFFER = _FILE_OBJECTID_BUFFER;
+  PFILE_OBJECTID_BUFFER = ^_FILE_OBJECTID_BUFFER;
+
+-- #pragma  warning(pop)
+-- #pragma  warning( default : 4201 )
+-- 
+--  Structure for FSCTL_SET_SPARSE
+-- 
+type
+  _FILE_SET_SPARSE_BUFFER = record
+SetSparse       : BOOLEAN;
+  end record;
+  FILE_SET_SPARSE_BUFFER = _FILE_SET_SPARSE_BUFFER;
+  PFILE_SET_SPARSE_BUFFER = ^_FILE_SET_SPARSE_BUFFER;
+
+-- 
+--  Structure for FSCTL_SET_ZERO_DATA
+-- 
+type
+  _FILE_ZERO_DATA_INFORMATION = record
+FileOffset      : LARGE_INTEGER;
+BeyondFinalZero : LARGE_INTEGER;
+  end record;
+  FILE_ZERO_DATA_INFORMATION = _FILE_ZERO_DATA_INFORMATION;
+  PFILE_ZERO_DATA_INFORMATION = ^_FILE_ZERO_DATA_INFORMATION;
+
+-- 
+--  Structure for FSCTL_QUERY_ALLOCATED_RANGES
+-- 
+-- 
+--  Querying the allocated ranges requires an output buffer to store the
+--  allocated ranges and an input buffer to specify the range to query.
+--  The input buffer contains a single entry, the output buffer is an
+--  array of the following structure.
+-- 
+type
+  _FILE_ALLOCATED_RANGE_BUFFER = record
+FileOffset      : LARGE_INTEGER;
+Length          : LARGE_INTEGER;
+  end record;
+  FILE_ALLOCATED_RANGE_BUFFER = _FILE_ALLOCATED_RANGE_BUFFER;
+  PFILE_ALLOCATED_RANGE_BUFFER = ^_FILE_ALLOCATED_RANGE_BUFFER;
+
+-- 
+--  Structures for FSCTL_SET_ENCRYPTION, FSCTL_WRITE_RAW_ENCRYPTED, and FSCTL_READ_RAW_ENCRYPTED
+-- 
+-- 
+--  The input buffer to set encryption indicates whether we are to encrypt/decrypt a file
+--  or an individual stream.
+-- 
+type
+  _ENCRYPTION_BUFFER = record
+EncryptionOperation : DWORD;
+_Private        : array 0..0 of BYTE;
+  end record;
+  ENCRYPTION_BUFFER = _ENCRYPTION_BUFFER;
+  PENCRYPTION_BUFFER = ^_ENCRYPTION_BUFFER;
+
+const
+  FILE_SET_ENCRYPTION= $01;
+
+const
+  FILE_CLEAR_ENCRYPTION= $02;
+
+const
+  STREAM_SET_ENCRYPTION= $03;
+
+const
+  STREAM_CLEAR_ENCRYPTION= $04;
+
+const
+  MAXIMUM_ENCRYPTION_VALUE= $04;
+
+-- 
+--  The optional output buffer to set encryption indicates that the last encrypted
+--  stream in a file has been marked as decrypted.
+-- 
+type
+  _DECRYPTION_STATUS_BUFFER = record
+NoEncryptedStreams : BOOLEAN;
+  end record;
+  DECRYPTION_STATUS_BUFFER = _DECRYPTION_STATUS_BUFFER;
+  PDECRYPTION_STATUS_BUFFER = ^_DECRYPTION_STATUS_BUFFER;
+
+-- 
+--  Request Encrypted Data structure. This is used to indicate
+--  the range of the file to read. It also describes the
+--  output buffer used to return the data.
+-- 
+type
+  _REQUEST_RAW_ENCRYPTED_DATA = record
+FileOffset      : LONGLONG;
+Length          : DWORD;
+  end record;
+  REQUEST_RAW_ENCRYPTED_DATA = _REQUEST_RAW_ENCRYPTED_DATA;
+  PREQUEST_RAW_ENCRYPTED_DATA = ^_REQUEST_RAW_ENCRYPTED_DATA;
+
+-- 
+--  Encrypted Data Information structure. This structure
+--  is used to return raw encrypted data from a file in
+--  order to perform off-line recovery. The data will be
+--  encrypted or encrypted and compressed. The off-line
+--  service will need to use the encryption and compression
+--  format information to recover the file data. In the
+--  event that the data is both encrypted and compressed then
+--  the decryption must occur before decompression. All
+--  the data units below must be encrypted and compressed
+--  with the same format.
+-- 
+--  The data will be returned in units. The data unit size
+--  will be fixed per request. If the data is compressed
+--  then the data unit size will be the compression unit size.
+-- 
+--  This structure is at the beginning of the buffer used to
+--  return the encrypted data. The actual raw bytes from
+--  the file will follow this buffer. The offset of the
+--  raw bytes from the beginning of this structure is
+--  specified in the REQUEST_RAW_ENCRYPTED_DATA structure
+--  described above.
+-- 
+type
+  _ENCRYPTED_DATA_INFO = record
+StartingFileOffset : DWORDLONG;
+OutputBufferOffset : DWORD;
+BytesWithinFileSize : DWORD;
+BytesWithinValidDataLength : DWORD;
+CompressionFormat : WORD;
+DataUnitShift   : BYTE;
+ChunkShift      : BYTE;
+ClusterShift    : BYTE;
+EncryptionFormat : BYTE;
+NumberOfDataBlocks : WORD;
+DataBlockSize   : array 0..ANYSIZE_ARRAY-1 of DWORD;
+  end record;
+  ENCRYPTED_DATA_INFO = _ENCRYPTED_DATA_INFO;
+
+type
+PENCRYPTED_DATA_INFO = ^ENCRYPTED_DATA_INFO for machine_pointer use true;
+-- 
+--  FSCTL_READ_FROM_PLEX support
+--  Request Plex Read Data structure. This is used to indicate
+--  the range of the file to read. It also describes
+--  which plex to perform the read from.
+-- 
+type
+  _PLEX_READ_DATA_REQUEST = record
+ByteOffset      : LARGE_INTEGER;
+ByteLength      : DWORD;
+PlexNumber      : DWORD;
+  end record;
+  PLEX_READ_DATA_REQUEST = _PLEX_READ_DATA_REQUEST;
+  PPLEX_READ_DATA_REQUEST = ^_PLEX_READ_DATA_REQUEST;
+
+-- 
+--  FSCTL_SIS_COPYFILE support
+--  Source and destination file names are passed in the FileNameBuffer.
+--  Both strings are null terminated, with the source name starting at
+--  the beginning of FileNameBuffer, and the destination name immediately
+--  following. Length fields include terminating nulls.
+-- 
+type
+  _SI_COPYFILE      = record
+SourceFileNameLength : DWORD;
+DestinationFileNameLength : DWORD;
+Flags           : DWORD;
+FileNameBuffer  : array 0..0 of WCHAR;
+  end record;
+  SI_COPYFILE       = _SI_COPYFILE;
+  PSI_COPYFILE      = ^_SI_COPYFILE;
+
+const
+  COPYFILE_SIS_LINK = $01;
+
+const
+  COPYFILE_SIS_REPLACE= $02;
+
+const
+  COPYFILE_SIS_FLAGS= $03;
+
+-- 
+--  These IOCTLs are handled by hard disk volumes.
+-- 
+-- 
+--  Disk extent definition.
+-- 
+type
+  _DISK_EXTENT      = record
+DiskNumber      : DWORD;
+StartingOffset  : LARGE_INTEGER;
+ExtentLength    : LARGE_INTEGER;
+  end record;
+  DISK_EXTENT       = _DISK_EXTENT;
+  PDISK_EXTENT      = ^_DISK_EXTENT;
+
+-- 
+--  Output structure for IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS.
+-- 
+type
+  _VOLUME_DISK_EXTENTS = record
+NumberOfDiskExtents : DWORD;
+Extents         : array 0..0 of DISK_EXTENT;
+  end record;
+  VOLUME_DISK_EXTENTS = _VOLUME_DISK_EXTENTS;
+  PVOLUME_DISK_EXTENTS = ^_VOLUME_DISK_EXTENTS;
+
+
+end winioctl;

@@ -1,0 +1,69 @@
+----------------------------------------------------------------------------------------------------
+module public device_context =
+-- Output device context.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- STATUS : working draft
+----------------------------------------------------------------------------------------------------
+
+with 
+  advanced.gui.resources;
+
+-- forward declarations
+class c_device_context; type p_device_context = ^class c_device_context;
+
+----------------------------------------------------------------------------------------------------
+class public c_device_context = {extend c_class}
+-- Device contect object for drawing operations.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create (
+        _handle    : in t_system_window_handle); -- handle to system window
+    -- Creates a new device context for window of [handle].
+    ------------------------------------------------------------------------------------------------
+    static draw_line (
+        _a         : in t_point;              
+        _b         : in t_point;
+        _pen       : in c_gr_pen); 
+    -- Draws a line with [_pen] from point [_a] to point [_b].
+    ------------------------------------------------------------------------------------------------
+    static draw_frame (
+        _rect      : in t_rectangle;
+        --_b         : in t_point;
+        _pen       : in c_gr_pen); 
+    -- Draws a frame with [_pen] that is specified by [_a] as a top-left point and by [_b] as
+    -- a right-bottom point.
+    ------------------------------------------------------------------------------------------------
+    procedure draw_text (
+        _a         : in t_point;
+        _text      : in p_char32ustr;
+        _font      : in c_gr_font);
+    -- Draws [_text] starting at point [_a].
+    ------------------------------------------------------------------------------------------------
+    procedure draw_icon (
+        _a         : in t_point;
+        _icon      : in c_gr_icon);
+    -- Draw [_icon] at the position [_a].
+    ------------------------------------------------------------------------------------------------
+    procedure draw_bitmap (
+        _a         : in t_point;
+        _bitmap    : in c_gr_bitmap);
+    -- Draws [_bitmap] at the posiotion [_a]. 
+    ------------------------------------------------------------------------------------------------
+    procedure fill_frame ( 
+        _rect      : in t_rectangle;
+        _brush     : in c_gr_brush);
+    -- Fills a frame defined by [_rect] with [_brush].
+    ------------------------------------------------------------------------------------------------
+    procedure begin_paint;
+    -- Starts block of painting operations. 
+    ------------------------------------------------------------------------------------------------
+    procedure end_paint;
+    -- Ends block of paint operations.
+    ------------------------------------------------------------------------------------------------
+   
+    end c_device_context;
+
+end device_context;

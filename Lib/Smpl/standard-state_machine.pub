@@ -1,0 +1,274 @@
+----------------------------------------------------------------------------------------------------
+module public state_machine =
+-- A universal state machine.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.triggers;
+
+-- forward declarations
+class c_state;         type p_state         = ^class c_state;
+class c_state_machine; type p_state_machine = ^class c_state_machine;
+
+type
+  -- Transition allowance check.
+  -- Checks wether a transition from the state [from_state] to the state [to_state] is allowed.
+  t_transition_check = procedure (
+      from_state   : in p_state;                 -- initial state
+      to_state     : in p_state)                 -- next state
+      return t_logical;                          -- T-transition allowed
+  p_transition_check = ^t_transition_check;
+
+----------------------------------------------------------------------------------------------------
+class public c_state = extend c_trigger_container;
+-- A single state of the state machine.
+----------------------------------------------------------------------------------------------------
+-- A state of a state machine is identified by an instance of the [c_state] class (or any of its
+-- descendants). Informace o mo‘n˜ch p©echodech jsou ale dr‘eny KA.
+--   A state is entered when it becomes the current state within a state machine and it is left,
+-- when another state becomes the current state. When a state is entered, [event_enter_state] is 
+-- signaled. Similarly, when a state is left, [event_leave_state] is signaled.
+----------------------------------------------------------------------------------------------------
+    var
+      -- events on a state
+      event_leave_state : const t_triggered_event; -- the state is being left
+      event_enter_state : const t_triggered_event; -- the state is being entered
+
+  {%%TODO(SUPERVISED) supervised}
+    ------------------------------------------------------------------------------------------------
+    virtual leave_state;
+    -- Vol  u‘ivatelskou sekvenci p©¡kaz– spojenou s v˜stupem ze stavu.
+    ------------------------------------------------------------------------------------------------
+    virtual enter_state;
+    -- Vol  u‘ivatelskou sekvenci p©¡kaz– spojenou se vstupem do stavu.
+    ------------------------------------------------------------------------------------------------
+
+    end c_state;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_state_machine = extend c_trigger_container;
+-- A universal state machine.
+----------------------------------------------------------------------------------------------------
+--
+-- Adding and removing states
+-- --------------------------
+--
+-- Typicaly, states are added to the state machine during an initialization phase 
+-- via [add_state]. However, states as well as transitions can be added or removed at any time.
+--   If the state machine was about to reach a state that was not added to it before, [event_error]
+-- is signaled.
+--   The first state has to be specified via the [set_first_state]. The first state can be 
+-- specified only once.
+--
+-- Adding and removing transitions
+-- -------------------------------
+--
+-- Typicaly, transitions are added to the state machine during an initialization phase 
+-- via [add_transition]. However, states as well as transitions can be added or removed at
+-- any time.
+-- If the state machine was about to reach a state that was not added to it before, [event_error]
+-- is signaled.
+--
+-- Event signaling
+-- ---------------
+--
+-- The state machine reports these groups of events:
+--   (1) When the first state has been selected, following sequence of events is signaled:
+--         1. [event_first_state]        within the state machine,
+--         2. [event_before_enter_state] within the state machine,
+--         3. [event_enter_state]        within the particular state,
+--         4. [event_after_enter_state]  within the state machine.
+--
+--   (2) When a transition happens, following sequence of events is signaled:
+--         1. [event_before_leave_state] within the state machine,
+--         2. [event_leave_state]        within the particular state
+--         3. [event_after_leave_state]  within the state machine.
+--         4. [event_transition]         within the state machine.
+--         5. [event_before_enter_state] within the state machine,
+--         6. [event_enter_state]        within the particular state
+--         7. [event_after_enter_state]  within the state machine.
+--
+--   (3) Immediately after the final state has been reached (either by (1) or by (2)), the event
+--       [event_final_state] is signaled within the state machine.
+--
+-- User-driven execution mode
+-- --------------------------
+--
+-- The state machine is desined so that the user can control when transition to another state 
+-- happens and execute any actions between transitions.
+--   After entering the first state via the [set_first_state], the user can perform any action
+-- and determine when (and if) to perform a transitions by checking [can_transition] and 
+-- [is_final_state] and then using [do_transition] to perform the actual transition.
+--
+-- Automatic execution mode
+-- ------------------------
+--
+-- In the automatic execution mode, transitions are performed in a sequence without any particular
+-- actions or delays (except the normal event signaling) between them until the final state is 
+-- reached. This mode is implemented in the [run_state_machine] method and is provided as a default
+-- state machine execution model, where all user-specific actions take place within the triggers of 
+-- the particular events.
+----------------------------------------------------------------------------------------------------
+
+    var
+      -- events on a state machine
+      event_before_leave_state : const t_triggered_event; -- signaled before a state is left
+      event_after_leave_state  : const t_triggered_event; -- signaled after a state is left
+      event_transition         : const t_triggered_event; -- signaled when a transition is in progresss
+      event_before_enter_state : const t_triggered_event; -- signaled before a state is entered
+      event_after_enter_state  : const t_triggered_event; -- signaled after a state is entered
+      event_first_state        : const t_triggered_event; -- signaled before the first state is entered
+      event_final_state        : const t_triggered_event; -- signaled after the final state has been reached
+
+
+    ------------------------------------------------------------------------------------------------
+    static add_transition (
+        from_state : in p_state;                 -- po‡ tek p©echodu
+        to_state   : in p_state;                 -- konec p©echodu
+        check      : in p_transition_check);     -- zda je p©echod vykonavateln˜
+    -- Defines a new transition from [from_state] to another state [to_state].
+    -- The transition can be performed only when then transition allowance check [check] returns 
+    -- True, otherwise it is forbidden to perform the transition.
+    -- When a transition from this state to [to_state] was already defined (regardless of the
+    -- transition allowance check), [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    static remove_transition (
+        from_state : in p_state;                 -- po‡ tek p©echodu
+        to_state   : in p_state);                -- konec p©echodu
+    -- Removes a transition from [from_state] to another state [to_state].
+    -- The transition have had to be defined via the [add_transition] method before, otherwise
+    -- [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    static add_state (
+        state      : in p_state);                -- state to be added to the state machine
+    -- Adds a state [state] to the state machine.
+    -- If the state have been already added to the state machine, [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    static remove_state (
+        state      : in p_state);                -- state to be removed from the state machine
+    -- Sma‘e stav z KA a v¨echny p©echody, kter‚ jsou s n¡m spojeny. Pokud se m  smazat aktivn¡ stav
+    -- KA [current_state], je signalizov n [event_error].
+    -- The state have had to be added to the state machine via the [add_state] method before, 
+    -- otherwise [event_error] is signaled.
+    ------------------------------------------------------------------------------------------------
+    static set_first_state (
+        state      : in p_state);
+    -- Sets the first state of the state machine. 
+    -- The state have had to be added to the state machine via the [add_state] method before, 
+    -- otherwise [event_error] is signaled. The first state of the state machine can be specified 
+    -- only once. If a current state is already determined, [event_error] is signaled.
+    --   Before entering the first state [event_first_state] is signaled. After that, normal event 
+    -- signalig takes place, when the first state is set. That is, all events starting from 
+    -- [event_before_enter_state] are signaled.
+    --   If the first state is a final state as well, [event_final_state] is signaled in the end.
+    ------------------------------------------------------------------------------------------------
+    static get_state return p_state;
+    -- Returns the current state of the state machine.
+    -- Returns NIL when no state was entered yet.
+    ------------------------------------------------------------------------------------------------
+    static is_final_state return t_logical;
+    -- Checks if the current state is the final state of the state machine. 
+    -- A final state is such a state, from which no transition to another state is defined.
+    -- When no current state is selected, [event_error] is signaled and the subprogram returns 
+    -- False.
+    ------------------------------------------------------------------------------------------------
+    virtual can_transition return t_logical;
+    -- Checks if a transition to some next state can be performed.
+    -- A transition can be performed when there are any transitions from the current state defined
+    -- and when at least one of these transitions passes the corresponding transition allowance
+    -- check.
+    ------------------------------------------------------------------------------------------------
+    static do_transition;
+    -- Performs a transition to some next state.
+    -- The destination state is selected based on the return values of the trasition allowance 
+    -- checks of all defined transitions (in order of definition via calls to the 
+    -- [c_state.add_transition] method). There shall be exactly one transition passing the 
+    -- transition allowance check. This transition is then performed, otherwise [event_error] is 
+    -- signaled.
+    --   This concludes, that when there is no transition defined for the current state, it is
+    -- treated as an error condition. It is up to the user to ensure by calling the [is_final_state]
+    -- that the current state is not the final state so allowing [do_transition] to be called.
+    --   When the final state is entered, [event_final_state] is signaled after the transition is
+    -- completed (that is, after [event_after_enter_state] was signaled).
+    ------------------------------------------------------------------------------------------------
+    static run_state_machine;
+    -- Repeatedly performs transitions until a final state has been reached. 
+    -- This provides a default state machine execution model, where all user-specific actions take 
+    -- place within the triggers of the particular events.
+    --   Before calling [run_state_machine], the first state have to be selected via the 
+    -- [set_first_state]. If the first state is the final state as well, the [run_state_machine]
+    -- terminates immediately without performing any action.
+    --   Note that there are no calls to [can_transition] and so [do_transition]s are executed in
+    -- an uninterrupted sequence without any explicit actions or delays between them.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+  {%%TODO(SUPERVISED) supervised}
+    type
+      -- transition description
+      t_transition = record
+          to_state : p_state;                    -- destination state of this transition
+          check    : p_transition_check;         -- corresponding transition allowance check
+          end record;
+
+      -- state description
+      t_state      = record
+          state       : p_state;                 -- source state of this transition
+          transitions : ^string of t_transition; -- seznam p©echod– z tohoto stavu
+          end record;
+
+    var
+      -- list of all states of this state machine
+      states       : ^string of t_state;         -- seznam stav– v KA
+
+    ------------------------------------------------------------------------------------------------
+    static check_state (
+        state      : in p_state);                -- stav v KA
+    -- Ensures that the given [state] was added to this state machine. If not, [event_error] is
+    -- signaled, otherwise no action is taken.
+    ------------------------------------------------------------------------------------------------
+    static find_state (
+        state      : in p_state)                 -- stav v KA
+        return t_unsigned;
+    -- Vrac¡ index stavu v ©etˆzci stav–. Pokud ‘ dn˜ stav v KA neexistuje - nebyl nalezen, metoda 
+    -- vr t¡ hodnotu 0.
+    ------------------------------------------------------------------------------------------------
+    static find_transition (
+        i_from_state : in t_unsigned;            -- index na po‡ tek p©echodu
+        to_state     : in p_state)               -- konec p©echodu
+        return t_unsigned;
+    -- Vr t¡ index p©echodu, kter˜ je ur‡en pozic¡ p©echodu ve stavu, kde p©echod za‡¡n  a stavem,
+    -- do kter‚ho se m  p©echod dostat. Pokud p©echod nen¡ nalezen nebo pokud nen¡ nalezen stav,
+    -- z kter‚ho nebo do kter‚ho by mˆl p©echod kon‡it, vrac¡ se hodnota 0 - p©echod nenalezen.
+    ------------------------------------------------------------------------------------------------
+    static enter_state;
+    -- Vol  ud losti spojen‚ se vstupem do stavu.
+    ------------------------------------------------------------------------------------------------
+    static leave_state;
+    -- Vol  ud losti spojen‚ s v˜stupem ze stavu.
+    ------------------------------------------------------------------------------------------------
+    static find_transition_to_perform (
+        i_state    : in t_unsigned)              -- index stavu
+        return t_unsigned;
+    -- Vrac¡ index p©echodu, jen‘ se m–‘e vykonat. Pokud ‘ dn˜ p©echod nen¡ nalezen nebo pokud 
+    -- existuje v¡c ne‘ dva p©echody, jimi‘ se lze dostat dal¨¡ho stavu, 
+    -- vrac¡ se hodnota 0 - p©echod nenalezen.
+    ------------------------------------------------------------------------------------------------
+
+    end c_state_machine;
+
+----------------------------------------------------------------------------------------------------
+procedure transition_always : t_transition_check;
+-- Special-purpose transition allowance check: Always allows transition (always returns True).
+----------------------------------------------------------------------------------------------------
+procedure transition_never : t_transition_check;
+-- Special-purpose transition allowance check: Always denies transition (always returns False).
+----------------------------------------------------------------------------------------------------
+
+end state_machine;
+

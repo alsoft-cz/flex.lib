@@ -1,0 +1,1250 @@
+----------------------------------------------------------------------------------------------------
+module winnetwk =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd;
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     winnetwk.h
+-- 
+-- Abstract:
+-- 
+--     Standard WINNET Header File for WIN32
+-- 
+-- Environment:
+-- 
+--     User Mode -Win32
+-- 
+-- Notes:
+-- 
+--     optional-notes
+-- 
+-- --*/
+-- 
+--  Network types
+-- 
+const
+  WNNC_NET_MSNET    = $10000;
+
+const
+  WNNC_NET_LANMAN   = $20000;
+
+const
+  WNNC_NET_NETWARE  = $30000;
+
+const
+  WNNC_NET_VINES    = $40000;
+
+const
+  WNNC_NET_10NET    = $50000;
+
+const
+  WNNC_NET_LOCUS    = $60000;
+
+const
+  WNNC_NET_SUN_PC_NFS= $70000;
+
+const
+  WNNC_NET_LANSTEP  = $80000;
+
+const
+  WNNC_NET_9TILES   = $90000;
+
+const
+  WNNC_NET_LANTASTIC= $A0000;
+
+const
+  WNNC_NET_AS400    = $B0000;
+
+const
+  WNNC_NET_FTP_NFS  = $C0000;
+
+const
+  WNNC_NET_PATHWORKS= $D0000;
+
+const
+  WNNC_NET_LIFENET  = $E0000;
+
+const
+  WNNC_NET_POWERLAN = $F0000;
+
+const
+  WNNC_NET_BWNFS    = $100000;
+
+const
+  WNNC_NET_COGENT   = $110000;
+
+const
+  WNNC_NET_FARALLON = $120000;
+
+const
+  WNNC_NET_APPLETALK= $130000;
+
+const
+  WNNC_NET_INTERGRAPH= $140000;
+
+const
+  WNNC_NET_SYMFONET = $150000;
+
+const
+  WNNC_NET_CLEARCASE= $160000;
+
+const
+  WNNC_NET_FRONTIER = $170000;
+
+const
+  WNNC_NET_BMC      = $180000;
+
+const
+  WNNC_NET_DCE      = $190000;
+
+const
+  WNNC_NET_AVID     = $1A0000;
+
+const
+  WNNC_NET_DOCUSPACE= $1B0000;
+
+const
+  WNNC_NET_MANGOSOFT= $1C0000;
+
+const
+  WNNC_NET_SERNET   = $1D0000;
+
+const
+  WNNC_NET_RIVERFRONT1= $1E0000;
+
+const
+  WNNC_NET_RIVERFRONT2= $1F0000;
+
+const
+  WNNC_NET_DECORB   = $200000;
+
+const
+  WNNC_NET_PROTSTOR = $210000;
+
+const
+  WNNC_NET_FJ_REDIR = $220000;
+
+const
+  WNNC_NET_DISTINCT = $230000;
+
+const
+  WNNC_NET_TWINS    = $240000;
+
+const
+  WNNC_NET_RDR2SAMPLE= $250000;
+
+const
+  WNNC_NET_CSC      = $260000;
+
+const
+  WNNC_NET_3IN1     = $270000;
+
+const
+  WNNC_NET_EXTENDNET= $290000;
+
+const
+  WNNC_NET_STAC     = $2A0000;
+
+const
+  WNNC_NET_FOXBAT   = $2B0000;
+
+const
+  WNNC_NET_YAHOO    = $2C0000;
+
+const
+  WNNC_NET_EXIFS    = $2D0000;
+
+const
+  WNNC_NET_DAV      = $2E0000;
+
+const
+  WNNC_NET_KNOWARE  = $2F0000;
+
+const
+  WNNC_NET_OBJECT_DIRE= $300000;
+
+const
+  WNNC_NET_MASFAX   = $310000;
+
+const
+  WNNC_NET_HOB_NFS  = $320000;
+
+const
+  WNNC_NET_SHIVA    = $330000;
+
+const
+  WNNC_NET_IBMAL    = $340000;
+
+const
+  WNNC_NET_LOCK     = $350000;
+
+const
+  WNNC_NET_TERMSRV  = $360000;
+
+const
+  WNNC_NET_SRT      = $370000;
+
+const
+  WNNC_NET_QUINCY   = $380000;
+
+const
+  WNNC_CRED_MANAGER = $FFFF0000;
+
+-- 
+--  Network Resources.
+-- 
+const
+  RESOURCE_CONNECTED= $01;
+
+const
+  RESOURCE_GLOBALNET= $02;
+
+const
+  RESOURCE_REMEMBERED= $03;
+
+const
+  RESOURCE_RECENT   = $04;
+
+const
+  RESOURCE_CONTEXT  = $05;
+
+const
+  RESOURCETYPE_ANY  = $00;
+
+const
+  RESOURCETYPE_DISK = $01;
+
+const
+  RESOURCETYPE_PRINT= $02;
+
+const
+  RESOURCETYPE_RESERVED= $08;
+
+const
+  RESOURCETYPE_UNKNOWN= $FFFFFFFF;
+
+const
+  RESOURCEUSAGE_CONNECTABLE= $01;
+
+const
+  RESOURCEUSAGE_CONTAINER= $02;
+
+const
+  RESOURCEUSAGE_NOLOCALDEVICE= $04;
+
+const
+  RESOURCEUSAGE_SIBLING= $08;
+
+const
+  RESOURCEUSAGE_ATTACHED= $10;
+
+const
+  RESOURCEUSAGE_RESERVED= $80000000;
+
+const
+  RESOURCEDISPLAYTYPE_GENERIC= $00;
+
+const
+  RESOURCEDISPLAYTYPE_DOMAIN= $01;
+
+const
+  RESOURCEDISPLAYTYPE_SERVER= $02;
+
+const
+  RESOURCEDISPLAYTYPE_SHARE= $03;
+
+const
+  RESOURCEDISPLAYTYPE_FILE= $04;
+
+const
+  RESOURCEDISPLAYTYPE_GROUP= $05;
+
+const
+  RESOURCEDISPLAYTYPE_NETWORK= $06;
+
+const
+  RESOURCEDISPLAYTYPE_ROOT= $07;
+
+const
+  RESOURCEDISPLAYTYPE_SHAREADMIN= $08;
+
+const
+  RESOURCEDISPLAYTYPE_DIRECTORY= $09;
+
+const
+  RESOURCEDISPLAYTYPE_TREE= $0A;
+
+const
+  RESOURCEDISPLAYTYPE_NDSCONTAINER= $0B;
+
+type
+  _NETRESOURCEA     = record
+dwScope         : DWORD;
+dwType          : DWORD;
+dwDisplayType   : DWORD;
+dwUsage         : DWORD;
+lpLocalName     : LPSTR;
+lpRemoteName    : LPSTR;
+lpComment       : LPSTR;
+lpProvider      : LPSTR;
+  end record;
+  NETRESOURCEA      = _NETRESOURCEA;
+  LPNETRESOURCEA    = ^_NETRESOURCEA;
+
+type
+  _NETRESOURCEW     = record
+dwScope         : DWORD;
+dwType          : DWORD;
+dwDisplayType   : DWORD;
+dwUsage         : DWORD;
+lpLocalName     : LPWSTR;
+lpRemoteName    : LPWSTR;
+lpComment       : LPWSTR;
+lpProvider      : LPWSTR;
+  end record;
+  NETRESOURCEW      = _NETRESOURCEW;
+  LPNETRESOURCEW    = ^_NETRESOURCEW;
+
+#if #declared UNICODE; then;
+type
+NETRESOURCE       = NETRESOURCEW;
+type
+LPNETRESOURCE     = LPNETRESOURCEW;
+#else;
+type
+NETRESOURCE       = NETRESOURCEA;
+type
+LPNETRESOURCE     = LPNETRESOURCEA;
+#end if;
+
+-- 
+--  Network Connections.
+-- 
+const
+  NETPROPERTY_PERSISTENT= 1;
+
+const
+  CONNECT_UPDATE_PROFILE= $01;
+
+const
+  CONNECT_UPDATE_RECENT= $02;
+
+const
+  CONNECT_TEMPORARY = $04;
+
+const
+  CONNECT_INTERACTIVE= $08;
+
+const
+  CONNECT_PROMPT    = $10;
+
+const
+  CONNECT_NEED_DRIVE= $20;
+
+const
+  CONNECT_REFCOUNT  = $40;
+
+const
+  CONNECT_REDIRECT  = $80;
+
+const
+  CONNECT_LOCALDRIVE= $0100;
+
+const
+  CONNECT_CURRENT_MEDIA= $0200;
+
+const
+  CONNECT_DEFERRED  = $0400;
+
+const
+  CONNECT_RESERVED  = $FF000000;
+
+const
+  CONNECT_COMMANDLINE= $0800;
+
+const
+  CONNECT_CMD_SAVECRED= $1000;
+
+procedure WNetAddConnectionA(
+    lpRemoteName    : in LPCSTR; 
+    lpPassword      : in LPCSTR; 
+    lpLocalName     : in LPCSTR)
+                      return DWORD;
+#pragma convention(WNetAddConnectionA,system);
+#pragma import(WNetAddConnectionA,'WNetAddConnectionA','mpr.dll');
+
+procedure WNetAddConnectionW(
+    lpRemoteName    : in LPCWSTR; 
+    lpPassword      : in LPCWSTR; 
+    lpLocalName     : in LPCWSTR)
+                      return DWORD;
+#pragma convention(WNetAddConnectionW,system);
+#pragma import(WNetAddConnectionW,'WNetAddConnectionW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetAddConnection;
+  WNetAddConnectionW 
+#end WNetAddConnection;
+#else;
+#template WNetAddConnection;
+  WNetAddConnectionA 
+#end WNetAddConnection;
+#end if;
+
+procedure WNetAddConnection2A(
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpPassword      : in LPCSTR; 
+    lpUserName      : in LPCSTR; 
+    dwFlags         : in DWORD)
+                      return DWORD;
+#pragma convention(WNetAddConnection2A,system);
+#pragma import(WNetAddConnection2A,'WNetAddConnection2A','mpr.dll');
+
+procedure WNetAddConnection2W(
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpPassword      : in LPCWSTR; 
+    lpUserName      : in LPCWSTR; 
+    dwFlags         : in DWORD)
+                      return DWORD;
+#pragma convention(WNetAddConnection2W,system);
+#pragma import(WNetAddConnection2W,'WNetAddConnection2W','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetAddConnection2;
+  WNetAddConnection2W 
+#end WNetAddConnection2;
+#else;
+#template WNetAddConnection2;
+  WNetAddConnection2A 
+#end WNetAddConnection2;
+#end if;
+
+procedure WNetAddConnection3A(
+    hwndOwner       : in t_HWND; 
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpPassword      : in LPCSTR; 
+    lpUserName      : in LPCSTR; 
+    dwFlags         : in DWORD)
+                      return DWORD;
+#pragma convention(WNetAddConnection3A,system);
+#pragma import(WNetAddConnection3A,'WNetAddConnection3A','mpr.dll');
+
+procedure WNetAddConnection3W(
+    hwndOwner       : in t_HWND; 
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpPassword      : in LPCWSTR; 
+    lpUserName      : in LPCWSTR; 
+    dwFlags         : in DWORD)
+                      return DWORD;
+#pragma convention(WNetAddConnection3W,system);
+#pragma import(WNetAddConnection3W,'WNetAddConnection3W','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetAddConnection3;
+  WNetAddConnection3W 
+#end WNetAddConnection3;
+#else;
+#template WNetAddConnection3;
+  WNetAddConnection3A 
+#end WNetAddConnection3;
+#end if;
+
+procedure WNetCancelConnectionA(
+    lpName          : in LPCSTR; 
+    fForce          : in BOOL)
+                      return DWORD;
+#pragma convention(WNetCancelConnectionA,system);
+#pragma import(WNetCancelConnectionA,'WNetCancelConnectionA','mpr.dll');
+
+procedure WNetCancelConnectionW(
+    lpName          : in LPCWSTR; 
+    fForce          : in BOOL)
+                      return DWORD;
+#pragma convention(WNetCancelConnectionW,system);
+#pragma import(WNetCancelConnectionW,'WNetCancelConnectionW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetCancelConnection;
+  WNetCancelConnectionW 
+#end WNetCancelConnection;
+#else;
+#template WNetCancelConnection;
+  WNetCancelConnectionA 
+#end WNetCancelConnection;
+#end if;
+
+procedure WNetCancelConnection2A(
+    lpName          : in LPCSTR; 
+    dwFlags         : in DWORD; 
+    fForce          : in BOOL)
+                      return DWORD;
+#pragma convention(WNetCancelConnection2A,system);
+#pragma import(WNetCancelConnection2A,'WNetCancelConnection2A','mpr.dll');
+
+procedure WNetCancelConnection2W(
+    lpName          : in LPCWSTR; 
+    dwFlags         : in DWORD; 
+    fForce          : in BOOL)
+                      return DWORD;
+#pragma convention(WNetCancelConnection2W,system);
+#pragma import(WNetCancelConnection2W,'WNetCancelConnection2W','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetCancelConnection2;
+  WNetCancelConnection2W 
+#end WNetCancelConnection2;
+#else;
+#template WNetCancelConnection2;
+  WNetCancelConnection2A 
+#end WNetCancelConnection2;
+#end if;
+
+procedure WNetGetConnectionA(
+    lpLocalName     : in LPCSTR; 
+    lpRemoteName    : out CHARSTR ; 
+    lpnLength       : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetConnectionA,system);
+#pragma import(WNetGetConnectionA,'WNetGetConnectionA','mpr.dll');
+
+procedure WNetGetConnectionW(
+    lpLocalName     : in LPCWSTR; 
+    lpRemoteName    : out WCHARSTR ; 
+    lpnLength       : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetConnectionW,system);
+#pragma import(WNetGetConnectionW,'WNetGetConnectionW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetConnection;
+  WNetGetConnectionW 
+#end WNetGetConnection;
+#else;
+#template WNetGetConnection;
+  WNetGetConnectionA 
+#end WNetGetConnection;
+#end if;
+
+#if #declared UNICODE; then;
+#template WNetRestoreConnection;
+  WNetRestoreConnectionW 
+#end WNetRestoreConnection;
+#else;
+#template WNetRestoreConnection;
+  WNetRestoreConnectionA 
+#end WNetRestoreConnection;
+#end if;
+
+procedure WNetUseConnectionA(
+    hwndOwner       : in t_HWND; 
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpPassword      : in LPCSTR; 
+    lpUserID        : in LPCSTR; 
+    dwFlags         : in DWORD; 
+    lpAccessName    : out CHARSTR ; 
+    lpBufferSize    : in out DWORD ; 
+    lpResult        : out DWORD )
+                      return DWORD;
+#pragma convention(WNetUseConnectionA,system);
+#pragma import(WNetUseConnectionA,'WNetUseConnectionA','mpr.dll');
+
+procedure WNetUseConnectionW(
+    hwndOwner       : in t_HWND; 
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpPassword      : in LPCWSTR; 
+    lpUserID        : in LPCWSTR; 
+    dwFlags         : in DWORD; 
+    lpAccessName    : out WCHARSTR ; 
+    lpBufferSize    : in out DWORD ; 
+    lpResult        : out DWORD )
+                      return DWORD;
+#pragma convention(WNetUseConnectionW,system);
+#pragma import(WNetUseConnectionW,'WNetUseConnectionW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetUseConnection;
+  WNetUseConnectionW 
+#end WNetUseConnection;
+#else;
+#template WNetUseConnection;
+  WNetUseConnectionA 
+#end WNetUseConnection;
+#end if;
+
+-- 
+--  Network Connection Dialogs.
+-- 
+procedure WNetConnectionDialog(
+    hwnd            : in t_HWND; 
+    dwType          : in DWORD)
+                      return DWORD;
+#pragma convention(WNetConnectionDialog,system);
+#pragma import(WNetConnectionDialog,'WNetConnectionDialog','mpr.dll');
+
+procedure WNetDisconnectDialog(
+    hwnd            : in t_HWND; 
+    dwType          : in DWORD)
+                      return DWORD;
+#pragma convention(WNetDisconnectDialog,system);
+#pragma import(WNetDisconnectDialog,'WNetDisconnectDialog','mpr.dll');
+
+type
+  _CONNECTDLGSTRUCTA = record
+cbStructure     : DWORD;
+hwndOwner       : t_HWND;
+lpConnRes       : LPNETRESOURCEA;
+dwFlags         : DWORD;
+dwDevNum        : DWORD;
+  end record;
+  CONNECTDLGSTRUCTA = _CONNECTDLGSTRUCTA;
+  LPCONNECTDLGSTRUCTA = ^_CONNECTDLGSTRUCTA;
+
+type
+  _CONNECTDLGSTRUCTW = record
+cbStructure     : DWORD;
+hwndOwner       : t_HWND;
+lpConnRes       : LPNETRESOURCEW;
+dwFlags         : DWORD;
+dwDevNum        : DWORD;
+  end record;
+  CONNECTDLGSTRUCTW = _CONNECTDLGSTRUCTW;
+  LPCONNECTDLGSTRUCTW = ^_CONNECTDLGSTRUCTW;
+
+#if #declared UNICODE; then;
+type
+CONNECTDLGSTRUCT  = CONNECTDLGSTRUCTW;
+type
+LPCONNECTDLGSTRUCT = LPCONNECTDLGSTRUCTW;
+#else;
+type
+CONNECTDLGSTRUCT  = CONNECTDLGSTRUCTA;
+type
+LPCONNECTDLGSTRUCT = LPCONNECTDLGSTRUCTA;
+#end if;
+
+const
+  CONNDLG_RO_PATH   = $01;
+
+const
+  CONNDLG_CONN_POINT= $02;
+
+const
+  CONNDLG_USE_MRU   = $04;
+
+const
+  CONNDLG_HIDE_BOX  = $08;
+
+-- /*
+--  * NOTE:  Set at most ONE of the below flags.  If neither flag is set,
+--  *        then the persistence is set to whatever the user chose during
+--  *        a previous connection
+--  */
+const
+  CONNDLG_PERSIST   = $10;
+
+const
+  CONNDLG_NOT_PERSIST= $20;
+
+procedure WNetConnectionDialog1A(
+    lpConnDlgStruct : in out _CONNECTDLGSTRUCTA)
+                      return DWORD;
+#pragma convention(WNetConnectionDialog1A,system);
+#pragma import(WNetConnectionDialog1A,'WNetConnectionDialog1A','mpr.dll');
+
+procedure WNetConnectionDialog1W(
+    lpConnDlgStruct : in out _CONNECTDLGSTRUCTW)
+                      return DWORD;
+#pragma convention(WNetConnectionDialog1W,system);
+#pragma import(WNetConnectionDialog1W,'WNetConnectionDialog1W','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetConnectionDialog1;
+  WNetConnectionDialog1W 
+#end WNetConnectionDialog1;
+#else;
+#template WNetConnectionDialog1;
+  WNetConnectionDialog1A 
+#end WNetConnectionDialog1;
+#end if;
+
+type
+  _DISCDLGSTRUCTA   = record
+cbStructure     : DWORD;
+hwndOwner       : t_HWND;
+lpLocalName     : LPSTR;
+lpRemoteName    : LPSTR;
+dwFlags         : DWORD;
+  end record;
+  DISCDLGSTRUCTA    = _DISCDLGSTRUCTA;
+  LPDISCDLGSTRUCTA  = ^_DISCDLGSTRUCTA;
+
+type
+  _DISCDLGSTRUCTW   = record
+cbStructure     : DWORD;
+hwndOwner       : t_HWND;
+lpLocalName     : LPWSTR;
+lpRemoteName    : LPWSTR;
+dwFlags         : DWORD;
+  end record;
+  DISCDLGSTRUCTW    = _DISCDLGSTRUCTW;
+  LPDISCDLGSTRUCTW  = ^_DISCDLGSTRUCTW;
+
+#if #declared UNICODE; then;
+type
+DISCDLGSTRUCT     = DISCDLGSTRUCTW;
+type
+LPDISCDLGSTRUCT   = LPDISCDLGSTRUCTW;
+#else;
+type
+DISCDLGSTRUCT     = DISCDLGSTRUCTA;
+type
+LPDISCDLGSTRUCT   = LPDISCDLGSTRUCTA;
+#end if;
+
+const
+  DISC_UPDATE_PROFILE= $01;
+
+const
+  DISC_NO_FORCE     = $40;
+
+procedure WNetDisconnectDialog1A(
+    lpConnDlgStruct : in LPDISCDLGSTRUCTA)
+                      return DWORD;
+#pragma convention(WNetDisconnectDialog1A,system);
+#pragma import(WNetDisconnectDialog1A,'WNetDisconnectDialog1A','mpr.dll');
+
+procedure WNetDisconnectDialog1W(
+    lpConnDlgStruct : in LPDISCDLGSTRUCTW)
+                      return DWORD;
+#pragma convention(WNetDisconnectDialog1W,system);
+#pragma import(WNetDisconnectDialog1W,'WNetDisconnectDialog1W','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetDisconnectDialog1;
+  WNetDisconnectDialog1W 
+#end WNetDisconnectDialog1;
+#else;
+#template WNetDisconnectDialog1;
+  WNetDisconnectDialog1A 
+#end WNetDisconnectDialog1;
+#end if;
+
+-- 
+--  Network Browsing.
+-- 
+procedure WNetOpenEnumA(
+    dwScope         : in DWORD; 
+    dwType          : in DWORD; 
+    dwUsage         : in DWORD; 
+    lpNetResource   : in LPNETRESOURCEA; 
+    lphEnum         : out winnt.t_HANDLE )
+                      return DWORD;
+#pragma convention(WNetOpenEnumA,system);
+#pragma import(WNetOpenEnumA,'WNetOpenEnumA','mpr.dll');
+
+procedure WNetOpenEnumW(
+    dwScope         : in DWORD; 
+    dwType          : in DWORD; 
+    dwUsage         : in DWORD; 
+    lpNetResource   : in LPNETRESOURCEW; 
+    lphEnum         : out winnt.t_HANDLE )
+                      return DWORD;
+#pragma convention(WNetOpenEnumW,system);
+#pragma import(WNetOpenEnumW,'WNetOpenEnumW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetOpenEnum;
+  WNetOpenEnumW 
+#end WNetOpenEnum;
+#else;
+#template WNetOpenEnum;
+  WNetOpenEnumA 
+#end WNetOpenEnum;
+#end if;
+
+procedure WNetEnumResourceA(
+    hEnum           : in t_HANDLE; 
+    lpcCount        : in out DWORD ; 
+    lpBuffer        : out unchecked ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetEnumResourceA,system);
+#pragma import(WNetEnumResourceA,'WNetEnumResourceA','mpr.dll');
+
+procedure WNetEnumResourceW(
+    hEnum           : in t_HANDLE; 
+    lpcCount        : in out DWORD ; 
+    lpBuffer        : out unchecked ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetEnumResourceW,system);
+#pragma import(WNetEnumResourceW,'WNetEnumResourceW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetEnumResource;
+  WNetEnumResourceW 
+#end WNetEnumResource;
+#else;
+#template WNetEnumResource;
+  WNetEnumResourceA 
+#end WNetEnumResource;
+#end if;
+
+procedure WNetCloseEnum(
+    hEnum           : in t_HANDLE)
+                      return DWORD;
+#pragma convention(WNetCloseEnum,system);
+#pragma import(WNetCloseEnum,'WNetCloseEnum','mpr.dll');
+
+procedure WNetGetResourceParentA(
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpBuffer        : out unchecked ; 
+    lpcbBuffer      : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetResourceParentA,system);
+#pragma import(WNetGetResourceParentA,'WNetGetResourceParentA','mpr.dll');
+
+procedure WNetGetResourceParentW(
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpBuffer        : out unchecked ; 
+    lpcbBuffer      : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetResourceParentW,system);
+#pragma import(WNetGetResourceParentW,'WNetGetResourceParentW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetResourceParent;
+  WNetGetResourceParentW 
+#end WNetGetResourceParent;
+#else;
+#template WNetGetResourceParent;
+  WNetGetResourceParentA 
+#end WNetGetResourceParent;
+#end if;
+
+procedure WNetGetResourceInformationA(
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpBuffer        : out unchecked ; 
+    lpcbBuffer      : in out DWORD ; 
+    lplpSystem      : out LPSTR)
+                      return DWORD;
+#pragma convention(WNetGetResourceInformationA,system);
+#pragma import(WNetGetResourceInformationA,'WNetGetResourceInformationA','mpr.dll');
+
+procedure WNetGetResourceInformationW(
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpBuffer        : out unchecked ; 
+    lpcbBuffer      : in out DWORD ; 
+    lplpSystem      : out LPWSTR)
+                      return DWORD;
+#pragma convention(WNetGetResourceInformationW,system);
+#pragma import(WNetGetResourceInformationW,'WNetGetResourceInformationW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetResourceInformation;
+  WNetGetResourceInformationW 
+#end WNetGetResourceInformation;
+#else;
+#template WNetGetResourceInformation;
+  WNetGetResourceInformationA 
+#end WNetGetResourceInformation;
+#end if;
+
+-- 
+--  Universal Naming.
+-- 
+const
+  UNIVERSAL_NAME_INFO_LEVEL= $01;
+
+const
+  REMOTE_NAME_INFO_LEVEL= $02;
+
+type
+  _UNIVERSAL_NAME_INFOA = record
+lpUniversalName : LPSTR;
+  end record;
+  UNIVERSAL_NAME_INFOA = _UNIVERSAL_NAME_INFOA;
+  LPUNIVERSAL_NAME_INFOA = ^_UNIVERSAL_NAME_INFOA;
+
+type
+  _UNIVERSAL_NAME_INFOW = record
+lpUniversalName : LPWSTR;
+  end record;
+  UNIVERSAL_NAME_INFOW = _UNIVERSAL_NAME_INFOW;
+  LPUNIVERSAL_NAME_INFOW = ^_UNIVERSAL_NAME_INFOW;
+
+#if #declared UNICODE; then;
+type
+UNIVERSAL_NAME_INFO = UNIVERSAL_NAME_INFOW;
+type
+LPUNIVERSAL_NAME_INFO = LPUNIVERSAL_NAME_INFOW;
+#else;
+type
+UNIVERSAL_NAME_INFO = UNIVERSAL_NAME_INFOA;
+type
+LPUNIVERSAL_NAME_INFO = LPUNIVERSAL_NAME_INFOA;
+#end if;
+
+type
+  _REMOTE_NAME_INFOA = record
+lpUniversalName : LPSTR;
+lpConnectionName : LPSTR;
+lpRemainingPath : LPSTR;
+  end record;
+  REMOTE_NAME_INFOA = _REMOTE_NAME_INFOA;
+  LPREMOTE_NAME_INFOA = ^_REMOTE_NAME_INFOA;
+
+type
+  _REMOTE_NAME_INFOW = record
+lpUniversalName : LPWSTR;
+lpConnectionName : LPWSTR;
+lpRemainingPath : LPWSTR;
+  end record;
+  REMOTE_NAME_INFOW = _REMOTE_NAME_INFOW;
+  LPREMOTE_NAME_INFOW = ^_REMOTE_NAME_INFOW;
+
+#if #declared UNICODE; then;
+type
+REMOTE_NAME_INFO  = REMOTE_NAME_INFOW;
+type
+LPREMOTE_NAME_INFO = LPREMOTE_NAME_INFOW;
+#else;
+type
+REMOTE_NAME_INFO  = REMOTE_NAME_INFOA;
+type
+LPREMOTE_NAME_INFO = LPREMOTE_NAME_INFOA;
+#end if;
+
+procedure WNetGetUniversalNameA(
+    lpLocalPath     : in LPCSTR; 
+    dwInfoLevel     : in DWORD; 
+    lpBuffer        : out unchecked ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetUniversalNameA,system);
+#pragma import(WNetGetUniversalNameA,'WNetGetUniversalNameA','mpr.dll');
+
+procedure WNetGetUniversalNameW(
+    lpLocalPath     : in LPCWSTR; 
+    dwInfoLevel     : in DWORD; 
+    lpBuffer        : out unchecked ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetUniversalNameW,system);
+#pragma import(WNetGetUniversalNameW,'WNetGetUniversalNameW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetUniversalName;
+  WNetGetUniversalNameW 
+#end WNetGetUniversalName;
+#else;
+#template WNetGetUniversalName;
+  WNetGetUniversalNameA 
+#end WNetGetUniversalName;
+#end if;
+
+-- 
+--  Authentication and Logon/Logoff.
+-- 
+procedure WNetGetUserA(
+    lpName          : in LPCSTR; 
+    lpUserName      : out CHARSTR ; 
+    lpnLength       : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetUserA,system);
+#pragma import(WNetGetUserA,'WNetGetUserA','mpr.dll');
+
+procedure WNetGetUserW(
+    lpName          : in LPCWSTR; 
+    lpUserName      : out WCHARSTR ; 
+    lpnLength       : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetUserW,system);
+#pragma import(WNetGetUserW,'WNetGetUserW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetUser;
+  WNetGetUserW 
+#end WNetGetUser;
+#else;
+#template WNetGetUser;
+  WNetGetUserA 
+#end WNetGetUser;
+#end if;
+
+-- 
+--  Other.
+-- 
+const
+  WNFMT_MULTILINE   = $01;
+
+const
+  WNFMT_ABBREVIATED = $02;
+
+const
+  WNFMT_INENUM      = $10;
+
+const
+  WNFMT_CONNECTION  = $20;
+
+procedure WNetGetProviderNameA(
+    dwNetType       : in DWORD; 
+    lpProviderName  : out CHARSTR ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetProviderNameA,system);
+#pragma import(WNetGetProviderNameA,'WNetGetProviderNameA','mpr.dll');
+
+procedure WNetGetProviderNameW(
+    dwNetType       : in DWORD; 
+    lpProviderName  : out WCHARSTR ; 
+    lpBufferSize    : in out DWORD )
+                      return DWORD;
+#pragma convention(WNetGetProviderNameW,system);
+#pragma import(WNetGetProviderNameW,'WNetGetProviderNameW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetProviderName;
+  WNetGetProviderNameW 
+#end WNetGetProviderName;
+#else;
+#template WNetGetProviderName;
+  WNetGetProviderNameA 
+#end WNetGetProviderName;
+#end if;
+
+type
+  _NETINFOSTRUCT    = record
+cbStructure     : DWORD;
+dwProviderVersion : DWORD;
+dwStatus        : DWORD;
+dwCharacteristics : DWORD;
+dwHandle        : ULONG_PTR;
+wNetType        : WORD;
+dwPrinters      : DWORD;
+dwDrives        : DWORD;
+  end record;
+  NETINFOSTRUCT     = _NETINFOSTRUCT;
+  LPNETINFOSTRUCT   = ^_NETINFOSTRUCT;
+
+const
+  NETINFO_DLL16     = $01;
+
+const
+  NETINFO_DISKRED   = $04;
+
+const
+  NETINFO_PRINTERRED= $08;
+
+procedure WNetGetNetworkInformationA(
+    lpProvider      : in LPCSTR; 
+    lpNetInfoStruct : out _NETINFOSTRUCT)
+                      return DWORD;
+#pragma convention(WNetGetNetworkInformationA,system);
+#pragma import(WNetGetNetworkInformationA,'WNetGetNetworkInformationA','mpr.dll');
+
+procedure WNetGetNetworkInformationW(
+    lpProvider      : in LPCWSTR; 
+    lpNetInfoStruct : out _NETINFOSTRUCT)
+                      return DWORD;
+#pragma convention(WNetGetNetworkInformationW,system);
+#pragma import(WNetGetNetworkInformationW,'WNetGetNetworkInformationW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetNetworkInformation;
+  WNetGetNetworkInformationW 
+#end WNetGetNetworkInformation;
+#else;
+#template WNetGetNetworkInformation;
+  WNetGetNetworkInformationA 
+#end WNetGetNetworkInformation;
+#end if;
+
+-- 
+--  User Profiles.
+-- 
+type
+PFNGETPROFILEPATHA = ^procedure (
+    pszUsername     : LPCSTR;
+    pszBuffer       : LPSTR;
+    cbBuffer        : UINT)
+                      return UINT for machine_pointer use true;
+type
+PFNGETPROFILEPATHW = ^procedure (
+    pszUsername     : LPCWSTR;
+    pszBuffer       : LPWSTR;
+    cbBuffer        : UINT)
+                      return UINT for machine_pointer use true;
+#if #declared UNICODE; then;
+#template PFNGETPROFILEPATH;
+  PFNGETPROFILEPATHW 
+#end PFNGETPROFILEPATH;
+#else;
+#template PFNGETPROFILEPATH;
+  PFNGETPROFILEPATHA 
+#end PFNGETPROFILEPATH;
+#end if;
+
+type
+PFNRECONCILEPROFILEA = ^procedure (
+    pszCentralFile  : LPCSTR;
+    pszLocalFile    : LPCSTR;
+    dwFlags         : DWORD)
+                      return UINT for machine_pointer use true;
+type
+PFNRECONCILEPROFILEW = ^procedure (
+    pszCentralFile  : LPCWSTR;
+    pszLocalFile    : LPCWSTR;
+    dwFlags         : DWORD)
+                      return UINT for machine_pointer use true;
+#if #declared UNICODE; then;
+#template PFNRECONCILEPROFILE;
+  PFNRECONCILEPROFILEW 
+#end PFNRECONCILEPROFILE;
+#else;
+#template PFNRECONCILEPROFILE;
+  PFNRECONCILEPROFILEA 
+#end PFNRECONCILEPROFILE;
+#end if;
+
+const
+  RP_LOGON          = $01;
+
+const
+  RP_INIFILE        = $02;
+
+-- 
+--  Policies.
+-- 
+type
+PFNPROCESSPOLICIESA = ^procedure (
+    hwnd            : t_HWND;
+    pszPath         : LPCSTR;
+    pszUsername     : LPCSTR;
+    pszComputerName : LPCSTR;
+    dwFlags         : DWORD)
+                      return BOOL for machine_pointer use true;
+type
+PFNPROCESSPOLICIESW = ^procedure (
+    hwnd            : t_HWND;
+    pszPath         : LPCWSTR;
+    pszUsername     : LPCWSTR;
+    pszComputerName : LPCWSTR;
+    dwFlags         : DWORD)
+                      return BOOL for machine_pointer use true;
+#if #declared UNICODE; then;
+#template PFNPROCESSPOLICIES;
+  PFNPROCESSPOLICIESW 
+#end PFNPROCESSPOLICIES;
+#else;
+#template PFNPROCESSPOLICIES;
+  PFNPROCESSPOLICIESA 
+#end PFNPROCESSPOLICIES;
+#end if;
+
+const
+  PP_DISPLAYERRORS  = $01;
+
+-- 
+--  Error handling.
+-- 
+procedure WNetGetLastErrorA(
+    lpError         : out DWORD ; 
+    lpErrorBuf      : out CHARSTR ; 
+    nErrorBufSize   : in DWORD; 
+    lpNameBuf       : out CHARSTR ; 
+    nNameBufSize    : in DWORD)
+                      return DWORD;
+#pragma convention(WNetGetLastErrorA,system);
+#pragma import(WNetGetLastErrorA,'WNetGetLastErrorA','mpr.dll');
+
+procedure WNetGetLastErrorW(
+    lpError         : out DWORD ; 
+    lpErrorBuf      : out WCHARSTR ; 
+    nErrorBufSize   : in DWORD; 
+    lpNameBuf       : out WCHARSTR ; 
+    nNameBufSize    : in DWORD)
+                      return DWORD;
+#pragma convention(WNetGetLastErrorW,system);
+#pragma import(WNetGetLastErrorW,'WNetGetLastErrorW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template WNetGetLastError;
+  WNetGetLastErrorW 
+#end WNetGetLastError;
+#else;
+#template WNetGetLastError;
+  WNetGetLastErrorA 
+#end WNetGetLastError;
+#end if;
+
+-- 
+--  STATUS CODES
+-- 
+--  General
+--  Connection
+--  Enumeration
+--  Authentication
+-- 
+--  For Shell
+-- 
+type
+  _NETCONNECTINFOSTRUCT = record
+cbStructure     : DWORD;
+dwFlags         : DWORD;
+dwSpeed         : DWORD;
+dwDelay         : DWORD;
+dwOptDataSize   : DWORD;
+  end record;
+  NETCONNECTINFOSTRUCT = _NETCONNECTINFOSTRUCT;
+  LPNETCONNECTINFOSTRUCT = ^_NETCONNECTINFOSTRUCT;
+
+const
+  WNCON_FORNETCARD  = $01;
+
+const
+  WNCON_NOTROUTED   = $02;
+
+const
+  WNCON_SLOWLINK    = $04;
+
+const
+  WNCON_DYNAMIC     = $08;
+
+procedure MultinetGetConnectionPerformanceA(
+    lpNetResource   : in LPNETRESOURCEA; 
+    lpNetConnectInfoStruct : out _NETCONNECTINFOSTRUCT)
+                      return DWORD;
+#pragma convention(MultinetGetConnectionPerformanceA,system);
+#pragma import(MultinetGetConnectionPerformanceA,'MultinetGetConnectionPerformanceA','mpr.dll');
+
+procedure MultinetGetConnectionPerformanceW(
+    lpNetResource   : in LPNETRESOURCEW; 
+    lpNetConnectInfoStruct : out _NETCONNECTINFOSTRUCT)
+                      return DWORD;
+#pragma convention(MultinetGetConnectionPerformanceW,system);
+#pragma import(MultinetGetConnectionPerformanceW,'MultinetGetConnectionPerformanceW','mpr.dll');
+
+#if #declared UNICODE; then;
+#template MultinetGetConnectionPerformance;
+  MultinetGetConnectionPerformanceW 
+#end MultinetGetConnectionPerformance;
+#else;
+#template MultinetGetConnectionPerformance;
+  MultinetGetConnectionPerformanceA 
+#end MultinetGetConnectionPerformance;
+#end if;
+
+
+end winnetwk;

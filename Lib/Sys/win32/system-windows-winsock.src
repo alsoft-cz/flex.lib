@@ -1,0 +1,1564 @@
+----------------------------------------------------------------------------------------------------
+module winsock =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,winbase;
+
+-- /* WINSOCK.H--definitions to be used with the WINSOCK.DLL
+--  * Copyright (c) Microsoft Corporation. All rights reserved.
+--  *
+--  * This header file corresponds to version 1.1 of the Windows Sockets specification.
+--  *
+--  * This file includes parts which are Copyright (c) 1982-1986 Regents
+--  * of the University of California.  All rights reserved.  The
+--  * Berkeley Software License Agreement specifies the terms and
+--  * conditions for redistribution.
+--  *
+--  */
+-- #pragma  once
+-- /*
+--  * Pull in WINDOWS.H if necessary
+--  */
+-- /*
+--  * Basic system type definitions, taken from the BSD file sys/types.h.
+--  */
+type
+u_char            = character 8;
+type
+u_short           = unsigned 16;
+type
+u_int             = unsigned 32;
+type
+u_long            = unsigned 32;
+-- /*
+--  * The new type to be used in all
+--  * instances which refer to sockets.
+--  */
+type
+t_SOCKET          = UINT_PTR;
+-- /*
+--  * Select uses arrays of SOCKETs.  These macros manipulate such
+--  * arrays.  FD_SETSIZE may be defined by the user before including
+--  * this file, but the default here should be >= 64.
+--  *
+--  * CAVEAT IMPLEMENTOR and USER: THESE MACROS AND TYPES MUST BE
+--  * INCLUDED IN WINSOCK.H EXACTLY AS SHOWN HERE.
+--  */
+const
+  FD_SETSIZE        = 64;
+
+type
+  t_fd_set          = record
+fd_count        : u_int;
+fd_array        : array 0..FD_SETSIZE-1 of t_SOCKET;
+  end record;
+
+type
+  t_001 = signed 32;
+t_002=^t_fd_set for machine_pointer use true;
+
+__WSAFDIsSet      = procedure (
+    _001            : t_SOCKET;
+    _002            : t_002)
+                      return t_001;
+-- /*
+--  * Structure used in select() call, taken from the BSD file sys/time.h.
+--  */
+type
+  t_timeval         = record
+tv_sec          : signed 32;
+tv_usec         : signed 32;
+  end record;
+
+-- /*
+--  * Operations on timevals.
+--  *
+--  * NB: timercmp does not work for >= or <=.
+--  */
+-- /*
+--  * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
+--  *
+--  *
+--  * Ioctl's have the command encoded in the lower word,
+--  * and the size of any in or out parameters in the upper
+--  * word.  The high 2 bits of the upper word are used
+--  * to encode the in/out status of the parameter; for now
+--  * we restrict parameters to at most 128 bytes.
+--  */
+const
+  IOCPARM_MASK      = $7F;
+
+const
+  IOC_VOID          = $20000000;
+
+const
+  IOC_OUT           = $40000000;
+
+const
+  IOC_IN            = $80000000;
+
+-- /* 0x20000000 distinguishes new &
+--                                            old ioctl's */
+-- /* Socket I/O Controls 
+-- /*
+--  * Structures returned by network data base library, taken from the
+--  * BSD file netdb.h.  All addresses are supplied in host order, and
+--  * returned in network order (suitable for use in system calls).
+--  */
+type
+  t_hostent         = record
+h_name          : ^character 8;
+h_aliases       : ^^character 8;
+h_addrtype      : signed 16;
+h_length        : signed 16;
+h_addr_list     : ^^character 8;
+  end record;
+
+-- /*
+--  * It is assumed here that a network number
+--  * fits in 32 bits.
+--  */
+type
+  netent            = record
+n_name          : ^character 8;
+n_aliases       : ^^character 8;
+n_addrtype      : signed 16;
+n_net           : u_long;
+  end record;
+
+type
+  t_servent         = record
+s_name          : ^character 8;
+s_aliases       : ^^character 8;
+s_port          : signed 16;
+s_proto         : ^character 8;
+  end record;
+
+type
+  t_protoent        = record
+p_name          : ^character 8;
+p_aliases       : ^^character 8;
+p_proto         : signed 16;
+  end record;
+
+-- /*
+--  * Constants and structures defined by the internet system,
+--  * Per RFC 790, September 1981, taken from the BSD file netinet/in.h.
+--  */
+-- /*
+--  * Protocols
+--  */
+const
+  IPPROTO_IP        = 0;
+
+const
+  IPPROTO_ICMP      = 1;
+
+const
+  IPPROTO_IGMP      = 2;
+
+const
+  IPPROTO_GGP       = 3;
+
+const
+  IPPROTO_TCP       = 6;
+
+const
+  IPPROTO_PUP       = 12;
+
+const
+  IPPROTO_UDP       = 17;
+
+const
+  IPPROTO_IDP       = 22;
+
+const
+  IPPROTO_ND        = 77;
+
+const
+  IPPROTO_RAW       = 255;
+
+const
+  IPPROTO_MAX       = 256;
+
+-- /*
+--  * Port/socket numbers: network standard functions
+--  */
+const
+  IPPORT_ECHO       = 7;
+
+const
+  IPPORT_DISCARD    = 9;
+
+const
+  IPPORT_SYSTAT     = 11;
+
+const
+  IPPORT_DAYTIME    = 13;
+
+const
+  IPPORT_NETSTAT    = 15;
+
+const
+  IPPORT_FTP        = 21;
+
+const
+  IPPORT_TELNET     = 23;
+
+const
+  IPPORT_SMTP       = 25;
+
+const
+  IPPORT_TIMESERVER = 37;
+
+const
+  IPPORT_NAMESERVER = 42;
+
+const
+  IPPORT_WHOIS      = 43;
+
+const
+  IPPORT_MTP        = 57;
+
+-- /*
+--  * Port/socket numbers: host specific functions
+--  */
+const
+  IPPORT_TFTP       = 69;
+
+const
+  IPPORT_RJE        = 77;
+
+const
+  IPPORT_FINGER     = 79;
+
+const
+  IPPORT_TTYLINK    = 87;
+
+const
+  IPPORT_SUPDUP     = 95;
+
+-- /*
+--  * UNIX TCP sockets
+--  */
+const
+  IPPORT_EXECSERVER = 512;
+
+const
+  IPPORT_LOGINSERVER= 513;
+
+const
+  IPPORT_CMDSERVER  = 514;
+
+const
+  IPPORT_EFSSERVER  = 520;
+
+-- /*
+--  * UNIX UDP sockets
+--  */
+const
+  IPPORT_BIFFUDP    = 512;
+
+const
+  IPPORT_WHOSERVER  = 513;
+
+const
+  IPPORT_ROUTESERVER= 520;
+
+-- /* 520+1 also used 
+-- /*
+--  * Ports < IPPORT_RESERVED are reserved for
+--  * privileged processes (e.g. root).
+--  */
+const
+  IPPORT_RESERVED   = 1024;
+
+-- /*
+--  * Link numbers
+--  */
+const
+  IMPLINK_IP        = 155;
+
+const
+  IMPLINK_LOWEXPER  = 156;
+
+const
+  IMPLINK_HIGHEXPER = 158;
+
+-- /*
+--  * Internet address (old style... should be updated)
+--  */
+type
+  t_in_addr         = record
+S_un             : record
+  S_un_b            : record
+s_b1            : u_char;
+s_b2            : u_char;
+s_b3            : u_char;
+s_b4            : u_char;
+  end record for position use 0;
+  S_un_w            : record
+s_w1            : u_short;
+s_w2            : u_short;
+  end record for position use 0;
+      S_addr        : u_long for position use 0;
+    end record;
+  end record;
+
+-- /*
+--  * Definitions of bits in internet address integers.
+--  * On subnets, the decomposition of addresses to host and net parts
+--  * is done according to subnet mask, not the masks here.
+--  */
+const
+  IN_CLASSA_NET     = $FF000000;
+
+const
+  IN_CLASSA_NSHIFT  = 24;
+
+const
+  IN_CLASSA_HOST    = $FFFFFF;
+
+const
+  IN_CLASSA_MAX     = 128;
+
+const
+  IN_CLASSB_NET     = $FFFF0000;
+
+const
+  IN_CLASSB_NSHIFT  = 16;
+
+const
+  IN_CLASSB_HOST    = $FFFF;
+
+const
+  IN_CLASSB_MAX     = 65536;
+
+const
+  IN_CLASSC_NET     = $FFFFFF00;
+
+const
+  IN_CLASSC_NSHIFT  = 8;
+
+const
+  IN_CLASSC_HOST    = $FF;
+
+const
+  INADDR_LOOPBACK   = $7F000001;
+
+const
+  INADDR_NONE       = $FFFFFFFF;
+
+-- /*
+--  * Socket address, internet style.
+--  */
+type
+  t_sockaddr_in     = record
+sin_family      : signed 16;
+sin_port        : u_short;
+  sin_addr          : t_in_addr;
+sin_zero        : array 0..7 of character 8;
+  end record;
+
+const
+  WSADESCRIPTION_LEN= 256;
+
+const
+  WSASYS_STATUS_LEN = 128;
+
+type
+  WSAData           = record
+wVersion        : WORD;
+wHighVersion    : WORD;
+szDescription   : array 0..0 of character 8;
+szSystemStatus  : array 0..0 of character 8;
+iMaxSockets     : unsigned 16;
+iMaxUdpDg       : unsigned 16;
+lpVendorInfo    : ^character 8;
+  end record;
+
+type
+LPWSADATA         = ^WSADATA for machine_pointer use true;
+-- /*
+--  * Options for use with [gs]etsockopt at the IP level.
+--  */
+const
+  IP_OPTIONS        = 1;
+
+const
+  IP_MULTICAST_IF   = 2;
+
+const
+  IP_MULTICAST_TTL  = 3;
+
+const
+  IP_MULTICAST_LOOP = 4;
+
+const
+  IP_ADD_MEMBERSHIP = 5;
+
+const
+  IP_DROP_MEMBERSHIP= 6;
+
+const
+  IP_TTL            = 7;
+
+const
+  IP_TOS            = 8;
+
+const
+  IP_DONTFRAGMENT   = 9;
+
+const
+  IP_DEFAULT_MULTICAST_TTL= 1;
+
+const
+  IP_DEFAULT_MULTICAST_LOOP= 1;
+
+const
+  IP_MAX_MEMBERSHIPS= 20;
+
+-- /*
+--  * Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.
+--  */
+type
+  ip_mreq           = record
+  imr_multiaddr     : t_in_addr;
+  imr_interface     : t_in_addr;
+  end record;
+
+-- /*
+--  * Definitions related to sockets: types, address families, options,
+--  * taken from the BSD file sys/socket.h.
+--  */
+-- /*
+--  * This is used instead of -1, since the
+--  * SOCKET type is unsigned.
+--  */
+-- /*
+--  * Types
+--  */
+const
+  SOCK_STREAM       = 1;
+
+const
+  SOCK_DGRAM        = 2;
+
+const
+  SOCK_RAW          = 3;
+
+const
+  SOCK_RDM          = 4;
+
+const
+  SOCK_SEQPACKET    = 5;
+
+-- /*
+--  * Option flags per-socket.
+--  */
+const
+  SO_DEBUG          = $01;
+
+const
+  SO_ACCEPTCONN     = $02;
+
+const
+  SO_REUSEADDR      = $04;
+
+const
+  SO_KEEPALIVE      = $08;
+
+const
+  SO_DONTROUTE      = $10;
+
+const
+  SO_BROADCAST      = $20;
+
+const
+  SO_USELOOPBACK    = $40;
+
+const
+  SO_LINGER         = $80;
+
+const
+  SO_OOBINLINE      = $0100;
+
+-- /*
+--  * Additional options.
+--  */
+const
+  SO_SNDBUF         = $1001;
+
+const
+  SO_RCVBUF         = $1002;
+
+const
+  SO_SNDLOWAT       = $1003;
+
+const
+  SO_RCVLOWAT       = $1004;
+
+const
+  SO_SNDTIMEO       = $1005;
+
+const
+  SO_RCVTIMEO       = $1006;
+
+const
+  SO_ERROR          = $1007;
+
+const
+  SO_TYPE           = $1008;
+
+-- /*
+--  * Options for connect and disconnect data and options.  Used only by
+--  * non-TCP/IP transports such as DECNet, OSI TP4, etc.
+--  */
+const
+  SO_CONNDATA       = $7000;
+
+const
+  SO_CONNOPT        = $7001;
+
+const
+  SO_DISCDATA       = $7002;
+
+const
+  SO_DISCOPT        = $7003;
+
+const
+  SO_CONNDATALEN    = $7004;
+
+const
+  SO_CONNOPTLEN     = $7005;
+
+const
+  SO_DISCDATALEN    = $7006;
+
+const
+  SO_DISCOPTLEN     = $7007;
+
+-- /*
+--  * Option for opening sockets for synchronous access.
+--  */
+const
+  SO_OPENTYPE       = $7008;
+
+const
+  SO_SYNCHRONOUS_ALERT= $10;
+
+const
+  SO_SYNCHRONOUS_NONALERT= $20;
+
+-- /*
+--  * Other NT-specific options.
+--  */
+const
+  SO_MAXDG          = $7009;
+
+const
+  SO_MAXPATHDG      = $700A;
+
+const
+  SO_UPDATE_ACCEPT_CONTEXT= $700B;
+
+const
+  SO_CONNECT_TIME   = $700C;
+
+-- /*
+--  * TCP options.
+--  */
+const
+  TCP_NODELAY       = $01;
+
+const
+  TCP_BSDURGENT     = $7000;
+
+-- /*
+--  * Address families.
+--  */
+const
+  AF_UNSPEC         = 0;
+
+const
+  AF_UNIX           = 1;
+
+const
+  AF_INET           = 2;
+
+const
+  AF_IMPLINK        = 3;
+
+const
+  AF_PUP            = 4;
+
+const
+  AF_CHAOS          = 5;
+
+const
+  AF_IPX            = 6;
+
+const
+  AF_NS             = 6;
+
+const
+  AF_ISO            = 7;
+
+const
+  AF_ECMA           = 8;
+
+const
+  AF_DATAKIT        = 9;
+
+const
+  AF_CCITT          = 10;
+
+const
+  AF_SNA            = 11;
+
+const
+  AF_DECnet         = 12;
+
+const
+  AF_DLI            = 13;
+
+const
+  AF_LAT            = 14;
+
+const
+  AF_HYLINK         = 15;
+
+const
+  AF_APPLETALK      = 16;
+
+const
+  AF_NETBIOS        = 17;
+
+const
+  AF_VOICEVIEW      = 18;
+
+const
+  AF_FIREFOX        = 19;
+
+const
+  AF_UNKNOWN1       = 20;
+
+const
+  AF_BAN            = 21;
+
+const
+  AF_MAX            = 22;
+
+-- /*
+--  * Structure used by kernel to store most
+--  * addresses.
+--  */
+type
+  t_sockaddr        = record
+sa_family       : u_short;
+sa_data         : array 0..13 of character 8;
+  end record;
+
+-- /*
+--  * Structure used by kernel to pass protocol
+--  * information in raw sockets.
+--  */
+type
+  sockproto         = record
+sp_family       : u_short;
+sp_protocol     : u_short;
+  end record;
+
+-- /*
+--  * Protocol families, same as address families for now.
+--  */
+-- /*
+--  * Structure used for manipulating linger option.
+--  */
+type
+  t_linger          = record
+l_onoff         : u_short;
+l_linger        : u_short;
+  end record;
+
+-- /*
+--  * Level number for (get/set)sockopt() to apply to socket itself.
+--  */
+const
+  SOL_SOCKET        = $FFFF;
+
+-- /*
+--  * Maximum queue length specifiable by listen.
+--  */
+const
+  SOMAXCONN         = 5;
+
+const
+  MSG_OOB           = $01;
+
+const
+  MSG_PEEK          = $02;
+
+const
+  MSG_DONTROUTE     = $04;
+
+const
+  MSG_MAXIOVLEN     = 16;
+
+const
+  MSG_PARTIAL       = $8000;
+
+-- /*
+--  * Define constant based on rfc883, used by gethostbyxxxx() calls.
+--  */
+const
+  MAXGETHOSTSTRUCT  = 1024;
+
+-- /*
+--  * Define flags to be used with the WSAAsyncSelect() call.
+--  */
+const
+  FD_READ           = $01;
+
+const
+  FD_WRITE          = $02;
+
+const
+  FD_OOB            = $04;
+
+const
+  FD_ACCEPT         = $08;
+
+const
+  FD_CONNECT        = $10;
+
+const
+  FD_CLOSE          = $20;
+
+-- /*
+--  * WinSock error codes are also defined in winerror.h
+--  * Hence the IFDEF.
+--  */
+-- /*
+--  * All Windows Sockets error constants are biased by WSABASEERR from
+--  * the "normal"
+--  */
+-- /*
+--  * Windows Sockets definitions of regular Microsoft C error constants
+--  */
+-- /*
+--  * Windows Sockets definitions of regular Berkeley error constants
+--  */
+-- /*
+--  * Extended Windows Sockets error constant definitions
+--  */
+-- /*
+--  * Error return codes from gethostbyname() and gethostbyaddr()
+--  * (when using the resolver). Note that these errors are
+--  * retrieved via WSAGetLastError() and must therefore follow
+--  * the rules for avoiding clashes with error numbers from
+--  * specific implementations or language run-time systems.
+--  * For this reason the codes are based at WSABASEERR+1001.
+--  * Note also that [WSA]NO_ADDRESS is defined only for
+--  * compatibility purposes.
+--  */
+-- /* Authoritative Answer: Host not found 
+-- /* Non-Authoritative: Host not found, or SERVERFAIL 
+-- /* Non recoverable errors, FORMERR, REFUSED, NOTIMP 
+-- /* Valid name, no data record of requested type 
+-- /*
+--  * WinSock error codes are also defined in winerror.h
+--  * Hence the IFDEF.
+--  */
+-- /*
+--  * Compatibility macros.
+--  */
+-- /* no address, look for MX record 
+-- /*
+--  * Windows Sockets errors redefined as regular Berkeley error constants.
+--  * These are commented out in Windows NT to avoid conflicts with errno.h.
+--  * Use the WSA constants instead.
+--  */
+-- /* Socket function prototypes 
+type
+t_003=signed 32;
+
+procedure _accept(
+    s               : in t_SOCKET; 
+    addr            : out t_sockaddr; 
+    addrlen         : in out t_003)
+                      return t_SOCKET;
+#pragma convention(_accept,system);
+#pragma import(_accept,'accept','Ws2_32.dll');
+
+type
+t_004=^t_sockaddr for machine_pointer use true;
+
+t_005=signed 32;
+
+  t_006 = signed 32;
+
+procedure bind(
+    s               : in t_SOCKET; 
+    addr            : in t_004; 
+    namelen         : in t_005)
+                      return t_006;
+#pragma convention(bind,system);
+#pragma import(bind,'bind','Ws2_32.dll');
+
+type
+  t_007 = signed 32;
+
+procedure closesocket(
+    s               : in t_SOCKET)
+                      return t_007;
+#pragma convention(closesocket,system);
+#pragma import(closesocket,'closesocket','Ws2_32.dll');
+
+type
+t_008=^t_sockaddr for machine_pointer use true;
+
+t_009=signed 32;
+
+  t_010 = signed 32;
+
+procedure connect(
+    s               : in t_SOCKET; 
+    name            : in t_008; 
+    namelen         : in t_009)
+                      return t_010;
+#pragma convention(connect,system);
+#pragma import(connect,'connect','Ws2_32.dll');
+
+type
+t_011=signed 32;
+
+  t_012 = signed 32;
+
+procedure ioctlsocket(
+    s               : in t_SOCKET; 
+    cmd             : in t_011; 
+    argp            : in out u_long)
+                      return t_012;
+#pragma convention(ioctlsocket,system);
+#pragma import(ioctlsocket,'ioctlsocket','Ws2_32.dll');
+
+type
+t_013=signed 32;
+
+  t_014 = signed 32;
+
+procedure getpeername(
+    s               : in t_SOCKET; 
+    name            : out t_sockaddr; 
+    namelen         : in out t_013)
+                      return t_014;
+#pragma convention(getpeername,system);
+#pragma import(getpeername,'getpeername','Ws2_32.dll');
+
+type
+t_015=signed 32;
+
+  t_016 = signed 32;
+
+procedure getsockname(
+    s               : in t_SOCKET; 
+    name            : out t_sockaddr; 
+    namelen         : in out t_015)
+                      return t_016;
+#pragma convention(getsockname,system);
+#pragma import(getsockname,'getsockname','Ws2_32.dll');
+
+type
+t_017=signed 32;
+
+t_018=signed 32;
+
+t_019=character 8;
+
+t_020=signed 32;
+
+  t_021 = signed 32;
+
+procedure getsockopt(
+    s               : in t_SOCKET; 
+    level           : in t_017; 
+    optname         : in t_018; 
+    optval          : out t_019; 
+    optlen          : in out t_020)
+                      return t_021;
+#pragma convention(getsockopt,system);
+#pragma import(getsockopt,'getsockopt','Ws2_32.dll');
+
+procedure htonl(
+    hostlong        : in u_long)
+                      return u_long;
+#pragma convention(htonl,system);
+#pragma import(htonl,'htonl','Ws2_32.dll');
+
+procedure htons(
+    hostshort       : in u_short)
+                      return u_short;
+#pragma convention(htons,system);
+#pragma import(htons,'htons','Ws2_32.dll');
+
+type
+t_022=^character 8;
+
+  t_023 = unsigned 32;
+
+procedure inet_addr(
+    cp              : in t_022)
+                      return t_023;
+#pragma convention(inet_addr,system);
+#pragma import(inet_addr,'inet_addr','Ws2_32.dll');
+
+type
+  t_024 = ^character 8;
+
+procedure inet_ntoa(
+    _001            : in t_in_addr)
+                      return t_024;
+#pragma convention(inet_ntoa,system);
+#pragma import(inet_ntoa,'inet_ntoa','Ws2_32.dll');
+
+type
+t_025=signed 32;
+
+  t_026 = signed 32;
+
+procedure listen(
+    s               : in t_SOCKET; 
+    backlog         : in t_025)
+                      return t_026;
+#pragma convention(listen,system);
+#pragma import(listen,'listen','Ws2_32.dll');
+
+procedure ntohl(
+    netlong         : in u_long)
+                      return u_long;
+#pragma convention(ntohl,system);
+#pragma import(ntohl,'ntohl','Ws2_32.dll');
+
+procedure ntohs(
+    netshort        : in u_short)
+                      return u_short;
+#pragma convention(ntohs,system);
+#pragma import(ntohs,'ntohs','Ws2_32.dll');
+
+type
+t_027=character 8;
+
+t_028=signed 32;
+
+t_029=signed 32;
+
+  t_030 = signed 32;
+
+procedure recv(
+    s               : in t_SOCKET; 
+    buf             : out t_027; 
+    len             : in t_028; 
+    flags           : in t_029)
+                      return t_030;
+#pragma convention(recv,system);
+#pragma import(recv,'recv','Ws2_32.dll');
+
+type
+t_031=character 8;
+
+t_032=signed 32;
+
+t_033=signed 32;
+
+t_034=signed 32;
+
+  t_035 = signed 32;
+
+procedure recvfrom(
+    s               : in t_SOCKET; 
+    buf             : out t_031; 
+    len             : in t_032; 
+    flags           : in t_033; 
+    from            : out t_sockaddr; 
+    fromlen         : in out t_034)
+                      return t_035;
+#pragma convention(recvfrom,system);
+#pragma import(recvfrom,'recvfrom','Ws2_32.dll');
+
+type
+t_036=signed 32;
+
+t_037=^t_timeval for machine_pointer use true;
+
+  t_038 = signed 32;
+
+procedure select(
+    nfds            : in t_036; 
+    readfds         : in out t_fd_set; 
+    writefds        : in out t_fd_set; 
+    exceptfds       : in out t_fd_set; 
+    timeout         : in t_037)
+                      return t_038;
+#pragma convention(select,system);
+#pragma import(select,'select','Ws2_32.dll');
+
+type
+t_039=^character 8;
+
+t_040=signed 32;
+
+t_041=signed 32;
+
+  t_042 = signed 32;
+
+procedure _send(
+    s               : in t_SOCKET; 
+    buf             : in t_039; 
+    len             : in t_040; 
+    flags           : in t_041)
+                      return t_042;
+#pragma convention(_send,system);
+#pragma import(_send,'send','Ws2_32.dll');
+
+type
+t_043=^character 8;
+
+t_044=signed 32;
+
+t_045=signed 32;
+
+t_046=^t_sockaddr for machine_pointer use true;
+
+t_047=signed 32;
+
+  t_048 = signed 32;
+
+procedure sendto(
+    s               : in t_SOCKET; 
+    buf             : in t_043; 
+    len             : in t_044; 
+    flags           : in t_045; 
+    _to             : in t_046; 
+    tolen           : in t_047)
+                      return t_048;
+#pragma convention(sendto,system);
+#pragma import(sendto,'sendto','Ws2_32.dll');
+
+type
+t_049=signed 32;
+
+t_050=signed 32;
+
+t_051=^character 8;
+
+t_052=signed 32;
+
+  t_053 = signed 32;
+
+procedure setsockopt(
+    s               : in t_SOCKET; 
+    level           : in t_049; 
+    optname         : in t_050; 
+    optval          : in t_051; 
+    optlen          : in t_052)
+                      return t_053;
+#pragma convention(setsockopt,system);
+#pragma import(setsockopt,'setsockopt','Ws2_32.dll');
+
+type
+t_054=signed 32;
+
+  t_055 = signed 32;
+
+procedure shutdown(
+    s               : in t_SOCKET; 
+    how             : in t_054)
+                      return t_055;
+#pragma convention(shutdown,system);
+#pragma import(shutdown,'shutdown','Ws2_32.dll');
+
+type
+t_056=signed 32;
+
+t_057=signed 32;
+
+t_058=signed 32;
+
+procedure socket(
+    af              : in t_056; 
+    _type           : in t_057; 
+    protocol        : in t_058)
+                      return t_SOCKET;
+#pragma convention(socket,system);
+#pragma import(socket,'socket','Ws2_32.dll');
+
+-- /* Database function prototypes 
+type
+t_059=^character 8;
+
+t_060=signed 32;
+
+t_061=signed 32;
+
+  t_062 = ^t_hostent for machine_pointer use true;
+
+procedure gethostbyaddr(
+    addr            : in t_059; 
+    len             : in t_060; 
+    _type           : in t_061)
+                      return t_062;
+#pragma convention(gethostbyaddr,system);
+#pragma import(gethostbyaddr,'gethostbyaddr','Ws2_32.dll');
+
+type
+t_063=^character 8;
+
+  t_064 = ^t_hostent for machine_pointer use true;
+
+procedure gethostbyname(
+    name            : in t_063)
+                      return t_064;
+#pragma convention(gethostbyname,system);
+#pragma import(gethostbyname,'gethostbyname','Ws2_32.dll');
+
+type
+t_065=character 8;
+
+t_066=signed 32;
+
+  t_067 = signed 32;
+
+procedure gethostname(
+    name            : out t_065; 
+    namelen         : in t_066)
+                      return t_067;
+#pragma convention(gethostname,system);
+#pragma import(gethostname,'gethostname','Ws2_32.dll');
+
+type
+t_068=signed 32;
+
+t_069=^character 8;
+
+  t_070 = ^t_servent for machine_pointer use true;
+
+procedure getservbyport(
+    port            : in t_068; 
+    proto           : in t_069)
+                      return t_070;
+#pragma convention(getservbyport,system);
+#pragma import(getservbyport,'getservbyport','Ws2_32.dll');
+
+type
+t_071=^character 8;
+
+t_072=^character 8;
+
+  t_073 = ^t_servent for machine_pointer use true;
+
+procedure getservbyname(
+    name            : in t_071; 
+    proto           : in t_072)
+                      return t_073;
+#pragma convention(getservbyname,system);
+#pragma import(getservbyname,'getservbyname','Ws2_32.dll');
+
+type
+t_074=signed 32;
+
+  t_075 = ^t_protoent for machine_pointer use true;
+
+procedure getprotobynumber(
+    proto           : in t_074)
+                      return t_075;
+#pragma convention(getprotobynumber,system);
+#pragma import(getprotobynumber,'getprotobynumber','Ws2_32.dll');
+
+type
+t_076=^character 8;
+
+  t_077 = ^t_protoent for machine_pointer use true;
+
+procedure getprotobyname(
+    name            : in t_076)
+                      return t_077;
+#pragma convention(getprotobyname,system);
+#pragma import(getprotobyname,'getprotobyname','Ws2_32.dll');
+
+-- /* Microsoft Windows Extension function prototypes 
+type
+  t_078 = signed 32;
+
+procedure WSAStartup(
+    wVersionRequired : in WORD; 
+    lpWSAData       : out WSADATA )
+                      return t_078;
+#pragma convention(WSAStartup,system);
+#pragma import(WSAStartup,'WSAStartup','Ws2_32.dll');
+
+type
+  t_079 = signed 32;
+
+procedure WSACleanup
+                      return t_079;
+#pragma convention(WSACleanup,system);
+#pragma import(WSACleanup,'WSACleanup','Ws2_32.dll');
+
+type
+t_080=signed 32;
+
+procedure WSASetLastError(
+    iError          : in t_080);
+#pragma convention(WSASetLastError,system);
+#pragma import(WSASetLastError,'WSASetLastError','Ws2_32.dll');
+
+type
+  t_081 = signed 32;
+
+procedure WSAGetLastError
+                      return t_081;
+#pragma convention(WSAGetLastError,system);
+#pragma import(WSAGetLastError,'WSAGetLastError','Ws2_32.dll');
+
+procedure WSAIsBlocking
+                      return BOOL;
+#pragma convention(WSAIsBlocking,system);
+#pragma import(WSAIsBlocking,'WSAIsBlocking','Ws2_32.dll');
+
+type
+  t_082 = signed 32;
+
+procedure WSAUnhookBlockingHook
+                      return t_082;
+#pragma convention(WSAUnhookBlockingHook,system);
+#pragma import(WSAUnhookBlockingHook,'WSAUnhookBlockingHook','Ws2_32.dll');
+
+procedure WSASetBlockingHook(
+    lpBlockFunc     : in FARPROC)
+                      return FARPROC;
+#pragma convention(WSASetBlockingHook,system);
+#pragma import(WSASetBlockingHook,'WSASetBlockingHook','Ws2_32.dll');
+
+type
+  t_083 = signed 32;
+
+procedure WSACancelBlockingCall
+                      return t_083;
+#pragma convention(WSACancelBlockingCall,system);
+#pragma import(WSACancelBlockingCall,'WSACancelBlockingCall','Ws2_32.dll');
+
+type
+t_084=^character 8;
+
+t_085=^character 8;
+
+t_086=character 8;
+
+t_087=signed 32;
+
+procedure WSAAsyncGetServByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_084; 
+    proto           : in t_085; 
+    buf             : out t_086; 
+    buflen          : in t_087)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetServByName,system);
+#pragma import(WSAAsyncGetServByName,'WSAAsyncGetServByName','Ws2_32.dll');
+
+type
+t_088=signed 32;
+
+t_089=^character 8;
+
+t_090=character 8;
+
+t_091=signed 32;
+
+procedure WSAAsyncGetServByPort(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    port            : in t_088; 
+    proto           : in t_089; 
+    buf             : out t_090; 
+    buflen          : in t_091)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetServByPort,system);
+#pragma import(WSAAsyncGetServByPort,'WSAAsyncGetServByPort','Ws2_32.dll');
+
+type
+t_092=^character 8;
+
+t_093=character 8;
+
+t_094=signed 32;
+
+procedure WSAAsyncGetProtoByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_092; 
+    buf             : out t_093; 
+    buflen          : in t_094)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetProtoByName,system);
+#pragma import(WSAAsyncGetProtoByName,'WSAAsyncGetProtoByName','Ws2_32.dll');
+
+type
+t_095=signed 32;
+
+t_096=character 8;
+
+t_097=signed 32;
+
+procedure WSAAsyncGetProtoByNumber(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    number          : in t_095; 
+    buf             : out t_096; 
+    buflen          : in t_097)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetProtoByNumber,system);
+#pragma import(WSAAsyncGetProtoByNumber,'WSAAsyncGetProtoByNumber','Ws2_32.dll');
+
+type
+t_098=^character 8;
+
+t_099=character 8;
+
+t_100=signed 32;
+
+procedure WSAAsyncGetHostByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_098; 
+    buf             : out t_099; 
+    buflen          : in t_100)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetHostByName,system);
+#pragma import(WSAAsyncGetHostByName,'WSAAsyncGetHostByName','Ws2_32.dll');
+
+type
+t_101=^character 8;
+
+t_102=signed 32;
+
+t_103=signed 32;
+
+t_104=character 8;
+
+t_105=signed 32;
+
+procedure WSAAsyncGetHostByAddr(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    addr            : in t_101; 
+    len             : in t_102; 
+    _type           : in t_103; 
+    buf             : out t_104; 
+    buflen          : in t_105)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetHostByAddr,system);
+#pragma import(WSAAsyncGetHostByAddr,'WSAAsyncGetHostByAddr','Ws2_32.dll');
+
+type
+  t_106 = signed 32;
+
+procedure WSACancelAsyncRequest(
+    hAsyncTaskHandle : in t_HANDLE)
+                      return t_106;
+#pragma convention(WSACancelAsyncRequest,system);
+#pragma import(WSACancelAsyncRequest,'WSACancelAsyncRequest','Ws2_32.dll');
+
+type
+t_107=signed 32;
+
+  t_108 = signed 32;
+
+procedure WSAAsyncSelect(
+    s               : in t_SOCKET; 
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    lEvent          : in t_107)
+                      return t_108;
+#pragma convention(WSAAsyncSelect,system);
+#pragma import(WSAAsyncSelect,'WSAAsyncSelect','Ws2_32.dll');
+
+type
+t_109=character 8;
+
+t_110=signed 32;
+
+t_111=signed 32;
+
+  t_112 = signed 32;
+
+procedure WSARecvEx(
+    s               : in t_SOCKET; 
+    buf             : out t_109; 
+    len             : in t_110; 
+    flags           : in out t_111)
+                      return t_112;
+#pragma convention(WSARecvEx,system);
+#pragma import(WSARecvEx,'WSARecvEx','wsock32.dll');
+
+type
+  _TRANSMIT_FILE_BUFFERS = record
+Head            : PVOID;
+HeadLength      : DWORD;
+Tail            : PVOID;
+TailLength      : DWORD;
+  end record;
+  TRANSMIT_FILE_BUFFERS = _TRANSMIT_FILE_BUFFERS;
+  PTRANSMIT_FILE_BUFFERS = ^_TRANSMIT_FILE_BUFFERS;
+  LPTRANSMIT_FILE_BUFFERS = ^_TRANSMIT_FILE_BUFFERS;
+
+const
+  TF_DISCONNECT     = $01;
+
+const
+  TF_REUSE_SOCKET   = $02;
+
+const
+  TF_WRITE_BEHIND   = $04;
+
+procedure TransmitFile(
+    hSocket         : in t_SOCKET; 
+    hFile           : in t_HANDLE; 
+    nNumberOfBytesToWrite : in DWORD; 
+    nNumberOfBytesPerSend : in DWORD; 
+    lpOverlapped    : in p_OVERLAPPED; 
+    lpTransmitBuffers : in LPTRANSMIT_FILE_BUFFERS; 
+    dwReserved      : in DWORD)
+                      return BOOL;
+#pragma convention(TransmitFile,system);
+#pragma import(TransmitFile,'TransmitFile','wsock32.dll');
+
+procedure AcceptEx(
+    sListenSocket   : in t_SOCKET; 
+    sAcceptSocket   : in t_SOCKET; 
+    lpOutputBuffer  : in PVOID; 
+    dwReceiveDataLength : in DWORD; 
+    dwLocalAddressLength : in DWORD; 
+    dwRemoteAddressLength : in DWORD; 
+    lpdwBytesReceived : out DWORD ; 
+    lpOverlapped    : in p_OVERLAPPED)
+                      return BOOL;
+#pragma convention(AcceptEx,system);
+#pragma import(AcceptEx,'AcceptEx','wsock32.dll');
+
+type
+t_113=^t_sockaddr for machine_pointer use true;
+
+t_114=signed 32 ;
+
+t_115=^t_sockaddr for machine_pointer use true;
+
+t_116=signed 32 ;
+
+procedure GetAcceptExSockaddrs(
+    lpOutputBuffer  : in PVOID; 
+    dwReceiveDataLength : in DWORD; 
+    dwLocalAddressLength : in DWORD; 
+    dwRemoteAddressLength : in DWORD; 
+    LocalSockaddr   : out t_113; 
+    LocalSockaddrLength : out t_114; 
+    RemoteSockaddr  : out t_115; 
+    RemoteSockaddrLength : out t_116);
+#pragma convention(GetAcceptExSockaddrs,system);
+#pragma import(GetAcceptExSockaddrs,'GetAcceptExSockaddrs','wsock32.dll');
+
+-- /* Microsoft Windows Extended data types 
+type
+  SOCKADDR          = t_sockaddr;
+type
+  PSOCKADDR         = ^t_sockaddr;
+type
+  LPSOCKADDR        = ^t_sockaddr;
+type
+  SOCKADDR_IN       = t_sockaddr_in;
+type
+  PSOCKADDR_IN      = ^t_sockaddr_in;
+type
+  LPSOCKADDR_IN     = ^t_sockaddr_in;
+type
+  LINGER            = t_linger;
+type
+  PLINGER           = ^t_linger;
+type
+  LPLINGER          = ^t_linger;
+type
+  IN_ADDR           = t_in_addr;
+type
+  PIN_ADDR          = ^t_in_addr;
+type
+  LPIN_ADDR         = ^t_in_addr;
+type
+  FD_SET            = t_fd_set;
+type
+  PFD_SET           = ^t_fd_set;
+type
+  LPFD_SET          = ^t_fd_set;
+type
+  HOSTENT           = t_hostent;
+type
+  PHOSTENT          = ^t_hostent;
+type
+  LPHOSTENT         = ^t_hostent;
+type
+  SERVENT           = t_servent;
+type
+  PSERVENT          = ^t_servent;
+type
+  LPSERVENT         = ^t_servent;
+type
+  PROTOENT          = t_protoent;
+type
+  PPROTOENT         = ^t_protoent;
+type
+  LPPROTOENT        = ^t_protoent;
+type
+  TIMEVAL           = t_timeval;
+type
+  PTIMEVAL          = ^t_timeval;
+type
+  LPTIMEVAL         = ^t_timeval;
+-- /*
+--  * Windows message parameter composition and decomposition
+--  * macros.
+--  *
+--  * WSAMAKEASYNCREPLY is intended for use by the Windows Sockets implementation
+--  * when constructing the response to a WSAAsyncGetXByY() routine.
+--  */
+-- /*
+--  * WSAMAKESELECTREPLY is intended for use by the Windows Sockets implementation
+--  * when constructing the response to WSAAsyncSelect().
+--  */
+-- /*
+--  * WSAGETASYNCBUFLEN is intended for use by the Windows Sockets application
+--  * to extract the buffer length from the lParam in the response
+--  * to a WSAGetXByY().
+--  */
+-- /*
+--  * WSAGETASYNCERROR is intended for use by the Windows Sockets application
+--  * to extract the error code from the lParam in the response
+--  * to a WSAGetXByY().
+--  */
+-- /*
+--  * WSAGETSELECTEVENT is intended for use by the Windows Sockets application
+--  * to extract the event code from the lParam in the response
+--  * to a WSAAsyncSelect().
+--  */
+-- /*
+--  * WSAGETSELECTERROR is intended for use by the Windows Sockets application
+--  * to extract the error code from the lParam in the response
+--  * to a WSAAsyncSelect().
+--  */
+
+end winsock;

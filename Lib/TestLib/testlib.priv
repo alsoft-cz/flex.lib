@@ -1,0 +1,115 @@
+----------------------------------------------------------------------------------------------------
+module private testlib =
+-- Flex Tests Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+with
+    standard,
+    standard.conversions,
+    standard.console;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_report_err =
+----------------------------------------------------------------------------------------------------
+begin
+  write('ERR ');
+  write(session.shortname);
+  write(' ');
+  write(unsigned_to_string(num));
+  write(' ');
+  write_line(str);
+  end testlib_report_err;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_report_ok =
+----------------------------------------------------------------------------------------------------
+begin
+  write('OK  ');
+  write(session.shortname);
+  write(' ');
+  write(unsigned_to_string(num));
+  write(' ');
+  write_line(str);
+  end testlib_report_ok;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_create_session=
+----------------------------------------------------------------------------------------------------
+begin
+  session:=nil;
+  session.verbose:=true;
+  session.name:=name;
+  session.shortname:=shortname;
+  if session.verbose then
+    testlib_report_ok(session,0,'Start testing session');
+    testlib_report_ok(session,0,name);
+    end if;
+  end testlib_create_session;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_discard_session =
+----------------------------------------------------------------------------------------------------
+begin
+  if session.errorcount > 0 then
+    testlib_report_err(session,0,'Finish testing session - WITH ERRORS');
+  else
+    testlib_report_ok(session,0,'Finish testing session - without errors');
+    end if;
+  end testlib_discard_session;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert =
+----------------------------------------------------------------------------------------------------
+begin
+  if not expression then
+    session.errorcount + 1;
+    testlib_report_err(session,num,str);
+  else
+    if session.verbose then
+      testlib_report_ok(session,num,str);
+      end if;
+    end if;
+
+  end testlib_assert;
+ 
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_order =
+----------------------------------------------------------------------------------------------------
+begin
+  if order<session.order then
+    session.errorcount + 1;
+    testlib_report_err(session,num,str);
+  else
+    session.order:=order;
+    if session.verbose then
+      testlib_report_ok(session,num,str);
+      end if;
+    end if;
+  end testlib_assert_order;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_reset_order =
+----------------------------------------------------------------------------------------------------
+begin
+  session.order:=order;
+  if session.verbose then
+    testlib_report_ok(session,num,str);
+    end if;
+  end testlib_assert_reset_order;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_strict_order =
+----------------------------------------------------------------------------------------------------
+begin
+  if order<>(session.order+1) then
+    session.errorcount + 1;
+    testlib_report_err(session,num,str);
+  else
+    session.order:=order;
+    if session.verbose then
+      testlib_report_ok(session,num,str);
+      end if;
+    end if;
+  end testlib_assert_strict_order;
+
+  end testlib;

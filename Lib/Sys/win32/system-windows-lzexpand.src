@@ -1,0 +1,137 @@
+----------------------------------------------------------------------------------------------------
+module lzexpand =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,winbase;
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation.  All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     lzdos.h
+-- 
+-- Abstract:
+-- 
+--     Public interface to LZEXP?.LIB.
+-- 
+-- Author:
+-- 
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- /*
+-- ** Error Return Codes
+-- */
+-- /*
+-- ** Prototypes
+-- */
+procedure LZStart
+                      return INT;
+#pragma convention(LZStart,system);
+#pragma import(LZStart,'LZStart','lz32.dll');
+
+procedure LZDone;
+#pragma convention(LZDone,system);
+#pragma import(LZDone,'LZDone','lz32.dll');
+
+procedure CopyLZFile(
+    _001            : INT; 
+    _002            : INT)
+                      return LONG;
+#pragma convention(CopyLZFile,system);
+#pragma import(CopyLZFile,'CopyLZFile','lz32.dll');
+
+procedure LZCopy(
+    _001            : INT; 
+    _002            : INT)
+                      return LONG;
+#pragma convention(LZCopy,system);
+#pragma import(LZCopy,'LZCopy','lz32.dll');
+
+procedure LZInit(
+    _001            : INT)
+                      return INT;
+#pragma convention(LZInit,system);
+#pragma import(LZInit,'LZInit','lz32.dll');
+
+procedure GetExpandedNameA(
+    _001            : LPSTR; 
+    _002            : LPSTR)
+                      return INT;
+#pragma convention(GetExpandedNameA,system);
+#pragma import(GetExpandedNameA,'GetExpandedNameA','lz32.dll');
+
+procedure GetExpandedNameW(
+    _001            : LPWSTR; 
+    _002            : LPWSTR)
+                      return INT;
+#pragma convention(GetExpandedNameW,system);
+#pragma import(GetExpandedNameW,'GetExpandedNameW','lz32.dll');
+
+#if #declared UNICODE; then;
+#template GetExpandedName;
+  GetExpandedNameW 
+#end GetExpandedName;
+#else;
+#template GetExpandedName;
+  GetExpandedNameA 
+#end GetExpandedName;
+#end if;
+
+procedure LZOpenFileA(
+    _001            : LPSTR; 
+    _002            : LPOFSTRUCT; 
+    _003            : WORD)
+                      return INT;
+#pragma convention(LZOpenFileA,system);
+#pragma import(LZOpenFileA,'LZOpenFileA','lz32.dll');
+
+procedure LZOpenFileW(
+    _001            : LPWSTR; 
+    _002            : LPOFSTRUCT; 
+    _003            : WORD)
+                      return INT;
+#pragma convention(LZOpenFileW,system);
+#pragma import(LZOpenFileW,'LZOpenFileW','lz32.dll');
+
+#if #declared UNICODE; then;
+#template LZOpenFile;
+  LZOpenFileW 
+#end LZOpenFile;
+#else;
+#template LZOpenFile;
+  LZOpenFileA 
+#end LZOpenFile;
+#end if;
+
+procedure LZSeek(
+    _001            : INT; 
+    _002            : LONG; 
+    _003            : INT)
+                      return LONG;
+#pragma convention(LZSeek,system);
+#pragma import(LZSeek,'LZSeek','lz32.dll');
+
+procedure LZRead(
+    _001            : INT; 
+    _002            : LPSTR; 
+    _003            : INT)
+                      return INT;
+#pragma convention(LZRead,system);
+#pragma import(LZRead,'LZRead','lz32.dll');
+
+procedure LZClose(
+    _001            : INT);
+#pragma convention(LZClose,system);
+#pragma import(LZClose,'LZClose','lz32.dll');
+
+
+end lzexpand;

@@ -1,0 +1,539 @@
+----------------------------------------------------------------------------------------------------
+module public names =
+-- Object names.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- clarify documentation,
+--   -- consider better names for [c_name.join], [c_name.join_before] and [c_name.join_after]
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.classes,
+  standard.classes.lists;
+
+----- Generic mechanisms for manipulation with names in a context of a namespace -------------------
+
+-- forward declarations
+class abstract c_namespace;         type p_namespace         = ^class c_namespace;
+class abstract c_name_component;    type p_name_component    = ^class c_name_component;
+class abstract c_name_subcomponent; type p_name_subcomponent = ^class c_name_subcomponent;
+class c_name;                       type p_name              = ^class c_name;
+class c_names;                      type p_names             = ^class c_names;
+
+type
+  -- plain-text name of an object
+  t_text_name      = protected t_char32ustr;
+  p_text_name      = ^t_text_name;
+
+  -- the type of the name in respect of its relativity
+  t_name_type      = enum
+      tnt_unspecified;                           -- the type of the name is not specified
+      tnt_absolute;                              -- the name is absolute
+      tnt_relative;                              -- the name is relative to a given base name
+      end enum;
+  t_name_type_set  = set of t_name_type;
+
+message
+  name_error       : exception;
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_namespace =
+-- A namespace.
+----------------------------------------------------------------------------------------------------
+
+    type
+      -- namespace-specific data
+      -- this data structure is provided for different namespaces as a placeholder for additional 
+      -- data needed for composition of a plain-text name from the corresponding decomposed form
+      t_namespace_specific = {%%TODO(ABSTRACT) abstract} record end record;
+      p_namespace_specific = ^class t_namespace_specific;
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract check_name (
+        text_name  : in t_text_name;             -- the actual plain-text name to be checked
+        name_type  : in t_name_type;             -- the type of the name in respect of its relativity
+        valid      : out t_logical);             -- [true], if the name is valid
+    -- Check if the given plain-text name [text_name] is a valid name in this namespace. When the
+    -- name is a valid name, [valid] is set to [true], otherwise it is set to [false].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract decompose_name (
+        text_name  : in t_text_name;             -- the actual plain-text name to be decomposed
+        proposed_nt: in t_name_type;             -- proposed type of the name 
+        detected_nt: out t_name_type;            -- detected type of the name
+        components : out c_list;                 -- list of components
+        ns_data    : out p_namespace_specific);  -- namespace-specific data
+    -- Decomposes a plain-text name [text_name] into a list of components [components].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract compose_name (
+        components : in c_list;                  -- list of components
+        ns_data    : in p_namespace_specific;    -- namespace-specific data
+        text_name  : out p_text_name);           -- composed plain-text name
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+-->>>
+    virtual abstract equal_names (
+        left           : in c_list;               -- list of first names's components
+        left_specific  : in p_namespace_specific; -- namespace specific data of first name
+        right          : in c_list;               -- list of second names's components
+        right_specific : in p_namespace_specific) -- namespace specific data of second name
+        return t_logical;
+    -- Compares two names by their components and returns, whether they are equal
+    ------------------------------------------------------------------------------------------------
+    virtual abstract clone_specific (
+        ns         : p_namespace_specific)
+        return p_namespace_specific;
+    -- makes copy of ns
+    ------------------------------------------------------------------------------------------------
+--<<<
+
+    end c_namespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_name_component = extend c_list_item;
+-- A single component of a name.
+----------------------------------------------------------------------------------------------------
+
+    var
+      subcomponents: protected c_list;           -- list of subcomponents
+
+    ------------------------------------------------------------------------------------------------
+    virtual decompose_name (
+        text_name  : in t_text_name);            -- the actual plain-text name to be decomposed
+    -- Decomposes a plain-text name [text_name] into a list of subcomponents [subcomponents]
+    ------------------------------------------------------------------------------------------------
+    virtual compose_name (
+        text_name  : out p_text_name);           -- composed plain-text name
+    -- Composes a plain-text name [text_name] from a list of subcomponents of this component. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+-->>>
+    static find_item (
+        index      : t_signed32)                 -- index v hlavn¡ £rovni komponent
+                   -- *** je nutn‚ idexovat komponenty? 
+                   -- <*> samoz©ejmˆ to nen¡ nutn‚, ale je to pohodlnˆj¨¡ pro u‘ivatele
+                   -- po‡¡t  se s t¡m, ‘e indexy vstupuj¡c¡ do t‚to funkce buduou mal  ‡¡sla, p©ibli‘nˆ -3..3
+        return p_name_subcomponent;
+    -- Vr t¡ subkomponentu s po©adov m ‡¡slem [index] v seznamu [components]
+    ------------------------------------------------------------------------------------------------
+    virtual abstract clone
+        return p_name_component;
+    -- Vr t¡ hlubokou kopii t‚to komponenty.
+    ------------------------------------------------------------------------------------------------
+    static join_subcomponent (
+        prefix     : in p_name_subcomponent;     -- prefix of the name
+        suffix     : in p_name_subcomponent);    -- suffix of the name
+    -- P©ipoj¡ zleva kopii subkomponenty [prefix] a zprava [suffix], pokud je kˆkter  z nich nil, nen¡ p©ipojena
+    ------------------------------------------------------------------------------------------------
+    static assign_subcomponents (
+        source     : in c_list);
+    -- P©i©ad¡ do [subcomponents] komponenty z source, dˆl  hlubok‚ kopie
+    ------------------------------------------------------------------------------------------------
+--<<<
+
+    end c_name_component;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_name_subcomponent = extend c_list_item;
+-- A single subcomponent of a name's component.
+----------------------------------------------------------------------------------------------------
+    
+    var
+      name         : protected p_text_name;      -- plain-text name of the subcomponent
+
+    ------------------------------------------------------------------------------------------------
+    static set_name (
+        text_name  : in t_text_name);            -- the actual plain-text name to be decomposed
+    -- Assigns a plain-text name of this subcomponent.
+    ------------------------------------------------------------------------------------------------
+-->>>
+    virtual abstract clone
+        return p_name_subcomponent;
+    -- Vr t¡ hlubokou kopii t‚to komponenty.
+    ------------------------------------------------------------------------------------------------
+    static assign_to (
+        source     : in p_name_subcomponent);    -- zdrojov˜ objekt
+    -- Zkop¡ruje do tohoto objektu data z [source].
+    ------------------------------------------------------------------------------------------------
+--<<<
+    end c_name_subcomponent;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name = extend c_list_item;
+-- A name split into a list of components.
+----------------------------------------------------------------------------------------------------
+
+    var
+      name_type    : protected t_name_type;      -- the type of the name in respect of its relativity
+      components   : protected c_list;           -- list of components
+
+    ------------------------------------------------------------------------------------------------
+    static decompose_name (
+        text_name  : in t_text_name;             -- the actual plain-text name to be decomposed
+        name_type  : in t_name_type);            -- the type of the name in respect of its relativity
+    -- Decomposes a plain-text name [text_name] into a list of components [components]
+    ------------------------------------------------------------------------------------------------
+    static compose_name (
+        text_name  : out p_text_name);           -- composed plain-text name
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    static join (
+        prefix     : in c_name;                  -- prefix of the name
+        suffix     : in c_name);                 -- suffix of the name
+    -- Joins a prefix and a suffix into this name. 
+    ------------------------------------------------------------------------------------------------
+    static join_before (
+        prefix    : in c_name);                  -- prefix of the name
+    -- Prepends a prefix before this name. This name must be a relative name.
+    ------------------------------------------------------------------------------------------------
+    static join_after (
+        suffix     : in c_name);                 -- suffix of the name
+    -- Appends a suffix to this name. The [suffix] must be a relative name.
+    ------------------------------------------------------------------------------------------------
+-->>>
+    static join_string (
+        prefix     : in t_text_name;             -- prefix of the name
+        suffix     : in t_text_name);            -- suffix of the name
+    -- Joins a prefix and a suffix into this name. 
+    ------------------------------------------------------------------------------------------------
+    static find_component_from (
+        atype      : in t_tag;                   -- the type of name to be searched
+        component  : out p_name_component);      -- return value
+    -- Najde prvn¡ komponentu typu [atype] nebo potomka [atype]
+    ------------------------------------------------------------------------------------------------
+    static find_last_component (
+        atype      : in t_tag;                   -- the type of name to be searched
+        component  : out p_name_component);      -- return value
+    -- Najde posledn¡ komponentu typu [atype] nebo potomka [atype]
+    ------------------------------------------------------------------------------------------------
+    static remove_last_component;
+    -- Removes last component, if it exists    
+    ------------------------------------------------------------------------------------------------
+    static remove_first_component;
+    -- Removes last component, if it exists    
+    ------------------------------------------------------------------------------------------------
+    static find_subitem (
+        main_index : t_signed32;                 -- index v hlavn¡ £rovni komponent
+        sub_index  : t_signed32)                 -- index v £rovni subkomponent
+        return p_name_subcomponent;
+    -- Vr t¡ subkomponentu s po©adovov˜m ‡¡slem [main_index] v seznamu [components], 
+    -- v r mci nˆho pak subkomponentu s po©adov˜m ‡¡slem [sub_index]
+    -- Indexy jsou ‡¡slovan‚ od jedni‡ky, pokud jsou z porn‚, znamen  to, ‘e seznam je proch zen odzadu,
+    -- tzn. ‘e pro [sub_index]=-2 to vr t¡ druhou subkomponentu odzadu
+    ------------------------------------------------------------------------------------------------
+    static find_item (
+        index      : t_signed32)                 -- index v hlavn¡ £rovni komponent
+        return p_name_component;
+    -- Vr t¡ komponentu s po©adovov˜m ‡¡slem [index] v seznamu [components]
+    ------------------------------------------------------------------------------------------------
+    static equal_to (
+        name       : in c_name)                  -- testovan‚ jm‚no
+        return t_logical;
+    -- Vr t¡, zda je [name] je stejn‚ jako [this]
+    ------------------------------------------------------------------------------------------------
+    static assign_to (
+        source     : in c_name);                 -- p©i©azovan‚ jm‚no
+    -- Makes deep copy of source
+    ------------------------------------------------------------------------------------------------
+    static join_component (
+        prefix    : in p_name_component;         -- prefix of the name
+        suffix     : in p_name_component);       -- suffix of the name
+    -- P©ipoj¡ zleva kopii komponenty prefix a zprava suffix, pokud je kˆkter  z nich nil, nen¡ p©ipojena
+    ------------------------------------------------------------------------------------------------
+    static assign_to_string (
+        source     : in t_char32ustr);           -- name in plain-text format
+    -- Assigns string value
+    ------------------------------------------------------------------------------------------------
+    static assign_components (
+        source     : in c_list);                 -- seznam objekt– typu [c_name_component]
+    -- P©i©ad¡ do [subcomponents] hubok‚ kopie komponent z [source], [subcomponents] je p©edt¡m vypr zdnˆno
+    ------------------------------------------------------------------------------------------------
+    static clone
+        return p_name;
+    -- Vr t¡ hlubokou kopii tohoto objektu
+    ------------------------------------------------------------------------------------------------
+--<<<
+
+  protected
+
+    var
+      ns_data      : c_namespace.p_namespace_specific; -- namespace-specific data
+
+    end c_name;
+
+-->>>
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_n (
+    name           : in out c_name;              -- name, which is changed
+    joined_name    : in c_name);                 -- name, which is joined to [name]
+-- name & joined_name
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_s (
+    name           : in out c_name;              -- name, which is changed
+    joined_name    : in t_char32ustr);           -- name, which is joined to [name]
+-- name & joined_name
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_c (
+    name           : in out c_name;              -- name, which is changed
+    joined_name    : in p_name_component);       -- name, which is joined to [name]
+-- name & joined_name
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_u (
+    name           : in out c_name;              -- name, which is changed
+    joined_name    : in p_name_subcomponent);    -- name, which is joined to [name]
+-- Joins names name and joined_name, joined_name is added to last component
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_n_n_n (
+    left           : in c_name;                  -- left name
+    right          : in c_name)                  -- right name
+    return c_name;
+-- Joins names left and right and returns left & right
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_n_s_n (
+    left           : in c_name;                  -- left name
+    right          : in t_char32ustr)            -- right name
+    return c_name;
+-- Joins names left and right and returns left & right
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_s_n_n (
+    left           : in t_char32ustr;            -- left name
+    right          : in c_name)                  -- right name
+    return c_name;
+-- Joins names left and right and returns left & right
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_pred (
+    n              : in out c_name);             -- right name
+-- Removes last component.
+----------------------------------------------------------------------------------------------------
+overload & :
+    operator_c_name_concat_on_n,
+    operator_c_name_concat_on_s,
+    operator_c_name_concat_on_c,
+    operator_c_name_concat_on_u,
+    operator_c_name_concat_n_n_n,
+    operator_c_name_concat_n_s_n,
+    operator_c_name_concat_s_n_n;
+----------------------------------------------------------------------------------------------------
+overload pred :
+    operator_c_name_pred;
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_equal (
+    left           : in c_name;
+    right          : in c_name)
+    return t_logical;
+-- left=right
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_not_equal (
+    left           : in c_name;
+    right          : in c_name)
+    return t_logical;
+-- left<>right
+----------------------------------------------------------------------------------------------------
+overload = :
+    operator_c_name_equal;
+----------------------------------------------------------------------------------------------------
+overload <> :
+    operator_c_name_not_equal;
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_n_n (
+    name           : in out c_name;            
+    value          : in c_name);
+-- name:=value, makes deep copy
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_n_s (
+    name           : in out c_name;            
+    value          : in t_char32ustr);
+-- name:=value, makes decomposion into components
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_ps_n (
+    value          : out p_text_name;
+    name           : in c_name);
+-- value:=name, makes decomposion into components
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_s_n (
+    value          : out t_char32ustr;
+    name           : in c_name);
+-- value:=name, makes decomposion into components
+----------------------------------------------------------------------------------------------------
+overload := :
+    operator_c_name_assign_n_n,
+    operator_c_name_assign_n_s,
+    operator_c_name_assign_ps_n,
+    operator_c_name_assign_s_n;
+------------------------------------------------------------------------------------------------
+--<<<
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_names = extend c_list;
+-- A collection of names.
+----------------------------------------------------------------------------------------------------
+
+    end c_names;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure register_namespace (
+    namespace      : in t_tag);
+-- Registers a new namespace.
+--
+-- Remarks:
+--   The system namespace ([c_namespace_system]) is registered by default.
+----------------------------------------------------------------------------------------------------
+
+
+
+----- Implementation of a system native namespace --------------------------------------------------
+
+-- forward declarations
+class c_namespace_system;              type p_namespace_system              = ^class c_namespace_system;
+class c_name_component_server;         type p_name_component_server         = ^class c_name_component_server;
+class c_name_component_drive;          type p_name_component_drive          = ^class c_name_component_drive;
+class c_name_component_file_or_folder; type p_name_component_file_or_folder = ^class c_name_component_file_or_folder;
+class c_name_component_folder;         type p_name_component_folder         = ^class c_name_component_folder;
+class c_name_component_file;           type p_name_component_file           = ^class c_name_component_file;
+class c_name_subcomponent_base_name;   type p_name_subcomponent_base_name   = ^class c_name_subcomponent_base_name;
+class c_name_subcomponent_extension;   type p_name_subcomponent_extension   = ^class c_name_subcomponent_extension;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_system = extend c_namespace;
+-- This platform's native namespace.
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_system;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_server = extend c_name_component;
+-- Name of a server.
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_server;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_drive = extend c_name_component;
+-- Name of a drive (or a "share" or a "volume" in some naming conventions) within a server.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_drive;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_file_or_folder = extend c_name_component;
+-- Name of a folder or a file.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static get_base_name (
+        base_name  : out p_text_name);           -- the base name
+    -- Retrieves the base name of a file or folder name.
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    static check_last_extension (
+        extension  : in t_text_name)             -- plain-text extension
+        return t_logical;                        -- [true] if the extension matches
+    -- Checks if the last extension of the name is equal to the given extension.
+    ------------------------------------------------------------------------------------------------
+    static replace_last_extension (
+        extension  : in t_text_name);            -- plain-text extension
+    -- Replaces the last extension of the name with the given extension.
+    ------------------------------------------------------------------------------------------------
+    static append_extension (
+        extension  : in t_text_name);            -- plain-text extension
+    -- Appends the given extension to the name.
+    ------------------------------------------------------------------------------------------------
+-->>>
+    static get_last_extension (
+        extension  : out p_text_name);           -- the extension
+    -- Retrieves the last extension of a file or folder name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    static remove_last_extension;
+    -- Removes the last extension of the name
+    ------------------------------------------------------------------------------------------------
+--<<<
+    end c_name_component_file_or_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_file = extend c_name_component_file_or_folder;
+-- Name of a file.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_file;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_folder = extend c_name_component_file_or_folder;
+-- Name of a folder.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_component_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_base_name = extend c_name_subcomponent;
+-- Base part of a name.
+----------------------------------------------------------------------------------------------------
+    
+    end c_name_subcomponent_base_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_extension = extend c_name_subcomponent;
+-- Extension of a name.
+----------------------------------------------------------------------------------------------------
+
+-->>>
+    ------------------------------------------------------------------------------------------------
+    static find_in_list (
+        exts       : t_char32ustr)               -- p©¡pony oddˆlen‚ st©edn¡kem
+        return t_signed32;
+    -- vr t¡ index p©¡pony v ©etˆzci exts ‡¡slovan˜ od 0, -1, pokud tam p©¡pona nen¡
+    -- nap©¡klad pro ©etˆzec exts="src;priv;pub" a pro p©¡ponu src to vr t¡ 0,
+    -- pro p©¡ponu priv 1 a pro p©¡ponu pub 2, pro p©¡ponu jinou -1
+    -- *** v˜znam t‚to metody nech pu
+    ------------------------------------------------------------------------------------------------
+--<<<
+
+    end c_name_subcomponent_extension;
+
+
+----------------------------------------------------------------------------------------------------
+-- extend c_name =
+----------------------------------------------------------------------------------------------------
+
+-->>>
+----------------------------------------------------------------------------------------------------
+procedure get_parent_path (
+    name       : c_name)
+    return p_name;
+-- Vr t¡ rodi‡ovsk˜ adres © zadan‚ cesty.
+----------------------------------------------------------------------------------------------------
+--<<<
+
+
+
+end names;

@@ -1,0 +1,952 @@
+----------------------------------------------------------------------------------------------------
+module ddeml =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd;
+
+-- /*++ BUILD Version: 0001 // Increment this if a change has global effects --
+-- /*****************************************************************************\
+-- *                                                                             *
+-- *  ddeml.h -    DDEML API header file                                         *
+-- *                                                                             *
+-- *               Version 3.10                                                  *
+-- *                                                                             *
+-- *               Copyright (c) Microsoft Corporation.  All rights reserved.    *
+-- *                                                                             *
+-- \*****************************************************************************/
+-- /******** public types *******
+type
+t_HCONVLIST       = t_HANDLE;
+type
+t_HCONV           = t_HANDLE;
+type
+t_HSZ             = t_HANDLE;
+type
+HDDEDATA          = t_HANDLE;
+-- /* the following structure is for use with XTYP_WILDCONNECT processing. 
+type
+  tagHSZPAIR        = record
+hszSvc          : t_HSZ;
+hszTopic        : t_HSZ;
+  end record;
+  HSZPAIR           = tagHSZPAIR;
+
+type
+PHSZPAIR          = ^HSZPAIR for machine_pointer use true;
+-- /* The following structure is used by DdeConnect() and DdeConnectList() and
+--    by XTYP_CONNECT and XTYP_WILDCONNECT callbacks. */
+type
+  tagCONVCONTEXT    = record
+cb              : UINT;
+wFlags          : UINT;
+wCountryID      : UINT;
+iCodePage       : signed 32;
+dwLangID        : DWORD;
+dwSecurity      : DWORD;
+qos             : SECURITY_QUALITY_OF_SERVICE;
+  end record;
+  CONVCONTEXT       = tagCONVCONTEXT;
+
+type
+PCONVCONTEXT      = ^CONVCONTEXT for machine_pointer use true;
+-- /* The following structure is used by DdeQueryConvInfo(): 
+type
+  tagCONVINFO       = record
+cb              : DWORD;
+hUser           : DWORD_PTR;
+hConvPartner    : t_HCONV;
+hszSvcPartner   : t_HSZ;
+hszServiceReq   : t_HSZ;
+hszTopic        : t_HSZ;
+hszItem         : t_HSZ;
+wFmt            : UINT;
+wType           : UINT;
+wStatus         : UINT;
+wConvst         : UINT;
+wLastError      : UINT;
+hConvList       : t_HCONVLIST;
+ConvCtxt        : CONVCONTEXT;
+hwnd            : t_HWND;
+hwndPartner     : t_HWND;
+  end record;
+  CONVINFO          = tagCONVINFO;
+
+type
+PCONVINFO         = ^CONVINFO for machine_pointer use true;
+-- /***** conversation states (usState) ****
+const
+  XST_NULL          = 0;
+
+const
+  XST_INCOMPLETE    = 1;
+
+const
+  XST_CONNECTED     = 2;
+
+const
+  XST_INIT1         = 3;
+
+const
+  XST_INIT2         = 4;
+
+const
+  XST_REQSENT       = 5;
+
+const
+  XST_DATARCVD      = 6;
+
+const
+  XST_POKESENT      = 7;
+
+const
+  XST_POKEACKRCVD   = 8;
+
+const
+  XST_EXECSENT      = 9;
+
+const
+  XST_EXECACKRCVD   = 10;
+
+const
+  XST_ADVSENT       = 11;
+
+const
+  XST_UNADVSENT     = 12;
+
+const
+  XST_ADVACKRCVD    = 13;
+
+const
+  XST_UNADVACKRCVD  = 14;
+
+const
+  XST_ADVDATASENT   = 15;
+
+const
+  XST_ADVDATAACKRCVD= 16;
+
+-- /* used in LOWORD(dwData1) of XTYP_ADVREQ callbacks... 
+const
+  CADV_LATEACK      = $FFFF;
+
+-- /***** conversation status bits (fsStatus) ****
+const
+  ST_CONNECTED      = $01;
+
+const
+  ST_ADVISE         = $02;
+
+const
+  ST_ISLOCAL        = $04;
+
+const
+  ST_BLOCKED        = $08;
+
+const
+  ST_CLIENT         = $10;
+
+const
+  ST_TERMINATED     = $20;
+
+const
+  ST_INLIST         = $40;
+
+const
+  ST_BLOCKNEXT      = $80;
+
+const
+  ST_ISSELF         = $0100;
+
+-- /* DDE constants for wStatus field 
+const
+  DDE_FACK          = $8000;
+
+const
+  DDE_FBUSY         = $4000;
+
+const
+  DDE_FDEFERUPD     = $4000;
+
+const
+  DDE_FACKREQ       = $8000;
+
+const
+  DDE_FRELEASE      = $2000;
+
+const
+  DDE_FREQUESTED    = $1000;
+
+const
+  DDE_FAPPSTATUS    = $FF;
+
+const
+  DDE_FNOTPROCESSED = $00;
+
+-- /***** message filter hook types ****
+const
+  MSGF_DDEMGR       = $8001;
+
+-- /***** codepage constants ***
+const
+  CP_WINANSI        = 1004;
+
+const
+  CP_WINUNICODE     = 1200;
+
+#if #declared UNICODE; then;
+#template CP_WINNEUTRAL;
+  CP_WINUNICODE 
+#end CP_WINNEUTRAL;
+#else;
+#template CP_WINNEUTRAL;
+  CP_WINANSI 
+#end CP_WINNEUTRAL;
+#end if;
+
+-- /***** transaction types ****
+const
+  XTYPF_NOBLOCK     = $02;
+
+const
+  XTYPF_NODATA      = $04;
+
+const
+  XTYPF_ACKREQ      = $08;
+
+const
+  XCLASS_MASK       = $FC00;
+
+const
+  XCLASS_BOOL       = $1000;
+
+const
+  XCLASS_DATA       = $2000;
+
+const
+  XCLASS_FLAGS      = $4000;
+
+const
+  XCLASS_NOTIFICATION= $8000;
+
+const
+  XTYP_MASK         = $F0;
+
+const
+  XTYP_SHIFT        = 4;
+
+-- /***** Timeout constants ****
+const
+  TIMEOUT_ASYNC     = $FFFFFFFF;
+
+-- /***** Transaction ID constants ****
+const
+  QID_SYNC          = $FFFFFFFF;
+
+-- /****** public strings used in DDE *****
+#if #declared UNICODE; then;
+#template SZDDESYS_TOPIC;
+  L 'System'
+#end SZDDESYS_TOPIC;
+#template SZDDESYS_ITEM_TOPICS;
+  L 'Topics'
+#end SZDDESYS_ITEM_TOPICS;
+#template SZDDESYS_ITEM_SYSITEMS;
+  L 'SysItems'
+#end SZDDESYS_ITEM_SYSITEMS;
+#template SZDDESYS_ITEM_RTNMSG;
+  L 'ReturnMessage'
+#end SZDDESYS_ITEM_RTNMSG;
+#template SZDDESYS_ITEM_STATUS;
+  L 'Status'
+#end SZDDESYS_ITEM_STATUS;
+#template SZDDESYS_ITEM_FORMATS;
+  L 'Formats'
+#end SZDDESYS_ITEM_FORMATS;
+#template SZDDESYS_ITEM_HELP;
+  L 'Help'
+#end SZDDESYS_ITEM_HELP;
+#template SZDDE_ITEM_ITEMLIST;
+  L 'TopicItemList'
+#end SZDDE_ITEM_ITEMLIST;
+#else;
+#template SZDDESYS_TOPIC;
+  'System'
+#end SZDDESYS_TOPIC;
+#template SZDDESYS_ITEM_TOPICS;
+  'Topics'
+#end SZDDESYS_ITEM_TOPICS;
+#template SZDDESYS_ITEM_SYSITEMS;
+  'SysItems'
+#end SZDDESYS_ITEM_SYSITEMS;
+#template SZDDESYS_ITEM_RTNMSG;
+  'ReturnMessage'
+#end SZDDESYS_ITEM_RTNMSG;
+#template SZDDESYS_ITEM_STATUS;
+  'Status'
+#end SZDDESYS_ITEM_STATUS;
+#template SZDDESYS_ITEM_FORMATS;
+  'Formats'
+#end SZDDESYS_ITEM_FORMATS;
+#template SZDDESYS_ITEM_HELP;
+  'Help'
+#end SZDDESYS_ITEM_HELP;
+#template SZDDE_ITEM_ITEMLIST;
+  'TopicItemList'
+#end SZDDE_ITEM_ITEMLIST;
+#end if;
+
+-- /****** API entry points *****
+type
+FNCALLBACK        = procedure (
+    wType           : UINT;
+    wFmt            : UINT;
+    hConv           : t_HCONV;
+    hsz1            : t_HSZ;
+    hsz2            : t_HSZ;
+    hData           : HDDEDATA;
+    dwData1         : ULONG_PTR;
+    dwData2         : ULONG_PTR)
+                      return HDDEDATA;
+type
+PFNCALLBACK       = ^procedure (
+    wType           : UINT;
+    wFmt            : UINT;
+    hConv           : t_HCONV;
+    hsz1            : t_HSZ;
+    hsz2            : t_HSZ;
+    hData           : HDDEDATA;
+    dwData1         : ULONG_PTR;
+    dwData2         : ULONG_PTR)
+                      return HDDEDATA for machine_pointer use true;
+-- /* DLL registration functions 
+procedure DdeInitializeA(
+    pidInst         : in out DWORD ; 
+    pfnCallback_x   : in PFNCALLBACK; 
+    afCmd           : in DWORD; 
+    ulRes           : in DWORD)
+                      return UINT;
+#pragma convention(DdeInitializeA,system);
+#pragma import(DdeInitializeA,'DdeInitializeA','user32.dll');
+
+procedure DdeInitializeW(
+    pidInst         : in out DWORD ; 
+    pfnCallback_x   : in PFNCALLBACK; 
+    afCmd           : in DWORD; 
+    ulRes           : in DWORD)
+                      return UINT;
+#pragma convention(DdeInitializeW,system);
+#pragma import(DdeInitializeW,'DdeInitializeW','user32.dll');
+
+#if #declared UNICODE; then;
+#template DdeInitialize;
+  DdeInitializeW 
+#end DdeInitialize;
+#else;
+#template DdeInitialize;
+  DdeInitializeA 
+#end DdeInitialize;
+#end if;
+
+-- /*
+--  * Callback filter flags for use with standard apps.
+--  */
+const
+  CBF_FAIL_SELFCONNECTIONS= $1000;
+
+const
+  CBF_FAIL_CONNECTIONS= $2000;
+
+const
+  CBF_FAIL_ADVISES  = $4000;
+
+const
+  CBF_FAIL_EXECUTES = $8000;
+
+const
+  CBF_FAIL_POKES    = $10000;
+
+const
+  CBF_FAIL_REQUESTS = $20000;
+
+const
+  CBF_FAIL_ALLSVRXACTIONS= $3F000;
+
+const
+  CBF_SKIP_CONNECT_CONFIRMS= $40000;
+
+const
+  CBF_SKIP_REGISTRATIONS= $80000;
+
+const
+  CBF_SKIP_UNREGISTRATIONS= $100000;
+
+const
+  CBF_SKIP_DISCONNECTS= $200000;
+
+const
+  CBF_SKIP_ALLNOTIFICATIONS= $3C0000;
+
+-- /*
+--  * Application command flags
+--  */
+const
+  APPCMD_CLIENTONLY = $10;
+
+const
+  APPCMD_FILTERINITS= $20;
+
+const
+  APPCMD_MASK       = $0FF0;
+
+-- /*
+--  * Application classification flags
+--  */
+const
+  APPCLASS_STANDARD = $00;
+
+const
+  APPCLASS_MASK     = $0F;
+
+procedure DdeUninitialize(
+    idInst          : in DWORD)
+                      return BOOL;
+#pragma convention(DdeUninitialize,system);
+#pragma import(DdeUninitialize,'DdeUninitialize','user32.dll');
+
+-- /*
+--  * conversation enumeration functions
+--  */
+procedure DdeConnectList(
+    idInst          : in DWORD; 
+    hszService      : in t_HSZ; 
+    hszTopic        : in t_HSZ; 
+    hConvList       : in t_HCONVLIST; 
+    pCC             : in PCONVCONTEXT)
+                      return t_HCONVLIST;
+#pragma convention(DdeConnectList,system);
+#pragma import(DdeConnectList,'DdeConnectList','user32.dll');
+
+procedure DdeQueryNextServer(
+    hConvList       : in t_HCONVLIST; 
+    hConvPrev       : in t_HCONV)
+                      return t_HCONV;
+#pragma convention(DdeQueryNextServer,system);
+#pragma import(DdeQueryNextServer,'DdeQueryNextServer','user32.dll');
+
+procedure DdeDisconnectList(
+    hConvList       : in t_HCONVLIST)
+                      return BOOL;
+#pragma convention(DdeDisconnectList,system);
+#pragma import(DdeDisconnectList,'DdeDisconnectList','user32.dll');
+
+-- /*
+--  * conversation control functions
+--  */
+procedure DdeConnect(
+    idInst          : in DWORD; 
+    hszService      : in t_HSZ; 
+    hszTopic        : in t_HSZ; 
+    pCC             : in PCONVCONTEXT)
+                      return t_HCONV;
+#pragma convention(DdeConnect,system);
+#pragma import(DdeConnect,'DdeConnect','user32.dll');
+
+procedure DdeDisconnect(
+    hConv           : in out {!}t_HCONV)
+                      return BOOL;
+#pragma convention(DdeDisconnect,system);
+#pragma import(DdeDisconnect,'DdeDisconnect','user32.dll');
+
+procedure DdeReconnect(
+    hConv           : in t_HCONV)
+                      return t_HCONV;
+#pragma convention(DdeReconnect,system);
+#pragma import(DdeReconnect,'DdeReconnect','user32.dll');
+
+procedure DdeQueryConvInfo(
+    hConv           : in t_HCONV; 
+    idTransaction   : in DWORD; 
+    pConvInfo       : in out CONVINFO )
+                      return UINT;
+#pragma convention(DdeQueryConvInfo,system);
+#pragma import(DdeQueryConvInfo,'DdeQueryConvInfo','user32.dll');
+
+procedure DdeSetUserHandle(
+    hConv           : in t_HCONV; 
+    id              : in DWORD; 
+    hUser           : in DWORD_PTR)
+                      return BOOL;
+#pragma convention(DdeSetUserHandle,system);
+#pragma import(DdeSetUserHandle,'DdeSetUserHandle','user32.dll');
+
+procedure DdeAbandonTransaction(
+    idInst          : in DWORD; 
+    hConv           : in t_HCONV; 
+    idTransaction   : in DWORD)
+                      return BOOL;
+#pragma convention(DdeAbandonTransaction,system);
+#pragma import(DdeAbandonTransaction,'DdeAbandonTransaction','user32.dll');
+
+-- /*
+--  * app server interface functions
+--  */
+procedure DdePostAdvise(
+    idInst          : in DWORD; 
+    hszTopic        : in t_HSZ; 
+    hszItem         : in t_HSZ)
+                      return BOOL;
+#pragma convention(DdePostAdvise,system);
+#pragma import(DdePostAdvise,'DdePostAdvise','user32.dll');
+
+procedure DdeEnableCallback(
+    idInst          : in DWORD; 
+    hConv           : in t_HCONV; 
+    wCmd            : in UINT)
+                      return BOOL;
+#pragma convention(DdeEnableCallback,system);
+#pragma import(DdeEnableCallback,'DdeEnableCallback','user32.dll');
+
+procedure DdeImpersonateClient(
+    hConv           : in t_HCONV)
+                      return BOOL;
+#pragma convention(DdeImpersonateClient,system);
+#pragma import(DdeImpersonateClient,'DdeImpersonateClient','user32.dll');
+
+const
+  EC_ENABLEALL      = 0;
+
+const
+  EC_QUERYWAITING   = 2;
+
+procedure DdeNameService(
+    idInst          : in DWORD; 
+    hsz1            : in t_HSZ; 
+    hsz2            : in t_HSZ; 
+    afCmd           : in UINT)
+                      return HDDEDATA;
+#pragma convention(DdeNameService,system);
+#pragma import(DdeNameService,'DdeNameService','user32.dll');
+
+const
+  DNS_REGISTER      = $01;
+
+const
+  DNS_UNREGISTER    = $02;
+
+const
+  DNS_FILTERON      = $04;
+
+const
+  DNS_FILTEROFF     = $08;
+
+-- /*
+--  * app client interface functions
+--  */
+procedure DdeClientTransaction(
+    pData           : in LPBYTE; 
+    cbData          : in DWORD; 
+    hConv           : in t_HCONV; 
+    hszItem         : in t_HSZ; 
+    wFmt            : in UINT; 
+    wType           : in UINT; 
+    dwTimeout       : in DWORD; 
+    pdwResult       : out DWORD )
+                      return HDDEDATA;
+#pragma convention(DdeClientTransaction,system);
+#pragma import(DdeClientTransaction,'DdeClientTransaction','user32.dll');
+
+-- /*
+--  *data transfer functions
+--  */
+procedure DdeCreateDataHandle(
+    idInst          : in DWORD; 
+    pSrc            : in LPBYTE; 
+    cb              : in DWORD; 
+    cbOff           : in DWORD; 
+    hszItem         : in t_HSZ; 
+    wFmt            : in UINT; 
+    afCmd           : in UINT)
+                      return HDDEDATA;
+#pragma convention(DdeCreateDataHandle,system);
+#pragma import(DdeCreateDataHandle,'DdeCreateDataHandle','user32.dll');
+
+procedure DdeAddData(
+    hData           : in HDDEDATA; 
+    pSrc            : in LPBYTE; 
+    cb              : in DWORD; 
+    cbOff           : in DWORD)
+                      return HDDEDATA;
+#pragma convention(DdeAddData,system);
+#pragma import(DdeAddData,'DdeAddData','user32.dll');
+
+procedure DdeGetData(
+    hData           : in HDDEDATA; 
+    pDst            : out BYTE ; 
+    cbMax           : in DWORD; 
+    cbOff           : in DWORD)
+                      return DWORD;
+#pragma convention(DdeGetData,system);
+#pragma import(DdeGetData,'DdeGetData','user32.dll');
+
+procedure DdeAccessData(
+    hData           : in HDDEDATA; 
+    pcbDataSize     : out DWORD )
+                      return LPBYTE;
+#pragma convention(DdeAccessData,system);
+#pragma import(DdeAccessData,'DdeAccessData','user32.dll');
+
+procedure DdeUnaccessData(
+    hData           : in HDDEDATA)
+                      return BOOL;
+#pragma convention(DdeUnaccessData,system);
+#pragma import(DdeUnaccessData,'DdeUnaccessData','user32.dll');
+
+procedure DdeFreeDataHandle(
+    hData           : in out {!}HDDEDATA)
+                      return BOOL;
+#pragma convention(DdeFreeDataHandle,system);
+#pragma import(DdeFreeDataHandle,'DdeFreeDataHandle','user32.dll');
+
+const
+  HDATA_APPOWNED    = $01;
+
+procedure DdeGetLastError(
+    idInst          : in DWORD)
+                      return UINT;
+#pragma convention(DdeGetLastError,system);
+#pragma import(DdeGetLastError,'DdeGetLastError','user32.dll');
+
+const
+  DMLERR_NO_ERROR   = 0;
+
+const
+  DMLERR_FIRST      = $4000;
+
+const
+  DMLERR_ADVACKTIMEOUT= $4000;
+
+const
+  DMLERR_BUSY       = $4001;
+
+const
+  DMLERR_DATAACKTIMEOUT= $4002;
+
+const
+  DMLERR_DLL_NOT_INITIALIZED= $4003;
+
+const
+  DMLERR_DLL_USAGE  = $4004;
+
+const
+  DMLERR_EXECACKTIMEOUT= $4005;
+
+const
+  DMLERR_INVALIDPARAMETER= $4006;
+
+const
+  DMLERR_LOW_MEMORY = $4007;
+
+const
+  DMLERR_MEMORY_ERROR= $4008;
+
+const
+  DMLERR_NOTPROCESSED= $4009;
+
+const
+  DMLERR_NO_CONV_ESTABLISHED= $400A;
+
+const
+  DMLERR_POKEACKTIMEOUT= $400B;
+
+const
+  DMLERR_POSTMSG_FAILED= $400C;
+
+const
+  DMLERR_REENTRANCY = $400D;
+
+const
+  DMLERR_SERVER_DIED= $400E;
+
+const
+  DMLERR_SYS_ERROR  = $400F;
+
+const
+  DMLERR_UNADVACKTIMEOUT= $4010;
+
+const
+  DMLERR_UNFOUND_QUEUE_ID= $4011;
+
+const
+  DMLERR_LAST       = $4011;
+
+type
+t_001=signed 32;
+
+procedure DdeCreateStringHandleA(
+    idInst          : in DWORD; 
+    psz             : in LPCSTR; 
+    iCodePage       : in t_001)
+                      return t_HSZ;
+#pragma convention(DdeCreateStringHandleA,system);
+#pragma import(DdeCreateStringHandleA,'DdeCreateStringHandleA','user32.dll');
+
+type
+t_002=signed 32;
+
+procedure DdeCreateStringHandleW(
+    idInst          : in DWORD; 
+    psz             : in LPCWSTR; 
+    iCodePage       : in t_002)
+                      return t_HSZ;
+#pragma convention(DdeCreateStringHandleW,system);
+#pragma import(DdeCreateStringHandleW,'DdeCreateStringHandleW','user32.dll');
+
+#if #declared UNICODE; then;
+#template DdeCreateStringHandle;
+  DdeCreateStringHandleW 
+#end DdeCreateStringHandle;
+#else;
+#template DdeCreateStringHandle;
+  DdeCreateStringHandleA 
+#end DdeCreateStringHandle;
+#end if;
+
+type
+t_003=signed 32;
+
+procedure DdeQueryStringA(
+    idInst          : in DWORD; 
+    hsz             : in t_HSZ; 
+    psz             : in out CHARSTR ; 
+    cchMax          : in DWORD; 
+    iCodePage       : in t_003)
+                      return DWORD;
+#pragma convention(DdeQueryStringA,system);
+#pragma import(DdeQueryStringA,'DdeQueryStringA','user32.dll');
+
+type
+t_004=signed 32;
+
+procedure DdeQueryStringW(
+    idInst          : in DWORD; 
+    hsz             : in t_HSZ; 
+    psz             : in out WCHARSTR ; 
+    cchMax          : in DWORD; 
+    iCodePage       : in t_004)
+                      return DWORD;
+#pragma convention(DdeQueryStringW,system);
+#pragma import(DdeQueryStringW,'DdeQueryStringW','user32.dll');
+
+#if #declared UNICODE; then;
+#template DdeQueryString;
+  DdeQueryStringW 
+#end DdeQueryString;
+#else;
+#template DdeQueryString;
+  DdeQueryStringA 
+#end DdeQueryString;
+#end if;
+
+procedure DdeFreeStringHandle(
+    idInst          : in DWORD; 
+    hsz             : in out {!}t_HSZ)
+                      return BOOL;
+#pragma convention(DdeFreeStringHandle,system);
+#pragma import(DdeFreeStringHandle,'DdeFreeStringHandle','user32.dll');
+
+procedure DdeKeepStringHandle(
+    idInst          : in DWORD; 
+    hsz             : in out {!}t_HSZ)
+                      return BOOL;
+#pragma convention(DdeKeepStringHandle,system);
+#pragma import(DdeKeepStringHandle,'DdeKeepStringHandle','user32.dll');
+
+type
+  t_005 = signed 32;
+
+procedure DdeCmpStringHandles(
+    hsz1            : in t_HSZ; 
+    hsz2            : in t_HSZ)
+                      return t_005;
+#pragma convention(DdeCmpStringHandles,system);
+#pragma import(DdeCmpStringHandles,'DdeCmpStringHandles','user32.dll');
+
+-- /*
+--  * DDEML public debugging header file info
+--  */
+type
+  tagDDEML_MSG_HOOK_DATA = record
+uiLo            : UINT_PTR;
+uiHi            : UINT_PTR;
+cbData          : DWORD;
+Data            : array 0..7 of DWORD;
+  end record;
+  DDEML_MSG_HOOK_DATA = tagDDEML_MSG_HOOK_DATA;
+  PDDEML_MSG_HOOK_DATA = ^tagDDEML_MSG_HOOK_DATA;
+
+type
+  tagMONMSGSTRUCT   = record
+cb              : UINT;
+hwndTo          : t_HWND;
+dwTime          : DWORD;
+hTask           : t_HANDLE;
+wMsg            : UINT;
+wParam          : t_WPARAM;
+lParam          : t_LPARAM;
+dmhd            : DDEML_MSG_HOOK_DATA;
+  end record;
+  MONMSGSTRUCT      = tagMONMSGSTRUCT;
+  PMONMSGSTRUCT     = ^tagMONMSGSTRUCT;
+
+type
+  tagMONCBSTRUCT    = record
+cb              : UINT;
+dwTime          : DWORD;
+hTask           : t_HANDLE;
+dwRet           : DWORD;
+wType           : UINT;
+wFmt            : UINT;
+hConv           : t_HCONV;
+hsz1            : t_HSZ;
+hsz2            : t_HSZ;
+hData           : HDDEDATA;
+dwData1         : ULONG_PTR;
+dwData2         : ULONG_PTR;
+cc              : CONVCONTEXT;
+cbData          : DWORD;
+Data            : array 0..7 of DWORD;
+  end record;
+  MONCBSTRUCT       = tagMONCBSTRUCT;
+  PMONCBSTRUCT      = ^tagMONCBSTRUCT;
+
+type
+  tagMONHSZSTRUCTA  = record
+cb              : UINT;
+fsAction        : BOOL;
+dwTime          : DWORD;
+hsz             : t_HSZ;
+hTask           : t_HANDLE;
+str             : array 0..0 of CHAR;
+  end record;
+  MONHSZSTRUCTA     = tagMONHSZSTRUCTA;
+  PMONHSZSTRUCTA    = ^tagMONHSZSTRUCTA;
+
+type
+  tagMONHSZSTRUCTW  = record
+cb              : UINT;
+fsAction        : BOOL;
+dwTime          : DWORD;
+hsz             : t_HSZ;
+hTask           : t_HANDLE;
+str             : array 0..0 of WCHAR;
+  end record;
+  MONHSZSTRUCTW     = tagMONHSZSTRUCTW;
+  PMONHSZSTRUCTW    = ^tagMONHSZSTRUCTW;
+
+#if #declared UNICODE; then;
+type
+MONHSZSTRUCT      = MONHSZSTRUCTW;
+type
+PMONHSZSTRUCT     = PMONHSZSTRUCTW;
+#else;
+type
+MONHSZSTRUCT      = MONHSZSTRUCTA;
+type
+PMONHSZSTRUCT     = PMONHSZSTRUCTA;
+#end if;
+
+const
+  MH_CREATE         = 1;
+
+const
+  MH_KEEP           = 2;
+
+const
+  MH_DELETE         = 3;
+
+const
+  MH_CLEANUP        = 4;
+
+type
+  tagMONERRSTRUCT   = record
+cb              : UINT;
+wLastError      : UINT;
+dwTime          : DWORD;
+hTask           : t_HANDLE;
+  end record;
+  MONERRSTRUCT      = tagMONERRSTRUCT;
+  PMONERRSTRUCT     = ^tagMONERRSTRUCT;
+
+type
+  tagMONLINKSTRUCT  = record
+cb              : UINT;
+dwTime          : DWORD;
+hTask           : t_HANDLE;
+fEstablished    : BOOL;
+fNoData         : BOOL;
+hszSvc          : t_HSZ;
+hszTopic        : t_HSZ;
+hszItem         : t_HSZ;
+wFmt            : UINT;
+fServer         : BOOL;
+hConvServer     : t_HCONV;
+hConvClient     : t_HCONV;
+  end record;
+  MONLINKSTRUCT     = tagMONLINKSTRUCT;
+  PMONLINKSTRUCT    = ^tagMONLINKSTRUCT;
+
+type
+  tagMONCONVSTRUCT  = record
+cb              : UINT;
+fConnect        : BOOL;
+dwTime          : DWORD;
+hTask           : t_HANDLE;
+hszSvc          : t_HSZ;
+hszTopic        : t_HSZ;
+hConvClient     : t_HCONV;
+hConvServer     : t_HCONV;
+  end record;
+  MONCONVSTRUCT     = tagMONCONVSTRUCT;
+  PMONCONVSTRUCT    = ^tagMONCONVSTRUCT;
+
+const
+  MAX_MONITORS      = 4;
+
+const
+  APPCLASS_MONITOR  = $01;
+
+-- /*
+--  * Callback filter flags for use with MONITOR apps - 0 implies no monitor
+--  * callbacks.
+--  */
+const
+  MF_HSZ_INFO       = $1000000;
+
+const
+  MF_SENDMSGS       = $2000000;
+
+const
+  MF_POSTMSGS       = $4000000;
+
+const
+  MF_CALLBACKS      = $8000000;
+
+const
+  MF_ERRORS         = $10000000;
+
+const
+  MF_LINKS          = $20000000;
+
+const
+  MF_CONV           = $40000000;
+
+const
+  MF_MASK           = $FF000000;
+
+
+end ddeml;

@@ -1,0 +1,180 @@
+----------------------------------------------------------------------------------------------------
+module dde =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd;
+
+-- /*****************************************************************************\
+-- *                                                                             *
+-- * dde.h -       Dynamic Data Exchange structures and definitions              *
+-- *                                                                             *
+-- * Copyright (c) 1993-1999, Microsoft Corp.	All rights reserved	      *
+-- *                                                                             *
+-- \*****************************************************************************/
+-- #pragma  once
+--  begin_r_dde
+-- /* DDE window messages 
+const
+  WM_DDE_FIRST      = $03E0;
+
+--  end_r_dde
+-- /*----------------------------------------------------------------------------
+-- |       DDEACK structure
+-- |
+-- |	Structure of wStatus (LOWORD(lParam)) in WM_DDE_ACK message
+-- |       sent in response to a WM_DDE_DATA, WM_DDE_REQUEST, WM_DDE_POKE,
+-- |       WM_DDE_ADVISE, or WM_DDE_UNADVISE message.
+-- |
+-- ----------------------------------------------------------------------------*/
+type
+  DDEACK            = record
+bAppReturnCode  : unsigned 16 {:8};
+reserved        : unsigned 16 {:6};
+fBusy           : unsigned 16 {:1};
+fAck            : unsigned 16 {:1};
+  end record;
+
+-- /*----------------------------------------------------------------------------
+-- |       DDEADVISE structure
+-- |
+-- |	WM_DDE_ADVISE parameter structure for hOptions (LOWORD(lParam))
+-- |
+-- ----------------------------------------------------------------------------*/
+type
+  DDEADVISE         = record
+reserved        : unsigned 16 {:14};
+fDeferUpd       : unsigned 16 {:1};
+fAckReq         : unsigned 16 {:1};
+cfFormat        : signed 16;
+  end record;
+
+-- /*----------------------------------------------------------------------------
+-- |       DDEDATA structure
+-- |
+-- |       WM_DDE_DATA parameter structure for hData (LOWORD(lParam)).
+-- |       The actual size of this structure depends on the size of
+-- |       the Value array.
+-- |
+-- ----------------------------------------------------------------------------*/
+type
+  DDEDATA           = record
+unused          : unsigned 16 {:12};
+fResponse       : unsigned 16 {:1};
+fRelease        : unsigned 16 {:1};
+reserved        : unsigned 16 {:1};
+fAckReq         : unsigned 16 {:1};
+cfFormat        : signed 16;
+Value           : array 0..0 of BYTE;
+  end record;
+
+-- /*----------------------------------------------------------------------------
+-- |	DDEPOKE structure
+-- |
+-- |	WM_DDE_POKE parameter structure for hData (LOWORD(lParam)).
+-- |       The actual size of this structure depends on the size of
+-- |       the Value array.
+-- |
+-- ----------------------------------------------------------------------------*/
+type
+  DDEPOKE           = record
+unused          : unsigned 16 {:13};
+fRelease        : unsigned 16 {:1};
+fReserved       : unsigned 16 {:2};
+cfFormat        : signed 16;
+Value           : array 0..0 of BYTE;
+  end record;
+
+-- /*----------------------------------------------------------------------------
+-- The following typedef's were used in previous versions of the Windows SDK.
+-- They are still valid.  The above typedef's define exactly the same structures
+-- as those below.  The above typedef names are recommended, however, as they
+-- are more meaningful.
+-- 
+-- Note that the DDEPOKE structure typedef'ed in earlier versions of DDE.H did
+-- not correctly define the bit positions.
+-- ----------------------------------------------------------------------------*/
+type
+  DDELN             = record
+unused          : unsigned 16 {:13};
+fRelease        : unsigned 16 {:1};
+fDeferUpd       : unsigned 16 {:1};
+fAckReq         : unsigned 16 {:1};
+cfFormat        : signed 16;
+  end record;
+
+type
+  DDEUP             = record
+unused          : unsigned 16 {:12};
+fAck            : unsigned 16 {:1};
+fRelease        : unsigned 16 {:1};
+fReserved       : unsigned 16 {:1};
+fAckReq         : unsigned 16 {:1};
+cfFormat        : signed 16;
+rgb             : array 0..0 of BYTE;
+  end record;
+
+-- /*
+--  * DDE SECURITY
+--  */
+type
+t_001=^SECURITY_QUALITY_OF_SERVICE for machine_pointer use true;
+
+procedure DdeSetQualityOfService(
+    hwndClient      : t_HWND; 
+    pqosNew         : in t_001; 
+    pqosPrev        : PSECURITY_QUALITY_OF_SERVICE)
+                      return BOOL;
+#pragma convention(DdeSetQualityOfService,system);
+#pragma import(DdeSetQualityOfService,'DdeSetQualityOfService','user32.dll');
+
+procedure ImpersonateDdeClientWindow(
+    hWndClient      : t_HWND; 
+    hWndServer      : t_HWND)
+                      return BOOL;
+#pragma convention(ImpersonateDdeClientWindow,system);
+#pragma import(ImpersonateDdeClientWindow,'ImpersonateDdeClientWindow','user32.dll');
+
+-- /*
+--  * DDE message packing APIs
+--  */
+procedure PackDDElParam(
+    msg             : UINT; 
+    uiLo            : UINT_PTR; 
+    uiHi            : UINT_PTR)
+                      return t_LPARAM;
+#pragma convention(PackDDElParam,system);
+#pragma import(PackDDElParam,'PackDDElParam','user32.dll');
+
+procedure UnpackDDElParam(
+    msg             : UINT; 
+    lParam          : t_LPARAM; 
+    puiLo           : PUINT_PTR; 
+    puiHi           : PUINT_PTR)
+                      return BOOL;
+#pragma convention(UnpackDDElParam,system);
+#pragma import(UnpackDDElParam,'UnpackDDElParam','user32.dll');
+
+procedure FreeDDElParam(
+    msg             : UINT; 
+    lParam          : t_LPARAM)
+                      return BOOL;
+#pragma convention(FreeDDElParam,system);
+#pragma import(FreeDDElParam,'FreeDDElParam','user32.dll');
+
+procedure ReuseDDElParam(
+    lParam          : t_LPARAM; 
+    msgIn           : UINT; 
+    msgOut          : UINT; 
+    uiLo            : UINT_PTR; 
+    uiHi            : UINT_PTR)
+                      return t_LPARAM;
+#pragma convention(ReuseDDElParam,system);
+#pragma import(ReuseDDElParam,'ReuseDDElParam','user32.dll');
+
+
+end dde;

@@ -1,0 +1,18 @@
+#option warning(all,false);
+#option hint(all,false);
+#separate public standard;
+#separate private standard;
+
+----------------------------------------------------------------------------------------------------
+program test_stream =
+-- Hello task.
+-- Programming Language Flex Samples.
+-- Copyright (C) 2003 A && L soft, s.r.o.
+----------------------------------------------------------------------------------------------------
+with
+   standard.streams,
+   standard.streams.terminators;
+
+
+begin
+  end test_stream;

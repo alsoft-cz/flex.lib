@@ -1,0 +1,285 @@
+----------------------------------------------------------------------------------------------------
+module private xml_tokenizer =
+-- Advanced Multi-platform Library: XML support
+-- XML token reader/writer.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_xml_token_reader =
+-- XML token reader.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initializes the reader and assigns an input stream to it.
+    -- If [prefixes] is True, then a name consisting of several parts separated by colons is 
+    -- reported as a sequence of [xtok_name] tokens intermixed with [xtok_colon] tokens.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_token =
+    -- Reads a token from the input.
+    -- The text outside elements, within comments and CDATA sections is reported as a sequence of
+    -- [xtok_characters] or [xtok_entity] (in text only) tokens.
+    -- Line ends are reported only when requested in the [init] procedure.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end get_token;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static unget_token =
+    -- Returns the last read token to the input (the reader shifts back one token).
+    -- This procedure can't be used recursively, i.e. it is not possible to [get_token] two tokens
+    -- and then return them both back with [unget_token].
+    ------------------------------------------------------------------------------------------------
+    begin
+      end unget_token;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_name =
+    -- Returns the name associated with the last [xtok_name] or [xtok_entity] token.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end get_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_string =
+    -- Returns the value of the string associated with the last [xtok_string] token.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end get_string;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_character =
+    -- Returns the character associated with the last [xtok_character] token.
+    ------------------------------------------------------------------------------------------------
+    begin
+      end get_character;
+
+    end c_xml_token_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_xml_token_writer =
+-- XML token writer.
+----------------------------------------------------------------------------------------------------
+
+    const
+      -- common names produced directly by the token writer
+      name_xml     = 'xml';                      -- the XML declaration name
+      name_version = 'version';                  -- the version attribute
+      name_encoding= 'encoding';                 -- the encoding attribute
+
+      -- common values produced directly by the token writer
+      value_version_1_0 = '1.0';                 -- XML version 1.0
+
+    var
+      stream       : p_text_writer;              -- output stream the XML shall be emitted to
+
+    ------------------------------------------------------------------------------------------------
+    static init = 
+    -- Initializes the writer and assigns an output stream to it.
+    ------------------------------------------------------------------------------------------------ 
+    begin
+      -- setup the stream
+      this.stream:=stream;
+
+      -- output the XML declaration
+      put_token(xtok_start_pi);
+      put_name(name_xml);
+      put_attribute(name_version,value_version_1_0);
+      -- %%TODO(XML) put_attribute(name_encoding,???);
+      put_token(xtok_end_pi);
+      put_token(xtok_line_end);
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_token =
+    -- Writes a token to the output.
+    -- Use following [put_*] procedures to write tokens like [xtok_name], [xtok_string], 
+    -- [xtok_entity] and a string of [xtok_character]s. When such token or [xtok_eof] is submited to 
+    -- [put_token], [xml_token_output_error] exception is raised.
+    --   Line ends are written only when [xtok_line_end] is submited to [put_token] and so do 
+    -- whitespaces (for whitespaces use [put_character] instead).
+    ------------------------------------------------------------------------------------------------ 
+    begin
+      case token
+        -- end of line
+        when xtok_line_end            do stream^.write_line('');
+        -- "<"
+        when xtok_start_element_begin do stream^.write('<');
+        -- "</"
+        when xtok_start_element_end   do stream^.write('</');
+        -- "<?"
+        when xtok_start_pi            do stream^.write('<?');
+        -- "<!--"
+        when xtok_start_comment       do stream^.write('<!--');
+        -- "<![CDATA["
+        when xtok_start_cdata         do stream^.write('<![CDATA[');
+        -- ">"
+        when xtok_end_element         do stream^.write('>');
+        -- "/>"
+        when xtok_end_empty_element   do stream^.write('/>');
+        -- "?>"
+        when xtok_end_pi              do stream^.write('?>');
+        -- "--!>"
+        when xtok_end_comment         do stream^.write('--!>');
+        -- "]]!>"
+        when xtok_end_cdata           do stream^.write(']]!>');
+        -- "="
+        when xtok_eq                  do stream^.write('=');
+        -- ":"
+        when xtok_colon               do stream^.write(':');
+
+        -- we don't know how to process [xtok_eof], [xtok_name], [xtok_string], [xtok_character] and [xtok_entity]
+        when others                   do raise xml_token_output_error;
+        end case;
+      end put_token;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_name =
+    -- Writes a name (XTOK_NAME) to the output.
+    ------------------------------------------------------------------------------------------------ 
+    begin
+      stream^.write(name);
+      end put_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_attribute =
+    -- Writes an attribute in the form "name='value'" to the output.
+    -- It is automatically detected wether to use apostrophees (') or quotes ("). If both are used 
+    -- in the value, [xml_token_output_error] exception is raised.
+    ------------------------------------------------------------------------------------------------
+    begin
+      put_character(" ");
+      put_name(name);
+      put_token(xtok_eq);
+      put_string(value);
+      end put_attribute;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_string =
+    -- Writes a string ([xtok_string]) to the output.
+    -- [put_string] automatically detects wether to use apostrophees (') or quotes ("). If both are
+    -- used in the string, [xml_token_output_error] exception is raised.
+    ------------------------------------------------------------------------------------------------ 
+    var
+      quotes_present       : t_logical;          -- True when quotes are present in the string
+      apostrophees_present : t_logical;          -- False when apostrophees are present in the string
+
+    begin
+      -- check for " or ' in the string
+      for i in value:range loop
+        quotes_present       or value[i]=""";
+        apostrophees_present or value[i]="'";
+        end loop;
+
+      -- both present => cannot handle, raise an exception
+      if quotes_present and apostrophees_present then
+        raise xml_token_output_error;
+
+      -- output the starting quote or apostrophee
+      elsif quotes_present 
+        then stream^.write('''');
+        else stream^.write('"');
+        end if;
+
+      -- output the value
+      stream^.write(value);
+
+      -- output the ending quote or apostrophee
+      if quotes_present
+        then stream^.write('''');
+        else stream^.write('"');
+        end if;
+      end put_string;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_entity =
+    -- Writes an entity ([xtok_entity]) to the output.
+    ------------------------------------------------------------------------------------------------ 
+    begin
+      stream^.write('&');
+      stream^.write(name);
+      stream^.write(';');
+      end put_entity;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_character =
+    -- Writes a character to the output.
+    ------------------------------------------------------------------------------------------------ 
+    var
+      s            : t_char32str;
+
+    begin
+      -- %%TODO(STRING)
+      s & value;
+      stream^.write(s);
+      end put_character;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static put_characters =
+    -- Writes a string of characters to the output.
+    ------------------------------------------------------------------------------------------------ 
+    begin
+      stream^.write(value);
+      end put_characters;
+
+    end c_xml_token_writer;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure xml_is_whitespace =
+-- True, if given [token] is a whitespace.
+----------------------------------------------------------------------------------------------------
+begin
+  end xml_is_whitespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure xml_is_name =
+-- True, if given [token] is a Name.
+----------------------------------------------------------------------------------------------------
+begin
+  end xml_is_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure xml_is_nmtoken =
+-- True, if given [token] is an Nmtoken.
+----------------------------------------------------------------------------------------------------
+begin
+  end xml_is_nmtoken;
+
+end xml_tokenizer;

@@ -1,0 +1,197 @@
+----------------------------------------------------------------------------------------------------
+module stralign =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /*++
+-- 
+-- Copyright (c) 2000  Microsoft Corporation
+-- 
+-- Module Name:
+-- 
+--     stralign.h
+-- 
+-- Abstract:
+-- 
+--     This module contains macros and prototypes to expose the unaligned wide
+--     character interfaces.
+-- 
+--     Public interfaces created or declared here include:
+-- 
+--     ua_CharUpper()
+--     ua_CharUpperW()
+--     ua_lstrcmp()
+--     ua_lstrcmpW()
+--     ua_lstrcmpi()
+--     ua_lstrcmpiW()
+--     ua_lstrlen()
+--     ua_lstrlenW()
+--     ua_tcscpy()
+--     ua_wcschr()
+--     ua_wcscpy()
+--     ua_wcslen()
+--     ua_wcsrchr()
+-- 
+--     STRUC_ALIGNED_STACK_COPY()
+--     TSTR_ALIGNED()
+--     TSTR_ALIGNED_STACK_COPY()
+--     WSTR_ALIGNED()
+--     WSTR_ALIGNED_STACK_COPY()
+-- 
+-- Author:
+-- 
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- 
+--  Alignment of unicode strings is not necessary on X86.
+-- 
+-- ++
+-- 
+--  VOID
+--  WSTR_ALIGNED_STACK_COPY (
+--  OUT PCWSTR *TargetString,
+--  IN PCUWSTR SourceString OPTIONAL
+--  )
+-- 
+--  VOID
+--  TSTR_ALIGNED_STACK_COPY (
+--  OUT PCTSTR *TargetString,
+--  IN PCUTSTR SourceString OPTIONAL
+--  )
+-- 
+--  Routine Description:
+-- 
+--  These macros set TargetString to an aligned pointer to the string
+--  represented by SourceString. If necessary, an aligned copy of
+--  SourceString is copied onto the stack.
+-- 
+--  Arguments:
+-- 
+--  TargetString - Supplies a pointer to a pointer to the resultant
+--  string. This may be the same as SourceString if
+--  that argument is aligned.
+-- 
+--  SourceString - Supplies a pointer to the possibly unaligned UNICODE
+--  string.
+-- 
+--  Return Value:
+-- 
+--  None.
+-- 
+--  Note:
+-- 
+--  These macros may allocate memory on the stack via the CRT function
+--  _alloca(). This memory is "freed" when the calling function exits.
+--  As a result, do not use these macros inside of a loop that may execute
+--  a large number of times - instead, use a wrapper function, or use
+--  an explicit buffer like this:
+-- 
+--  TCHAR AlignedStringBuffer[ MAX_FOOSTR_CHARS ];
+--  PTSTR AlignedString;
+-- 
+--  while (a < b) {
+--  ...
+--  if (TSTR_ALIGNED(s) {
+--  AlignedString = s;
+--  } else {
+--  AlignedString = (PTSTR)ua_tcscpy(AlignedStringBuffer,s);
+--  }
+--  SomeSystemFunction(AlignedString);
+--  ...
+--  }
+--  
+--  
+-- --
+-- 
+--  __UA_WSTRSIZE returns the number of bytes required to store the
+--  supplied null-terminated UNICODE string.
+--  
+--  __UA_LOCALCOPY accepts a pointer to unaligned data and a size. It
+--  allocates an aligned buffer on the stack and copies the data into
+--  it, returning a pointer to the buffer.
+-- 
+-- 
+--  Note that NULL is aligned.
+-- 
+-- ++
+-- 
+--  <type> CONST *
+--  STRUC_ALIGNED_STACK_COPY (
+--  IN <type name>,
+--  IN PVOID Struc OPTIONAL
+--  )
+--  
+--  Routine Description:
+-- 
+--  This macro returns an aligned pointer to Struc, creating a local
+--  copy on the stack if necessary.
+-- 
+--  This should be used only for relatively small structures, and efforts
+--  should be made to align the structure properly in the first place. Use
+--  this macro only as a last resort.
+-- 
+--  Arguments:
+-- 
+--  <type> - The type specifier of Struc
+-- 
+--  Struc - Supplies a pointer to the structure in question.
+-- 
+--  Return Value:
+-- 
+--  Returns a const pointer to Struc if it is properly aligned, or a pointer 
+--  to a stack-allocated copy of Struc if it is not.
+-- 
+-- --
+#if #declared UNICODE; then;
+#template TSTR_ALIGNED_STACK_COPY(d,s);
+  {WSTR_ALIGNED_STACK_COPY(d,s)} (*(d)=(PCWSTR)(s)) ( d,s ) 
+#end TSTR_ALIGNED_STACK_COPY;
+#template TSTR_ALIGNED(x);
+  {WSTR_ALIGNED(s)} TRUE  ( x ) 
+#end TSTR_ALIGNED;
+#template ua_CharUpper;
+  CharUpperW 
+#end ua_CharUpper;
+#template ua_lstrcmp;
+  lstrcmpW 
+#end ua_lstrcmp;
+#template ua_lstrcmpi;
+  lstrcmpiW 
+#end ua_lstrcmpi;
+#template ua_lstrlen;
+  lstrlenW 
+#end ua_lstrlen;
+#template ua_tcscpy;
+  wcscpy 
+#end ua_tcscpy;
+#else;
+#template TSTR_ALIGNED_STACK_COPY(d,s);
+  {ASTR_ALIGNED_STACK_COPY(d,s)} (*(d)=(PCSTR)(s)) ( d,s ) 
+#end TSTR_ALIGNED_STACK_COPY;
+#template TSTR_ALIGNED(x);
+  1 
+#end TSTR_ALIGNED;
+#template ua_CharUpper;
+  CharUpperA 
+#end ua_CharUpper;
+#template ua_lstrcmp;
+  lstrcmpA 
+#end ua_lstrcmp;
+#template ua_lstrcmpi;
+  lstrcmpiA 
+#end ua_lstrcmpi;
+#template ua_lstrlen;
+  lstrlenA 
+#end ua_lstrlen;
+#template ua_tcscpy;
+  strcpy 
+#end ua_tcscpy;
+#end if;
+
+
+end stralign;

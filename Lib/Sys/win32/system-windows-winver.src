@@ -1,0 +1,484 @@
+----------------------------------------------------------------------------------------------------
+module winver =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt;
+
+-- /*****************************************************************************\
+-- *                                                                             *
+-- * winver.h -    Version management functions, types, and definitions          *
+-- *                                                                             *
+-- *               Include file for VER.DLL.  This library is                    *
+-- *               designed to allow version stamping of Windows executable files*
+-- *               and of special .VER files for DOS executable files.           *
+-- *                                                                             *
+-- *               Copyright (c) Microsoft Corporation. All rights reserved.     *
+-- *                                                                             *
+-- \*****************************************************************************/
+-- /* ----- Symbols ----- 
+const
+  VS_VERSION_INFO   = 1;
+
+const
+  VS_USER_DEFINED   = 100;
+
+-- /* ----- VS_VERSION.dwFileFlags ----- 
+const
+  VS_FFI_SIGNATURE  = $FEEF04BD;
+
+const
+  VS_FFI_STRUCVERSION= $10000;
+
+const
+  VS_FFI_FILEFLAGSMASK= $3F;
+
+-- /* ----- VS_VERSION.dwFileFlags ----- 
+const
+  VS_FF_DEBUG       = $01;
+
+const
+  VS_FF_PRERELEASE  = $02;
+
+const
+  VS_FF_PATCHED     = $04;
+
+const
+  VS_FF_PRIVATEBUILD= $08;
+
+const
+  VS_FF_INFOINFERRED= $10;
+
+const
+  VS_FF_SPECIALBUILD= $20;
+
+-- /* ----- VS_VERSION.dwFileOS ----- 
+const
+  VOS_UNKNOWN       = $00;
+
+const
+  VOS_DOS           = $10000;
+
+const
+  VOS_OS216         = $20000;
+
+const
+  VOS_OS232         = $30000;
+
+const
+  VOS_NT            = $40000;
+
+const
+  VOS_WINCE         = $50000;
+
+const
+  VOS__BASE         = $00;
+
+const
+  VOS__WINDOWS16    = $01;
+
+const
+  VOS__PM16         = $02;
+
+const
+  VOS__PM32         = $03;
+
+const
+  VOS__WINDOWS32    = $04;
+
+const
+  VOS_DOS_WINDOWS16 = $10001;
+
+const
+  VOS_DOS_WINDOWS32 = $10004;
+
+const
+  VOS_OS216_PM16    = $20002;
+
+const
+  VOS_OS232_PM32    = $30003;
+
+const
+  VOS_NT_WINDOWS32  = $40004;
+
+-- /* ----- VS_VERSION.dwFileType ----- 
+const
+  VFT_UNKNOWN       = $00;
+
+const
+  VFT_APP           = $01;
+
+const
+  VFT_DLL           = $02;
+
+const
+  VFT_DRV           = $03;
+
+const
+  VFT_FONT          = $04;
+
+const
+  VFT_VXD           = $05;
+
+const
+  VFT_STATIC_LIB    = $07;
+
+-- /* ----- VS_VERSION.dwFileSubtype for VFT_WINDOWS_DRV ----- 
+const
+  VFT2_UNKNOWN      = $00;
+
+const
+  VFT2_DRV_PRINTER  = $01;
+
+const
+  VFT2_DRV_KEYBOARD = $02;
+
+const
+  VFT2_DRV_LANGUAGE = $03;
+
+const
+  VFT2_DRV_DISPLAY  = $04;
+
+const
+  VFT2_DRV_MOUSE    = $05;
+
+const
+  VFT2_DRV_NETWORK  = $06;
+
+const
+  VFT2_DRV_SYSTEM   = $07;
+
+const
+  VFT2_DRV_INSTALLABLE= $08;
+
+const
+  VFT2_DRV_SOUND    = $09;
+
+const
+  VFT2_DRV_COMM     = $0A;
+
+const
+  VFT2_DRV_INPUTMETHOD= $0B;
+
+const
+  VFT2_DRV_VERSIONED_PRINTER= $0C;
+
+-- /* ----- VS_VERSION.dwFileSubtype for VFT_WINDOWS_FONT ----- 
+const
+  VFT2_FONT_RASTER  = $01;
+
+const
+  VFT2_FONT_VECTOR  = $02;
+
+const
+  VFT2_FONT_TRUETYPE= $03;
+
+-- /* ----- VerFindFile() flags ----- 
+const
+  VFFF_ISSHAREDFILE = $01;
+
+const
+  VFF_CURNEDEST     = $01;
+
+const
+  VFF_FILEINUSE     = $02;
+
+const
+  VFF_BUFFTOOSMALL  = $04;
+
+-- /* ----- VerInstallFile() flags ----- 
+const
+  VIFF_FORCEINSTALL = $01;
+
+const
+  VIFF_DONTDELETEOLD= $02;
+
+const
+  VIF_TEMPFILE      = $01;
+
+const
+  VIF_MISMATCH      = $02;
+
+const
+  VIF_SRCOLD        = $04;
+
+const
+  VIF_DIFFLANG      = $08;
+
+const
+  VIF_DIFFCODEPG    = $10;
+
+const
+  VIF_DIFFTYPE      = $20;
+
+const
+  VIF_WRITEPROT     = $40;
+
+const
+  VIF_FILEINUSE     = $80;
+
+const
+  VIF_OUTOFSPACE    = $0100;
+
+const
+  VIF_ACCESSVIOLATION= $0200;
+
+const
+  VIF_SHARINGVIOLATION= $0400;
+
+const
+  VIF_CANNOTCREATE  = $0800;
+
+const
+  VIF_CANNOTDELETE  = $1000;
+
+const
+  VIF_CANNOTRENAME  = $2000;
+
+const
+  VIF_CANNOTDELETECUR= $4000;
+
+const
+  VIF_OUTOFMEMORY   = $8000;
+
+const
+  VIF_CANNOTREADSRC = $10000;
+
+const
+  VIF_CANNOTREADDST = $20000;
+
+const
+  VIF_BUFFTOOSMALL  = $40000;
+
+const
+  VIF_CANNOTLOADLZ32= $80000;
+
+const
+  VIF_CANNOTLOADCABINET= $100000;
+
+-- /* ----- Types and structures ----- 
+type
+  tagVS_FIXEDFILEINFO = record
+dwSignature     : DWORD;
+dwStrucVersion  : DWORD;
+dwFileVersionMS : DWORD;
+dwFileVersionLS : DWORD;
+dwProductVersionMS : DWORD;
+dwProductVersionLS : DWORD;
+dwFileFlagsMask : DWORD;
+dwFileFlags     : DWORD;
+dwFileOS        : DWORD;
+dwFileType      : DWORD;
+dwFileSubtype   : DWORD;
+dwFileDateMS    : DWORD;
+dwFileDateLS    : DWORD;
+  end record;
+  VS_FIXEDFILEINFO  = tagVS_FIXEDFILEINFO;
+
+-- /* ----- Function prototypes ----- 
+procedure VerFindFileA(
+    uFlags          : DWORD; 
+    szFileName      : LPSTR; 
+    szWinDir        : LPSTR; 
+    szAppDir        : LPSTR; 
+    szCurDir        : LPSTR; 
+    lpuCurDirLen    : PUINT; 
+    szDestDir       : LPSTR; 
+    lpuDestDirLen   : PUINT)
+                      return DWORD;
+#pragma convention(VerFindFileA,system);
+#pragma import(VerFindFileA,'VerFindFileA','version.dll');
+
+procedure VerFindFileW(
+    uFlags          : DWORD; 
+    szFileName      : LPWSTR; 
+    szWinDir        : LPWSTR; 
+    szAppDir        : LPWSTR; 
+    szCurDir        : LPWSTR; 
+    lpuCurDirLen    : PUINT; 
+    szDestDir       : LPWSTR; 
+    lpuDestDirLen   : PUINT)
+                      return DWORD;
+#pragma convention(VerFindFileW,system);
+#pragma import(VerFindFileW,'VerFindFileW','version.dll');
+
+#if #declared UNICODE; then;
+#template VerFindFile;
+  VerFindFileW 
+#end VerFindFile;
+#else;
+#template VerFindFile;
+  VerFindFileA 
+#end VerFindFile;
+#end if;
+
+procedure VerInstallFileA(
+    uFlags          : DWORD; 
+    szSrcFileName   : LPSTR; 
+    szDestFileName  : LPSTR; 
+    szSrcDir        : LPSTR; 
+    szDestDir       : LPSTR; 
+    szCurDir        : LPSTR; 
+    szTmpFile       : LPSTR; 
+    lpuTmpFileLen   : PUINT)
+                      return DWORD;
+#pragma convention(VerInstallFileA,system);
+#pragma import(VerInstallFileA,'VerInstallFileA','version.dll');
+
+procedure VerInstallFileW(
+    uFlags          : DWORD; 
+    szSrcFileName   : LPWSTR; 
+    szDestFileName  : LPWSTR; 
+    szSrcDir        : LPWSTR; 
+    szDestDir       : LPWSTR; 
+    szCurDir        : LPWSTR; 
+    szTmpFile       : LPWSTR; 
+    lpuTmpFileLen   : PUINT)
+                      return DWORD;
+#pragma convention(VerInstallFileW,system);
+#pragma import(VerInstallFileW,'VerInstallFileW','version.dll');
+
+#if #declared UNICODE; then;
+#template VerInstallFile;
+  VerInstallFileW 
+#end VerInstallFile;
+#else;
+#template VerInstallFile;
+  VerInstallFileA 
+#end VerInstallFile;
+#end if;
+
+-- /* Returns size of version info in bytes 
+-- /* Filename of version stamped file 
+procedure GetFileVersionInfoSizeA(
+    lptstrFilename  : LPCSTR; 
+    lpdwHandle      : LPDWORD)
+                      return DWORD;
+#pragma convention(GetFileVersionInfoSizeA,system);
+#pragma import(GetFileVersionInfoSizeA,'GetFileVersionInfoSizeA','version.dll');
+
+-- /* Information for use by GetFileVersionInfo 
+-- /* Returns size of version info in bytes 
+-- /* Filename of version stamped file 
+procedure GetFileVersionInfoSizeW(
+    lptstrFilename  : LPCWSTR; 
+    lpdwHandle      : LPDWORD)
+                      return DWORD;
+#pragma convention(GetFileVersionInfoSizeW,system);
+#pragma import(GetFileVersionInfoSizeW,'GetFileVersionInfoSizeW','version.dll');
+
+-- /* Information for use by GetFileVersionInfo 
+#if #declared UNICODE; then;
+#template GetFileVersionInfoSize;
+  GetFileVersionInfoSizeW 
+#end GetFileVersionInfoSize;
+#else;
+#template GetFileVersionInfoSize;
+  GetFileVersionInfoSizeA 
+#end GetFileVersionInfoSize;
+#end if;
+
+-- /* Read version info into buffer 
+-- /* Filename of version stamped file 
+-- /* Information from GetFileVersionSize 
+-- /* Length of buffer for info 
+procedure GetFileVersionInfoA(
+    lptstrFilename  : LPCSTR; 
+    dwHandle        : DWORD; 
+    dwLen           : DWORD; 
+    lpData          : LPVOID)
+                      return BOOL;
+#pragma convention(GetFileVersionInfoA,system);
+#pragma import(GetFileVersionInfoA,'GetFileVersionInfoA','version.dll');
+
+-- /* Buffer to place the data structure 
+-- /* Read version info into buffer 
+-- /* Filename of version stamped file 
+-- /* Information from GetFileVersionSize 
+-- /* Length of buffer for info 
+procedure GetFileVersionInfoW(
+    lptstrFilename  : LPCWSTR; 
+    dwHandle        : DWORD; 
+    dwLen           : DWORD; 
+    lpData          : LPVOID)
+                      return BOOL;
+#pragma convention(GetFileVersionInfoW,system);
+#pragma import(GetFileVersionInfoW,'GetFileVersionInfoW','version.dll');
+
+-- /* Buffer to place the data structure 
+#if #declared UNICODE; then;
+#template GetFileVersionInfo;
+  GetFileVersionInfoW 
+#end GetFileVersionInfo;
+#else;
+#template GetFileVersionInfo;
+  GetFileVersionInfoA 
+#end GetFileVersionInfo;
+#end if;
+
+procedure VerLanguageNameA(
+    wLang           : DWORD; 
+    szLang          : LPSTR; 
+    nSize           : DWORD)
+                      return DWORD;
+#pragma convention(VerLanguageNameA,system);
+#pragma import(VerLanguageNameA,'VerLanguageNameA','kernel32.dll');
+
+procedure VerLanguageNameW(
+    wLang           : DWORD; 
+    szLang          : LPWSTR; 
+    nSize           : DWORD)
+                      return DWORD;
+#pragma convention(VerLanguageNameW,system);
+#pragma import(VerLanguageNameW,'VerLanguageNameW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template VerLanguageName;
+  VerLanguageNameW 
+#end VerLanguageName;
+#else;
+#template VerLanguageName;
+  VerLanguageNameA 
+#end VerLanguageName;
+#end if;
+
+type
+t_001=^LPVOID for machine_pointer use true;
+
+procedure VerQueryValueA(
+    pBlock          : in LPVOID; 
+    lpSubBlock      : LPSTR; 
+    lplpBuffer      : t_001; 
+    puLen           : PUINT)
+                      return BOOL;
+#pragma convention(VerQueryValueA,system);
+#pragma import(VerQueryValueA,'VerQueryValueA','version.dll');
+
+type
+t_002=^LPVOID for machine_pointer use true;
+
+procedure VerQueryValueW(
+    pBlock          : in LPVOID; 
+    lpSubBlock      : LPWSTR; 
+    lplpBuffer      : t_002; 
+    puLen           : PUINT)
+                      return BOOL;
+#pragma convention(VerQueryValueW,system);
+#pragma import(VerQueryValueW,'VerQueryValueW','version.dll');
+
+#if #declared UNICODE; then;
+#template VerQueryValue;
+  VerQueryValueW 
+#end VerQueryValue;
+#else;
+#template VerQueryValue;
+  VerQueryValueA 
+#end VerQueryValue;
+#end if;
+
+
+end winver;

@@ -1,0 +1,77 @@
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_reader_filter = extend c_stream_reader; expose c_input_stream;
+-- predek pro forwardery
+----------------------------------------------------------------------------------------------------
+  end c_stream_reader_filter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_writer_filter = extend c_stream_writer; expose c_output_stream;
+-- predek pro forwardery
+----------------------------------------------------------------------------------------------------
+  end c_stream_writer_filter;
+
+
+
+---------------------------------------------------------------------------------------------------
+class public c_input_stream_buffer = extend c_stream_reader_filter; expose c_task;
+-- implementace bufferujiciho forwarderu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_input_buffer(
+      source       : in p_input_stream);         -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream_buffer;
+type p_input_stream_buffer = ^class c_input_stream_buffer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_buffer = extend c_stream_writer_filter; expose c_task;
+-- implementace bufferujiciho forwarderu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_output_buffer(
+      target     : in p_output_stream);          -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_buffer;
+type p_output_stream_buffer = ^class c_output_stream_buffer;
+
+
+
+---------------------------------------------------------------------------------------------------
+class public c_input_stream_redirector = extend c_stream_reader_filter;
+-- implementace redirectorujiciho forwarderu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_input_redirector(
+      source       : in p_input_stream);         -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  static change_input_redirector(
+      source       : in p_input_stream);         -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream_redirector;
+type p_input_stream_redirector = ^class c_input_stream_redirector;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_redirector = extend c_stream_writer_filter;
+-- implementace redirectorujiciho forwarderu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_output_redirector(
+      target     : in p_output_stream);          -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  static change_output_redirector(
+      target     : in p_output_stream);          -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_redirector;
+type p_output_stream_redirector = ^class c_output_stream_redirector;
+
+
+
+
+
+

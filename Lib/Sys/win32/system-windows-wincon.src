@@ -1,0 +1,1178 @@
+----------------------------------------------------------------------------------------------------
+module wincon =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,winbase;
+
+-- /*++ BUILD Version: 0002    // Increment this if a change has global effects
+-- 
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     wincon.h
+-- 
+-- Abstract:
+-- 
+--     This module contains the public data structures, data types,
+--     and procedures exported by the NT console subsystem.
+-- 
+-- Created:
+-- 
+--     26-Oct-1990
+-- 
+-- Revision History:
+-- 
+-- --*/
+type
+  _COORD            = record
+X               : SHORT;
+Y               : SHORT;
+  end record;
+  COORD             = _COORD;
+  PCOORD            = ^_COORD;
+
+type
+  _SMALL_RECT       = record
+Left            : SHORT;
+Top             : SHORT;
+Right           : SHORT;
+Bottom          : SHORT;
+  end record;
+  SMALL_RECT        = _SMALL_RECT;
+  PSMALL_RECT       = ^_SMALL_RECT;
+
+type
+  _KEY_EVENT_RECORD = record
+bKeyDown        : BOOL;
+wRepeatCount    : WORD;
+wVirtualKeyCode : WORD;
+wVirtualScanCode : WORD;
+uChar            : record
+      UnicodeChar   : WCHAR for position use 0;
+      AsciiChar     : CHAR for position use 0;
+    end record;
+dwControlKeyState : DWORD;
+  end record;
+  KEY_EVENT_RECORD  = _KEY_EVENT_RECORD;
+  PKEY_EVENT_RECORD = ^_KEY_EVENT_RECORD;
+
+-- 
+--  ControlKeyState flags
+-- 
+const
+  RIGHT_ALT_PRESSED = $01;
+
+const
+  LEFT_ALT_PRESSED  = $02;
+
+const
+  RIGHT_CTRL_PRESSED= $04;
+
+const
+  LEFT_CTRL_PRESSED = $08;
+
+const
+  SHIFT_PRESSED     = $10;
+
+const
+  NUMLOCK_ON        = $20;
+
+const
+  SCROLLLOCK_ON     = $40;
+
+const
+  CAPSLOCK_ON       = $80;
+
+const
+  ENHANCED_KEY      = $0100;
+
+const
+  NLS_DBCSCHAR      = $10000;
+
+const
+  NLS_ALPHANUMERIC  = $00;
+
+const
+  NLS_KATAKANA      = $20000;
+
+const
+  NLS_HIRAGANA      = $40000;
+
+const
+  NLS_ROMAN         = $400000;
+
+const
+  NLS_IME_CONVERSION= $800000;
+
+const
+  NLS_IME_DISABLE   = $20000000;
+
+type
+  _MOUSE_EVENT_RECORD = record
+dwMousePosition : COORD;
+dwButtonState   : DWORD;
+dwControlKeyState : DWORD;
+dwEventFlags    : DWORD;
+  end record;
+  MOUSE_EVENT_RECORD = _MOUSE_EVENT_RECORD;
+  PMOUSE_EVENT_RECORD = ^_MOUSE_EVENT_RECORD;
+
+-- 
+--  ButtonState flags
+-- 
+const
+  FROM_LEFT_1ST_BUTTON_PRESSED= $01;
+
+const
+  RIGHTMOST_BUTTON_PRESSED= $02;
+
+const
+  FROM_LEFT_2ND_BUTTON_PRESSED= $04;
+
+const
+  FROM_LEFT_3RD_BUTTON_PRESSED= $08;
+
+const
+  FROM_LEFT_4TH_BUTTON_PRESSED= $10;
+
+-- 
+--  EventFlags
+-- 
+const
+  MOUSE_MOVED       = $01;
+
+const
+  DOUBLE_CLICK      = $02;
+
+const
+  MOUSE_WHEELED     = $04;
+
+type
+  _WINDOW_BUFFER_SIZE_RECORD = record
+dwSize          : COORD;
+  end record;
+  WINDOW_BUFFER_SIZE_RECORD = _WINDOW_BUFFER_SIZE_RECORD;
+  PWINDOW_BUFFER_SIZE_RECORD = ^_WINDOW_BUFFER_SIZE_RECORD;
+
+type
+  _MENU_EVENT_RECORD = record
+dwCommandId     : UINT;
+  end record;
+  MENU_EVENT_RECORD = _MENU_EVENT_RECORD;
+  PMENU_EVENT_RECORD = ^_MENU_EVENT_RECORD;
+
+type
+  _FOCUS_EVENT_RECORD = record
+bSetFocus       : BOOL;
+  end record;
+  FOCUS_EVENT_RECORD = _FOCUS_EVENT_RECORD;
+  PFOCUS_EVENT_RECORD = ^_FOCUS_EVENT_RECORD;
+
+type
+  _INPUT_RECORD     = record
+EventType       : WORD;
+Event            : record
+      KeyEvent      : KEY_EVENT_RECORD for position use 0;
+      MouseEvent    : MOUSE_EVENT_RECORD for position use 0;
+      WindowBufferSizeEvent : WINDOW_BUFFER_SIZE_RECORD for position use 0;
+      MenuEvent     : MENU_EVENT_RECORD for position use 0;
+      FocusEvent    : FOCUS_EVENT_RECORD for position use 0;
+    end record;
+  end record;
+  INPUT_RECORD      = _INPUT_RECORD;
+  PINPUT_RECORD     = ^_INPUT_RECORD;
+
+-- 
+--  EventType flags:
+-- 
+const
+  KEY_EVENT         = $01;
+
+const
+  MOUSE_EVENT       = $02;
+
+const
+  WINDOW_BUFFER_SIZE_EVENT= $04;
+
+const
+  MENU_EVENT        = $08;
+
+const
+  FOCUS_EVENT       = $10;
+
+type
+  _CHAR_INFO        = record
+Char             : record
+      UnicodeChar   : WCHAR for position use 0;
+      AsciiChar     : CHAR for position use 0;
+    end record;
+Attributes      : WORD;
+  end record;
+  CHAR_INFO         = _CHAR_INFO;
+  PCHAR_INFO        = ^_CHAR_INFO;
+
+-- 
+--  Attributes flags:
+-- 
+const
+  FOREGROUND_BLUE   = $01;
+
+const
+  FOREGROUND_GREEN  = $02;
+
+const
+  FOREGROUND_RED    = $04;
+
+const
+  FOREGROUND_INTENSITY= $08;
+
+const
+  BACKGROUND_BLUE   = $10;
+
+const
+  BACKGROUND_GREEN  = $20;
+
+const
+  BACKGROUND_RED    = $40;
+
+const
+  BACKGROUND_INTENSITY= $80;
+
+const
+  COMMON_LVB_LEADING_BYTE= $0100;
+
+const
+  COMMON_LVB_TRAILING_BYTE= $0200;
+
+const
+  COMMON_LVB_GRID_HORIZONTAL= $0400;
+
+const
+  COMMON_LVB_GRID_LVERTICAL= $0800;
+
+const
+  COMMON_LVB_GRID_RVERTICAL= $1000;
+
+const
+  COMMON_LVB_REVERSE_VIDEO= $4000;
+
+const
+  COMMON_LVB_UNDERSCORE= $8000;
+
+const
+  COMMON_LVB_SBCSDBCS= $0300;
+
+type
+  _CONSOLE_SCREEN_BUFFER_INFO = record
+dwSize          : COORD;
+dwCursorPosition : COORD;
+wAttributes     : WORD;
+srWindow        : SMALL_RECT;
+dwMaximumWindowSize : COORD;
+  end record;
+  CONSOLE_SCREEN_BUFFER_INFO = _CONSOLE_SCREEN_BUFFER_INFO;
+  PCONSOLE_SCREEN_BUFFER_INFO = ^_CONSOLE_SCREEN_BUFFER_INFO;
+
+type
+  _CONSOLE_CURSOR_INFO = record
+dwSize          : DWORD;
+bVisible        : BOOL;
+  end record;
+  CONSOLE_CURSOR_INFO = _CONSOLE_CURSOR_INFO;
+  PCONSOLE_CURSOR_INFO = ^_CONSOLE_CURSOR_INFO;
+
+type
+  _CONSOLE_FONT_INFO = record
+nFont           : DWORD;
+dwFontSize      : COORD;
+  end record;
+  CONSOLE_FONT_INFO = _CONSOLE_FONT_INFO;
+  PCONSOLE_FONT_INFO = ^_CONSOLE_FONT_INFO;
+
+type
+  _CONSOLE_SELECTION_INFO = record
+dwFlags         : DWORD;
+dwSelectionAnchor : COORD;
+srSelection     : SMALL_RECT;
+  end record;
+  CONSOLE_SELECTION_INFO = _CONSOLE_SELECTION_INFO;
+  PCONSOLE_SELECTION_INFO = ^_CONSOLE_SELECTION_INFO;
+
+-- 
+--  Selection flags
+-- 
+const
+  CONSOLE_NO_SELECTION= $00;
+
+const
+  CONSOLE_SELECTION_IN_PROGRESS= $01;
+
+const
+  CONSOLE_SELECTION_NOT_EMPTY= $02;
+
+const
+  CONSOLE_MOUSE_SELECTION= $04;
+
+const
+  CONSOLE_MOUSE_DOWN= $08;
+
+-- 
+--  typedef for ctrl-c handler routines
+-- 
+type
+PHANDLER_ROUTINE  = ^procedure (
+    CtrlType        : DWORD)
+                      return BOOL for machine_pointer use true;
+const
+  CTRL_C_EVENT      = 0;
+
+const
+  CTRL_BREAK_EVENT  = 1;
+
+const
+  CTRL_CLOSE_EVENT  = 2;
+
+--  3 is reserved!
+--  4 is reserved!
+const
+  CTRL_LOGOFF_EVENT = 5;
+
+const
+  CTRL_SHUTDOWN_EVENT= 6;
+
+-- 
+--  Input Mode flags:
+-- 
+const
+  ENABLE_PROCESSED_INPUT= $01;
+
+const
+  ENABLE_LINE_INPUT = $02;
+
+const
+  ENABLE_ECHO_INPUT = $04;
+
+const
+  ENABLE_WINDOW_INPUT= $08;
+
+const
+  ENABLE_MOUSE_INPUT= $10;
+
+-- 
+--  Output Mode flags:
+-- 
+const
+  ENABLE_PROCESSED_OUTPUT= $01;
+
+const
+  ENABLE_WRAP_AT_EOL_OUTPUT= $02;
+
+-- 
+--  direct API definitions.
+-- 
+procedure PeekConsoleInputA(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out _INPUT_RECORD; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsRead : out DWORD )
+                      return BOOL;
+#pragma convention(PeekConsoleInputA,system);
+#pragma import(PeekConsoleInputA,'PeekConsoleInputA','kernel32.dll');
+
+procedure PeekConsoleInputW(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out _INPUT_RECORD; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsRead : out DWORD )
+                      return BOOL;
+#pragma convention(PeekConsoleInputW,system);
+#pragma import(PeekConsoleInputW,'PeekConsoleInputW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template PeekConsoleInput;
+  PeekConsoleInputW 
+#end PeekConsoleInput;
+#else;
+#template PeekConsoleInput;
+  PeekConsoleInputA 
+#end PeekConsoleInput;
+#end if;
+
+procedure ReadConsoleInputA(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out _INPUT_RECORD; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsRead : out DWORD )
+                      return BOOL;
+#pragma convention(ReadConsoleInputA,system);
+#pragma import(ReadConsoleInputA,'ReadConsoleInputA','kernel32.dll');
+
+procedure ReadConsoleInputW(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out _INPUT_RECORD; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsRead : out DWORD )
+                      return BOOL;
+#pragma convention(ReadConsoleInputW,system);
+#pragma import(ReadConsoleInputW,'ReadConsoleInputW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template ReadConsoleInput;
+  ReadConsoleInputW 
+#end ReadConsoleInput;
+#else;
+#template ReadConsoleInput;
+  ReadConsoleInputA 
+#end ReadConsoleInput;
+#end if;
+
+type
+t_001=^INPUT_RECORD for machine_pointer use true;
+
+procedure WriteConsoleInputA(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : in t_001; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(WriteConsoleInputA,system);
+#pragma import(WriteConsoleInputA,'WriteConsoleInputA','kernel32.dll');
+
+type
+t_002=^INPUT_RECORD for machine_pointer use true;
+
+procedure WriteConsoleInputW(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : in t_002; 
+    nLength         : in DWORD; 
+    lpNumberOfEventsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(WriteConsoleInputW,system);
+#pragma import(WriteConsoleInputW,'WriteConsoleInputW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template WriteConsoleInput;
+  WriteConsoleInputW 
+#end WriteConsoleInput;
+#else;
+#template WriteConsoleInput;
+  WriteConsoleInputA 
+#end WriteConsoleInput;
+#end if;
+
+procedure ReadConsoleOutputA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : out _CHAR_INFO; 
+    dwBufferSize    : in static COORD; 
+    dwBufferCoord   : in static COORD; 
+    lpReadRegion    : in out _SMALL_RECT)
+                      return BOOL;
+#pragma convention(ReadConsoleOutputA,system);
+#pragma import(ReadConsoleOutputA,'ReadConsoleOutputA','kernel32.dll');
+
+procedure ReadConsoleOutputW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : out _CHAR_INFO; 
+    dwBufferSize    : in static COORD; 
+    dwBufferCoord   : in static COORD; 
+    lpReadRegion    : in out _SMALL_RECT)
+                      return BOOL;
+#pragma convention(ReadConsoleOutputW,system);
+#pragma import(ReadConsoleOutputW,'ReadConsoleOutputW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template ReadConsoleOutput;
+  ReadConsoleOutputW 
+#end ReadConsoleOutput;
+#else;
+#template ReadConsoleOutput;
+  ReadConsoleOutputA 
+#end ReadConsoleOutput;
+#end if;
+
+type
+t_003=^CHAR_INFO for machine_pointer use true;
+
+procedure WriteConsoleOutputA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : in t_003; 
+    dwBufferSize    : in static COORD; 
+    dwBufferCoord   : in static COORD; 
+    lpWriteRegion   : in out _SMALL_RECT)
+                      return BOOL;
+#pragma convention(WriteConsoleOutputA,system);
+#pragma import(WriteConsoleOutputA,'WriteConsoleOutputA','kernel32.dll');
+
+type
+t_004=^CHAR_INFO for machine_pointer use true;
+
+procedure WriteConsoleOutputW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : in t_004; 
+    dwBufferSize    : in static COORD; 
+    dwBufferCoord   : in static COORD; 
+    lpWriteRegion   : in out _SMALL_RECT)
+                      return BOOL;
+#pragma convention(WriteConsoleOutputW,system);
+#pragma import(WriteConsoleOutputW,'WriteConsoleOutputW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template WriteConsoleOutput;
+  WriteConsoleOutputW 
+#end WriteConsoleOutput;
+#else;
+#template WriteConsoleOutput;
+  WriteConsoleOutputA 
+#end WriteConsoleOutput;
+#end if;
+
+procedure ReadConsoleOutputCharacterA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpCharacter     : out CHARSTR ; 
+    nLength         : in DWORD; 
+    dwReadCoord     : in static COORD; 
+    lpNumberOfCharsRead : out DWORD )
+                      return BOOL;
+#pragma convention(ReadConsoleOutputCharacterA,system);
+#pragma import(ReadConsoleOutputCharacterA,'ReadConsoleOutputCharacterA','kernel32.dll');
+
+procedure ReadConsoleOutputCharacterW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpCharacter     : out WCHARSTR ; 
+    nLength         : in DWORD; 
+    dwReadCoord     : in static COORD; 
+    lpNumberOfCharsRead : out DWORD )
+                      return BOOL;
+#pragma convention(ReadConsoleOutputCharacterW,system);
+#pragma import(ReadConsoleOutputCharacterW,'ReadConsoleOutputCharacterW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template ReadConsoleOutputCharacter;
+  ReadConsoleOutputCharacterW 
+#end ReadConsoleOutputCharacter;
+#else;
+#template ReadConsoleOutputCharacter;
+  ReadConsoleOutputCharacterA 
+#end ReadConsoleOutputCharacter;
+#end if;
+
+procedure ReadConsoleOutputAttribute(
+    hConsoleOutput  : in t_HANDLE; 
+    lpAttribute     : out WORD ; 
+    nLength         : in DWORD; 
+    dwReadCoord     : in static COORD; 
+    lpNumberOfAttrsRead : out DWORD )
+                      return BOOL;
+#pragma convention(ReadConsoleOutputAttribute,system);
+#pragma import(ReadConsoleOutputAttribute,'ReadConsoleOutputAttribute','kernel32.dll');
+
+procedure WriteConsoleOutputCharacterA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpCharacter     : in LPCSTR; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfCharsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(WriteConsoleOutputCharacterA,system);
+#pragma import(WriteConsoleOutputCharacterA,'WriteConsoleOutputCharacterA','kernel32.dll');
+
+procedure WriteConsoleOutputCharacterW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpCharacter     : in LPCWSTR; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfCharsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(WriteConsoleOutputCharacterW,system);
+#pragma import(WriteConsoleOutputCharacterW,'WriteConsoleOutputCharacterW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template WriteConsoleOutputCharacter;
+  WriteConsoleOutputCharacterW 
+#end WriteConsoleOutputCharacter;
+#else;
+#template WriteConsoleOutputCharacter;
+  WriteConsoleOutputCharacterA 
+#end WriteConsoleOutputCharacter;
+#end if;
+
+type
+t_005=^WORD for machine_pointer use true;
+
+procedure WriteConsoleOutputAttribute(
+    hConsoleOutput  : in t_HANDLE; 
+    lpAttribute     : in t_005; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfAttrsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(WriteConsoleOutputAttribute,system);
+#pragma import(WriteConsoleOutputAttribute,'WriteConsoleOutputAttribute','kernel32.dll');
+
+procedure FillConsoleOutputCharacterA(
+    hConsoleOutput  : in t_HANDLE; 
+    cCharacter      : in CHAR; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfCharsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(FillConsoleOutputCharacterA,system);
+#pragma import(FillConsoleOutputCharacterA,'FillConsoleOutputCharacterA','kernel32.dll');
+
+procedure FillConsoleOutputCharacterW(
+    hConsoleOutput  : in t_HANDLE; 
+    cCharacter      : in WCHAR; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfCharsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(FillConsoleOutputCharacterW,system);
+#pragma import(FillConsoleOutputCharacterW,'FillConsoleOutputCharacterW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template FillConsoleOutputCharacter;
+  FillConsoleOutputCharacterW 
+#end FillConsoleOutputCharacter;
+#else;
+#template FillConsoleOutputCharacter;
+  FillConsoleOutputCharacterA 
+#end FillConsoleOutputCharacter;
+#end if;
+
+procedure FillConsoleOutputAttribute(
+    hConsoleOutput  : in t_HANDLE; 
+    wAttribute      : in WORD; 
+    nLength         : in DWORD; 
+    dwWriteCoord    : in static COORD; 
+    lpNumberOfAttrsWritten : out DWORD )
+                      return BOOL;
+#pragma convention(FillConsoleOutputAttribute,system);
+#pragma import(FillConsoleOutputAttribute,'FillConsoleOutputAttribute','kernel32.dll');
+
+procedure GetConsoleMode(
+    hConsoleHandle  : in t_HANDLE; 
+    lpMode          : out DWORD )
+                      return BOOL;
+#pragma convention(GetConsoleMode,system);
+#pragma import(GetConsoleMode,'GetConsoleMode','kernel32.dll');
+
+procedure GetNumberOfConsoleInputEvents(
+    hConsoleInput   : in t_HANDLE; 
+    lpNumberOfEvents : out DWORD )
+                      return BOOL;
+#pragma convention(GetNumberOfConsoleInputEvents,system);
+#pragma import(GetNumberOfConsoleInputEvents,'GetNumberOfConsoleInputEvents','kernel32.dll');
+
+procedure GetConsoleScreenBufferInfo(
+    hConsoleOutput  : in t_HANDLE; 
+    lpConsoleScreenBufferInfo : out _CONSOLE_SCREEN_BUFFER_INFO)
+                      return BOOL;
+#pragma convention(GetConsoleScreenBufferInfo,system);
+#pragma import(GetConsoleScreenBufferInfo,'GetConsoleScreenBufferInfo','kernel32.dll');
+
+procedure GetLargestConsoleWindowSize(
+    hConsoleOutput  : in t_HANDLE)
+                      return COORD;
+#pragma convention(GetLargestConsoleWindowSize,system);
+#pragma import(GetLargestConsoleWindowSize,'GetLargestConsoleWindowSize','kernel32.dll');
+
+procedure GetConsoleCursorInfo(
+    hConsoleOutput  : in t_HANDLE; 
+    lpConsoleCursorInfo : out _CONSOLE_CURSOR_INFO)
+                      return BOOL;
+#pragma convention(GetConsoleCursorInfo,system);
+#pragma import(GetConsoleCursorInfo,'GetConsoleCursorInfo','kernel32.dll');
+
+procedure GetCurrentConsoleFont(
+    hConsoleOutput  : in t_HANDLE; 
+    bMaximumWindow  : in BOOL; 
+    lpConsoleCurrentFont : out _CONSOLE_FONT_INFO)
+                      return BOOL;
+#pragma convention(GetCurrentConsoleFont,system);
+#pragma import(GetCurrentConsoleFont,'GetCurrentConsoleFont','kernel32.dll');
+
+procedure GetConsoleFontSize(
+    hConsoleOutput  : in t_HANDLE; 
+    nFont           : in DWORD)
+                      return COORD;
+#pragma convention(GetConsoleFontSize,system);
+#pragma import(GetConsoleFontSize,'GetConsoleFontSize','kernel32.dll');
+
+procedure GetConsoleSelectionInfo(
+    lpConsoleSelectionInfo : out _CONSOLE_SELECTION_INFO)
+                      return BOOL;
+#pragma convention(GetConsoleSelectionInfo,system);
+#pragma import(GetConsoleSelectionInfo,'GetConsoleSelectionInfo','kernel32.dll');
+
+procedure GetNumberOfConsoleMouseButtons(
+    lpNumberOfMouseButtons : out DWORD )
+                      return BOOL;
+#pragma convention(GetNumberOfConsoleMouseButtons,system);
+#pragma import(GetNumberOfConsoleMouseButtons,'GetNumberOfConsoleMouseButtons','kernel32.dll');
+
+procedure SetConsoleMode(
+    hConsoleHandle  : in t_HANDLE; 
+    dwMode          : in DWORD)
+                      return BOOL;
+#pragma convention(SetConsoleMode,system);
+#pragma import(SetConsoleMode,'SetConsoleMode','kernel32.dll');
+
+procedure SetConsoleActiveScreenBuffer(
+    hConsoleOutput  : in t_HANDLE)
+                      return BOOL;
+#pragma convention(SetConsoleActiveScreenBuffer,system);
+#pragma import(SetConsoleActiveScreenBuffer,'SetConsoleActiveScreenBuffer','kernel32.dll');
+
+procedure FlushConsoleInputBuffer(
+    hConsoleInput   : in t_HANDLE)
+                      return BOOL;
+#pragma convention(FlushConsoleInputBuffer,system);
+#pragma import(FlushConsoleInputBuffer,'FlushConsoleInputBuffer','kernel32.dll');
+
+procedure SetConsoleScreenBufferSize(
+    hConsoleOutput  : in t_HANDLE; 
+    dwSize          : in static COORD)
+                      return BOOL;
+#pragma convention(SetConsoleScreenBufferSize,system);
+#pragma import(SetConsoleScreenBufferSize,'SetConsoleScreenBufferSize','kernel32.dll');
+
+procedure SetConsoleCursorPosition(
+    hConsoleOutput  : in t_HANDLE; 
+    dwCursorPosition : in static COORD)
+                      return BOOL;
+#pragma convention(SetConsoleCursorPosition,system);
+#pragma import(SetConsoleCursorPosition,'SetConsoleCursorPosition','kernel32.dll');
+
+type
+t_006=^CONSOLE_CURSOR_INFO for machine_pointer use true;
+
+procedure SetConsoleCursorInfo(
+    hConsoleOutput  : in t_HANDLE; 
+    lpConsoleCursorInfo : in t_006)
+                      return BOOL;
+#pragma convention(SetConsoleCursorInfo,system);
+#pragma import(SetConsoleCursorInfo,'SetConsoleCursorInfo','kernel32.dll');
+
+type
+t_007=^SMALL_RECT for machine_pointer use true;
+
+t_008=^SMALL_RECT for machine_pointer use true;
+
+t_009=^CHAR_INFO for machine_pointer use true;
+
+procedure ScrollConsoleScreenBufferA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpScrollRectangle : in t_007; 
+    lpClipRectangle : in t_008; 
+    dwDestinationOrigin : in static COORD; 
+    lpFill          : in t_009)
+                      return BOOL;
+#pragma convention(ScrollConsoleScreenBufferA,system);
+#pragma import(ScrollConsoleScreenBufferA,'ScrollConsoleScreenBufferA','kernel32.dll');
+
+type
+t_010=^SMALL_RECT for machine_pointer use true;
+
+t_011=^SMALL_RECT for machine_pointer use true;
+
+t_012=^CHAR_INFO for machine_pointer use true;
+
+procedure ScrollConsoleScreenBufferW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpScrollRectangle : in t_010; 
+    lpClipRectangle : in t_011; 
+    dwDestinationOrigin : in static COORD; 
+    lpFill          : in t_012)
+                      return BOOL;
+#pragma convention(ScrollConsoleScreenBufferW,system);
+#pragma import(ScrollConsoleScreenBufferW,'ScrollConsoleScreenBufferW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template ScrollConsoleScreenBuffer;
+  ScrollConsoleScreenBufferW 
+#end ScrollConsoleScreenBuffer;
+#else;
+#template ScrollConsoleScreenBuffer;
+  ScrollConsoleScreenBufferA 
+#end ScrollConsoleScreenBuffer;
+#end if;
+
+type
+t_013=^SMALL_RECT for machine_pointer use true;
+
+procedure SetConsoleWindowInfo(
+    hConsoleOutput  : in t_HANDLE; 
+    bAbsolute       : in BOOL; 
+    lpConsoleWindow : in t_013)
+                      return BOOL;
+#pragma convention(SetConsoleWindowInfo,system);
+#pragma import(SetConsoleWindowInfo,'SetConsoleWindowInfo','kernel32.dll');
+
+procedure SetConsoleTextAttribute(
+    hConsoleOutput  : in t_HANDLE; 
+    wAttributes     : in WORD)
+                      return BOOL;
+#pragma convention(SetConsoleTextAttribute,system);
+#pragma import(SetConsoleTextAttribute,'SetConsoleTextAttribute','kernel32.dll');
+
+procedure SetConsoleCtrlHandler(
+    HandlerRoutine  : in PHANDLER_ROUTINE; 
+    Add             : in BOOL)
+                      return BOOL;
+#pragma convention(SetConsoleCtrlHandler,system);
+#pragma import(SetConsoleCtrlHandler,'SetConsoleCtrlHandler','kernel32.dll');
+
+procedure GenerateConsoleCtrlEvent(
+    dwCtrlEvent     : in DWORD; 
+    dwProcessGroupId : in DWORD)
+                      return BOOL;
+#pragma convention(GenerateConsoleCtrlEvent,system);
+#pragma import(GenerateConsoleCtrlEvent,'GenerateConsoleCtrlEvent','kernel32.dll');
+
+procedure AllocConsole
+                      return BOOL;
+#pragma convention(AllocConsole,system);
+#pragma import(AllocConsole,'AllocConsole','kernel32.dll');
+
+procedure FreeConsole
+                      return BOOL;
+#pragma convention(FreeConsole,system);
+#pragma import(FreeConsole,'FreeConsole','kernel32.dll');
+
+procedure AttachConsole(
+    dwProcessId     : in DWORD)
+                      return BOOL;
+#pragma convention(AttachConsole,system);
+#pragma import(AttachConsole,'AttachConsole','kernel32.dll');
+
+procedure GetConsoleTitleA(
+    lpConsoleTitle  : out CHARSTR ; 
+    nSize           : in DWORD)
+                      return DWORD;
+#pragma convention(GetConsoleTitleA,system);
+#pragma import(GetConsoleTitleA,'GetConsoleTitleA','kernel32.dll');
+
+procedure GetConsoleTitleW(
+    lpConsoleTitle  : out WCHARSTR ; 
+    nSize           : in DWORD)
+                      return DWORD;
+#pragma convention(GetConsoleTitleW,system);
+#pragma import(GetConsoleTitleW,'GetConsoleTitleW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleTitle;
+  GetConsoleTitleW 
+#end GetConsoleTitle;
+#else;
+#template GetConsoleTitle;
+  GetConsoleTitleA 
+#end GetConsoleTitle;
+#end if;
+
+procedure SetConsoleTitleA(
+    lpConsoleTitle  : in LPCSTR)
+                      return BOOL;
+#pragma convention(SetConsoleTitleA,system);
+#pragma import(SetConsoleTitleA,'SetConsoleTitleA','kernel32.dll');
+
+procedure SetConsoleTitleW(
+    lpConsoleTitle  : in LPCWSTR)
+                      return BOOL;
+#pragma convention(SetConsoleTitleW,system);
+#pragma import(SetConsoleTitleW,'SetConsoleTitleW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template SetConsoleTitle;
+  SetConsoleTitleW 
+#end SetConsoleTitle;
+#else;
+#template SetConsoleTitle;
+  SetConsoleTitleA 
+#end SetConsoleTitle;
+#end if;
+
+procedure ReadConsoleA(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out unchecked ; 
+    nNumberOfCharsToRead : in DWORD; 
+    lpNumberOfCharsRead : out DWORD ; 
+    lpReserved      : in LPVOID)
+                      return BOOL;
+#pragma convention(ReadConsoleA,system);
+#pragma import(ReadConsoleA,'ReadConsoleA','kernel32.dll');
+
+procedure ReadConsoleW(
+    hConsoleInput   : in t_HANDLE; 
+    lpBuffer        : out unchecked ; 
+    nNumberOfCharsToRead : in DWORD; 
+    lpNumberOfCharsRead : out DWORD ; 
+    lpReserved      : in LPVOID)
+                      return BOOL;
+#pragma convention(ReadConsoleW,system);
+#pragma import(ReadConsoleW,'ReadConsoleW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template ReadConsole;
+  ReadConsoleW 
+#end ReadConsole;
+#else;
+#template ReadConsole;
+  ReadConsoleA 
+#end ReadConsole;
+#end if;
+
+type
+t_014=^unchecked for machine_pointer use true;
+
+procedure WriteConsoleA(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : in t_014; 
+    nNumberOfCharsToWrite : in DWORD; 
+    lpNumberOfCharsWritten : out DWORD ; 
+    lpReserved      : in LPVOID)
+                      return BOOL;
+#pragma convention(WriteConsoleA,system);
+#pragma import(WriteConsoleA,'WriteConsoleA','kernel32.dll');
+
+type
+t_015=^unchecked for machine_pointer use true;
+
+procedure WriteConsoleW(
+    hConsoleOutput  : in t_HANDLE; 
+    lpBuffer        : in t_015; 
+    nNumberOfCharsToWrite : in DWORD; 
+    lpNumberOfCharsWritten : out DWORD ; 
+    lpReserved      : in LPVOID)
+                      return BOOL;
+#pragma convention(WriteConsoleW,system);
+#pragma import(WriteConsoleW,'WriteConsoleW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template WriteConsole;
+  WriteConsoleW 
+#end WriteConsole;
+#else;
+#template WriteConsole;
+  WriteConsoleA 
+#end WriteConsole;
+#end if;
+
+const
+  CONSOLE_TEXTMODE_BUFFER= 1;
+
+type
+t_016=^SECURITY_ATTRIBUTES for machine_pointer use true;
+
+procedure CreateConsoleScreenBuffer(
+    dwDesiredAccess : in DWORD; 
+    dwShareMode     : in DWORD; 
+    lpSecurityAttributes : in t_016; 
+    dwFlags         : in DWORD; 
+    lpScreenBufferData : in LPVOID)
+                      return t_HANDLE;
+#pragma convention(CreateConsoleScreenBuffer,system);
+#pragma import(CreateConsoleScreenBuffer,'CreateConsoleScreenBuffer','kernel32.dll');
+
+procedure GetConsoleCP
+                      return UINT;
+#pragma convention(GetConsoleCP,system);
+#pragma import(GetConsoleCP,'GetConsoleCP','kernel32.dll');
+
+procedure SetConsoleCP(
+    wCodePageID     : in UINT)
+                      return BOOL;
+#pragma convention(SetConsoleCP,system);
+#pragma import(SetConsoleCP,'SetConsoleCP','kernel32.dll');
+
+procedure GetConsoleOutputCP
+                      return UINT;
+#pragma convention(GetConsoleOutputCP,system);
+#pragma import(GetConsoleOutputCP,'GetConsoleOutputCP','kernel32.dll');
+
+procedure SetConsoleOutputCP(
+    wCodePageID     : in UINT)
+                      return BOOL;
+#pragma convention(SetConsoleOutputCP,system);
+#pragma import(SetConsoleOutputCP,'SetConsoleOutputCP','kernel32.dll');
+
+const
+  CONSOLE_FULLSCREEN= 1;
+
+const
+  CONSOLE_FULLSCREEN_HARDWARE= 2;
+
+procedure GetConsoleDisplayMode(
+    lpModeFlags     : out DWORD )
+                      return BOOL;
+#pragma convention(GetConsoleDisplayMode,system);
+#pragma import(GetConsoleDisplayMode,'GetConsoleDisplayMode','kernel32.dll');
+
+procedure GetConsoleWindow
+                      return t_HWND;
+#pragma convention(GetConsoleWindow,system);
+#pragma import(GetConsoleWindow,'GetConsoleWindow','kernel32.dll');
+
+procedure GetConsoleProcessList(
+    lpdwProcessList : out DWORD ; 
+    dwProcessCount  : in DWORD)
+                      return DWORD;
+#pragma convention(GetConsoleProcessList,system);
+#pragma import(GetConsoleProcessList,'GetConsoleProcessList','kernel32.dll');
+
+-- 
+--  Aliasing apis.
+-- 
+procedure AddConsoleAliasA(
+    Source          : in LPSTR; 
+    Target          : in LPSTR; 
+    ExeName         : in LPSTR)
+                      return BOOL;
+#pragma convention(AddConsoleAliasA,system);
+#pragma import(AddConsoleAliasA,'AddConsoleAliasA','kernel32.dll');
+
+procedure AddConsoleAliasW(
+    Source          : in LPWSTR; 
+    Target          : in LPWSTR; 
+    ExeName         : in LPWSTR)
+                      return BOOL;
+#pragma convention(AddConsoleAliasW,system);
+#pragma import(AddConsoleAliasW,'AddConsoleAliasW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template AddConsoleAlias;
+  AddConsoleAliasW 
+#end AddConsoleAlias;
+#else;
+#template AddConsoleAlias;
+  AddConsoleAliasA 
+#end AddConsoleAlias;
+#end if;
+
+procedure GetConsoleAliasA(
+    Source          : in LPSTR; 
+    TargetBuffer    : out CHARSTR ; 
+    TargetBufferLength : in DWORD; 
+    ExeName         : in LPSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasA,system);
+#pragma import(GetConsoleAliasA,'GetConsoleAliasA','kernel32.dll');
+
+procedure GetConsoleAliasW(
+    Source          : in LPWSTR; 
+    TargetBuffer    : out WCHARSTR ; 
+    TargetBufferLength : in DWORD; 
+    ExeName         : in LPWSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasW,system);
+#pragma import(GetConsoleAliasW,'GetConsoleAliasW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleAlias;
+  GetConsoleAliasW 
+#end GetConsoleAlias;
+#else;
+#template GetConsoleAlias;
+  GetConsoleAliasA 
+#end GetConsoleAlias;
+#end if;
+
+procedure GetConsoleAliasesLengthA(
+    ExeName         : in LPSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasesLengthA,system);
+#pragma import(GetConsoleAliasesLengthA,'GetConsoleAliasesLengthA','kernel32.dll');
+
+procedure GetConsoleAliasesLengthW(
+    ExeName         : in LPWSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasesLengthW,system);
+#pragma import(GetConsoleAliasesLengthW,'GetConsoleAliasesLengthW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleAliasesLength;
+  GetConsoleAliasesLengthW 
+#end GetConsoleAliasesLength;
+#else;
+#template GetConsoleAliasesLength;
+  GetConsoleAliasesLengthA 
+#end GetConsoleAliasesLength;
+#end if;
+
+procedure GetConsoleAliasExesLengthA
+                      return DWORD;
+#pragma convention(GetConsoleAliasExesLengthA,system);
+#pragma import(GetConsoleAliasExesLengthA,'GetConsoleAliasExesLengthA','kernel32.dll');
+
+procedure GetConsoleAliasExesLengthW
+                      return DWORD;
+#pragma convention(GetConsoleAliasExesLengthW,system);
+#pragma import(GetConsoleAliasExesLengthW,'GetConsoleAliasExesLengthW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleAliasExesLength;
+  GetConsoleAliasExesLengthW 
+#end GetConsoleAliasExesLength;
+#else;
+#template GetConsoleAliasExesLength;
+  GetConsoleAliasExesLengthA 
+#end GetConsoleAliasExesLength;
+#end if;
+
+procedure GetConsoleAliasesA(
+    AliasBuffer     : out CHARSTR ; 
+    AliasBufferLength : in DWORD; 
+    ExeName         : in LPSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasesA,system);
+#pragma import(GetConsoleAliasesA,'GetConsoleAliasesA','kernel32.dll');
+
+procedure GetConsoleAliasesW(
+    AliasBuffer     : out WCHARSTR ; 
+    AliasBufferLength : in DWORD; 
+    ExeName         : in LPWSTR)
+                      return DWORD;
+#pragma convention(GetConsoleAliasesW,system);
+#pragma import(GetConsoleAliasesW,'GetConsoleAliasesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleAliases;
+  GetConsoleAliasesW 
+#end GetConsoleAliases;
+#else;
+#template GetConsoleAliases;
+  GetConsoleAliasesA 
+#end GetConsoleAliases;
+#end if;
+
+procedure GetConsoleAliasExesA(
+    ExeNameBuffer   : out CHARSTR ; 
+    ExeNameBufferLength : in DWORD)
+                      return DWORD;
+#pragma convention(GetConsoleAliasExesA,system);
+#pragma import(GetConsoleAliasExesA,'GetConsoleAliasExesA','kernel32.dll');
+
+procedure GetConsoleAliasExesW(
+    ExeNameBuffer   : out WCHARSTR ; 
+    ExeNameBufferLength : in DWORD)
+                      return DWORD;
+#pragma convention(GetConsoleAliasExesW,system);
+#pragma import(GetConsoleAliasExesW,'GetConsoleAliasExesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetConsoleAliasExes;
+  GetConsoleAliasExesW 
+#end GetConsoleAliasExes;
+#else;
+#template GetConsoleAliasExes;
+  GetConsoleAliasExesA 
+#end GetConsoleAliasExes;
+#end if;
+
+-- ** console owns the hardware
+end wincon;

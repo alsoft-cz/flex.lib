@@ -1,0 +1,1418 @@
+----------------------------------------------------------------------------------------------------
+module shellapi =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,winbase;
+
+-- /*****************************************************************************\
+-- *                                                                             *
+-- * shellapi.h -  SHELL.DLL functions, types, and definitions                   *
+-- *                                                                             *
+-- * Copyright (c) Microsoft Corporation. All rights reserved.                   *
+-- *                                                                             *
+-- \*****************************************************************************/
+-- 
+--  Define API decoration for direct importing of DLL references.
+-- 
+-- ignored #include <pshpack1.h>
+type
+HDROP             = t_HANDLE;
+procedure DragQueryFileA(
+    _001            : HDROP; 
+    _002            : UINT; 
+    _003            : LPSTR; 
+    _004            : UINT)
+                      return UINT;
+#pragma convention(DragQueryFileA,system);
+#pragma import(DragQueryFileA,'DragQueryFileA','shell32.dll');
+
+procedure DragQueryFileW(
+    _001            : HDROP; 
+    _002            : UINT; 
+    _003            : LPWSTR; 
+    _004            : UINT)
+                      return UINT;
+#pragma convention(DragQueryFileW,system);
+#pragma import(DragQueryFileW,'DragQueryFileW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template DragQueryFile;
+  DragQueryFileW 
+#end DragQueryFile;
+#else;
+#template DragQueryFile;
+  DragQueryFileA 
+#end DragQueryFile;
+#end if;
+
+procedure DragQueryPoint(
+    _001            : HDROP; 
+    _002            : p_POINT)
+                      return BOOL;
+#pragma convention(DragQueryPoint,system);
+#pragma import(DragQueryPoint,'DragQueryPoint','shell32.dll');
+
+procedure DragFinish(
+    _001            : HDROP);
+#pragma convention(DragFinish,system);
+#pragma import(DragFinish,'DragFinish','shell32.dll');
+
+procedure DragAcceptFiles(
+    _001            : t_HWND; 
+    _002            : BOOL);
+#pragma convention(DragAcceptFiles,system);
+#pragma import(DragAcceptFiles,'DragAcceptFiles','shell32.dll');
+
+procedure ShellExecuteA(
+    hwnd            : t_HWND; 
+    lpOperation     : LPCSTR; 
+    lpFile          : LPCSTR; 
+    lpParameters    : LPCSTR; 
+    lpDirectory     : LPCSTR; 
+    nShowCmd        : INT)
+                      return t_HINSTANCE;
+#pragma convention(ShellExecuteA,system);
+#pragma import(ShellExecuteA,'ShellExecuteA','shell32.dll');
+
+procedure ShellExecuteW(
+    hwnd            : t_HWND; 
+    lpOperation     : LPCWSTR; 
+    lpFile          : LPCWSTR; 
+    lpParameters    : LPCWSTR; 
+    lpDirectory     : LPCWSTR; 
+    nShowCmd        : INT)
+                      return t_HINSTANCE;
+#pragma convention(ShellExecuteW,system);
+#pragma import(ShellExecuteW,'ShellExecuteW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ShellExecute;
+  ShellExecuteW 
+#end ShellExecute;
+#else;
+#template ShellExecute;
+  ShellExecuteA 
+#end ShellExecute;
+#end if;
+
+procedure FindExecutableA(
+    lpFile          : LPCSTR; 
+    lpDirectory     : LPCSTR; 
+    lpResult        : LPSTR)
+                      return t_HINSTANCE;
+#pragma convention(FindExecutableA,system);
+#pragma import(FindExecutableA,'FindExecutableA','shell32.dll');
+
+procedure FindExecutableW(
+    lpFile          : LPCWSTR; 
+    lpDirectory     : LPCWSTR; 
+    lpResult        : LPWSTR)
+                      return t_HINSTANCE;
+#pragma convention(FindExecutableW,system);
+#pragma import(FindExecutableW,'FindExecutableW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template FindExecutable;
+  FindExecutableW 
+#end FindExecutable;
+#else;
+#template FindExecutable;
+  FindExecutableA 
+#end FindExecutable;
+#end if;
+
+type
+t_001=^signed 32;
+
+  t_002 = ^LPWSTR for machine_pointer use true;
+
+procedure CommandLineToArgvW(
+    lpCmdLine       : LPCWSTR; 
+    pNumArgs        : t_001)
+                      return t_002;
+#pragma convention(CommandLineToArgvW,system);
+#pragma import(CommandLineToArgvW,'CommandLineToArgvW','shell32.dll');
+
+procedure ShellAboutA(
+    hWnd            : t_HWND; 
+    szApp           : LPCSTR; 
+    szOtherStuff    : LPCSTR; 
+    hIcon           : t_HICON)
+                      return INT;
+#pragma convention(ShellAboutA,system);
+#pragma import(ShellAboutA,'ShellAboutA','shell32.dll');
+
+procedure ShellAboutW(
+    hWnd            : t_HWND; 
+    szApp           : LPCWSTR; 
+    szOtherStuff    : LPCWSTR; 
+    hIcon           : t_HICON)
+                      return INT;
+#pragma convention(ShellAboutW,system);
+#pragma import(ShellAboutW,'ShellAboutW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ShellAbout;
+  ShellAboutW 
+#end ShellAbout;
+#else;
+#template ShellAbout;
+  ShellAboutA 
+#end ShellAbout;
+#end if;
+
+procedure DuplicateIcon(
+    hInst           : t_HINSTANCE; 
+    hIcon           : t_HICON)
+                      return t_HICON;
+#pragma convention(DuplicateIcon,system);
+#pragma import(DuplicateIcon,'DuplicateIcon','shell32.dll');
+
+procedure ExtractAssociatedIconA(
+    hInst           : t_HINSTANCE; 
+    lpIconPath      : LPSTR; 
+    lpiIcon         : LPWORD)
+                      return t_HICON;
+#pragma convention(ExtractAssociatedIconA,system);
+#pragma import(ExtractAssociatedIconA,'ExtractAssociatedIconA','shell32.dll');
+
+procedure ExtractAssociatedIconW(
+    hInst           : t_HINSTANCE; 
+    lpIconPath      : LPWSTR; 
+    lpiIcon         : LPWORD)
+                      return t_HICON;
+#pragma convention(ExtractAssociatedIconW,system);
+#pragma import(ExtractAssociatedIconW,'ExtractAssociatedIconW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ExtractAssociatedIcon;
+  ExtractAssociatedIconW 
+#end ExtractAssociatedIcon;
+#else;
+#template ExtractAssociatedIcon;
+  ExtractAssociatedIconA 
+#end ExtractAssociatedIcon;
+#end if;
+
+procedure ExtractAssociatedIconExA(
+    hInst           : t_HINSTANCE; 
+    lpIconPath      : LPSTR; 
+    lpiIconIndex    : LPWORD; 
+    lpiIconId       : LPWORD)
+                      return t_HICON;
+#pragma convention(ExtractAssociatedIconExA,system);
+#pragma import(ExtractAssociatedIconExA,'ExtractAssociatedIconExA','shell32.dll');
+
+procedure ExtractAssociatedIconExW(
+    hInst           : t_HINSTANCE; 
+    lpIconPath      : LPWSTR; 
+    lpiIconIndex    : LPWORD; 
+    lpiIconId       : LPWORD)
+                      return t_HICON;
+#pragma convention(ExtractAssociatedIconExW,system);
+#pragma import(ExtractAssociatedIconExW,'ExtractAssociatedIconExW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ExtractAssociatedIconEx;
+  ExtractAssociatedIconExW 
+#end ExtractAssociatedIconEx;
+#else;
+#template ExtractAssociatedIconEx;
+  ExtractAssociatedIconExA 
+#end ExtractAssociatedIconEx;
+#end if;
+
+procedure ExtractIconA(
+    hInst           : t_HINSTANCE; 
+    lpszExeFileName : LPCSTR; 
+    nIconIndex      : UINT)
+                      return t_HICON;
+#pragma convention(ExtractIconA,system);
+#pragma import(ExtractIconA,'ExtractIconA','shell32.dll');
+
+procedure ExtractIconW(
+    hInst           : t_HINSTANCE; 
+    lpszExeFileName : LPCWSTR; 
+    nIconIndex      : UINT)
+                      return t_HICON;
+#pragma convention(ExtractIconW,system);
+#pragma import(ExtractIconW,'ExtractIconW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ExtractIcon;
+  ExtractIconW 
+#end ExtractIcon;
+#else;
+#template ExtractIcon;
+  ExtractIconA 
+#end ExtractIcon;
+#end if;
+
+type
+  _DRAGINFOA        = record
+uSize           : UINT;
+pt              : t_POINT;
+fNC             : BOOL;
+lpFileList      : LPSTR;
+grfKeyState     : DWORD;
+  end record;
+  DRAGINFOA         = _DRAGINFOA;
+  LPDRAGINFOA       = ^_DRAGINFOA;
+
+type
+  _DRAGINFOW        = record
+uSize           : UINT;
+pt              : t_POINT;
+fNC             : BOOL;
+lpFileList      : LPWSTR;
+grfKeyState     : DWORD;
+  end record;
+  DRAGINFOW         = _DRAGINFOW;
+  LPDRAGINFOW       = ^_DRAGINFOW;
+
+#if #declared UNICODE; then;
+type
+DRAGINFO          = DRAGINFOW;
+type
+LPDRAGINFO        = LPDRAGINFOW;
+#else;
+type
+DRAGINFO          = DRAGINFOA;
+type
+LPDRAGINFO        = LPDRAGINFOA;
+#end if;
+
+-- //
+-- // AppBar stuff
+-- //
+const
+  ABM_NEW           = $00;
+
+const
+  ABM_REMOVE        = $01;
+
+const
+  ABM_QUERYPOS      = $02;
+
+const
+  ABM_SETPOS        = $03;
+
+const
+  ABM_GETSTATE      = $04;
+
+const
+  ABM_GETTASKBARPOS = $05;
+
+const
+  ABM_ACTIVATE      = $06;
+
+const
+  ABM_GETAUTOHIDEBAR= $07;
+
+const
+  ABM_SETAUTOHIDEBAR= $08;
+
+--  lParam = TRUE/FALSE Set/Unset
+--  uEdge = what edge
+const
+  ABM_WINDOWPOSCHANGED= $09;
+
+const
+  ABM_SETSTATE      = $0A;
+
+--  these are put in the wparam of callback messages
+const
+  ABN_STATECHANGE   = $00;
+
+const
+  ABN_POSCHANGED    = $01;
+
+const
+  ABN_FULLSCREENAPP = $02;
+
+const
+  ABN_WINDOWARRANGE = $03;
+
+--  flags for get state
+const
+  ABS_AUTOHIDE      = $01;
+
+const
+  ABS_ALWAYSONTOP   = $02;
+
+const
+  ABE_LEFT          = 0;
+
+const
+  ABE_TOP           = 1;
+
+const
+  ABE_RIGHT         = 2;
+
+const
+  ABE_BOTTOM        = 3;
+
+type
+  _AppBarData       = record
+cbSize          : DWORD;
+hWnd            : t_HWND;
+uCallbackMessage : UINT;
+uEdge           : UINT;
+rc              : RECT;
+lParam          : t_LPARAM;
+  end record;
+  APPBARDATA        = _AppBarData;
+  PAPPBARDATA       = ^_AppBarData;
+
+procedure SHAppBarMessage(
+    dwMessage       : DWORD; 
+    pData           : PAPPBARDATA)
+                      return UINT_PTR;
+#pragma convention(SHAppBarMessage,system);
+#pragma import(SHAppBarMessage,'SHAppBarMessage','shell32.dll');
+
+-- //
+-- // EndAppBar
+-- //
+procedure DoEnvironmentSubstA(
+    szString        : LPSTR; 
+    cchString       : UINT)
+                      return DWORD;
+#pragma convention(DoEnvironmentSubstA,system);
+#pragma import(DoEnvironmentSubstA,'DoEnvironmentSubstA','shell32.dll');
+
+procedure DoEnvironmentSubstW(
+    szString        : LPWSTR; 
+    cchString       : UINT)
+                      return DWORD;
+#pragma convention(DoEnvironmentSubstW,system);
+#pragma import(DoEnvironmentSubstW,'DoEnvironmentSubstW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template DoEnvironmentSubst;
+  DoEnvironmentSubstW 
+#end DoEnvironmentSubst;
+#else;
+#template DoEnvironmentSubst;
+  DoEnvironmentSubstA 
+#end DoEnvironmentSubst;
+#end if;
+
+type
+t_003=signed 32;
+
+t_004=^t_HICON for machine_pointer use true;
+
+t_005=^t_HICON for machine_pointer use true;
+
+procedure ExtractIconExA(
+    lpszFile        : LPCSTR; 
+    nIconIndex      : t_003; 
+    phiconLarge     : t_004; 
+    phiconSmall     : t_005; 
+    nIcons          : UINT)
+                      return UINT;
+#pragma convention(ExtractIconExA,system);
+#pragma import(ExtractIconExA,'ExtractIconExA','shell32.dll');
+
+type
+t_006=signed 32;
+
+t_007=^t_HICON for machine_pointer use true;
+
+t_008=^t_HICON for machine_pointer use true;
+
+procedure ExtractIconExW(
+    lpszFile        : LPCWSTR; 
+    nIconIndex      : t_006; 
+    phiconLarge     : t_007; 
+    phiconSmall     : t_008; 
+    nIcons          : UINT)
+                      return UINT;
+#pragma convention(ExtractIconExW,system);
+#pragma import(ExtractIconExW,'ExtractIconExW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ExtractIconEx;
+  ExtractIconExW 
+#end ExtractIconEx;
+#else;
+#template ExtractIconEx;
+  ExtractIconExA 
+#end ExtractIconEx;
+#end if;
+
+-- //
+-- // Shell File Operations
+-- //
+const
+  FO_MOVE           = $01;
+
+const
+  FO_COPY           = $02;
+
+const
+  FO_DELETE         = $03;
+
+const
+  FO_RENAME         = $04;
+
+const
+  FOF_MULTIDESTFILES= $01;
+
+const
+  FOF_CONFIRMMOUSE  = $02;
+
+const
+  FOF_SILENT        = $04;
+
+const
+  FOF_RENAMEONCOLLISION= $08;
+
+const
+  FOF_NOCONFIRMATION= $10;
+
+const
+  FOF_WANTMAPPINGHANDLE= $20;
+
+--  Must be freed using SHFreeNameMappings
+const
+  FOF_ALLOWUNDO     = $40;
+
+const
+  FOF_FILESONLY     = $80;
+
+const
+  FOF_SIMPLEPROGRESS= $0100;
+
+const
+  FOF_NOCONFIRMMKDIR= $0200;
+
+const
+  FOF_NOERRORUI     = $0400;
+
+const
+  FOF_NOCOPYSECURITYATTRIBS= $0800;
+
+const
+  FOF_NORECURSION   = $1000;
+
+const
+  FOF_NORECURSEREPARSE= $8000;
+
+type
+FILEOP_FLAGS      = WORD;
+const
+  PO_DELETE         = $13;
+
+const
+  PO_RENAME         = $14;
+
+const
+  PO_PORTCHANGE     = $20;
+
+--  if this id is set, the strings received by
+--  the copyhook are a doubly-null terminated
+--  list of strings. The first is the printer
+--  name and the second is the printer port.
+const
+  PO_REN_PORT       = $34;
+
+--  no POF_ flags currently defined
+type
+PRINTEROP_FLAGS   = WORD;
+--  implicit parameters are:
+--  if pFrom or pTo are unqualified names the current directories are
+--  taken from the global current drive/directory settings managed
+--  by Get/SetCurrentDrive/Directory
+-- 
+--  the global confirmation settings
+type
+  _SHFILEOPSTRUCTA  = record
+hwnd            : t_HWND;
+wFunc           : UINT;
+pFrom           : LPCSTR;
+pTo             : LPCSTR;
+fFlags          : FILEOP_FLAGS;
+fAnyOperationsAborted : BOOL;
+hNameMappings   : LPVOID;
+lpszProgressTitle : LPCSTR;
+  end record;
+  SHFILEOPSTRUCTA   = _SHFILEOPSTRUCTA;
+  LPSHFILEOPSTRUCTA = ^_SHFILEOPSTRUCTA;
+
+type
+  _SHFILEOPSTRUCTW  = record
+hwnd            : t_HWND;
+wFunc           : UINT;
+pFrom           : LPCWSTR;
+pTo             : LPCWSTR;
+fFlags          : FILEOP_FLAGS;
+fAnyOperationsAborted : BOOL;
+hNameMappings   : LPVOID;
+lpszProgressTitle : LPCWSTR;
+  end record;
+  SHFILEOPSTRUCTW   = _SHFILEOPSTRUCTW;
+  LPSHFILEOPSTRUCTW = ^_SHFILEOPSTRUCTW;
+
+#if #declared UNICODE; then;
+type
+SHFILEOPSTRUCT    = SHFILEOPSTRUCTW;
+type
+LPSHFILEOPSTRUCT  = LPSHFILEOPSTRUCTW;
+#else;
+type
+SHFILEOPSTRUCT    = SHFILEOPSTRUCTA;
+type
+LPSHFILEOPSTRUCT  = LPSHFILEOPSTRUCTA;
+#end if;
+
+type
+  t_009 = signed 32;
+
+procedure SHFileOperationA(
+    lpFileOp        : LPSHFILEOPSTRUCTA)
+                      return t_009;
+#pragma convention(SHFileOperationA,system);
+#pragma import(SHFileOperationA,'SHFileOperationA','shell32.dll');
+
+type
+  t_010 = signed 32;
+
+procedure SHFileOperationW(
+    lpFileOp        : LPSHFILEOPSTRUCTW)
+                      return t_010;
+#pragma convention(SHFileOperationW,system);
+#pragma import(SHFileOperationW,'SHFileOperationW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHFileOperation;
+  SHFileOperationW 
+#end SHFileOperation;
+#else;
+#template SHFileOperation;
+  SHFileOperationA 
+#end SHFileOperation;
+#end if;
+
+procedure SHFreeNameMappings(
+    hNameMappings   : t_HANDLE);
+#pragma convention(SHFreeNameMappings,system);
+#pragma import(SHFreeNameMappings,'SHFreeNameMappings','shell32.dll');
+
+type
+  _SHNAMEMAPPINGA   = record
+pszOldPath      : LPSTR;
+pszNewPath      : LPSTR;
+cchOldPath      : signed 32;
+cchNewPath      : signed 32;
+  end record;
+  SHNAMEMAPPINGA    = _SHNAMEMAPPINGA;
+  LPSHNAMEMAPPINGA  = ^_SHNAMEMAPPINGA;
+
+type
+  _SHNAMEMAPPINGW   = record
+pszOldPath      : LPWSTR;
+pszNewPath      : LPWSTR;
+cchOldPath      : signed 32;
+cchNewPath      : signed 32;
+  end record;
+  SHNAMEMAPPINGW    = _SHNAMEMAPPINGW;
+  LPSHNAMEMAPPINGW  = ^_SHNAMEMAPPINGW;
+
+#if #declared UNICODE; then;
+type
+SHNAMEMAPPING     = SHNAMEMAPPINGW;
+type
+LPSHNAMEMAPPING   = LPSHNAMEMAPPINGW;
+#else;
+type
+SHNAMEMAPPING     = SHNAMEMAPPINGA;
+type
+LPSHNAMEMAPPING   = LPSHNAMEMAPPINGA;
+#end if;
+
+-- //
+-- // End Shell File Operations
+-- //
+-- //
+-- // Begin ShellExecuteEx and family
+-- //
+-- /* ShellExecute() and ShellExecuteEx() error codes 
+-- /* regular WinExec() codes 
+const
+  SE_ERR_FNF        = 2;
+
+const
+  SE_ERR_PNF        = 3;
+
+const
+  SE_ERR_ACCESSDENIED= 5;
+
+const
+  SE_ERR_OOM        = 8;
+
+const
+  SE_ERR_DLLNOTFOUND= 32;
+
+-- /* error values for ShellExecute() beyond the regular WinExec() codes 
+const
+  SE_ERR_SHARE      = 26;
+
+const
+  SE_ERR_ASSOCINCOMPLETE= 27;
+
+const
+  SE_ERR_DDETIMEOUT = 28;
+
+const
+  SE_ERR_DDEFAIL    = 29;
+
+const
+  SE_ERR_DDEBUSY    = 30;
+
+const
+  SE_ERR_NOASSOC    = 31;
+
+--  Note CLASSKEY overrides CLASSNAME
+const
+  SEE_MASK_CLASSNAME= $01;
+
+const
+  SEE_MASK_CLASSKEY = $03;
+
+--  Note INVOKEIDLIST overrides IDLIST
+const
+  SEE_MASK_IDLIST   = $04;
+
+const
+  SEE_MASK_INVOKEIDLIST= $0C;
+
+const
+  SEE_MASK_ICON     = $10;
+
+const
+  SEE_MASK_HOTKEY   = $20;
+
+const
+  SEE_MASK_NOCLOSEPROCESS= $40;
+
+const
+  SEE_MASK_CONNECTNETDRV= $80;
+
+const
+  SEE_MASK_FLAG_DDEWAIT= $0100;
+
+const
+  SEE_MASK_DOENVSUBST= $0200;
+
+const
+  SEE_MASK_FLAG_NO_UI= $0400;
+
+const
+  SEE_MASK_UNICODE  = $4000;
+
+const
+  SEE_MASK_NO_CONSOLE= $8000;
+
+const
+  SEE_MASK_ASYNCOK  = $100000;
+
+const
+  SEE_MASK_HMONITOR = $200000;
+
+-- 
+--  For compilers that don't support nameless unions
+-- 
+type
+  _SHELLEXECUTEINFOA = record
+cbSize          : DWORD;
+fMask           : ULONG;
+hwnd            : t_HWND;
+lpVerb          : LPCSTR;
+lpFile          : LPCSTR;
+lpParameters    : LPCSTR;
+lpDirectory     : LPCSTR;
+nShow           : signed 32;
+hInstApp        : t_HINSTANCE;
+lpIDList        : LPVOID;
+lpClass         : LPCSTR;
+hkeyClass       : t_HKEY;
+dwHotKey        : DWORD;
+t_011            : record
+      hIcon         : t_HANDLE for position use 0;
+      hMonitor      : t_HANDLE for position use 0;
+    end record;
+hProcess        : t_HANDLE;
+  end record;
+  SHELLEXECUTEINFOA = _SHELLEXECUTEINFOA;
+  LPSHELLEXECUTEINFOA = ^_SHELLEXECUTEINFOA;
+
+type
+  _SHELLEXECUTEINFOW = record
+cbSize          : DWORD;
+fMask           : ULONG;
+hwnd            : t_HWND;
+lpVerb          : LPCWSTR;
+lpFile          : LPCWSTR;
+lpParameters    : LPCWSTR;
+lpDirectory     : LPCWSTR;
+nShow           : signed 32;
+hInstApp        : t_HINSTANCE;
+lpIDList        : LPVOID;
+lpClass         : LPCWSTR;
+hkeyClass       : t_HKEY;
+dwHotKey        : DWORD;
+t_012            : record
+      hIcon         : t_HANDLE for position use 0;
+      hMonitor      : t_HANDLE for position use 0;
+    end record;
+hProcess        : t_HANDLE;
+  end record;
+  SHELLEXECUTEINFOW = _SHELLEXECUTEINFOW;
+  LPSHELLEXECUTEINFOW = ^_SHELLEXECUTEINFOW;
+
+#if #declared UNICODE; then;
+type
+SHELLEXECUTEINFO  = SHELLEXECUTEINFOW;
+type
+LPSHELLEXECUTEINFO = LPSHELLEXECUTEINFOW;
+#else;
+type
+SHELLEXECUTEINFO  = SHELLEXECUTEINFOA;
+type
+LPSHELLEXECUTEINFO = LPSHELLEXECUTEINFOA;
+#end if;
+
+procedure ShellExecuteExA(
+    lpExecInfo      : LPSHELLEXECUTEINFOA)
+                      return BOOL;
+#pragma convention(ShellExecuteExA,system);
+#pragma import(ShellExecuteExA,'ShellExecuteExA','shell32.dll');
+
+procedure ShellExecuteExW(
+    lpExecInfo      : LPSHELLEXECUTEINFOW)
+                      return BOOL;
+#pragma convention(ShellExecuteExW,system);
+#pragma import(ShellExecuteExW,'ShellExecuteExW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ShellExecuteEx;
+  ShellExecuteExW 
+#end ShellExecuteEx;
+#else;
+#template ShellExecuteEx;
+  ShellExecuteExA 
+#end ShellExecuteEx;
+#end if;
+
+type
+t_013=signed 32;
+
+procedure WinExecErrorA(
+    hwnd            : t_HWND; 
+    error           : t_013; 
+    lpstrFileName   : LPCSTR; 
+    lpstrTitle      : LPCSTR);
+#pragma convention(WinExecErrorA,system);
+#pragma import(WinExecErrorA,'WinExecErrorA','');
+
+type
+t_014=signed 32;
+
+procedure WinExecErrorW(
+    hwnd            : t_HWND; 
+    error           : t_014; 
+    lpstrFileName   : LPCWSTR; 
+    lpstrTitle      : LPCWSTR);
+#pragma convention(WinExecErrorW,system);
+#pragma import(WinExecErrorW,'WinExecErrorW','');
+
+#if #declared UNICODE; then;
+#template WinExecError;
+  WinExecErrorW 
+#end WinExecError;
+#else;
+#template WinExecError;
+  WinExecErrorA 
+#end WinExecError;
+#end if;
+
+-- 
+--  SHCreateProcessAsUser()
+type
+  _SHCREATEPROCESSINFOW = record
+cbSize          : DWORD;
+fMask           : ULONG;
+hwnd            : t_HWND;
+pszFile         : LPCWSTR;
+pszParameters   : LPCWSTR;
+pszCurrentDirectory : LPCWSTR;
+hUserToken      : t_HANDLE;
+lpProcessAttributes : LPSECURITY_ATTRIBUTES;
+lpThreadAttributes : LPSECURITY_ATTRIBUTES;
+bInheritHandles : BOOL;
+dwCreationFlags : DWORD;
+lpStartupInfo   : LPSTARTUPINFOW;
+lpProcessInformation : LPPROCESS_INFORMATION;
+  end record;
+  SHCREATEPROCESSINFOW = _SHCREATEPROCESSINFOW;
+  PSHCREATEPROCESSINFOW = ^_SHCREATEPROCESSINFOW;
+
+procedure SHCreateProcessAsUserW(
+    pscpi           : PSHCREATEPROCESSINFOW)
+                      return BOOL;
+#pragma convention(SHCreateProcessAsUserW,system);
+#pragma import(SHCreateProcessAsUserW,'SHCreateProcessAsUserW','shell32.dll');
+
+-- //
+-- // End ShellExecuteEx and family
+-- //
+-- 
+--  RecycleBin
+-- 
+--  struct for query recycle bin info
+type
+  _SHQUERYRBINFO    = record
+cbSize          : DWORD;
+i64Size         : signed 64;
+i64NumItems     : signed 64;
+  end record;
+  SHQUERYRBINFO     = _SHQUERYRBINFO;
+  LPSHQUERYRBINFO   = ^_SHQUERYRBINFO;
+
+--  flags for SHEmptyRecycleBin
+-- 
+const
+  SHERB_NOCONFIRMATION= $01;
+
+const
+  SHERB_NOPROGRESSUI= $02;
+
+const
+  SHERB_NOSOUND     = $04;
+
+procedure SHQueryRecycleBinA(
+    pszRootPath     : LPCSTR; 
+    pSHQueryRBInfo  : LPSHQUERYRBINFO)
+                      return HRESULT;
+#pragma convention(SHQueryRecycleBinA,system);
+#pragma import(SHQueryRecycleBinA,'SHQueryRecycleBinA','shell32.dll');
+
+procedure SHQueryRecycleBinW(
+    pszRootPath     : LPCWSTR; 
+    pSHQueryRBInfo  : LPSHQUERYRBINFO)
+                      return HRESULT;
+#pragma convention(SHQueryRecycleBinW,system);
+#pragma import(SHQueryRecycleBinW,'SHQueryRecycleBinW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHQueryRecycleBin;
+  SHQueryRecycleBinW 
+#end SHQueryRecycleBin;
+#else;
+#template SHQueryRecycleBin;
+  SHQueryRecycleBinA 
+#end SHQueryRecycleBin;
+#end if;
+
+procedure SHEmptyRecycleBinA(
+    hwnd            : t_HWND; 
+    pszRootPath     : LPCSTR; 
+    dwFlags         : DWORD)
+                      return HRESULT;
+#pragma convention(SHEmptyRecycleBinA,system);
+#pragma import(SHEmptyRecycleBinA,'SHEmptyRecycleBinA','shell32.dll');
+
+procedure SHEmptyRecycleBinW(
+    hwnd            : t_HWND; 
+    pszRootPath     : LPCWSTR; 
+    dwFlags         : DWORD)
+                      return HRESULT;
+#pragma convention(SHEmptyRecycleBinW,system);
+#pragma import(SHEmptyRecycleBinW,'SHEmptyRecycleBinW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHEmptyRecycleBin;
+  SHEmptyRecycleBinW 
+#end SHEmptyRecycleBin;
+#else;
+#template SHEmptyRecycleBin;
+  SHEmptyRecycleBinA 
+#end SHEmptyRecycleBin;
+#end if;
+
+-- //
+-- // end of RecycleBin
+-- //
+-- // Tray notification definitions
+-- //
+type
+  _NOTIFYICONDATAA  = record
+cbSize          : DWORD;
+hWnd            : t_HWND;
+uID             : UINT;
+uFlags          : UINT;
+uCallbackMessage : UINT;
+hIcon           : t_HICON;
+szTip           : array 0..127 of CHAR;
+  end record;
+  NOTIFYICONDATAA   = _NOTIFYICONDATAA;
+  PNOTIFYICONDATAA  = ^_NOTIFYICONDATAA;
+
+type
+  _NOTIFYICONDATAW  = record
+cbSize          : DWORD;
+hWnd            : t_HWND;
+uID             : UINT;
+uFlags          : UINT;
+uCallbackMessage : UINT;
+hIcon           : t_HICON;
+szTip           : array 0..127 of WCHAR;
+  end record;
+  NOTIFYICONDATAW   = _NOTIFYICONDATAW;
+  PNOTIFYICONDATAW  = ^_NOTIFYICONDATAW;
+
+#if #declared UNICODE; then;
+type
+NOTIFYICONDATA    = NOTIFYICONDATAW;
+type
+PNOTIFYICONDATA   = PNOTIFYICONDATAW;
+#else;
+type
+NOTIFYICONDATA    = NOTIFYICONDATAA;
+type
+PNOTIFYICONDATA   = PNOTIFYICONDATAA;
+#end if;
+
+#if #declared UNICODE; then;
+#template NOTIFYICONDATA_V1_SIZE;
+  {FIELD_OFFSET(type,field)} ((LONG)(LONG_PTR)&(((type *)0 )->field)) ( NOTIFYICONDATAW,szTip [ 64 ] ) 
+#end NOTIFYICONDATA_V1_SIZE;
+#else;
+#template NOTIFYICONDATA_V1_SIZE;
+  {FIELD_OFFSET(type,field)} ((LONG)(LONG_PTR)&(((type *)0 )->field)) ( NOTIFYICONDATAA,szTip [ 64 ] ) 
+#end NOTIFYICONDATA_V1_SIZE;
+#end if;
+
+#if #declared UNICODE; then;
+#template NOTIFYICONDATA_V2_SIZE;
+  {FIELD_OFFSET(type,field)} ((LONG)(LONG_PTR)&(((type *)0 )->field)) ( NOTIFYICONDATAW,guidItem ) 
+#end NOTIFYICONDATA_V2_SIZE;
+#else;
+#template NOTIFYICONDATA_V2_SIZE;
+  {FIELD_OFFSET(type,field)} ((LONG)(LONG_PTR)&(((type *)0 )->field)) ( NOTIFYICONDATAA,guidItem ) 
+#end NOTIFYICONDATA_V2_SIZE;
+#end if;
+
+const
+  NIM_ADD           = $00;
+
+const
+  NIM_MODIFY        = $01;
+
+const
+  NIM_DELETE        = $02;
+
+const
+  NIF_MESSAGE       = $01;
+
+const
+  NIF_ICON          = $02;
+
+const
+  NIF_TIP           = $04;
+
+procedure Shell_NotifyIconA(
+    dwMessage       : DWORD; 
+    lpData          : PNOTIFYICONDATAA)
+                      return BOOL;
+#pragma convention(Shell_NotifyIconA,system);
+#pragma import(Shell_NotifyIconA,'Shell_NotifyIconA','shell32.dll');
+
+procedure Shell_NotifyIconW(
+    dwMessage       : DWORD; 
+    lpData          : PNOTIFYICONDATAW)
+                      return BOOL;
+#pragma convention(Shell_NotifyIconW,system);
+#pragma import(Shell_NotifyIconW,'Shell_NotifyIconW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template Shell_NotifyIcon;
+  Shell_NotifyIconW 
+#end Shell_NotifyIcon;
+#else;
+#template Shell_NotifyIcon;
+  Shell_NotifyIconA 
+#end Shell_NotifyIcon;
+#end if;
+
+-- //
+-- // End Tray Notification Icons
+-- //
+-- //
+-- // Begin SHGetFileInfo
+-- //
+-- /*
+--  * The SHGetFileInfo API provides an easy way to get attributes
+--  * for a file given a pathname.
+--  *
+--  *   PARAMETERS
+--  *
+--  *     pszPath              file name to get info about
+--  *     dwFileAttributes     file attribs, only used with SHGFI_USEFILEATTRIBUTES
+--  *     psfi                 place to return file info
+--  *     cbFileInfo           size of structure
+--  *     uFlags               flags
+--  *
+--  *   RETURN
+--  *     TRUE if things worked
+--  */
+type
+  _SHFILEINFOA      = record
+hIcon           : t_HICON;
+iIcon           : signed 32;
+dwAttributes    : DWORD;
+szDisplayName   : array 0..MAX_PATH-1 of CHAR;
+szTypeName      : array 0..79 of CHAR;
+  end record;
+  SHFILEINFOA       = _SHFILEINFOA;
+
+type
+  _SHFILEINFOW      = record
+hIcon           : t_HICON;
+iIcon           : signed 32;
+dwAttributes    : DWORD;
+szDisplayName   : array 0..MAX_PATH-1 of WCHAR;
+szTypeName      : array 0..79 of WCHAR;
+  end record;
+  SHFILEINFOW       = _SHFILEINFOW;
+
+#if #declared UNICODE; then;
+type
+SHFILEINFO        = SHFILEINFOW;
+#else;
+type
+SHFILEINFO        = SHFILEINFOA;
+#end if;
+
+--  NOTE: This is also in shlwapi.h. Please keep in synch.
+type
+t_015=^SHFILEINFOA for machine_pointer use true;
+
+procedure SHGetFileInfoA(
+    pszPath         : LPCSTR; 
+    dwFileAttributes : DWORD; 
+    psfi            : t_015; 
+    cbFileInfo      : UINT; 
+    uFlags          : UINT)
+                      return DWORD_PTR;
+#pragma convention(SHGetFileInfoA,system);
+#pragma import(SHGetFileInfoA,'SHGetFileInfoA','shell32.dll');
+
+type
+t_016=^SHFILEINFOW for machine_pointer use true;
+
+procedure SHGetFileInfoW(
+    pszPath         : LPCWSTR; 
+    dwFileAttributes : DWORD; 
+    psfi            : t_016; 
+    cbFileInfo      : UINT; 
+    uFlags          : UINT)
+                      return DWORD_PTR;
+#pragma convention(SHGetFileInfoW,system);
+#pragma import(SHGetFileInfoW,'SHGetFileInfoW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHGetFileInfo;
+  SHGetFileInfoW 
+#end SHGetFileInfo;
+#else;
+#template SHGetFileInfo;
+  SHGetFileInfoA 
+#end SHGetFileInfo;
+#end if;
+
+type
+t_017=^ULARGE_INTEGER for machine_pointer use true;
+
+t_018=^ULARGE_INTEGER for machine_pointer use true;
+
+t_019=^ULARGE_INTEGER for machine_pointer use true;
+
+procedure SHGetDiskFreeSpaceExA(
+    pszDirectoryName : LPCSTR; 
+    pulFreeBytesAvailableToCaller : t_017; 
+    pulTotalNumberOfBytes : t_018; 
+    pulTotalNumberOfFreeBytes : t_019)
+                      return BOOL;
+#pragma convention(SHGetDiskFreeSpaceExA,system);
+#pragma import(SHGetDiskFreeSpaceExA,'SHGetDiskFreeSpaceExA','shell32.dll');
+
+type
+t_020=^ULARGE_INTEGER for machine_pointer use true;
+
+t_021=^ULARGE_INTEGER for machine_pointer use true;
+
+t_022=^ULARGE_INTEGER for machine_pointer use true;
+
+procedure SHGetDiskFreeSpaceExW(
+    pszDirectoryName : LPCWSTR; 
+    pulFreeBytesAvailableToCaller : t_020; 
+    pulTotalNumberOfBytes : t_021; 
+    pulTotalNumberOfFreeBytes : t_022)
+                      return BOOL;
+#pragma convention(SHGetDiskFreeSpaceExW,system);
+#pragma import(SHGetDiskFreeSpaceExW,'SHGetDiskFreeSpaceExW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHGetDiskFreeSpaceEx;
+  SHGetDiskFreeSpaceExW 
+#end SHGetDiskFreeSpaceEx;
+#else;
+#template SHGetDiskFreeSpaceEx;
+  SHGetDiskFreeSpaceExA 
+#end SHGetDiskFreeSpaceEx;
+#end if;
+
+type
+t_023=^BOOL for machine_pointer use true;
+
+procedure SHGetNewLinkInfoA(
+    pszLinkTo       : LPCSTR; 
+    pszDir          : LPCSTR; 
+    pszName         : LPSTR; 
+    pfMustCopy      : t_023; 
+    uFlags          : UINT)
+                      return BOOL;
+#pragma convention(SHGetNewLinkInfoA,system);
+#pragma import(SHGetNewLinkInfoA,'SHGetNewLinkInfoA','shell32.dll');
+
+type
+t_024=^BOOL for machine_pointer use true;
+
+procedure SHGetNewLinkInfoW(
+    pszLinkTo       : LPCWSTR; 
+    pszDir          : LPCWSTR; 
+    pszName         : LPWSTR; 
+    pfMustCopy      : t_024; 
+    uFlags          : UINT)
+                      return BOOL;
+#pragma convention(SHGetNewLinkInfoW,system);
+#pragma import(SHGetNewLinkInfoW,'SHGetNewLinkInfoW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHGetNewLinkInfo;
+  SHGetNewLinkInfoW 
+#end SHGetNewLinkInfo;
+#else;
+#template SHGetNewLinkInfo;
+  SHGetNewLinkInfoA 
+#end SHGetNewLinkInfo;
+#end if;
+
+-- //
+-- // End SHGetFileInfo
+-- //
+--  Printer stuff
+const
+  PRINTACTION_OPEN  = 0;
+
+const
+  PRINTACTION_PROPERTIES= 1;
+
+const
+  PRINTACTION_NETINSTALL= 2;
+
+const
+  PRINTACTION_NETINSTALLLINK= 3;
+
+const
+  PRINTACTION_TESTPAGE= 4;
+
+const
+  PRINTACTION_OPENNETPRN= 5;
+
+procedure SHInvokePrinterCommandA(
+    hwnd            : t_HWND; 
+    uAction         : UINT; 
+    lpBuf1          : LPCSTR; 
+    lpBuf2          : LPCSTR; 
+    fModal          : BOOL)
+                      return BOOL;
+#pragma convention(SHInvokePrinterCommandA,system);
+#pragma import(SHInvokePrinterCommandA,'SHInvokePrinterCommandA','shell32.dll');
+
+procedure SHInvokePrinterCommandW(
+    hwnd            : t_HWND; 
+    uAction         : UINT; 
+    lpBuf1          : LPCWSTR; 
+    lpBuf2          : LPCWSTR; 
+    fModal          : BOOL)
+                      return BOOL;
+#pragma convention(SHInvokePrinterCommandW,system);
+#pragma import(SHInvokePrinterCommandW,'SHInvokePrinterCommandW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template SHInvokePrinterCommand;
+  SHInvokePrinterCommandW 
+#end SHInvokePrinterCommand;
+#else;
+#template SHInvokePrinterCommand;
+  SHInvokePrinterCommandA 
+#end SHInvokePrinterCommand;
+#end if;
+
+-- 
+--  The SHLoadNonloadedIconOverlayIdentifiers API causes the shell's
+--  icon overlay manager to load any registered icon overlay
+--  identifers that are not currently loaded. This is useful if an
+--  overlay identifier did not load at shell startup but is needed
+--  and can be loaded at a later time. Identifiers already loaded
+--  are not affected. Overlay identifiers implement the 
+--  IShellIconOverlayIdentifier interface.
+-- 
+--  Returns:
+--  S_OK
+--  
+procedure SHLoadNonloadedIconOverlayIdentifiers
+                      return HRESULT;
+#pragma convention(SHLoadNonloadedIconOverlayIdentifiers,system);
+#pragma import(SHLoadNonloadedIconOverlayIdentifiers,'SHLoadNonloadedIconOverlayIdentifiers','shell32.dll');
+
+-- 
+--  The SHIsFileAvailableOffline API determines whether a file
+--  or folder is available for offline use.
+-- 
+--  Parameters:
+--  pwszPath file name to get info about
+--  pdwStatus (optional) OFFLINE_STATUS_* flags returned here
+-- 
+--  Returns:
+--  S_OK File/directory is available offline, unless
+--  OFFLINE_STATUS_INCOMPLETE is returned.
+--  E_INVALIDARG Path is invalid, or not a net path
+--  E_FAIL File/directory is not available offline
+--  
+--  Notes:
+--  OFFLINE_STATUS_INCOMPLETE is never returned for directories.
+--  Both OFFLINE_STATUS_LOCAL and OFFLINE_STATUS_REMOTE may be returned,
+--  indicating "open in both places." This is common when the server is online.
+-- 
+procedure SHIsFileAvailableOffline(
+    pwszPath        : LPCWSTR; 
+    pdwStatus       : LPDWORD)
+                      return HRESULT;
+#pragma convention(SHIsFileAvailableOffline,system);
+#pragma import(SHIsFileAvailableOffline,'SHIsFileAvailableOffline','shell32.dll');
+
+const
+  OFFLINE_STATUS_LOCAL= $01;
+
+const
+  OFFLINE_STATUS_REMOTE= $02;
+
+const
+  OFFLINE_STATUS_INCOMPLETE= $04;
+
+--  The file will not be available offline
+--  until it has been synchronized.
+--  sets the specified path to use the string resource
+--  as the UI instead of the file system name
+type
+t_025=signed 32;
+
+procedure SHSetLocalizedName(
+    pszPath         : LPWSTR; 
+    pszResModule    : LPCWSTR; 
+    idsRes          : t_025)
+                      return HRESULT;
+#pragma convention(SHSetLocalizedName,system);
+#pragma import(SHSetLocalizedName,'SHSetLocalizedName','shell32.dll');
+
+-- ====== ShellMessageBox ================================================
+--  If lpcTitle is NULL, the title is taken from hWnd
+--  If lpcText is NULL, this is assumed to be an Out Of Memory message
+--  If the selector of lpcTitle or lpcText is NULL, the offset should be a
+--  string resource ID
+--  The variable arguments must all be 32-bit values (even if fewer bits
+--  are actually used)
+--  lpcText (or whatever string resource it causes to be loaded) should
+--  be a formatting string similar to wsprintf except that only the
+--  following formats are available:
+--  %% formats to a single '%'
+--  %nn%s the nn-th arg is a string which is inserted
+--  %nn%ld the nn-th arg is a DWORD, and formatted decimal
+--  %nn%lx the nn-th arg is a DWORD, and formatted hex
+--  note that lengths are allowed on the %s, %ld, and %lx, just
+--  like wsprintf
+-- 
+type
+  t_026 = signed 32;
+
+procedure ShellMessageBoxA(
+    hAppInst        : t_HINSTANCE; 
+    hWnd            : t_HWND; 
+    lpcText         : LPCSTR; 
+    lpcTitle        : LPCSTR; 
+    fuStyle         : UINT)
+                      return t_026;
+#pragma import(ShellMessageBoxA,'ShellMessageBoxA','shell32.dll');
+
+type
+  t_027 = signed 32;
+
+procedure ShellMessageBoxW(
+    hAppInst        : t_HINSTANCE; 
+    hWnd            : t_HWND; 
+    lpcText         : LPCWSTR; 
+    lpcTitle        : LPCWSTR; 
+    fuStyle         : UINT)
+                      return t_027;
+#pragma import(ShellMessageBoxW,'ShellMessageBoxW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template ShellMessageBox;
+  ShellMessageBoxW 
+#end ShellMessageBox;
+#else;
+#template ShellMessageBox;
+  ShellMessageBoxA 
+#end ShellMessageBox;
+#end if;
+
+procedure IsLFNDriveA(
+    pszPath         : LPCSTR)
+                      return BOOL;
+#pragma convention(IsLFNDriveA,system);
+#pragma import(IsLFNDriveA,'IsLFNDriveA','shell32.dll');
+
+procedure IsLFNDriveW(
+    pszPath         : LPCWSTR)
+                      return BOOL;
+#pragma convention(IsLFNDriveW,system);
+#pragma import(IsLFNDriveW,'IsLFNDriveW','shell32.dll');
+
+#if #declared UNICODE; then;
+#template IsLFNDrive;
+  IsLFNDriveW 
+#end IsLFNDrive;
+#else;
+#template IsLFNDrive;
+  IsLFNDriveA 
+#end IsLFNDrive;
+#end if;
+
+type
+SHTestTokenMembership = procedure (
+    hToken          : t_HANDLE;
+    ulRID           : ULONG)
+                      return BOOL;
+-- ignored #include <poppack.h>
+-- ** The local copy is currently imcomplete.
+end shellapi;

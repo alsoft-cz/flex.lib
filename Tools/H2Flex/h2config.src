@@ -1,0 +1,471 @@
+----------------------------------------------------------------------------------------------------
+-- h2config
+----------------------------------------------------------------------------------------------------
+-- Prace s konfiguraci
+----------------------------------------------------------------------------------------------------
+
+module h2config =
+
+with
+  system,dir,filedef,files,txtfiles,str,num,log,lstr,
+  h2parser,h2def,h2util,
+  debug;
+
+{%OFF}
+
+----------------------------------------------------------------------------------------------------
+procedure cfg_load;
+-- otevre a nacte konfiguracni soubor
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+const
+  mainsection      = 'main';
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_true (
+             value : str255 )
+                     return boolean =
+-- bez komentare
+----------------------------------------------------------------------------------------------------
+begin
+  value:=upcasestr(value);
+  result:=value='TRUE' or value='ON' or value='YES' or value='1';
+  end is_true;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_false (
+             value : str255 )
+                     return boolean =
+-- bez komentare
+----------------------------------------------------------------------------------------------------
+begin
+  value:=upcasestr(value);
+  result:=value='FALSE' or value='OFF' or value='NO' or value='0';
+  end is_false;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure cfg_load =
+-- otevre a nacte konfiguracni soubor
+----------------------------------------------------------------------------------------------------
+var
+  cfgfile          : file;
+  bchyba           : boolean;
+  cfgline          : str255;
+  command          : str255;
+  parameter        : str255;
+  command2         : str255;
+  parameter2       : str255;
+  command3         : str255;
+  parameter3       : str255;
+  value            : tvalue;
+  i                : longint;
+  isection         : str255;                     -- sekce, ktera se prave cte
+  fsection         : str255;                     -- sekce, ktera se bude zpracovavat
+  templstr         : lstring;
+
+begin
+  -- inicializace
+  isection:=' ';
+  fsection:=' ';
+
+  -- otevrit konfiguracni soubor pro cteni
+  finit(cfgfile,pathfile(mypath,configname));
+  fopen(cfgfile,fmoder);
+  if fgetres(cfgfile)<>f_ok then
+    wr({MSG=}000016,lc_error,formats('cfg_load : nelze otevrit konfiguracni soubor %1',pathfile(mypath,configname)));
+    raise internal_error;
+    end if;
+
+  -- priradit textovy buffer
+  txtopen(cfgfile,4096,bchyba);
+  if bchyba then
+    wr({MSG=}000017,lc_error,formats('cfg_load : nelze otevrit konfiguracni soubor %1',pathfile(mypath,configname)));
+    raise internal_error;
+    end if;
+
+  -- precist konfiguracni soubor
+  while not txteof(cfgfile) loop
+    -- precist radek v konfiguraci
+    txtread(cfgfile,cfgline);
+    cfgline:=trimstr(cfgline);
+
+    -- jednoduchy parser
+    simple_parser(cfgline,['='],command,parameter);
+
+    -- zjistit, co to je zac
+    if command:length=0 then
+        -- prazdny radek se ignoruje
+
+      -- komentar se ignoruje
+      elsif command='--' then
+
+      ----------------------------------------------------------------------------------------------
+      -- parametry ovlivnujici zpracovani sekci
+      ----------------------------------------------------------------------------------------------
+
+      -- pojmenovani sekce
+      elsif command='[' then
+        isection:=parameter;
+
+      -- nastaveni zpracovavane sekce
+      elsif command='section' then
+        fsection:=parameter;
+
+      -- preskoceni nespravne sekce
+      elsif isection<>mainsection and isection<>fsection then
+-- write2('ignore section ' & isection);
+
+      ----------------------------------------------------------------------------------------------
+      -- parametry ovlivnujici vsechny phase
+      ----------------------------------------------------------------------------------------------
+
+      -- output_path
+      elsif command='output_path' then
+        output_path:=parameter;
+
+      -- phase = [0][1][2]
+      elsif command='phase' then
+        if parameter='' then
+            phase:=[phase_1,phase_2];
+          elsif parameter='0' then
+            phase:=[phase_0];
+          elsif parameter='12' then
+            phase:=[phase_1,phase_2];
+          elsif parameter='1' then
+            phase:=[phase_1];
+          elsif parameter='2' then
+            phase:=[phase_2];
+          else
+            wr({MSG=}000018,lc_error,formats('cfg_load : neznama hodnota parametru: %1',cfgline));
+            raise internal_error;
+          end if;
+
+      -- verbose_mode = true
+      elsif command='verbose_mode' then
+        if is_true(parameter) then
+            verbose_mode:=true;
+          elsif is_false(parameter) then
+            verbose_mode:=false;
+          else
+            wr({MSG=}000019,lc_error,formats('cfg_load : neznama hodnota parametru: %1',cfgline));
+            raise internal_error;
+          end if;
+
+      -- work_path
+      elsif command='work_path' then
+        work_path:=parameter;
+
+      -- header_?
+      elsif command='header_1' then
+        header_header[1]:=parameter;
+      elsif command='header_2' then
+        header_header[2]:=parameter;
+      elsif command='header_3' then
+        header_header[3]:=parameter;
+      elsif command='header_4' then
+        header_header[4]:=parameter;
+      elsif command='header_5' then
+        header_header[5]:=parameter;
+      elsif command='header_6' then
+        header_header[6]:=parameter;
+      elsif command='header_7' then
+        header_header[7]:=parameter;
+      elsif command='header_8' then
+        header_header[8]:=parameter;
+      elsif command='header_9' then
+        header_header[9]:=parameter;
+
+      ----------------------------------------------------------------------------------------------
+      -- parametry ovlivnujici phase 0 - export .LIB a nacteni obsahu knihoven
+      ----------------------------------------------------------------------------------------------
+
+      -- library_path
+      elsif command='library_path' then
+        library_path:=parameter;
+
+      -- program_files
+      elsif command='program_files' then
+        program_files:=parameter;
+
+      -- library_file
+      elsif command='library_file' then
+        -- upravit parametr
+        if pos('.',parameter)=0 then
+          parameter & library_ext;
+          end if;
+
+        -- prohledat pole (zjistit duplicity) popr. najit prvni prazdne
+        for i in library_file:range loop
+          -- jiz existuje, ukoncit prohledavani
+          if library_file[i]=parameter then
+              break;
+            -- nalezen prazdny tak ulozit na toto misto a ukoncit prohledavani
+            elsif library_file[i]:length=0 then
+              library_file[i]:=parameter;
+              break;
+            end if;
+          end loop;
+
+      elsif command='ignore_libraries' then
+        if is_true(parameter)
+          then
+            ignore_libraries:=true;
+          else
+            wr({MSG=}000020,lc_error,formats('cfg_load : neznamy parametr: %1',cfgline));
+            raise internal_error;
+          end if;
+
+      ----------------------------------------------------------------------------------------------
+      -- parametry ovlivnujici phase 1 - preprocesor
+      ----------------------------------------------------------------------------------------------
+
+      -- define
+      elsif command='define' then
+        simple_parser(parameter,['='],command2,parameter2);
+        simple_parser(parameter2,['='],command3,parameter3);
+
+
+        -- prevest nacteny retezec na hodnotu
+        if parameter2:length=0 then
+            wr({MSG=}000021,lc_error,formats('cfg_load : neznamy parametr: %1',cfgline));
+            raise internal_error;
+
+          elsif copy(parameter2,1,1)='@' then
+            -- specialni parametry
+            -- @THROUGH
+            if parameter2=define_through then
+                value.typ:=tv_extra;
+                value.x:=tx_through;
+
+              -- @EMPTY
+              elsif parameter2=define_empty then
+                value.typ:=tv_str;
+                value.s.empty;
+
+              -- @IGNORE
+              elsif parameter2=define_ignore then
+                value.typ:=tv_extra;
+                value.x:=tx_ignore;
+
+              -- @FALSE = neni definovan!!! neplest s FALSE
+              elsif parameter2=define_false then
+                -- FALSE
+                value.typ:=tv_extra;
+                value.x:=tx_false;
+
+              -- @TRUE
+              elsif parameter2=define_true then
+                -- FALSE
+                value.typ:=tv_boolean;
+                value.b:=true;
+
+              -- @CONST
+              elsif parameter2=define_const then
+                value.typ:=tv_extra;
+                value.x:=tx_const;
+
+              -- @CONST = value
+              elsif command3=define_const and parameter3<>'' then 
+                value.typ:=tv_extra;
+                value.x:=tx_const_def;
+                value.s.empty;
+                value.s.addstr(parameter3);
+write2('parametr pro define const = ' & parameter3); 
+
+              else
+                wr({MSG=}000022,lc_error,formats('cfg_load : neznama hodnota parametru : %1',cfgline));
+                raise internal_error;
+              end if;
+
+          elsif copy(parameter2,1,2)='0x' then
+            -- cislo je v hexadecimalnim tvaru
+            value.typ:=tv_longint;
+            value.l:=0;
+            for i in 3..parameter2:length loop
+              value.l:=16*value.l+char_to_num(parameter2[i]);
+              end loop;
+
+          elsif parameter2[1] in ['0','1','2','3','4','5','6','7','8','9'] then
+            -- cislo je v decimalnim tvaru
+            value.typ:=tv_longint;
+            value.l:=0;
+            for i in 1..parameter2:length loop
+              value.l:=10*value.l+char_to_num(parameter2[i]);
+              end loop;
+
+          else
+            -- vse ostatni je retezec
+            value.typ:=tv_str;
+            value.s.empty;
+            value.s.addstr(parameter2);
+          end if;
+
+        str_add2(defines,command2,value);
+
+      -- flex_prefix
+      elsif command='flex_prefix' then
+        flex_prefix:=parameter;
+
+      -- flex_ext
+      elsif command='flex_ext' then
+        flex_ext:=parameter;
+
+      -- header_file
+      elsif command='header_file' then
+        header_file:=parameter;
+
+      -- ignore_file
+      elsif command='ignore_file' then
+        for i in ignore_file:range loop
+          -- jiz existuje, ukoncit prohledavani
+          if ignore_file[i]=parameter then
+              break;
+            elsif ignore_file[i]='' then
+              ignore_file[i]:=parameter;
+              break;
+            end if;
+          end loop;
+
+      -- force_file
+      elsif command='force_file' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        for i in force_file:range loop
+          -- jiz existuje, ukoncit prohledavani
+          if force_file[i].s=command2 then
+              wr({MSG=}000023,lc_error,'duplicitni parametr : ' & cfgline);
+              raise internal_error;
+            elsif force_file[i].s='' then
+              force_file[i].s:=command2;
+              force_file[i].p:=parameter2;
+              break;
+            end if;
+          end loop;
+
+      -- header_path
+      elsif command='header_path' then
+        header_path[0]:=parameter;
+
+      -- search_path
+      elsif command='search_path' then
+        -- prohledat pole (zjistit duplicity) popr. najit prvni prazdne
+        for i in header_path:range loop
+          -- jiz existuje, ukoncit prohledavani
+          if header_path[i]=parameter then
+              break;
+            -- nalezen prazdny tak ulozit na toto misto a ukoncit prohledavani
+            elsif header_path[i]='' then
+              header_path[i]:=parameter;
+              break;
+            end if;
+          end loop;
+
+      -- needed_file = filename1 = filename2
+      elsif command='needed_file' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        proc_add(needed_list,command2,parameter2);
+
+      ----------------------------------------------------------------------------------------------
+      -- parametry ovlivnujici phase 2
+      ----------------------------------------------------------------------------------------------
+      -- with
+      elsif command='with' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        proc_add(with_list,command2,parameter2);
+
+      -- const
+      elsif command='const' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        if parameter2='@IGNORE' then
+            str_add2(consts,command2,[tv_extra,for x use tx_ignore]);
+
+          else
+            wr({MSG=}000024,lc_error,formats('cfg_load : neznama hodnota parametru: %1',cfgline));
+            raise internal_error;
+          end if;
+
+      -- typedef
+      elsif command='typedef' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        if parameter2='@IGNORE' then
+            str_add2(typedefs,command2,[tv_extra,for x use tx_ignore]);
+
+          elsif parameter2='@IGNORE1' then
+            str_add2(typedefs,command2,[tv_extra,for x use tx_ignore1]);
+
+          elsif parameter2='@IGNORE2' then
+            str_add2(typedefs,command2,[tv_extra,for x use tx_ignore2]);
+
+          elsif parameter2='@FORWARD1' then
+            str_add2(typedefs,command2,[tv_extra,for x use tx_forward1]);
+
+          elsif parameter2='@FORWARD2' then
+            str_add2(typedefs,command2,[tv_extra,for x use tx_forward2]);
+
+          else
+            -- nahradit vsechny ';' -> ';<cr><lf>'
+            parameter2:=replaceall(';',';' & crlf,parameter2);
+
+            -- a ulozit pro dalsi pouziti
+            templstr.empty;
+            templstr.addstr(parameter2);
+            str_add2(typedefs,command2,[tv_str,for s use templstr]);
+            templstr.free;
+          end if;
+
+      -- parameter
+      elsif command='parameter' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        -- ulozit pro dalsi pouziti
+        templstr.empty;
+        templstr.addstr(parameter2);
+        str_add2(parameters,command2,[tv_str,for s use templstr]);
+        templstr.free;
+
+      -- procedure
+      elsif command='procedure' then
+        simple_parser(parameter,['='],command2,parameter2);
+
+        if parameter2='@IGNORE' then
+            proc_add(proclist,command2,parameter2);
+
+          else
+            wr({MSG=}000025,lc_error,formats('cfg_load : neznama hodnota parametru: %1',cfgline));
+            raise internal_error;
+          end if;
+
+      else
+        wr({MSG=}000026,lc_error,formats('cfg_load : neznamy parametr: %1',cfgline));
+        raise internal_error;
+      end if;
+
+    end loop;
+
+  -- uzavrit konfiguracni soubor
+  txtclose(cfgfile);
+  fclose(cfgfile);
+
+  wr({MSG=}000027,lc_debug,formats('Nactena konfigurace ze souboru %1',pathfile(mypath,configname)));
+  end cfg_load;
+
+
+
+end h2config;
+
+{%ON}
+

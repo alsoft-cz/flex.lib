@@ -1,0 +1,506 @@
+----------------------------------------------------------------------------------------------------
+module winperf =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,winbase;
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation.  All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     winperf.h
+-- 
+-- Abstract:
+-- 
+--     Header file for the Performance Monitor data.
+-- 
+--     This file contains the definitions of the data structures returned
+--     by the Configuration Registry in response to a request for
+--     performance data.  This file is used by both the Configuration
+--     Registry and the Performance Monitor to define their interface.
+--     The complete interface is described here, except for the name
+--     of the node to query in the registry.  It is
+-- 
+--                    HKEY_PERFORMANCE_DATA.
+-- 
+--     By querying that node with a subkey of "Global" the caller will
+--     retrieve the structures described here.
+-- 
+--     There is no need to RegOpenKey() the reserved handle HKEY_PERFORMANCE_DATA,
+--     but the caller should RegCloseKey() the handle so that network transports
+--     and drivers can be removed or installed (which cannot happen while
+--     they are open for monitoring.)  Remote requests must first
+--     RegConnectRegistry().
+-- 
+-- --*/
+-- #pragma  once
+-- ignored #include <pshpack8.h>
+--  Data structure definitions.
+--  In order for data to be returned through the Configuration Registry
+--  in a system-independent fashion, it must be self-describing.
+--  In the following, all offsets are in bytes.
+-- 
+--  Data is returned through the Configuration Registry in a
+--  a data block which begins with a _PERF_DATA_BLOCK structure.
+-- 
+const
+  PERF_DATA_VERSION = 1;
+
+const
+  PERF_DATA_REVISION= 1;
+
+type
+  _PERF_DATA_BLOCK  = record
+Signature       : array 0..3 of WCHAR;
+LittleEndian    : DWORD;
+Version         : DWORD;
+Revision        : DWORD;
+TotalByteLength : DWORD;
+HeaderLength    : DWORD;
+NumObjectTypes  : DWORD;
+DefaultObject   : LONG;
+SystemTime      : t_SYSTEMTIME;
+PerfTime        : LARGE_INTEGER;
+PerfFreq        : LARGE_INTEGER;
+PerfTime100nSec : LARGE_INTEGER;
+SystemNameLength : DWORD;
+SystemNameOffset : DWORD;
+  end record;
+  PERF_DATA_BLOCK   = _PERF_DATA_BLOCK;
+  PPERF_DATA_BLOCK  = ^_PERF_DATA_BLOCK;
+
+-- 
+--  The _PERF_DATA_BLOCK structure is followed by NumObjectTypes of
+--  data sections, one for each type of object measured. Each object
+--  type section begins with a _PERF_OBJECT_TYPE structure.
+-- 
+type
+  _PERF_OBJECT_TYPE = record
+TotalByteLength : DWORD;
+DefinitionLength : DWORD;
+HeaderLength    : DWORD;
+ObjectNameTitleIndex : DWORD;
+ObjectNameTitle : LPWSTR;
+ObjectHelpTitleIndex : DWORD;
+ObjectHelpTitle : LPWSTR;
+DetailLevel     : DWORD;
+NumCounters     : DWORD;
+DefaultCounter  : LONG;
+NumInstances    : LONG;
+CodePage        : DWORD;
+PerfTime        : LARGE_INTEGER;
+PerfFreq        : LARGE_INTEGER;
+  end record;
+  PERF_OBJECT_TYPE  = _PERF_OBJECT_TYPE;
+  PPERF_OBJECT_TYPE = ^_PERF_OBJECT_TYPE;
+
+-- 
+--  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-- 
+--  PERF_COUNTER_DEFINITION.CounterType field values
+-- 
+-- 
+--  Counter ID Field Definition:
+-- 
+--  3 2 2 2 2 1 1 1
+--  1 8 4 2 0 6 2 0 8 0
+--  +--------+--------+----+----+--------+--------+----+----+----------------+
+--  |Display |Calculation |Time|Counter | |Ctr |Size| |
+--  |Flags |Modifiers |Base|SubType |Reserved|Type|Fld | Reserved |
+--  +--------+--------+----+----+--------+--------+----+----+----------------+
+-- 
+-- 
+--  The counter type is the "or" of the following values as described below
+-- 
+--  select one of the following to indicate the counter's data size
+-- 
+const
+  PERF_SIZE_DWORD   = $00;
+
+const
+  PERF_SIZE_LARGE   = $0100;
+
+const
+  PERF_SIZE_ZERO    = $0200;
+
+const
+  PERF_SIZE_VARIABLE_LEN= $0300;
+
+--  of Counter Definition struct
+-- 
+--  select one of the following values to indicate the counter field usage
+-- 
+const
+  PERF_TYPE_NUMBER  = $00;
+
+const
+  PERF_TYPE_COUNTER = $0400;
+
+const
+  PERF_TYPE_TEXT    = $0800;
+
+const
+  PERF_TYPE_ZERO    = $0C00;
+
+-- 
+--  If the PERF_TYPE_NUMBER field was selected, then select one of the
+--  following to describe the Number
+-- 
+const
+  PERF_NUMBER_HEX   = $00;
+
+const
+  PERF_NUMBER_DECIMAL= $10000;
+
+const
+  PERF_NUMBER_DEC_1000= $20000;
+
+-- 
+--  If the PERF_TYPE_COUNTER value was selected then select one of the
+--  following to indicate the type of counter
+-- 
+const
+  PERF_COUNTER_VALUE= $00;
+
+const
+  PERF_COUNTER_RATE = $10000;
+
+const
+  PERF_COUNTER_FRACTION= $20000;
+
+const
+  PERF_COUNTER_BASE = $30000;
+
+const
+  PERF_COUNTER_ELAPSED= $40000;
+
+const
+  PERF_COUNTER_QUEUELEN= $50000;
+
+const
+  PERF_COUNTER_HISTOGRAM= $60000;
+
+const
+  PERF_COUNTER_PRECISION= $70000;
+
+-- 
+--  If the PERF_TYPE_TEXT value was selected, then select one of the
+--  following to indicate the type of TEXT data.
+-- 
+const
+  PERF_TEXT_UNICODE = $00;
+
+const
+  PERF_TEXT_ASCII   = $10000;
+
+-- 
+--  Timer SubTypes
+-- 
+const
+  PERF_TIMER_TICK   = $00;
+
+const
+  PERF_TIMER_100NS  = $100000;
+
+const
+  PERF_OBJECT_TIMER = $200000;
+
+-- 
+--  Any types that have calculations performed can use one or more of
+--  the following calculation modification flags listed here
+-- 
+const
+  PERF_DELTA_COUNTER= $400000;
+
+const
+  PERF_DELTA_BASE   = $800000;
+
+const
+  PERF_INVERSE_COUNTER= $1000000;
+
+const
+  PERF_MULTI_COUNTER= $2000000;
+
+-- 
+--  Select one of the following values to indicate the display suffix (if any)
+-- 
+const
+  PERF_DISPLAY_NO_SUFFIX= $00;
+
+const
+  PERF_DISPLAY_PER_SEC= $10000000;
+
+const
+  PERF_DISPLAY_PERCENT= $20000000;
+
+const
+  PERF_DISPLAY_SECONDS= $30000000;
+
+const
+  PERF_DISPLAY_NOSHOW= $40000000;
+
+-- 
+--  Predefined counter types
+-- 
+--  32-bit Counter. Divide delta by delta time. Display suffix: "/sec"
+--  64-bit Timer. Divide delta by delta time. Display suffix: "%"
+--  Queue Length Space-Time Product. Divide delta by delta time. No Display Suffix.
+--  Queue Length Space-Time Product. Divide delta by delta time. No Display Suffix.
+--  Queue Length Space-Time Product using 100 Ns timebase.
+--  Divide delta by delta time. No Display Suffix.
+--  Queue Length Space-Time Product using Object specific timebase.
+--  Divide delta by delta time. No Display Suffix.
+--  64-bit Counter. Divide delta by delta time. Display Suffix: "/sec"
+--  Indicates the counter is not a counter but rather Unicode text Display as text.
+--  Indicates the data is a counter which should not be
+--  time averaged on display (such as an error counter on a serial line)
+--  Display as is. No Display Suffix.
+--  Same as PERF_COUNTER_RAWCOUNT except its size is a large integer
+--  Special case for RAWCOUNT that want to be displayed in hex
+--  Indicates the data is a counter which should not be
+--  time averaged on display (such as an error counter on a serial line)
+--  Display as is. No Display Suffix.
+--  Same as PERF_COUNTER_RAWCOUNT_HEX except its size is a large integer
+--  A count which is either 1 or 0 on each sampling interrupt (% busy)
+--  Divide delta by delta base. Display Suffix: "%"
+--  A count which is sampled on each sampling interrupt (queue length)
+--  Divide delta by delta time. No Display Suffix.
+--  A label: no data is associated with this counter (it has 0 length)
+--  Do not display.
+--  64-bit Timer inverse (e.g., idle is measured, but display busy %)
+--  Display 100 - delta divided by delta time. Display suffix: "%"
+--  The divisor for a sample, used with the previous counter to form a
+--  sampled %. You must check for >0 before dividing by this! This
+--  counter will directly follow the numerator counter. It should not
+--  be displayed to the user.
+--  A timer which, when divided by an average base, produces a time
+--  in seconds which is the average time of some operation. This
+--  timer times total operations, and the base is the number of opera-
+--  tions. Display Suffix: "sec"
+--  Used as the denominator in the computation of time or count
+--  averages. Must directly follow the numerator counter. Not dis-
+--  played to the user.
+--  A bulk count which, when divided (typically) by the number of
+--  operations, gives (typically) the number of bytes per operation.
+--  No Display Suffix.
+--  64-bit Timer in object specific units. Display delta divided by
+--  delta time as returned in the object type header structure. Display suffix: "%"
+--  64-bit Timer in 100 nsec units. Display delta divided by
+--  delta time. Display suffix: "%"
+--  64-bit Timer inverse (e.g., idle is measured, but display busy %)
+--  Display 100 - delta divided by delta time. Display suffix: "%"
+--  64-bit Timer. Divide delta by delta time. Display suffix: "%"
+--  Timer for multiple instances, so result can exceed 100%.
+--  64-bit Timer inverse (e.g., idle is measured, but display busy %)
+--  Display 100 * _MULTI_BASE - delta divided by delta time.
+--  Display suffix: "%" Timer for multiple instances, so result
+--  can exceed 100%. Followed by a counter of type _MULTI_BASE.
+--  Number of instances to which the preceding _MULTI_..._INV counter
+--  applies. Used as a factor to get the percentage.
+--  64-bit Timer in 100 nsec units. Display delta divided by delta time.
+--  Display suffix: "%" Timer for multiple instances, so result can exceed 100%.
+--  64-bit Timer inverse (e.g., idle is measured, but display busy %)
+--  Display 100 * _MULTI_BASE - delta divided by delta time.
+--  Display suffix: "%" Timer for multiple instances, so result
+--  can exceed 100%. Followed by a counter of type _MULTI_BASE.
+--  Indicates the data is a fraction of the following counter which
+--  should not be time averaged on display (such as free space over
+--  total space.) Display as is. Display the quotient as "%".
+--  Indicates the data is a base for the preceding counter which should
+--  not be time averaged on display (such as free space over total space.)
+--  The data collected in this counter is actually the start time of the
+--  item being measured. For display, this data is subtracted from the
+--  sample time to yield the elapsed time as the difference between the two.
+--  In the definition below, the PerfTime field of the Object contains
+--  the sample time as indicated by the PERF_OBJECT_TIMER bit and the
+--  difference is scaled by the PerfFreq of the Object to convert the time
+--  units into seconds.
+-- 
+--  The following counter type can be used with the preceding types to
+--  define a range of values to be displayed in a histogram.
+-- 
+const
+  PERF_COUNTER_HISTOGRAM_TYPE= $80000000;
+
+--  Counter begins or ends a histogram
+-- 
+--  This counter is used to display the difference from one sample
+--  to the next. The counter value is a constantly increasing number
+--  and the value displayed is the difference between the current
+--  value and the previous value. Negative numbers are not allowed
+--  which shouldn't be a problem as long as the counter value is
+--  increasing or unchanged.
+-- 
+-- 
+--  The precision counters are timers that consist of two counter values:
+--  1) the count of elapsed time of the event being monitored
+--  2) the "clock" time in the same units
+-- 
+--  the precition timers are used where the standard system timers are not
+--  precise enough for accurate readings. It's assumed that the service
+--  providing the data is also providing a timestamp at the same time which
+--  will eliminate any error that may occur since some small and variable
+--  time elapses between the time the system timestamp is captured and when
+--  the data is collected from the performance DLL. Only in extreme cases
+--  has this been observed to be problematic.
+-- 
+--  when using this type of timer, the definition of the
+--  PERF_PRECISION_TIMESTAMP counter must immediately follow the
+--  definition of the PERF_PRECISION_*_TIMER in the Object header
+-- 
+--  The timer used has the same frequency as the System Performance Timer
+-- 
+--  The timer used has the same frequency as the 100 NanoSecond Timer
+-- 
+--  The timer used is of the frequency specified in the Object header's
+--  PerfFreq field (PerfTime is ignored)
+-- 
+--  This is the timestamp to use in the computation of the timer specified
+--  in the previous description block
+-- 
+--  The following are used to determine the level of detail associated
+--  with the counter. The user will be setting the level of detail
+--  that should be displayed at any given time.
+-- 
+-- 
+const
+  PERF_DETAIL_NOVICE= 100;
+
+const
+  PERF_DETAIL_ADVANCED= 200;
+
+const
+  PERF_DETAIL_EXPERT= 300;
+
+const
+  PERF_DETAIL_WIZARD= 400;
+
+-- 
+-- 
+--  There is one of the following for each of the
+--  PERF_OBJECT_TYPE.NumCounters. The Unicode names in this structure MUST
+--  come from a message file.
+-- 
+-- 
+type
+  _PERF_COUNTER_DEFINITION = record
+ByteLength      : DWORD;
+CounterNameTitleIndex : DWORD;
+CounterNameTitle : LPWSTR;
+CounterHelpTitleIndex : DWORD;
+CounterHelpTitle : LPWSTR;
+DefaultScale    : LONG;
+DetailLevel     : DWORD;
+CounterType     : DWORD;
+CounterSize     : DWORD;
+CounterOffset   : DWORD;
+  end record;
+  PERF_COUNTER_DEFINITION = _PERF_COUNTER_DEFINITION;
+  PPERF_COUNTER_DEFINITION = ^_PERF_COUNTER_DEFINITION;
+
+-- 
+-- 
+--  If (PERF_DATA_BLOCK.NumInstances >= 0) then there will be
+--  PERF_DATA_BLOCK.NumInstances of a (PERF_INSTANCE_DEFINITION
+--  followed by a PERF_COUNTER_BLOCK followed by the counter data fields)
+--  for each instance.
+-- 
+--  If (PERF_DATA_BLOCK.NumInstances < 0) then the counter definition
+--  strucutre above will be followed by only a PERF_COUNTER_BLOCK and the
+--  counter data for that COUNTER.
+-- 
+type
+  _PERF_INSTANCE_DEFINITION = record
+ByteLength      : DWORD;
+ParentObjectTitleIndex : DWORD;
+ParentObjectInstance : DWORD;
+UniqueID        : LONG;
+NameOffset      : DWORD;
+NameLength      : DWORD;
+  end record;
+  PERF_INSTANCE_DEFINITION = _PERF_INSTANCE_DEFINITION;
+  PPERF_INSTANCE_DEFINITION = ^_PERF_INSTANCE_DEFINITION;
+
+-- 
+--  If .ParentObjectName is 0, there
+--  is no parent-child hierarchy for this object type. Otherwise,
+--  the .ParentObjectInstance is an index, starting at 0, into the
+--  instances reported for the parent object type. It is only
+--  meaningful if .ParentObjectName is not 0. The purpose of all this
+--  is to permit reporting/summation of object instances like threads
+--  within processes, and logical drives within physical drives.
+-- 
+-- 
+--  The PERF_INSTANCE_DEFINITION will be followed by a PERF_COUNTER_BLOCK.
+-- 
+type
+  _PERF_COUNTER_BLOCK = record
+ByteLength      : DWORD;
+  end record;
+  PERF_COUNTER_BLOCK = _PERF_COUNTER_BLOCK;
+  PPERF_COUNTER_BLOCK = ^_PERF_COUNTER_BLOCK;
+
+-- 
+--  The PERF_COUNTER_BLOCK is followed by PERF_OBJECT_TYPE.NumCounters
+--  number of counters.
+-- 
+-- 
+--  Support for New Extensible API starting with NT 5.0
+-- 
+-- 
+--  function typedefs for extensible counter function prototypes
+-- 
+type
+PM_OPEN_PROC      = procedure (
+    _001            : LPWSTR)
+                      return DWORD;
+type
+t_001=^LPVOID for machine_pointer use true;
+
+PM_COLLECT_PROC   = procedure (
+    _001            : LPWSTR;
+    _002            : t_001;
+    _003            : LPDWORD;
+    _004            : LPDWORD)
+                      return DWORD;
+type
+PM_CLOSE_PROC     = procedure 
+                      return DWORD;
+type
+t_002=^LPVOID for machine_pointer use true;
+
+PM_QUERY_PROC     = procedure (
+    _001            : LPDWORD;
+    _002            : t_002;
+    _003            : LPDWORD;
+    _004            : LPDWORD)
+                      return DWORD;
+-- 
+--  The following are the possible values for
+--  HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Perflib\EventLogLevel
+--  The default is WINPERF_LOG_NONE if the registry value is not defined.
+--  This should be adopted by all perfdlls to avoid flooding the application
+--  event log.
+-- 
+const
+  WINPERF_LOG_NONE  = 0;
+
+const
+  WINPERF_LOG_USER  = 1;
+
+const
+  WINPERF_LOG_DEBUG = 2;
+
+const
+  WINPERF_LOG_VERBOSE= 3;
+
+-- ignored #include <poppack.h>
+-- ** Report everything
+end winperf;

@@ -1,0 +1,330 @@
+var
+  crlf           : static const string 2 of t_char32 := \$0d\$0a;
+  cr             : static const t_char32             := \$0d;
+  lf             : static const t_char32             := \$0a;
+
+----------------------------------------------------------------------------------------------------
+class private c_stream_text_writer =
+----------------------------------------------------------------------------------------------------
+var
+  encoder          : p_character_encoder;
+
+  --------------------------------------------------------------------------------------------------
+  static init_text_writer = 
+  --------------------------------------------------------------------------------------------------
+  begin
+    -- zrirzdim cil
+    init_writer(target);
+    -- nastavim kodovani
+    this.encoder:=encoder;
+    end init_text_writer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_writer.write_char =
+  ------------------------------------------------------------------------------------------------
+  var
+      all_out      : t_logical;
+      buffer       : array 0..4 of t_data_byte;
+      pos          : t_offset;
+
+  begin
+    if encoder<>nil then
+      encoder^.put_character(text);
+      -- output all bytes
+      loop
+        encoder^.get_output(t_unsigned8(buffer[pos]),all_out);
+        pos + 1;
+        until all_out;
+      p_stream_generic_writer(^this)^.write_unchecked(buffer,pos);
+    else
+      p_stream_generic_writer(^this)^.write_char32(text);
+      end if;
+    end write_char;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_writer.write =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if encoder<>nil then
+      c_text_writer:(this).write_first(text,text:length);
+    else
+      -- neni treba prekodovat , ukladam nativne
+      write_text(text);
+      end if;
+    end write;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_text_writer.write_first =
+  ------------------------------------------------------------------------------------------------
+  var
+    all_out        : t_logical;
+    buffer         : p_data_array;
+    pos            : t_offset;
+    optimal_size   : t_offset;
+
+  begin
+    if encoder<>nil then
+      get_optimal_packet_size(optimal_size);
+      if optimal_size>(count*t_char32:size) then
+        optimal_size:=(count*t_char32:size);
+        end if;
+
+      -- pripravim buffer
+      new buffer range optimal_size;
+      for i in 1 .. count loop
+        encoder^.put_character(text[i]);
+        -- output all bytes
+        loop
+          encoder^.get_output(t_unsigned8(buffer^[pos]),all_out);
+          pos + 1;
+          -- odeslu buffer pokud je plny
+          if pos=optimal_size then
+            p_stream_generic_writer(^this)^.write_heap(p_data_array_long(buffer:unchecked)^,pos);
+            new buffer range optimal_size;
+            pos:=0;
+            end if;
+          until all_out;
+        end loop;
+
+      -- odeslu zbyle data
+      if pos>0 then
+        p_stream_generic_writer(^this)^.write_heap(p_data_array_long(buffer:unchecked)^,pos);
+      else
+        discard buffer;
+        end if;
+    else
+      -- neni treba prekodovat , ukladam nativne
+      write_text_part(text,count);
+      end if;
+    end write_first;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_writer.write_line =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_text_writer:(this).write(text);
+    c_text_writer:(this).write(crlf);
+    end write_line;
+  end c_stream_text_writer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_stream_text_reader =
+----------------------------------------------------------------------------------------------------
+var
+  decoder          : p_character_decoder;
+
+  --------------------------------------------------------------------------------------------------
+  static init_text_reader = 
+  --------------------------------------------------------------------------------------------------
+  begin
+    -- priradim zdroj dat
+    init_reader(source);
+    -- nastavim kodovani
+    this.decoder:=decoder;
+    end init_text_reader;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_reader.read_char =
+  ------------------------------------------------------------------------------------------------
+  var
+      b            : t_data_byte;
+      done         : t_logical;
+
+  begin
+    if decoder<>nil then
+      loop
+        if p_stream_generic_reader(^this)^.read_byte(b) then
+          result:=true;
+          return;
+          end if;
+        decoder^.put_byte (t_unsigned8(b),done);
+        until done;
+      text:=decoder^.get_character();
+    else
+      -- kodovani netreba ctu nativne
+      result:=p_stream_generic_reader(^this)^.read_char32(text);
+      end if;
+    end read_char;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_text_reader.read_first =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if decoder<>nil then
+      -- ctu po znaku do konce bufferu
+      loop
+        if text:length>=count then
+          break;
+          end if;
+        result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
+        if result then
+          return;
+        else
+          text:length + 1;
+          end if;
+        end loop;
+    else
+      result:=read_text(text);
+      end if;
+    end read_first;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_reader.read =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=(^c_text_reader:(this))^.read_first(text,text:last);
+    end read;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_reader.read_line =
+  ------------------------------------------------------------------------------------------------
+  var
+    readbytes    : t_offset;
+
+  begin
+    -- ctu po znaku do konce radku nebo bufferu
+    loop
+      if text:length>=text:last then
+        raise string_buffer_overflow;
+        end if;
+      result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
+      if not result then
+        text:length + 1;
+        if text[text:length]=cr then
+          text:length - 1;
+        elsif text[text:length]=lf then
+          text:length - 1;
+          break;
+          end if;
+      else
+        break;
+        end if;
+      end loop;
+    end read_line;
+  end c_stream_text_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_input_stream_text_recoder = 
+----------------------------------------------------------------------------------------------------
+var
+  eod              : t_logical;
+  closed           : t_logical;
+  decoder          : p_character_decoder;
+  encoder          : p_character_encoder;
+
+  --------------------------------------------------------------------------------------------------
+  static init_recoder =
+  --------------------------------------------------------------------------------------------------
+  begin
+    init_reader(source);
+    this.decoder:=decoder;
+    this.encoder:=encoder;
+    end init_recoder;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.close =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    _source^.close;
+    closed:=true;
+    end close;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet =
+  --------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO
+    end read_packet;
+  
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod =
+  --------------------------------------------------------------------------------------------------
+  begin 
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=eod;
+    end is_eod;
+  end c_input_stream_text_recoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_output_stream_text_recoder = 
+-- implementace prekodovavace znaku
+----------------------------------------------------------------------------------------------------
+var
+  eod              : t_logical;
+  closed           : t_logical;
+  decoder          : p_character_decoder;
+  encoder          : p_character_encoder;
+
+  --------------------------------------------------------------------------------------------------
+  static init_recoder =
+  --------------------------------------------------------------------------------------------------
+  begin
+    init_writer(target);
+    this.encoder:=encoder;
+    this.decoder:=decoder;
+    end init_recoder;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    _target^.close;
+    closed:=true;
+    end close;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  --------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO
+    end write_packet;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  --------------------------------------------------------------------------------------------------
+  begin
+    result:=_target^.is_reading;
+    end is_reading;
+  end c_output_stream_text_recoder;

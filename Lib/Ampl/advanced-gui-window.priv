@@ -1,0 +1,53 @@
+----------------------------------------------------------------------------------------------------
+module private window =
+-- GUI window object.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with 
+  advanced.gui.device_context;
+
+-- Foerward declarations
+
+class private c_window = 
+----------------------------------------------------------------------------------------------------
+
+    -- creation and finalization
+    ------------------------------------------------------------------------------------------------
+    static set_window_handle =
+    -- %% Working version for flex - pascal gui library  
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end set_window_handle ;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static create =
+    -- Creates a window and its context at gives position [_x,_y] of dimension [_width,_height] in
+    -- a context of [_parent] window 
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end create;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual close = 
+    -- Closes window and finalizes all its resoucources etc.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end close;
+
+    -- drawing methods
+    ------------------------------------------------------------------------------------------------
+    virtual repaint =
+    -- Repaints context of a window.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      end repaint;
+    
+    end c_window;
+
+end window;

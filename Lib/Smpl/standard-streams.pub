@@ -1,0 +1,133 @@
+----------------------------------------------------------------------------------------------------
+module public streams =
+-- Stream Interface
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Popis :
+-- Stream je proud netypovanych dat. Zakladni rozdeleni je : 
+--  - proudy ktere data tlaci smerem k prijemci [c_output_stream]
+--  - proudy ktere data tahaji ze zdroje [c_input_stream]
+--
+----------------------------------------------------------------------------------------------------
+-- Data jsou representovany datovymi packety techto zakladnich druhu
+----------------------------------------------------------------------------------------------------
+--  [t_dps_heap]        - data na flex heapu, ktere jsou uvolneny prijemcem data
+--  [t_dps_immortal]    - data ktere maji platnost delsi nez je zivotnost streamu
+--  [t_dps_temporary]   - data na stacku volajiciho, museji byt zpracovany nebo zkopirovany v tomto volani
+--  [t_dps_other]       - data ktere potrebuji jine zachazeni, napr jiny alokator
+--  [t_dps_signal]      - signalizuje nedatovou udalost
+--    [t_dpss_eod]        - signalizuje konec dat
+--    [t_dpss_flush]      - signalizuje pozadavek na (nedestruktivni) vyprazdneni vsech bufferu
+--
+--
+--
+----------------------------------------------------------------------------------------------------
+-- Koncove prvky retezu streamu implementuji [c_output_stream] nebo [c_input_stream].
+----------------------------------------------------------------------------------------------------
+-- Implementovany jsou :
+-- [c_null_input_stream],[c_empty_input_stream],[c_null_output_stream]
+-- [c_file_output_stream],[c_file_input_stream],[c_buffered_file_output_stream],[c_buffered_file_output_stream]
+-- [c_console_output_stream],[c_console_input_stream]
+--
+-- Implementace [c_output_stream] implementuje metody interface takto:
+--
+-- override [write_packet] - cte data packetu pomoci procedury [read_packet]
+--                         - zapisuje data na podlehajici cil, 
+--                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
+--                         - reaguje na packet [t_dps_signal] [t_dpss_flush] a ceka na zapsani vsech dat
+--                         - resi zapis po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
+--                         - resi zapis po [close] vyhozenim vyjimky [stream_already_closed]
+--                         - zapocitava prutok dat pomoci [add_flow]
+--                         - uvolnuje packety pomoci procedury [discard_packet]
+-- override [close]        - propaguje uvolneni zdroju na podlehajici cil, 
+--                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
+-- override [is_reading]   - vraci jestli podlehajici cil je(byl) schopen prijimat data
+--
+--
+--
+-- Implementace [c_input_stream] implemntuje metody interface takto:
+--
+-- override [read_packet]  - vytvari packety pomoci procedury [create_packet]
+--                         - cte data z podlehajiciho zdroje
+--                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
+--                         - reaguje na packet [t_dps_signal] [t_dpss_flush]
+--                         - resi cteni po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
+--                         - resi cteni po [close] vyhozenim vyjimky [stream_already_closed]
+--                         - zapocitava prutok dat pomoci [add_flow]
+-- override [close]        - propaguje uvolneni zdroju na podlehajici zdroj pomoci
+--                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
+-- override [is_eod]       - vraci informaci jestli uz byl precten signal [t_dpss_eod]
+--
+--
+--
+----------------------------------------------------------------------------------------------------
+-- Formattery jsou koncove prvky implementujici jina rozhrani a pouzivajici streamy
+----------------------------------------------------------------------------------------------------
+-- Odvozuji ze z [c_stream_writer],[c_stream_reader] 
+-- nebo z pomocnych [c_stream_generic_writer],[c_stream_generic_reader]
+--
+-- Implementovany jsou :
+-- [c_stream_binary_writer],[c_stream_binary_reader]
+-- [c_stream_text_writer],[c_stream_text_reader]
+-- [c_text_file_reader],[c_text_file_writer]
+--
+--
+--
+----------------------------------------------------------------------------------------------------
+-- Filtry jsou forwardery packetu z vestavenou funkcnosti jako (sifrovani, komprese, bufferovani).
+----------------------------------------------------------------------------------------------------
+-- Mohou (a nemusi)mit buffery a pomocne thready. Nemeni smer toku dat. 
+-- Ovozuji se z [c_stream_writer_filter] nebo [c_stream_reader_filter]
+-- Implementovany jsou : 
+-- [c_input_stream_buffer],[c_output_stream_buffer],
+-- [c_input_stream_text_recoder],[c_output_stream_text_recoder]
+--
+--
+--
+----------------------------------------------------------------------------------------------------
+-- Connectory jsou forwardery ktere meni smer toku dat.
+----------------------------------------------------------------------------------------------------
+-- Mohou mit buffery a pomocne thready.
+-- Implementovany jsou : [c_active_stream_connector],[c_passive_buffered_stream_connector]
+-- 
+--
+--
+
+with 
+  standard.tasks,
+  standard.synchronization;
+
+
+message
+  stream_exception;                              -- obecn  v˜jimka p©i pr ci se streamy
+  stream_error extend stream_exception;          -- obecn  chyba p©i pr ci se streamy
+  stream_internal_error extend stream_error;     -- intern¡ chyba
+  stream_read_error extend stream_error;         -- chyba p©i ‡ten¡
+  stream_end_of_data extend stream_exception;    -- v˜jimka - ‡ten¡ p©es konec dat
+  stream_other_side extend stream_exception;     -- druha strana prestala cist data
+  stream_already_closed extend stream_exception; -- jiz bylo zavreno
+
+
+----------------------------------------------------------------------------------------------------
+#separate public packets;
+-- packet structures
+----------------------------------------------------------------------------------------------------
+#separate public abstr;
+-- abstract interfaces
+----------------------------------------------------------------------------------------------------
+#separate public formatters;
+-- stream formaters
+----------------------------------------------------------------------------------------------------
+#separate public filters;
+-- stream filters
+----------------------------------------------------------------------------------------------------
+#separate public connectors;
+-- stream filters
+----------------------------------------------------------------------------------------------------
+#separate public terminators;
+-- stream terminators
+----------------------------------------------------------------------------------------------------
+end streams;

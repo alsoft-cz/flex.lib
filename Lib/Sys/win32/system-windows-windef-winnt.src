@@ -1,0 +1,7924 @@
+----------------------------------------------------------------------------------------------------
+module winnt =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /*++ BUILD Version: 0092     Increment this if a change has global effects
+-- 
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     winnt.h
+-- 
+-- Abstract:
+-- 
+--     This module defines the 32-Bit Windows types and constants that are
+--     defined by NT, but exposed through the Win32 API.
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- ignored #include <ctype.h>
+const
+  ANYSIZE_ARRAY     = 1;
+
+const
+  MEMORY_ALLOCATION_ALIGNMENT= 8;
+
+-- 
+--  TYPE_ALIGNMENT will return the alignment requirements of a given type for
+--  the current platform.
+-- 
+-- 
+--  C_ASSERT() can be used to perform many compile-time assertions:
+--  type sizes, field offsets, etc.
+-- 
+--  An assertion failure results in error C2118: negative subscript.
+-- 
+type
+POINTER_64_INT    = unsigned 32;
+#separate basetsd;
+const
+  PRAGMA_DEPRECATED_DDK= 0;
+
+-- 
+--  Void
+-- 
+type
+PVOID             = ^unchecked for machine_pointer use true;
+type
+PVOID64           = ^unchecked for machine_pointer use true;
+-- 
+--  Define API decoration for direct importing system DLL references.
+-- 
+-- 
+--  Basics
+-- 
+type
+CHAR              = character 8;
+CHARSTR = array of CHAR;
+type
+SHORT             = signed 16;
+type
+LONG              = signed 32;
+-- 
+--  UNICODE (Wide Character) types
+-- 
+type
+WCHAR             = character 16;
+WCHARSTR = array of aliased WCHAR;
+--  wc, 16-bit UNICODE character
+type
+PWCHAR            = ^WCHAR for machine_pointer use true;
+type
+LPWCH             = ^WCHAR for machine_pointer use true;
+PWCH              = ^^WCHAR for machine_pointer use true;
+type
+LPCWCH            = ^WCHAR for machine_pointer use true;
+PCWCH             = ^^WCHAR for machine_pointer use true;
+type
+NWPSTR            = ^WCHARSTR for machine_pointer use true;
+type
+LPWSTR            = ^WCHARSTR for machine_pointer use true;
+PWSTR             = ^WCHARSTR for machine_pointer use true;
+type
+LPUWSTR           = LPWSTR;
+PUWSTR            = PWSTR;
+type
+LPCWSTR           = LPWSTR;
+PCWSTR            = PWSTR;
+type
+LPCUWSTR          = LPWSTR;
+PCUWSTR           = PWSTR;
+-- 
+--  ANSI (Multi-byte Character) types
+-- 
+type
+PCHAR             = ^CHAR for machine_pointer use true;
+type
+LPCH              = ^CHAR for machine_pointer use true;
+PCH               = ^^CHAR for machine_pointer use true;
+type
+LPCCH             = ^CHAR for machine_pointer use true;
+PCCH              = ^^CHAR for machine_pointer use true;
+type
+NPSTR             = ^CHARSTR for machine_pointer use true;
+type
+LPSTR             = ^CHARSTR for machine_pointer use true;
+PSTR              = ^CHARSTR for machine_pointer use true;
+type
+LPCSTR            = LPSTR;
+PCSTR             = PSTR;
+-- 
+--  Neutral ANSI/UNICODE types and macros
+-- 
+#if #declared UNICODE; then;
+type
+TCHAR             = WCHAR;
+PTCHAR            = ^WCHAR for machine_pointer use true;
+type
+TBYTE             = WCHAR;
+PTBYTE            = ^WCHAR for machine_pointer use true;
+type
+LPTCH             = LPWSTR;
+PTCH              = LPWSTR;
+type
+PTSTR             = LPWSTR;
+LPTSTR            = LPWSTR;
+type
+PCTSTR            = LPCWSTR;
+LPCTSTR           = LPCWSTR;
+type
+PUTSTR            = LPUWSTR;
+LPUTSTR           = LPUWSTR;
+type
+PCUTSTR           = LPCUWSTR;
+LPCUTSTR          = LPCUWSTR;
+type
+LP                = LPWSTR;
+--  r_winnt
+#template __TEXT(quote);
+  Lquote 
+#end __TEXT;
+#else;
+type
+LPTCH             = LPSTR;
+PTCH              = LPSTR;
+type
+PTSTR             = LPSTR;
+LPTSTR            = LPSTR;
+PUTSTR            = LPSTR;
+LPUTSTR           = LPSTR;
+type
+PCTSTR            = LPCSTR;
+LPCTSTR           = LPCSTR;
+PCUTSTR           = LPCSTR;
+LPCUTSTR          = LPCSTR;
+--  r_winnt
+#template __TEXT(quote);
+  quote 
+#end __TEXT;
+#end if;
+
+type
+PSHORT            = ^SHORT for machine_pointer use true;
+type
+PLONG             = ^LONG for machine_pointer use true;
+type
+t_HANDLE          = unsigned 32;
+type
+PHANDLE           = ^t_HANDLE for machine_pointer use true;
+-- 
+--  Flag (bit) fields
+-- 
+type
+FCHAR             = BYTE;
+type
+FSHORT            = WORD;
+type
+FLONG             = DWORD;
+--  Component Object Model defines, and macros
+type
+HRESULT           = LONG;
+--  Win32 doesn't support __export
+--  The 'V' versions allow Variable Argument lists.
+type
+CCHAR             = character 8;
+type
+LCID              = DWORD;
+type
+PLCID             = PDWORD;
+type
+LANGID            = WORD;
+const
+  APPLICATION_ERROR_MASK= $20000000;
+
+const
+  ERROR_SEVERITY_SUCCESS= $00;
+
+const
+  ERROR_SEVERITY_INFORMATIONAL= $40000000;
+
+const
+  ERROR_SEVERITY_WARNING= $80000000;
+
+const
+  ERROR_SEVERITY_ERROR= $C0000000;
+
+-- 
+--  _M_IX86 included so that EM CONTEXT structure compiles with
+--  x86 programs. *** TBD should this be for all architectures?
+-- 
+-- 
+--  16 byte aligned type for 128 bit floats
+-- 
+-- 
+--  For we define a 128 bit structure and use __declspec(align(16)) pragma to
+--  align to 128 bits.
+-- 
+type
+  _FLOAT128         = record
+LowPart         : signed 64;
+HighPart        : signed 64;
+  end record;
+  FLOAT128          = _FLOAT128;
+
+type
+PFLOAT128         = ^FLOAT128 for machine_pointer use true;
+-- 
+--  __int64 is only supported by 2.0 and later midl.
+--  __midl is set by the 2.0 midl and not by 1.0 midl.
+-- 
+type
+LONGLONG          = float 64;
+type
+ULONGLONG         = float 64;
+type
+PLONGLONG         = ^LONGLONG for machine_pointer use true;
+type
+PULONGLONG        = ^ULONGLONG for machine_pointer use true;
+--  Update Sequence Number
+type
+t_USN             = LONGLONG;
+type
+  _LARGE_INTEGER = record
+LowPart         : aliased DWORD;
+HighPart        : aliased LONG;
+  u                 : record
+LowPart         : DWORD;
+HighPart        : LONG;
+  end record for position use 0;
+  QuadPart        : LONGLONG for position use 0;
+  end record;
+
+  LARGE_INTEGER     = _LARGE_INTEGER;
+type
+PLARGE_INTEGER    = ^LARGE_INTEGER for machine_pointer use true;
+type
+  _ULARGE_INTEGER = record
+LowPart         : DWORD;
+HighPart        : DWORD;
+  u                 : record
+LowPart         : DWORD;
+HighPart        : DWORD;
+  end record for position use 0;
+  QuadPart        : ULONGLONG for position use 0;
+  end record;
+
+  ULARGE_INTEGER    = _ULARGE_INTEGER;
+type
+PULARGE_INTEGER   = ^ULARGE_INTEGER for machine_pointer use true;
+--  end_ntminiport end_ntndis end_ntminitape
+-- 
+--  Locally Unique Identifier
+-- 
+type
+  _LUID             = record
+LowPart         : DWORD;
+HighPart        : LONG;
+  end record;
+  t_LUID            = _LUID;
+  PLUID             = ^_LUID;
+
+type
+DWORDLONG         = ULONGLONG;
+type
+PDWORDLONG        = ^DWORDLONG for machine_pointer use true;
+-- 
+--  Define operations to logically shift an int64 by 0..31 bits and to multiply
+--  32-bits by 32-bits to form a 64-bit product.
+-- 
+-- 
+--  The x86 C compiler understands inline assembler. Therefore, inline functions
+--  that employ inline assembler are used for shifts of 0..31. The multiplies
+--  rely on the compiler recognizing the cast of the multiplicand to int64 to
+--  generate the optimal code inline.
+-- 
+-- #pragma  warning(push)
+-- #pragma  warning(disable:4035) // re-enable below
+-- #pragma  warning(pop)
+-- #pragma  warning(default:4035)
+type
+BOOLEAN           = logical 8;
+type
+PBOOLEAN          = ^BOOLEAN for machine_pointer use true;
+-- 
+--  Doubly linked list structure. Can be used as either a list head, or
+--  as link words.
+-- 
+type
+  _LIST_ENTRY       = record
+  Flink             : ^_LIST_ENTRY;
+  Blink             : ^_LIST_ENTRY;
+  end record;
+  LIST_ENTRY        = _LIST_ENTRY;
+  PLIST_ENTRY       = ^_LIST_ENTRY;
+  PRLIST_ENTRY      = ^_LIST_ENTRY;
+
+-- 
+--  Singly linked list structure. Can be used as either a list head, or
+--  as link words.
+-- 
+type
+  _SINGLE_LIST_ENTRY = record
+  Next              : ^_SINGLE_LIST_ENTRY;
+  end record;
+  SINGLE_LIST_ENTRY = _SINGLE_LIST_ENTRY;
+  PSINGLE_LIST_ENTRY = ^_SINGLE_LIST_ENTRY;
+
+-- 
+--  These are needed for portable debugger support.
+-- 
+type
+  LIST_ENTRY32      = record
+Flink           : DWORD;
+Blink           : DWORD;
+  end record;
+
+type
+PLIST_ENTRY32     = ^LIST_ENTRY32 for machine_pointer use true;
+type
+  LIST_ENTRY64      = record
+Flink           : ULONGLONG;
+Blink           : ULONGLONG;
+  end record;
+
+type
+PLIST_ENTRY64     = ^LIST_ENTRY64 for machine_pointer use true;
+#separate guiddef;
+type
+  _OBJECTID         = record
+Lineage         : guiddef.t_GUID;
+Uniquifier      : DWORD;
+  end record;
+  OBJECTID          = _OBJECTID;
+
+const
+  MINCHAR           = $80;
+
+const
+  MAXCHAR           = $7F;
+
+const
+  MINSHORT          = $8000;
+
+const
+  MAXSHORT          = $7FFF;
+
+const
+  MINLONG           = $80000000;
+
+const
+  MAXLONG           = $7FFFFFFF;
+
+const
+  MAXBYTE           = $FF;
+
+const
+  MAXWORD           = $FFFF;
+
+const
+  MAXDWORD          = $FFFFFFFF;
+
+-- 
+--  Calculate the byte offset of a field in a structure of type type.
+-- 
+-- 
+--  Calculate the size of a field in a structure of type type, without
+--  knowing or stating the type of the field.
+-- 
+-- 
+--  Calculate the size of a structure of type type up through and
+--  including a field.
+-- 
+-- 
+--  RTL_CONTAINS_FIELD usage:
+-- 
+--  if (RTL_CONTAINS_FIELD(pBlock, pBlock->cbSize, dwMumble)) { // safe to use pBlock->dwMumble
+-- 
+-- 
+--  Return the number of elements in a statically sized array.
+--  DWORD Buffer[100];
+--  RTL_NUMBER_OF(Buffer) == 100
+--  This is also popularly known as: NUMBER_OF, ARRSIZE, _countof, NELEM, etc.
+-- 
+-- 
+--  An expression that yields the type of a field in a struct.
+-- 
+--  RTL_ to avoid collisions in the global namespace.
+-- 
+--  Given typedef struct _FOO { BYTE Bar[123]; } FOO;
+--  RTL_NUMBER_OF_FIELD(FOO, Bar) == 123
+-- 
+-- 
+--  eg:
+--  typedef struct FOO {
+--  DWORD Integer;
+--  PVOID Pointer;
+--  } FOO;
+-- 
+--  RTL_PADDING_BETWEEN_FIELDS(FOO, Integer, Pointer) == 0 for Win32, 4 for Win64
+-- 
+--  RTL_ to avoid collisions in the global namespace.
+--  like sizeof
+--  usually this would be * CHAR_BIT, but we don't necessarily have #include <limits.h>
+-- 
+--  Calculate the address of the base of the structure given its type, and an
+--  address of a field within the structure.
+-- 
+const
+  VER_SERVER_NT     = $80000000;
+
+const
+  VER_WORKSTATION_NT= $40000000;
+
+const
+  VER_SUITE_SMALLBUSINESS= $01;
+
+const
+  VER_SUITE_ENTERPRISE= $02;
+
+const
+  VER_SUITE_BACKOFFICE= $04;
+
+const
+  VER_SUITE_COMMUNICATIONS= $08;
+
+const
+  VER_SUITE_TERMINAL= $10;
+
+const
+  VER_SUITE_SMALLBUSINESS_RESTRICTED= $20;
+
+const
+  VER_SUITE_EMBEDDEDNT= $40;
+
+const
+  VER_SUITE_DATACENTER= $80;
+
+const
+  VER_SUITE_SINGLEUSERTS= $0100;
+
+const
+  VER_SUITE_PERSONAL= $0200;
+
+const
+  VER_SUITE_BLADE   = $0400;
+
+const
+  VER_SUITE_EMBEDDED_RESTRICTED= $0800;
+
+const
+  VER_SUITE_SECURITY_APPLIANCE= $1000;
+
+-- 
+--  Language IDs.
+-- 
+--  The following two combinations of primary language ID and
+--  sublanguage ID have special semantics:
+-- 
+--  Primary Language ID Sublanguage ID Result
+--  ------------------- --------------- ------------------------
+--  LANG_NEUTRAL SUBLANG_NEUTRAL Language neutral
+--  LANG_NEUTRAL SUBLANG_DEFAULT User default language
+--  LANG_NEUTRAL SUBLANG_SYS_DEFAULT System default language
+--  LANG_INVARIANT SUBLANG_NEUTRAL Invariant locale
+-- 
+-- 
+--  Primary language IDs.
+-- 
+const
+  LANG_NEUTRAL      = $00;
+
+const
+  LANG_INVARIANT    = $7F;
+
+const
+  LANG_AFRIKAANS    = $36;
+
+const
+  LANG_ALBANIAN     = $1C;
+
+const
+  LANG_ARABIC       = $01;
+
+const
+  LANG_ARMENIAN     = $2B;
+
+const
+  LANG_ASSAMESE     = $4D;
+
+const
+  LANG_AZERI        = $2C;
+
+const
+  LANG_BASQUE       = $2D;
+
+const
+  LANG_BELARUSIAN   = $23;
+
+const
+  LANG_BENGALI      = $45;
+
+const
+  LANG_BULGARIAN    = $02;
+
+const
+  LANG_CATALAN      = $03;
+
+const
+  LANG_CHINESE      = $04;
+
+const
+  LANG_CROATIAN     = $1A;
+
+const
+  LANG_CZECH        = $05;
+
+const
+  LANG_DANISH       = $06;
+
+const
+  LANG_DIVEHI       = $65;
+
+const
+  LANG_DUTCH        = $13;
+
+const
+  LANG_ENGLISH      = $09;
+
+const
+  LANG_ESTONIAN     = $25;
+
+const
+  LANG_FAEROESE     = $38;
+
+const
+  LANG_FARSI        = $29;
+
+const
+  LANG_FINNISH      = $0B;
+
+const
+  LANG_FRENCH       = $0C;
+
+const
+  LANG_GALICIAN     = $56;
+
+const
+  LANG_GEORGIAN     = $37;
+
+const
+  LANG_GERMAN       = $07;
+
+const
+  LANG_GREEK        = $08;
+
+const
+  LANG_GUJARATI     = $47;
+
+const
+  LANG_HEBREW       = $0D;
+
+const
+  LANG_HINDI        = $39;
+
+const
+  LANG_HUNGARIAN    = $0E;
+
+const
+  LANG_ICELANDIC    = $0F;
+
+const
+  LANG_INDONESIAN   = $21;
+
+const
+  LANG_ITALIAN      = $10;
+
+const
+  LANG_JAPANESE     = $11;
+
+const
+  LANG_KANNADA      = $4B;
+
+const
+  LANG_KASHMIRI     = $60;
+
+const
+  LANG_KAZAK        = $3F;
+
+const
+  LANG_KONKANI      = $57;
+
+const
+  LANG_KOREAN       = $12;
+
+const
+  LANG_KYRGYZ       = $40;
+
+const
+  LANG_LATVIAN      = $26;
+
+const
+  LANG_LITHUANIAN   = $27;
+
+const
+  LANG_MACEDONIAN   = $2F;
+
+const
+  LANG_MALAY        = $3E;
+
+const
+  LANG_MALAYALAM    = $4C;
+
+const
+  LANG_MANIPURI     = $58;
+
+const
+  LANG_MARATHI      = $4E;
+
+const
+  LANG_MONGOLIAN    = $50;
+
+const
+  LANG_NEPALI       = $61;
+
+const
+  LANG_NORWEGIAN    = $14;
+
+const
+  LANG_ORIYA        = $48;
+
+const
+  LANG_POLISH       = $15;
+
+const
+  LANG_PORTUGUESE   = $16;
+
+const
+  LANG_PUNJABI      = $46;
+
+const
+  LANG_ROMANIAN     = $18;
+
+const
+  LANG_RUSSIAN      = $19;
+
+const
+  LANG_SANSKRIT     = $4F;
+
+const
+  LANG_SERBIAN      = $1A;
+
+const
+  LANG_SINDHI       = $59;
+
+const
+  LANG_SLOVAK       = $1B;
+
+const
+  LANG_SLOVENIAN    = $24;
+
+const
+  LANG_SPANISH      = $0A;
+
+const
+  LANG_SWAHILI      = $41;
+
+const
+  LANG_SWEDISH      = $1D;
+
+const
+  LANG_SYRIAC       = $5A;
+
+const
+  LANG_TAMIL        = $49;
+
+const
+  LANG_TATAR        = $44;
+
+const
+  LANG_TELUGU       = $4A;
+
+const
+  LANG_THAI         = $1E;
+
+const
+  LANG_TURKISH      = $1F;
+
+const
+  LANG_UKRAINIAN    = $22;
+
+const
+  LANG_URDU         = $20;
+
+const
+  LANG_UZBEK        = $43;
+
+const
+  LANG_VIETNAMESE   = $2A;
+
+-- 
+--  Sublanguage IDs.
+-- 
+--  The name immediately following SUBLANG_ dictates which primary
+--  language ID that sublanguage ID can be combined with to form a
+--  valid language ID.
+-- 
+const
+  SUBLANG_NEUTRAL   = $00;
+
+const
+  SUBLANG_DEFAULT   = $01;
+
+const
+  SUBLANG_SYS_DEFAULT= $02;
+
+const
+  SUBLANG_ARABIC_SAUDI_ARABIA= $01;
+
+const
+  SUBLANG_ARABIC_IRAQ= $02;
+
+const
+  SUBLANG_ARABIC_EGYPT= $03;
+
+const
+  SUBLANG_ARABIC_LIBYA= $04;
+
+const
+  SUBLANG_ARABIC_ALGERIA= $05;
+
+const
+  SUBLANG_ARABIC_MOROCCO= $06;
+
+const
+  SUBLANG_ARABIC_TUNISIA= $07;
+
+const
+  SUBLANG_ARABIC_OMAN= $08;
+
+const
+  SUBLANG_ARABIC_YEMEN= $09;
+
+const
+  SUBLANG_ARABIC_SYRIA= $0A;
+
+const
+  SUBLANG_ARABIC_JORDAN= $0B;
+
+const
+  SUBLANG_ARABIC_LEBANON= $0C;
+
+const
+  SUBLANG_ARABIC_KUWAIT= $0D;
+
+const
+  SUBLANG_ARABIC_UAE= $0E;
+
+const
+  SUBLANG_ARABIC_BAHRAIN= $0F;
+
+const
+  SUBLANG_ARABIC_QATAR= $10;
+
+const
+  SUBLANG_AZERI_LATIN= $01;
+
+const
+  SUBLANG_AZERI_CYRILLIC= $02;
+
+const
+  SUBLANG_CHINESE_TRADITIONAL= $01;
+
+const
+  SUBLANG_CHINESE_SIMPLIFIED= $02;
+
+const
+  SUBLANG_CHINESE_HONGKONG= $03;
+
+const
+  SUBLANG_CHINESE_SINGAPORE= $04;
+
+const
+  SUBLANG_CHINESE_MACAU= $05;
+
+const
+  SUBLANG_DUTCH     = $01;
+
+const
+  SUBLANG_DUTCH_BELGIAN= $02;
+
+const
+  SUBLANG_ENGLISH_US= $01;
+
+const
+  SUBLANG_ENGLISH_UK= $02;
+
+const
+  SUBLANG_ENGLISH_AUS= $03;
+
+const
+  SUBLANG_ENGLISH_CAN= $04;
+
+const
+  SUBLANG_ENGLISH_NZ= $05;
+
+const
+  SUBLANG_ENGLISH_EIRE= $06;
+
+const
+  SUBLANG_ENGLISH_SOUTH_AFRICA= $07;
+
+const
+  SUBLANG_ENGLISH_JAMAICA= $08;
+
+const
+  SUBLANG_ENGLISH_CARIBBEAN= $09;
+
+const
+  SUBLANG_ENGLISH_BELIZE= $0A;
+
+const
+  SUBLANG_ENGLISH_TRINIDAD= $0B;
+
+const
+  SUBLANG_ENGLISH_ZIMBABWE= $0C;
+
+const
+  SUBLANG_ENGLISH_PHILIPPINES= $0D;
+
+const
+  SUBLANG_FRENCH    = $01;
+
+const
+  SUBLANG_FRENCH_BELGIAN= $02;
+
+const
+  SUBLANG_FRENCH_CANADIAN= $03;
+
+const
+  SUBLANG_FRENCH_SWISS= $04;
+
+const
+  SUBLANG_FRENCH_LUXEMBOURG= $05;
+
+const
+  SUBLANG_FRENCH_MONACO= $06;
+
+const
+  SUBLANG_GERMAN    = $01;
+
+const
+  SUBLANG_GERMAN_SWISS= $02;
+
+const
+  SUBLANG_GERMAN_AUSTRIAN= $03;
+
+const
+  SUBLANG_GERMAN_LUXEMBOURG= $04;
+
+const
+  SUBLANG_GERMAN_LIECHTENSTEIN= $05;
+
+const
+  SUBLANG_ITALIAN   = $01;
+
+const
+  SUBLANG_ITALIAN_SWISS= $02;
+
+const
+  SUBLANG_KASHMIRI_SASIA= $02;
+
+const
+  SUBLANG_KASHMIRI_INDIA= $02;
+
+const
+  SUBLANG_KOREAN    = $01;
+
+const
+  SUBLANG_LITHUANIAN= $01;
+
+const
+  SUBLANG_MALAY_MALAYSIA= $01;
+
+const
+  SUBLANG_MALAY_BRUNEI_DARUSSALAM= $02;
+
+const
+  SUBLANG_NEPALI_INDIA= $02;
+
+const
+  SUBLANG_NORWEGIAN_BOKMAL= $01;
+
+const
+  SUBLANG_NORWEGIAN_NYNORSK= $02;
+
+const
+  SUBLANG_PORTUGUESE= $02;
+
+const
+  SUBLANG_PORTUGUESE_BRAZILIAN= $01;
+
+const
+  SUBLANG_SERBIAN_LATIN= $02;
+
+const
+  SUBLANG_SERBIAN_CYRILLIC= $03;
+
+const
+  SUBLANG_SPANISH   = $01;
+
+const
+  SUBLANG_SPANISH_MEXICAN= $02;
+
+const
+  SUBLANG_SPANISH_MODERN= $03;
+
+const
+  SUBLANG_SPANISH_GUATEMALA= $04;
+
+const
+  SUBLANG_SPANISH_COSTA_RICA= $05;
+
+const
+  SUBLANG_SPANISH_PANAMA= $06;
+
+const
+  SUBLANG_SPANISH_DOMINICAN_REPUBLIC= $07;
+
+const
+  SUBLANG_SPANISH_VENEZUELA= $08;
+
+const
+  SUBLANG_SPANISH_COLOMBIA= $09;
+
+const
+  SUBLANG_SPANISH_PERU= $0A;
+
+const
+  SUBLANG_SPANISH_ARGENTINA= $0B;
+
+const
+  SUBLANG_SPANISH_ECUADOR= $0C;
+
+const
+  SUBLANG_SPANISH_CHILE= $0D;
+
+const
+  SUBLANG_SPANISH_URUGUAY= $0E;
+
+const
+  SUBLANG_SPANISH_PARAGUAY= $0F;
+
+const
+  SUBLANG_SPANISH_BOLIVIA= $10;
+
+const
+  SUBLANG_SPANISH_EL_SALVADOR= $11;
+
+const
+  SUBLANG_SPANISH_HONDURAS= $12;
+
+const
+  SUBLANG_SPANISH_NICARAGUA= $13;
+
+const
+  SUBLANG_SPANISH_PUERTO_RICO= $14;
+
+const
+  SUBLANG_SWEDISH   = $01;
+
+const
+  SUBLANG_SWEDISH_FINLAND= $02;
+
+const
+  SUBLANG_URDU_PAKISTAN= $01;
+
+const
+  SUBLANG_URDU_INDIA= $02;
+
+const
+  SUBLANG_UZBEK_LATIN= $01;
+
+const
+  SUBLANG_UZBEK_CYRILLIC= $02;
+
+-- 
+--  Sorting IDs.
+-- 
+const
+  SORT_DEFAULT      = $00;
+
+const
+  SORT_JAPANESE_XJIS= $00;
+
+const
+  SORT_JAPANESE_UNICODE= $01;
+
+const
+  SORT_CHINESE_BIG5 = $00;
+
+const
+  SORT_CHINESE_PRCP = $00;
+
+const
+  SORT_CHINESE_UNICODE= $01;
+
+const
+  SORT_CHINESE_PRC  = $02;
+
+const
+  SORT_CHINESE_BOPOMOFO= $03;
+
+const
+  SORT_KOREAN_KSC   = $00;
+
+const
+  SORT_KOREAN_UNICODE= $01;
+
+const
+  SORT_GERMAN_PHONE_BOOK= $01;
+
+const
+  SORT_HUNGARIAN_DEFAULT= $00;
+
+const
+  SORT_HUNGARIAN_TECHNICAL= $01;
+
+const
+  SORT_GEORGIAN_TRADITIONAL= $00;
+
+const
+  SORT_GEORGIAN_MODERN= $01;
+
+--  end_r_winnt
+-- 
+--  A language ID is a 16 bit value which is the combination of a
+--  primary language ID and a secondary language ID. The bits are
+--  allocated as follows:
+-- 
+--  +-----------------------+-------------------------+
+--  | Sublanguage ID | Primary Language ID |
+--  +-----------------------+-------------------------+
+--  15 10 9 0 bit
+-- 
+-- 
+--  Language ID creation/extraction macros:
+-- 
+--  MAKELANGID - construct language id from a primary language id and
+--  a sublanguage id.
+--  PRIMARYLANGID - extract primary language id from a language id.
+--  SUBLANGID - extract sublanguage id from a language id.
+-- 
+-- 
+--  A locale ID is a 32 bit value which is the combination of a
+--  language ID, a sort ID, and a reserved area. The bits are
+--  allocated as follows:
+-- 
+--  +-------------+---------+-------------------------+
+--  | Reserved | Sort ID | Language ID |
+--  +-------------+---------+-------------------------+
+--  31 20 19 16 15 0 bit
+-- 
+-- 
+--  Locale ID creation/extraction macros:
+-- 
+--  MAKELCID - construct the locale id from a language id and a sort id.
+--  MAKESORTLCID - construct the locale id from a language id, sort id, and sort version.
+--  LANGIDFROMLCID - extract the language id from a locale id.
+--  SORTIDFROMLCID - extract the sort id from a locale id.
+--  SORTVERSIONFROMLCID - extract the sort version from a locale id.
+-- 
+const
+  NLS_VALID_LOCALE_MASK= $FFFFF;
+
+-- 
+--  Default System and User IDs for language and locale.
+-- 
+--  begin_ntminiport begin_ntndis begin_ntminitape
+-- 
+--  Macros used to eliminate compiler warning generated when formal
+--  parameters or local variables are not declared.
+-- 
+--  Use DBG_UNREFERENCED_PARAMETER() when a parameter is not yet
+--  referenced but will be once the module is completely developed.
+-- 
+--  Use DBG_UNREFERENCED_LOCAL_VARIABLE() when a local variable is not yet
+--  referenced but will be once the module is completely developed.
+-- 
+--  Use UNREFERENCED_PARAMETER() if a parameter will never be referenced.
+-- 
+--  DBG_UNREFERENCED_PARAMETER and DBG_UNREFERENCED_LOCAL_VARIABLE will
+--  eventually be made into a null macro to help determine whether there
+--  is unfinished work.
+-- 
+-- 
+--  Macro used to eliminate compiler warning 4715 within a switch statement
+--  when all possible cases have already been accounted for.
+-- 
+--  switch (a & 3) {
+--  case 0: return 1;
+--  case 1: return Foo();
+--  case 2: return Bar();
+--  case 3: return 1;
+--  DEFAULT_UNREACHABLE;
+-- 
+-- /*lint -save -e767 
+-- /*lint -restore 
+const
+  MAXIMUM_WAIT_OBJECTS= 64;
+
+type
+KSPIN_LOCK        = basetsd.ULONG_PTR;
+type
+PKSPIN_LOCK       = ^KSPIN_LOCK for machine_pointer use true;
+-- #pragma  intrinsic(_bittest)
+-- #pragma  intrinsic(_bittestandcomplement)
+-- #pragma  intrinsic(_bittestandset)
+-- #pragma  intrinsic(_bittestandreset)
+-- #pragma  intrinsic(_interlockedbittestandset)
+-- #pragma  intrinsic(_interlockedbittestandreset)
+-- #pragma  intrinsic(_bittest64)
+-- #pragma  intrinsic(_bittestandcomplement64)
+-- #pragma  intrinsic(_bittestandset64)
+-- #pragma  intrinsic(_bittestandreset64)
+-- #pragma  intrinsic(_interlockedbittestandset64)
+-- #pragma  intrinsic(_interlockedbittestandreset64)
+-- #pragma  intrinsic(_BitScanForward)
+-- #pragma  intrinsic(_BitScanReverse)
+-- #pragma  intrinsic(_BitScanForward64)
+-- #pragma  intrinsic(_BitScanReverse64)
+-- #pragma  intrinsic(_mm_clflush)
+-- #pragma  intrinsic(_mm_prefetch)
+-- #pragma  intrinsic(_mm_lfence)
+-- #pragma  intrinsic(_mm_mfence)
+-- #pragma  intrinsic(_mm_sfence)
+-- #pragma  intrinsic(__getcallerseflags)
+-- #pragma  intrinsic(__rdtsc)
+-- #pragma  intrinsic(__movsb)
+-- #pragma  intrinsic(__movsw)
+-- #pragma  intrinsic(__movsd)
+-- #pragma  intrinsic(__movsq)
+-- #pragma  intrinsic(__stosb)
+-- #pragma  intrinsic(__stosw)
+-- #pragma  intrinsic(__stosd)
+-- #pragma  intrinsic(__stosq)
+-- #pragma  intrinsic(__mulh)
+-- #pragma  intrinsic(__umulh)
+-- #pragma  intrinsic(__readgsbyte)
+-- #pragma  intrinsic(__readgsword)
+-- #pragma  intrinsic(__readgsdword)
+-- #pragma  intrinsic(__readgsqword)
+-- #pragma  intrinsic(__writegsbyte)
+-- #pragma  intrinsic(__writegsword)
+-- #pragma  intrinsic(__writegsdword)
+-- #pragma  intrinsic(__writegsqword)
+-- 
+--  Define function to return the current Thread Environment Block
+-- 
+-- #pragma  intrinsic(_rdteb) // winnt
+-- 
+--  Define functions to get the address of the current fiber and the
+--  current fiber data.
+-- 
+-- 
+--  Disable these two pragmas that evaluate to "sti" "cli" on x86 so that driver
+--  writers to not leave them inadvertantly in their code.
+-- 
+-- #pragma  warning(push)
+-- #pragma  warning(disable:4164) // disable C4164 warning so that apps that
+--  build with /Od don't get weird errors !
+-- #pragma  function(_enable)
+-- #pragma  function(_disable)
+-- #pragma  warning(pop)
+-- #pragma  warning(default:4164) // reenable C4164 warning
+-- #pragma  intrinsic(__readfsbyte)
+-- #pragma  intrinsic(__readfsword)
+-- #pragma  intrinsic(__readfsdword)
+-- #pragma  intrinsic(__writefsbyte)
+-- #pragma  intrinsic(__writefsword)
+-- #pragma  intrinsic(__writefsdword)
+-- 
+--  Prefetch is not supported on all x86 procssors.
+-- 
+-- 
+--  PreFetchCacheLine level defines.
+-- 
+--  end_ntddk
+-- #pragma  warning(push)
+-- #pragma  warning (disable:4035) // disable 4035 (function must return something)
+-- #pragma  warning(pop)
+-- #pragma  warning (default:4035) // Reenable it
+--  begin_ntddk 
+--  begin_wx86
+-- 
+--  Define the size of the 80387 save area, which is in the context frame.
+-- 
+const
+  SIZE_OF_80387_REGISTERS= 80;
+
+-- 
+--  The following flags control the contents of the CONTEXT structure.
+-- 
+const
+  CONTEXT_i386      = $10000;
+
+const
+  CONTEXT_i486      = $10000;
+
+--  end_wx86
+--  begin_wx86
+const
+  MAXIMUM_SUPPORTED_EXTENSION= 512;
+
+type
+  _FLOATING_SAVE_AREA = record
+ControlWord     : DWORD;
+StatusWord      : DWORD;
+TagWord         : DWORD;
+ErrorOffset     : DWORD;
+ErrorSelector   : DWORD;
+DataOffset      : DWORD;
+DataSelector    : DWORD;
+RegisterArea    : array 0..SIZE_OF_80387_REGISTERS-1 of BYTE;
+Cr0NpxState     : DWORD;
+  end record;
+  FLOATING_SAVE_AREA = _FLOATING_SAVE_AREA;
+
+type
+PFLOATING_SAVE_AREA = ^FLOATING_SAVE_AREA for machine_pointer use true;
+-- 
+--  Context Frame
+-- 
+--  This frame has a several purposes: 1) it is used as an argument to
+--  NtContinue, 2) is is used to constuct a call frame for APC delivery,
+--  and 3) it is used in the user level thread creation routines.
+-- 
+--  The layout of the record conforms to a standard call frame.
+-- 
+type
+  _CONTEXT          = record
+ContextFlags    : DWORD;
+Dr0             : DWORD;
+Dr1             : DWORD;
+Dr2             : DWORD;
+Dr3             : DWORD;
+Dr6             : DWORD;
+Dr7             : DWORD;
+FloatSave       : FLOATING_SAVE_AREA;
+SegGs           : DWORD;
+SegFs           : DWORD;
+SegEs           : DWORD;
+SegDs           : DWORD;
+Edi             : DWORD;
+Esi             : DWORD;
+Ebx             : DWORD;
+Edx             : DWORD;
+Ecx             : DWORD;
+Eax             : DWORD;
+Ebp             : DWORD;
+Eip             : DWORD;
+SegCs           : DWORD;
+EFlags          : DWORD;
+Esp             : DWORD;
+SegSs           : DWORD;
+ExtendedRegisters : array 0..MAXIMUM_SUPPORTED_EXTENSION-1 of BYTE;
+  end record;
+  CONTEXT           = _CONTEXT;
+
+type
+PCONTEXT          = ^CONTEXT for machine_pointer use true;
+--  begin_ntminiport
+type
+  _LDT_ENTRY        = record
+LimitLow        : WORD;
+BaseLow         : WORD;
+HighWord         : record
+  Bytes             : record
+BaseMid         : BYTE;
+Flags1          : BYTE;
+Flags2          : BYTE;
+BaseHi          : BYTE;
+  end record for position use 0;
+  Bits              : record
+BaseMid         : DWORD {:8};
+_Type           : DWORD {:5};
+Dpl             : DWORD {:2};
+Pres            : DWORD {:1};
+LimitHi         : DWORD {:4};
+Sys             : DWORD {:1};
+Reserved_0      : DWORD {:1};
+Default_Big     : DWORD {:1};
+Granularity     : DWORD {:1};
+BaseHi          : DWORD {:8};
+  end record for position use 0;
+    end record;
+  end record;
+  LDT_ENTRY         = _LDT_ENTRY;
+  PLDT_ENTRY        = ^_LDT_ENTRY;
+
+-- #pragma  intrinsic(_rdteb)
+-- #pragma  intrinsic (__yield)
+-- #pragma  intrinsic (__lfetch)
+-- #pragma  intrinsic (__lfetchfault)
+-- #pragma  intrinsic (__mf)
+const
+  EXCEPTION_NONCONTINUABLE= $01;
+
+const
+  EXCEPTION_MAXIMUM_PARAMETERS= 15;
+
+-- 
+--  Exception record definition.
+-- 
+type
+  _EXCEPTION_RECORD = record
+ExceptionCode   : DWORD;
+ExceptionFlags  : DWORD;
+  ExceptionRecord   : ^_EXCEPTION_RECORD;
+ExceptionAddress : PVOID;
+NumberParameters : DWORD;
+ExceptionInformation : array 0..EXCEPTION_MAXIMUM_PARAMETERS-1 of basetsd.ULONG_PTR;
+  end record;
+  EXCEPTION_RECORD  = _EXCEPTION_RECORD;
+
+type
+PEXCEPTION_RECORD = ^EXCEPTION_RECORD for machine_pointer use true;
+type
+  _EXCEPTION_RECORD32 = record
+ExceptionCode   : DWORD;
+ExceptionFlags  : DWORD;
+ExceptionRecord : DWORD;
+ExceptionAddress : DWORD;
+NumberParameters : DWORD;
+ExceptionInformation : array 0..EXCEPTION_MAXIMUM_PARAMETERS-1 of DWORD;
+  end record;
+  EXCEPTION_RECORD32 = _EXCEPTION_RECORD32;
+  PEXCEPTION_RECORD32 = ^_EXCEPTION_RECORD32;
+
+type
+  _EXCEPTION_RECORD64 = record
+ExceptionCode   : DWORD;
+ExceptionFlags  : DWORD;
+ExceptionRecord : basetsd.DWORD64;
+ExceptionAddress : basetsd.DWORD64;
+NumberParameters : DWORD;
+__unusedAlignment : DWORD;
+ExceptionInformation : array 0..EXCEPTION_MAXIMUM_PARAMETERS-1 of basetsd.DWORD64;
+  end record;
+  EXCEPTION_RECORD64 = _EXCEPTION_RECORD64;
+  PEXCEPTION_RECORD64 = ^_EXCEPTION_RECORD64;
+
+-- 
+--  Typedef for pointer returned by exception_info()
+-- 
+type
+  _EXCEPTION_POINTERS = record
+ExceptionRecord : PEXCEPTION_RECORD;
+ContextRecord   : PCONTEXT;
+  end record;
+  EXCEPTION_POINTERS = _EXCEPTION_POINTERS;
+  PEXCEPTION_POINTERS = ^_EXCEPTION_POINTERS;
+
+type
+PACCESS_TOKEN     = PVOID;
+type
+PSECURITY_DESCRIPTOR = PVOID;
+type
+p_SID             = PVOID;
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  ACCESS MASK //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+--  Define the access mask as a longword sized structure divided up as
+--  follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +---------------+---------------+-------------------------------+
+--  |G|G|G|G|Res'd|A| StandardRights| SpecificRights |
+--  |R|W|E|A| |S| | |
+--  +-+-------------+---------------+-------------------------------+
+-- 
+--  typedef struct _ACCESS_MASK {
+--  WORD SpecificRights;
+--  BYTE StandardRights;
+--  BYTE AccessSystemAcl : 1;
+--  BYTE Reserved : 3;
+--  BYTE GenericAll : 1;
+--  BYTE GenericExecute : 1;
+--  BYTE GenericWrite : 1;
+--  BYTE GenericRead : 1;
+--  } ACCESS_MASK;
+--  typedef ACCESS_MASK *PACCESS_MASK;
+-- 
+--  but to make life simple for programmer's we'll allow them to specify
+--  a desired access mask by simply OR'ing together mulitple single rights
+--  and treat an access mask as a DWORD. For example
+-- 
+--  DesiredAccess = DELETE | READ_CONTROL
+-- 
+--  So we'll declare ACCESS_MASK as DWORD
+-- 
+--  begin_ntddk begin_wdm begin_nthal begin_ntifs
+type
+ACCESS_MASK       = DWORD;
+type
+PACCESS_MASK      = ^ACCESS_MASK for machine_pointer use true;
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  ACCESS TYPES //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+--  begin_ntddk begin_wdm begin_nthal begin_ntifs
+-- 
+--  The following are masks for the predefined standard access types
+-- 
+-- 
+--  AccessSystemAcl access type
+-- 
+-- 
+--  MaximumAllowed access type
+-- 
+-- 
+--  These are the generic rights.
+-- 
+const
+  GENERIC_READ = $80000000;
+
+const
+  GENERIC_WRITE = $40000000;
+
+const
+  GENERIC_EXECUTE = $20000000;
+
+const
+  GENERIC_ALL = $10000000;
+
+-- 
+--  Define the generic mapping array. This is used to denote the
+--  mapping of each generic access right to a specific access mask.
+-- 
+type
+  _GENERIC_MAPPING  = record
+GenericRead     : ACCESS_MASK;
+GenericWrite    : ACCESS_MASK;
+GenericExecute  : ACCESS_MASK;
+GenericAll      : ACCESS_MASK;
+  end record;
+  GENERIC_MAPPING   = _GENERIC_MAPPING;
+
+type
+PGENERIC_MAPPING  = ^GENERIC_MAPPING for machine_pointer use true;
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  LUID_AND_ATTRIBUTES //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+-- 
+-- ignored #include <pshpack4.h>
+type
+  _LUID_AND_ATTRIBUTES = record
+Luid            : t_LUID;
+Attributes      : DWORD;
+  end record;
+  LUID_AND_ATTRIBUTES = _LUID_AND_ATTRIBUTES;
+  PLUID_AND_ATTRIBUTES = ^_LUID_AND_ATTRIBUTES;
+
+type
+LUID_AND_ATTRIBUTES_ARRAY = array 0..ANYSIZE_ARRAY-1 of LUID_AND_ATTRIBUTES;
+type
+PLUID_AND_ATTRIBUTES_ARRAY = ^LUID_AND_ATTRIBUTES_ARRAY for machine_pointer use true;
+-- ignored #include <poppack.h>
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  Security Id (SID) //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+-- 
+--  Pictorially the structure of an SID is as follows:
+-- 
+--  1 1 1 1 1 1
+--  5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +---------------------------------------------------------------+
+--  | SubAuthorityCount |Reserved1 (SBZ)| Revision |
+--  +---------------------------------------------------------------+
+--  | IdentifierAuthority[0] |
+--  +---------------------------------------------------------------+
+--  | IdentifierAuthority[1] |
+--  +---------------------------------------------------------------+
+--  | IdentifierAuthority[2] |
+--  +---------------------------------------------------------------+
+--  | |
+--  +- - - - - - - - SubAuthority[] - - - - - - - - -+
+--  | |
+--  +---------------------------------------------------------------+
+-- 
+-- 
+--  begin_ntifs
+type
+  _SID_IDENTIFIER_AUTHORITY = record
+Value           : array 0..5 of BYTE;
+  end record;
+  SID_IDENTIFIER_AUTHORITY = _SID_IDENTIFIER_AUTHORITY;
+  PSID_IDENTIFIER_AUTHORITY = ^_SID_IDENTIFIER_AUTHORITY;
+
+type
+  _SID              = record
+Revision        : BYTE;
+SubAuthorityCount : BYTE;
+IdentifierAuthority : SID_IDENTIFIER_AUTHORITY;
+SubAuthority    : array 0..ANYSIZE_ARRAY-1 of DWORD;
+  end record;
+  t_SID             = _SID;
+  PISID             = ^_SID;
+
+--  in a future release.
+type
+_SID_NAME_USE     = enum
+    SidTypeUser     for ord use 1;
+    SidTypeGroup;
+    SidTypeDomain;
+    SidTypeAlias;
+    SidTypeWellKnownGroup;
+    SidTypeDeletedAccount;
+    SidTypeInvalid;
+    SidTypeUnknown;
+    SidTypeComputer;
+  end enum for size use 4;
+  SID_NAME_USE      = _SID_NAME_USE;
+  PSID_NAME_USE     = ^_SID_NAME_USE;
+type
+  _SID_AND_ATTRIBUTES = record
+Sid             : p_SID;
+Attributes      : DWORD;
+  end record;
+  SID_AND_ATTRIBUTES = _SID_AND_ATTRIBUTES;
+  PSID_AND_ATTRIBUTES = ^_SID_AND_ATTRIBUTES;
+
+type
+SID_AND_ATTRIBUTES_ARRAY = array 0..ANYSIZE_ARRAY-1 of SID_AND_ATTRIBUTES;
+type
+PSID_AND_ATTRIBUTES_ARRAY = ^SID_AND_ATTRIBUTES_ARRAY for machine_pointer use true;
+-- ///////////////////////////////////////////////////////////////////////////
+--  //
+--  Universal well-known SIDs //
+--  //
+--  Null SID S-1-0-0 //
+--  World S-1-1-0 //
+--  Local S-1-2-0 //
+--  Creator Owner ID S-1-3-0 //
+--  Creator Group ID S-1-3-1 //
+--  Creator Owner Server ID S-1-3-2 //
+--  Creator Group Server ID S-1-3-3 //
+--  //
+--  (Non-unique IDs) S-1-4 //
+--  //
+-- ///////////////////////////////////////////////////////////////////////////
+-- /////////////////////////////////////////////////////////////////////////////
+--  //
+--  NT well-known SIDs //
+--  //
+--  NT Authority S-1-5 //
+--  Dialup S-1-5-1 //
+--  //
+--  Network S-1-5-2 //
+--  Batch S-1-5-3 //
+--  Interactive S-1-5-4 //
+--  (Logon IDs) S-1-5-5-X-Y //
+--  Service S-1-5-6 //
+--  AnonymousLogon S-1-5-7 (aka null logon session) //
+--  Proxy S-1-5-8 //
+--  Enterprise DC (EDC) S-1-5-9 (aka domain controller account) //
+--  Self S-1-5-10 (self RID) //
+--  Authenticated User S-1-5-11 (Authenticated user somewhere) //
+--  Restricted Code S-1-5-12 (Running restricted code) //
+--  Terminal Server S-1-5-13 (Running on Terminal Server) //
+--  Remote Logon S-1-5-14 (Remote Interactive Logon) //
+--  This Organization S-1-5-15 //
+--  //
+--  Local System S-1-5-18 //
+--  Local Service S-1-5-19 //
+--  Network Service S-1-5-20 //
+--  //
+--  (NT non-unique IDs) S-1-5-0x15-... (NT Domain Sids) //
+--  //
+--  (Built-in domain) S-1-5-0x20 //
+--  //
+--  (Security Package IDs) S-1-5-0x40 //
+--  NTLM Authentication S-1-5-0x40-10 //
+--  SChannel Authentication S-1-5-0x40-14 //
+--  Digest Authentication S-1-5-0x40-21 //
+--  //
+--  Other Organization S-1-5-1000 (>=1000 can not be filtered) //
+--  //
+--  //
+--  NOTE: the relative identifier values (RIDs) determine which security //
+--  boundaries the SID is allowed to cross. Before adding new RIDs, //
+--  a determination needs to be made regarding which range they should //
+--  be added to in order to ensure proper "SID filtering" //
+--  //
+-- /////////////////////////////////////////////////////////////////////////////
+-- ///////////////////////////////////////////////////////////////////////////
+--  //
+--  well-known domain relative sub-authority values (RIDs)... //
+--  //
+-- ///////////////////////////////////////////////////////////////////////////
+--  Well-known users ...
+--  well-known groups ...
+--  well-known aliases ...
+type
+WELL_KNOWN_SID_TYPE= enum
+    WinNullSid      for ord use 0;
+    WinWorldSid     for ord use 1;
+    WinLocalSid     for ord use 2;
+    WinCreatorOwnerSid for ord use 3;
+    WinCreatorGroupSid for ord use 4;
+    WinCreatorOwnerServerSid for ord use 5;
+    WinCreatorGroupServerSid for ord use 6;
+    WinNtAuthoritySid for ord use 7;
+    WinDialupSid    for ord use 8;
+    WinNetworkSid   for ord use 9;
+    WinBatchSid     for ord use 10;
+    WinInteractiveSid for ord use 11;
+    WinServiceSid   for ord use 12;
+    WinAnonymousSid for ord use 13;
+    WinProxySid     for ord use 14;
+    WinEnterpriseControllersSid for ord use 15;
+    WinSelfSid      for ord use 16;
+    WinAuthenticatedUserSid for ord use 17;
+    WinRestrictedCodeSid for ord use 18;
+    WinTerminalServerSid for ord use 19;
+    WinRemoteLogonIdSid for ord use 20;
+    WinLogonIdsSid  for ord use 21;
+    WinLocalSystemSid for ord use 22;
+    WinLocalServiceSid for ord use 23;
+    WinNetworkServiceSid for ord use 24;
+    WinBuiltinDomainSid for ord use 25;
+    WinBuiltinAdministratorsSid for ord use 26;
+    WinBuiltinUsersSid for ord use 27;
+    WinBuiltinGuestsSid for ord use 28;
+    WinBuiltinPowerUsersSid for ord use 29;
+    WinBuiltinAccountOperatorsSid for ord use 30;
+    WinBuiltinSystemOperatorsSid for ord use 31;
+    WinBuiltinPrintOperatorsSid for ord use 32;
+    WinBuiltinBackupOperatorsSid for ord use 33;
+    WinBuiltinReplicatorSid for ord use 34;
+    WinBuiltinPreWindows2000CompatibleAccessSid for ord use 35;
+    WinBuiltinRemoteDesktopUsersSid for ord use 36;
+    WinBuiltinNetworkConfigurationOperatorsSid for ord use 37;
+    WinAccountAdministratorSid for ord use 38;
+    WinAccountGuestSid for ord use 39;
+    WinAccountKrbtgtSid for ord use 40;
+    WinAccountDomainAdminsSid for ord use 41;
+    WinAccountDomainUsersSid for ord use 42;
+    WinAccountDomainGuestsSid for ord use 43;
+    WinAccountComputersSid for ord use 44;
+    WinAccountControllersSid for ord use 45;
+    WinAccountCertAdminsSid for ord use 46;
+    WinAccountSchemaAdminsSid for ord use 47;
+    WinAccountEnterpriseAdminsSid for ord use 48;
+    WinAccountPolicyAdminsSid for ord use 49;
+    WinAccountRasAndIasServersSid for ord use 50;
+    WinNTLMAuthenticationSid for ord use 51;
+    WinDigestAuthenticationSid for ord use 52;
+    WinSChannelAuthenticationSid for ord use 53;
+    WinThisOrganizationSid for ord use 54;
+    WinOtherOrganizationSid for ord use 55;
+    WinBuiltinIncomingForestTrustBuildersSid for ord use 56;
+    WinBuiltinPerfMonitoringUsersSid for ord use 57;
+    WinBuiltinPerfLoggingUsersSid for ord use 58;
+    WinBuiltinAuthorizationAccessSid for ord use 59;
+    WinBuiltinTerminalServerLicenseServersSid for ord use 60;
+  end enum for size use 4;
+-- 
+--  Allocate the System Luid. The first 1000 LUIDs are reserved.
+--  Use #999 here (0x3E7 = 999)
+-- 
+--  end_ntifs
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  User and Group related SID attributes //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+--  Group attributes
+-- 
+-- 
+--  User attributes
+-- 
+--  (None yet defined.)
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  ACL and ACE //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+--  Define an ACL and the ACE format. The structure of an ACL header
+--  followed by one or more ACEs. Pictorally the structure of an ACL header
+--  is as follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +-------------------------------+---------------+---------------+
+--  | AclSize | Sbz1 | AclRevision |
+--  +-------------------------------+---------------+---------------+
+--  | Sbz2 | AceCount |
+--  +-------------------------------+-------------------------------+
+-- 
+--  The current AclRevision is defined to be ACL_REVISION.
+-- 
+--  AclSize is the size, in bytes, allocated for the ACL. This includes
+--  the ACL header, ACES, and remaining free space in the buffer.
+-- 
+--  AceCount is the number of ACES in the ACL.
+-- 
+--  begin_ntddk begin_wdm begin_ntifs
+--  This is the *current* ACL revision
+--  This is the history of ACL revisions. Add a new one whenever
+--  ACL_REVISION is updated
+type
+  _ACL              = record
+AclRevision     : BYTE;
+Sbz1            : BYTE;
+AclSize         : WORD;
+AceCount        : WORD;
+Sbz2            : WORD;
+  end record;
+  ACL               = _ACL;
+
+type
+p_ACL             = ^ACL for machine_pointer use true;
+--  end_ntddk end_wdm
+-- 
+--  The structure of an ACE is a common ace header followed by ace type
+--  specific data. Pictorally the structure of the common ace header is
+--  as follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +---------------+-------+-------+---------------+---------------+
+--  | AceSize | AceFlags | AceType |
+--  +---------------+-------+-------+---------------+---------------+
+-- 
+--  AceType denotes the type of the ace, there are some predefined ace
+--  types
+-- 
+--  AceSize is the size, in bytes, of ace.
+-- 
+--  AceFlags are the Ace flags for audit and inheritance, defined shortly.
+type
+  _ACE_HEADER       = record
+AceType         : BYTE;
+AceFlags        : BYTE;
+AceSize         : WORD;
+  end record;
+  ACE_HEADER        = _ACE_HEADER;
+
+type
+PACE_HEADER       = ^ACE_HEADER for machine_pointer use true;
+-- 
+--  The following are the predefined ace types that go into the AceType
+--  field of an Ace header.
+-- 
+-- 
+--  The following are the inherit flags that go into the AceFlags field
+--  of an Ace header.
+-- 
+--  The following are the currently defined ACE flags that go into the
+--  AceFlags field of an ACE header. Each ACE type has its own set of
+--  AceFlags.
+-- 
+--  SUCCESSFUL_ACCESS_ACE_FLAG - used only with system audit and alarm ACE
+--  types to indicate that a message is generated for successful accesses.
+-- 
+--  FAILED_ACCESS_ACE_FLAG - used only with system audit and alarm ACE types
+--  to indicate that a message is generated for failed accesses.
+-- 
+-- 
+--  SYSTEM_AUDIT and SYSTEM_ALARM AceFlags
+-- 
+--  These control the signaling of audit and alarms for success or failure.
+-- 
+-- 
+--  We'll define the structure of the predefined ACE types. Pictorally
+--  the structure of the predefined ACE's is as follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +---------------+-------+-------+---------------+---------------+
+--  | AceFlags | Resd |Inherit| AceSize | AceType |
+--  +---------------+-------+-------+---------------+---------------+
+--  | Mask |
+--  +---------------------------------------------------------------+
+--  | |
+--  + +
+--  | |
+--  + Sid +
+--  | |
+--  + +
+--  | |
+--  +---------------------------------------------------------------+
+-- 
+--  Mask is the access mask associated with the ACE. This is either the
+--  access allowed, access denied, audit, or alarm mask.
+-- 
+--  Sid is the Sid associated with the ACE.
+-- 
+--  The following are the four predefined ACE types.
+--  Examine the AceType field in the Header to determine
+--  which structure is appropriate to use for casting.
+type
+  _ACCESS_ALLOWED_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  ACCESS_ALLOWED_ACE = _ACCESS_ALLOWED_ACE;
+
+type
+PACCESS_ALLOWED_ACE = ^ACCESS_ALLOWED_ACE for machine_pointer use true;
+type
+  _ACCESS_DENIED_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  ACCESS_DENIED_ACE = _ACCESS_DENIED_ACE;
+
+type
+PACCESS_DENIED_ACE = ^ACCESS_DENIED_ACE for machine_pointer use true;
+type
+  _SYSTEM_AUDIT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_AUDIT_ACE  = _SYSTEM_AUDIT_ACE;
+
+type
+PSYSTEM_AUDIT_ACE = ^SYSTEM_AUDIT_ACE for machine_pointer use true;
+type
+  _SYSTEM_ALARM_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_ALARM_ACE  = _SYSTEM_ALARM_ACE;
+
+type
+PSYSTEM_ALARM_ACE = ^SYSTEM_ALARM_ACE for machine_pointer use true;
+--  end_ntifs
+type
+  _ACCESS_ALLOWED_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  ACCESS_ALLOWED_OBJECT_ACE = _ACCESS_ALLOWED_OBJECT_ACE;
+  PACCESS_ALLOWED_OBJECT_ACE = ^_ACCESS_ALLOWED_OBJECT_ACE;
+
+type
+  _ACCESS_DENIED_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  ACCESS_DENIED_OBJECT_ACE = _ACCESS_DENIED_OBJECT_ACE;
+  PACCESS_DENIED_OBJECT_ACE = ^_ACCESS_DENIED_OBJECT_ACE;
+
+type
+  _SYSTEM_AUDIT_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_AUDIT_OBJECT_ACE = _SYSTEM_AUDIT_OBJECT_ACE;
+  PSYSTEM_AUDIT_OBJECT_ACE = ^_SYSTEM_AUDIT_OBJECT_ACE;
+
+type
+  _SYSTEM_ALARM_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_ALARM_OBJECT_ACE = _SYSTEM_ALARM_OBJECT_ACE;
+  PSYSTEM_ALARM_OBJECT_ACE = ^_SYSTEM_ALARM_OBJECT_ACE;
+
+-- 
+--  Callback ace support in post Win2000.
+--  Resource managers can put their own data after Sidstart + Length of the sid
+-- 
+type
+  _ACCESS_ALLOWED_CALLBACK_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  ACCESS_ALLOWED_CALLBACK_ACE = _ACCESS_ALLOWED_CALLBACK_ACE;
+  PACCESS_ALLOWED_CALLBACK_ACE = ^_ACCESS_ALLOWED_CALLBACK_ACE;
+
+type
+  _ACCESS_DENIED_CALLBACK_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  ACCESS_DENIED_CALLBACK_ACE = _ACCESS_DENIED_CALLBACK_ACE;
+  PACCESS_DENIED_CALLBACK_ACE = ^_ACCESS_DENIED_CALLBACK_ACE;
+
+type
+  _SYSTEM_AUDIT_CALLBACK_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_AUDIT_CALLBACK_ACE = _SYSTEM_AUDIT_CALLBACK_ACE;
+  PSYSTEM_AUDIT_CALLBACK_ACE = ^_SYSTEM_AUDIT_CALLBACK_ACE;
+
+type
+  _SYSTEM_ALARM_CALLBACK_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_ALARM_CALLBACK_ACE = _SYSTEM_ALARM_CALLBACK_ACE;
+  PSYSTEM_ALARM_CALLBACK_ACE = ^_SYSTEM_ALARM_CALLBACK_ACE;
+
+type
+  _ACCESS_ALLOWED_CALLBACK_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  ACCESS_ALLOWED_CALLBACK_OBJECT_ACE = _ACCESS_ALLOWED_CALLBACK_OBJECT_ACE;
+  PACCESS_ALLOWED_CALLBACK_OBJECT_ACE = ^_ACCESS_ALLOWED_CALLBACK_OBJECT_ACE;
+
+type
+  _ACCESS_DENIED_CALLBACK_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  ACCESS_DENIED_CALLBACK_OBJECT_ACE = _ACCESS_DENIED_CALLBACK_OBJECT_ACE;
+  PACCESS_DENIED_CALLBACK_OBJECT_ACE = ^_ACCESS_DENIED_CALLBACK_OBJECT_ACE;
+
+type
+  _SYSTEM_AUDIT_CALLBACK_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_AUDIT_CALLBACK_OBJECT_ACE = _SYSTEM_AUDIT_CALLBACK_OBJECT_ACE;
+  PSYSTEM_AUDIT_CALLBACK_OBJECT_ACE = ^_SYSTEM_AUDIT_CALLBACK_OBJECT_ACE;
+
+type
+  _SYSTEM_ALARM_CALLBACK_OBJECT_ACE = record
+Header          : ACE_HEADER;
+Mask            : ACCESS_MASK;
+Flags           : DWORD;
+ObjectType      : guiddef.t_GUID;
+InheritedObjectType : guiddef.t_GUID;
+SidStart        : DWORD;
+  end record;
+  SYSTEM_ALARM_CALLBACK_OBJECT_ACE = _SYSTEM_ALARM_CALLBACK_OBJECT_ACE;
+  PSYSTEM_ALARM_CALLBACK_OBJECT_ACE = ^_SYSTEM_ALARM_CALLBACK_OBJECT_ACE;
+
+-- 
+--  Currently define Flags for "OBJECT" ACE types.
+-- 
+const
+  ACE_OBJECT_TYPE_PRESENT= $01;
+
+const
+  ACE_INHERITED_OBJECT_TYPE_PRESENT= $02;
+
+-- 
+--  The following declarations are used for setting and querying information
+--  about and ACL. First are the various information classes available to
+--  the user.
+-- 
+type
+_ACL_INFORMATION_CLASS= enum
+    AclRevisionInformation for ord use 1;
+    AclSizeInformation;
+  end enum for size use 4;
+  ACL_INFORMATION_CLASS = _ACL_INFORMATION_CLASS;
+-- 
+--  This record is returned/sent if the user is requesting/setting the
+--  AclRevisionInformation
+-- 
+type
+  _ACL_REVISION_INFORMATION = record
+AclRevision     : DWORD;
+  end record;
+  ACL_REVISION_INFORMATION = _ACL_REVISION_INFORMATION;
+
+type
+PACL_REVISION_INFORMATION = ^ACL_REVISION_INFORMATION for machine_pointer use true;
+-- 
+--  This record is returned if the user is requesting AclSizeInformation
+-- 
+type
+  _ACL_SIZE_INFORMATION = record
+AceCount        : DWORD;
+AclBytesInUse   : DWORD;
+AclBytesFree    : DWORD;
+  end record;
+  ACL_SIZE_INFORMATION = _ACL_SIZE_INFORMATION;
+
+type
+PACL_SIZE_INFORMATION = ^ACL_SIZE_INFORMATION for machine_pointer use true;
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  SECURITY_DESCRIPTOR //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- 
+--  Define the Security Descriptor and related data types.
+--  This is an opaque data structure.
+-- 
+--  begin_wdm begin_ntddk begin_ntifs
+-- 
+--  Current security descriptor revision value
+-- 
+--  end_wdm end_ntddk
+type
+SECURITY_DESCRIPTOR_CONTROL = WORD;
+PSECURITY_DESCRIPTOR_CONTROL = ^WORD for machine_pointer use true;
+-- 
+--  Where:
+-- 
+--  SE_OWNER_DEFAULTED - This boolean flag, when set, indicates that the
+--  SID pointed to by the Owner field was provided by a
+--  defaulting mechanism rather than explicitly provided by the
+--  original provider of the security descriptor. This may
+--  affect the treatment of the SID with respect to inheritence
+--  of an owner.
+-- 
+--  SE_GROUP_DEFAULTED - This boolean flag, when set, indicates that the
+--  SID in the Group field was provided by a defaulting mechanism
+--  rather than explicitly provided by the original provider of
+--  the security descriptor. This may affect the treatment of
+--  the SID with respect to inheritence of a primary group.
+-- 
+--  SE_DACL_PRESENT - This boolean flag, when set, indicates that the
+--  security descriptor contains a discretionary ACL. If this
+--  flag is set and the Dacl field of the SECURITY_DESCRIPTOR is
+--  null, then a null ACL is explicitly being specified.
+-- 
+--  SE_DACL_DEFAULTED - This boolean flag, when set, indicates that the
+--  ACL pointed to by the Dacl field was provided by a defaulting
+--  mechanism rather than explicitly provided by the original
+--  provider of the security descriptor. This may affect the
+--  treatment of the ACL with respect to inheritence of an ACL.
+--  This flag is ignored if the DaclPresent flag is not set.
+-- 
+--  SE_SACL_PRESENT - This boolean flag, when set, indicates that the
+--  security descriptor contains a system ACL pointed to by the
+--  Sacl field. If this flag is set and the Sacl field of the
+--  SECURITY_DESCRIPTOR is null, then an empty (but present)
+--  ACL is being specified.
+-- 
+--  SE_SACL_DEFAULTED - This boolean flag, when set, indicates that the
+--  ACL pointed to by the Sacl field was provided by a defaulting
+--  mechanism rather than explicitly provided by the original
+--  provider of the security descriptor. This may affect the
+--  treatment of the ACL with respect to inheritence of an ACL.
+--  This flag is ignored if the SaclPresent flag is not set.
+-- 
+--  SE_SELF_RELATIVE - This boolean flag, when set, indicates that the
+--  security descriptor is in self-relative form. In this form,
+--  all fields of the security descriptor are contiguous in memory
+--  and all pointer fields are expressed as offsets from the
+--  beginning of the security descriptor. This form is useful
+--  for treating security descriptors as opaque data structures
+--  for transmission in communication protocol or for storage on
+--  secondary media.
+-- 
+-- 
+-- 
+--  Pictorially the structure of a security descriptor is as follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +---------------------------------------------------------------+
+--  | Control |Reserved1 (SBZ)| Revision |
+--  +---------------------------------------------------------------+
+--  | Owner |
+--  +---------------------------------------------------------------+
+--  | Group |
+--  +---------------------------------------------------------------+
+--  | Sacl |
+--  +---------------------------------------------------------------+
+--  | Dacl |
+--  +---------------------------------------------------------------+
+-- 
+--  In general, this data structure should be treated opaquely to ensure future
+--  compatibility.
+-- 
+-- 
+type
+  _SECURITY_DESCRIPTOR_RELATIVE = record
+Revision        : BYTE;
+Sbz1            : BYTE;
+Control         : SECURITY_DESCRIPTOR_CONTROL;
+Owner           : DWORD;
+Group           : DWORD;
+Sacl            : DWORD;
+Dacl            : DWORD;
+  end record;
+  SECURITY_DESCRIPTOR_RELATIVE = _SECURITY_DESCRIPTOR_RELATIVE;
+  PISECURITY_DESCRIPTOR_RELATIVE = ^_SECURITY_DESCRIPTOR_RELATIVE;
+
+type
+  _SECURITY_DESCRIPTOR = record
+Revision        : BYTE;
+Sbz1            : BYTE;
+Control         : SECURITY_DESCRIPTOR_CONTROL;
+Owner           : p_SID;
+Group           : p_SID;
+Sacl            : p_ACL;
+Dacl            : p_ACL;
+  end record;
+  SECURITY_DESCRIPTOR = _SECURITY_DESCRIPTOR;
+  PISECURITY_DESCRIPTOR = ^_SECURITY_DESCRIPTOR;
+
+--  end_ntifs
+--  Where:
+-- 
+--  Revision - Contains the revision level of the security
+--  descriptor. This allows this structure to be passed between
+--  systems or stored on disk even though it is expected to
+--  change in the future.
+-- 
+--  Control - A set of flags which qualify the meaning of the
+--  security descriptor or individual fields of the security
+--  descriptor.
+-- 
+--  Owner - is a pointer to an SID representing an object's owner.
+--  If this field is null, then no owner SID is present in the
+--  security descriptor. If the security descriptor is in
+--  self-relative form, then this field contains an offset to
+--  the SID, rather than a pointer.
+-- 
+--  Group - is a pointer to an SID representing an object's primary
+--  group. If this field is null, then no primary group SID is
+--  present in the security descriptor. If the security descriptor
+--  is in self-relative form, then this field contains an offset to
+--  the SID, rather than a pointer.
+-- 
+--  Sacl - is a pointer to a system ACL. This field value is only
+--  valid if the DaclPresent control flag is set. If the
+--  SaclPresent flag is set and this field is null, then a null
+--  ACL is specified. If the security descriptor is in
+--  self-relative form, then this field contains an offset to
+--  the ACL, rather than a pointer.
+-- 
+--  Dacl - is a pointer to a discretionary ACL. This field value is
+--  only valid if the DaclPresent control flag is set. If the
+--  DaclPresent flag is set and this field is null, then a null
+--  ACL (unconditionally granting access) is specified. If the
+--  security descriptor is in self-relative form, then this field
+--  contains an offset to the ACL, rather than a pointer.
+-- 
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  Object Type list for AccessCheckByType //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+type
+  _OBJECT_TYPE_LIST = record
+Level           : WORD;
+Sbz             : WORD;
+ObjectType      : ^guiddef.t_GUID;
+  end record;
+  OBJECT_TYPE_LIST  = _OBJECT_TYPE_LIST;
+  POBJECT_TYPE_LIST = ^_OBJECT_TYPE_LIST;
+
+-- 
+--  DS values for Level
+-- 
+const
+  ACCESS_OBJECT_GUID= 0;
+
+const
+  ACCESS_PROPERTY_SET_GUID= 1;
+
+const
+  ACCESS_PROPERTY_GUID= 2;
+
+const
+  ACCESS_MAX_LEVEL  = 4;
+
+-- 
+--  Parameters to NtAccessCheckByTypeAndAditAlarm
+-- 
+type
+_AUDIT_EVENT_TYPE = enum
+    AuditEventObjectAccess;
+    AuditEventDirectoryServiceAccess;
+  end enum for size use 4;
+  AUDIT_EVENT_TYPE  = _AUDIT_EVENT_TYPE;
+  PAUDIT_EVENT_TYPE = ^_AUDIT_EVENT_TYPE;
+const
+  AUDIT_ALLOW_NO_PRIVILEGE= $01;
+
+-- 
+--  DS values for Source and ObjectTypeName
+-- 
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  Privilege Related Data Structures //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+--  begin_wdm begin_ntddk begin_nthal
+-- 
+--  Privilege attributes
+-- 
+-- 
+--  Privilege Set Control flags
+-- 
+-- 
+--  Privilege Set - This is defined for a privilege set of one.
+--  If more than one privilege is needed, then this structure
+--  will need to be allocated with more space.
+-- 
+--  Note: don't change this structure without fixing the INITIAL_PRIVILEGE_SET
+--  structure (defined in se.h)
+-- 
+type
+  _PRIVILEGE_SET    = record
+PrivilegeCount  : DWORD;
+Control         : DWORD;
+Privilege       : array 0..ANYSIZE_ARRAY-1 of LUID_AND_ATTRIBUTES;
+  end record;
+  PRIVILEGE_SET     = _PRIVILEGE_SET;
+  PPRIVILEGE_SET    = ^_PRIVILEGE_SET;
+
+-- //////////////////////////////////////////////////////////////////////
+--  //
+--  NT Defined Privileges //
+--  //
+-- //////////////////////////////////////////////////////////////////////
+-- //////////////////////////////////////////////////////////////////
+--  //
+--  Security Quality Of Service //
+--  //
+--  //
+-- //////////////////////////////////////////////////////////////////
+--  begin_wdm begin_ntddk begin_nthal begin_ntifs
+-- 
+--  Impersonation Level
+-- 
+--  Impersonation level is represented by a pair of bits in Windows.
+--  If a new impersonation level is added or lowest value is changed from
+--  0 to something else, fix the Windows CreateFile call.
+-- 
+type
+_SECURITY_IMPERSONATION_LEVEL= enum
+    SecurityAnonymous;
+    SecurityIdentification;
+    SecurityImpersonation;
+    SecurityDelegation;
+  end enum for size use 4;
+  SECURITY_IMPERSONATION_LEVEL = _SECURITY_IMPERSONATION_LEVEL;
+  PSECURITY_IMPERSONATION_LEVEL = ^_SECURITY_IMPERSONATION_LEVEL;
+-- //////////////////////////////////////////////////////////////////
+--  //
+--  Token Object Definitions //
+--  //
+--  //
+-- //////////////////////////////////////////////////////////////////
+-- 
+--  Token Specific Access Rights.
+-- 
+-- 
+-- 
+--  Token Types
+-- 
+type
+_TOKEN_TYPE       = enum
+    TokenPrimary    for ord use 1;
+    TokenImpersonation;
+  end enum for size use 4;
+  TOKEN_TYPE        = _TOKEN_TYPE;
+type
+PTOKEN_TYPE       = ^TOKEN_TYPE for machine_pointer use true;
+-- 
+--  Token Information Classes.
+-- 
+type
+_TOKEN_INFORMATION_CLASS= enum
+    TokenUser       for ord use 1;
+    TokenGroups;
+    TokenPrivileges;
+    TokenOwner;
+    TokenPrimaryGroup;
+    TokenDefaultDacl;
+    TokenSource;
+    TokenType;
+    TokenImpersonationLevel;
+    TokenStatistics;
+    TokenRestrictedSids;
+    TokenSessionId;
+    TokenGroupsAndPrivileges;
+    TokenSessionReference;
+    TokenSandBoxInert;
+    TokenAuditPolicy;
+    TokenOrigin;
+    MaxTokenInfoClass;
+  end enum for size use 4;
+  TOKEN_INFORMATION_CLASS = _TOKEN_INFORMATION_CLASS;
+  PTOKEN_INFORMATION_CLASS = ^_TOKEN_INFORMATION_CLASS;
+-- 
+--  Token information class structures
+-- 
+type
+  _TOKEN_USER       = record
+User            : SID_AND_ATTRIBUTES;
+  end record;
+  TOKEN_USER        = _TOKEN_USER;
+  PTOKEN_USER       = ^_TOKEN_USER;
+
+type
+  _TOKEN_GROUPS     = record
+GroupCount      : DWORD;
+Groups          : array 0..ANYSIZE_ARRAY-1 of SID_AND_ATTRIBUTES;
+  end record;
+  TOKEN_GROUPS      = _TOKEN_GROUPS;
+  PTOKEN_GROUPS     = ^_TOKEN_GROUPS;
+
+type
+  _TOKEN_PRIVILEGES = record
+PrivilegeCount  : DWORD;
+Privileges      : array 0..ANYSIZE_ARRAY-1 of LUID_AND_ATTRIBUTES;
+  end record;
+  TOKEN_PRIVILEGES  = _TOKEN_PRIVILEGES;
+  PTOKEN_PRIVILEGES = ^_TOKEN_PRIVILEGES;
+
+type
+  _TOKEN_OWNER      = record
+Owner           : p_SID;
+  end record;
+  TOKEN_OWNER       = _TOKEN_OWNER;
+  PTOKEN_OWNER      = ^_TOKEN_OWNER;
+
+type
+  _TOKEN_PRIMARY_GROUP = record
+PrimaryGroup    : p_SID;
+  end record;
+  TOKEN_PRIMARY_GROUP = _TOKEN_PRIMARY_GROUP;
+  PTOKEN_PRIMARY_GROUP = ^_TOKEN_PRIMARY_GROUP;
+
+type
+  _TOKEN_DEFAULT_DACL = record
+DefaultDacl     : p_ACL;
+  end record;
+  TOKEN_DEFAULT_DACL = _TOKEN_DEFAULT_DACL;
+  PTOKEN_DEFAULT_DACL = ^_TOKEN_DEFAULT_DACL;
+
+type
+  _TOKEN_GROUPS_AND_PRIVILEGES = record
+SidCount        : DWORD;
+SidLength       : DWORD;
+Sids            : PSID_AND_ATTRIBUTES;
+RestrictedSidCount : DWORD;
+RestrictedSidLength : DWORD;
+RestrictedSids  : PSID_AND_ATTRIBUTES;
+PrivilegeCount  : DWORD;
+PrivilegeLength : DWORD;
+Privileges      : PLUID_AND_ATTRIBUTES;
+AuthenticationId : t_LUID;
+  end record;
+  TOKEN_GROUPS_AND_PRIVILEGES = _TOKEN_GROUPS_AND_PRIVILEGES;
+  PTOKEN_GROUPS_AND_PRIVILEGES = ^_TOKEN_GROUPS_AND_PRIVILEGES;
+
+-- 
+--  Valid bits for each TOKEN_AUDIT_POLICY policy mask field.
+-- 
+const
+  TOKEN_AUDIT_SUCCESS_INCLUDE= $01;
+
+const
+  TOKEN_AUDIT_SUCCESS_EXCLUDE= $02;
+
+const
+  TOKEN_AUDIT_FAILURE_INCLUDE= $04;
+
+const
+  TOKEN_AUDIT_FAILURE_EXCLUDE= $08;
+
+type
+  _TOKEN_AUDIT_POLICY_ELEMENT = record
+Category        : DWORD;
+PolicyMask      : DWORD;
+  end record;
+  TOKEN_AUDIT_POLICY_ELEMENT = _TOKEN_AUDIT_POLICY_ELEMENT;
+  PTOKEN_AUDIT_POLICY_ELEMENT = ^_TOKEN_AUDIT_POLICY_ELEMENT;
+
+type
+  _TOKEN_AUDIT_POLICY = record
+PolicyCount     : DWORD;
+Policy          : array 0..ANYSIZE_ARRAY-1 of TOKEN_AUDIT_POLICY_ELEMENT;
+  end record;
+  TOKEN_AUDIT_POLICY = _TOKEN_AUDIT_POLICY;
+  PTOKEN_AUDIT_POLICY = ^_TOKEN_AUDIT_POLICY;
+
+const
+  TOKEN_SOURCE_LENGTH= 8;
+
+type
+  _TOKEN_SOURCE     = record
+SourceName      : array 0..TOKEN_SOURCE_LENGTH-1 of CHAR;
+SourceIdentifier : t_LUID;
+  end record;
+  TOKEN_SOURCE      = _TOKEN_SOURCE;
+  PTOKEN_SOURCE     = ^_TOKEN_SOURCE;
+
+type
+  _TOKEN_STATISTICS = record
+TokenId         : t_LUID;
+AuthenticationId : t_LUID;
+ExpirationTime  : LARGE_INTEGER;
+TokenType       : TOKEN_TYPE;
+ImpersonationLevel : SECURITY_IMPERSONATION_LEVEL;
+DynamicCharged  : DWORD;
+DynamicAvailable : DWORD;
+GroupCount      : DWORD;
+PrivilegeCount  : DWORD;
+ModifiedId      : t_LUID;
+  end record;
+  TOKEN_STATISTICS  = _TOKEN_STATISTICS;
+  PTOKEN_STATISTICS = ^_TOKEN_STATISTICS;
+
+type
+  _TOKEN_CONTROL    = record
+TokenId         : t_LUID;
+AuthenticationId : t_LUID;
+ModifiedId      : t_LUID;
+TokenSource     : TOKEN_SOURCE;
+  end record;
+  TOKEN_CONTROL     = _TOKEN_CONTROL;
+  PTOKEN_CONTROL    = ^_TOKEN_CONTROL;
+
+type
+  _TOKEN_ORIGIN     = record
+OriginatingLogonSession : t_LUID;
+  end record;
+  TOKEN_ORIGIN      = _TOKEN_ORIGIN;
+  PTOKEN_ORIGIN     = ^_TOKEN_ORIGIN;
+
+-- 
+--  Security Tracking Mode
+-- 
+type
+SECURITY_CONTEXT_TRACKING_MODE = BOOLEAN;
+PSECURITY_CONTEXT_TRACKING_MODE = ^BOOLEAN for machine_pointer use true;
+-- 
+--  Quality Of Service
+-- 
+type
+  _SECURITY_QUALITY_OF_SERVICE = record
+Length          : DWORD;
+ImpersonationLevel : SECURITY_IMPERSONATION_LEVEL;
+ContextTrackingMode : SECURITY_CONTEXT_TRACKING_MODE;
+EffectiveOnly   : BOOLEAN;
+  end record;
+  SECURITY_QUALITY_OF_SERVICE = _SECURITY_QUALITY_OF_SERVICE;
+  PSECURITY_QUALITY_OF_SERVICE = ^_SECURITY_QUALITY_OF_SERVICE;
+
+-- 
+--  Used to represent information related to a thread impersonation
+-- 
+type
+  _SE_IMPERSONATION_STATE = record
+Token           : PACCESS_TOKEN;
+CopyOnOpen      : BOOLEAN;
+EffectiveOnly   : BOOLEAN;
+Level           : SECURITY_IMPERSONATION_LEVEL;
+  end record;
+  SE_IMPERSONATION_STATE = _SE_IMPERSONATION_STATE;
+  PSE_IMPERSONATION_STATE = ^_SE_IMPERSONATION_STATE;
+
+const
+  DISABLE_MAX_PRIVILEGE= $01;
+
+const
+  SANDBOX_INERT     = $02;
+
+type
+SECURITY_INFORMATION = DWORD;
+PSECURITY_INFORMATION = ^DWORD for machine_pointer use true;
+--  begin_nthal
+const
+  MAXIMUM_PROCESSORS= 32;
+
+--  end_nthal
+--  begin_ntddk begin_wdm begin_ntifs
+--  end_ntddk end_wdm end_ntifs
+type
+  _JOB_SET_ARRAY    = record
+JobHandle       : t_HANDLE;
+MemberLevel     : DWORD;
+Flags           : DWORD;
+  end record;
+  JOB_SET_ARRAY     = _JOB_SET_ARRAY;
+  PJOB_SET_ARRAY    = ^_JOB_SET_ARRAY;
+
+const
+  FLS_MAXIMUM_AVAILABLE= 128;
+
+const
+  TLS_MINIMUM_AVAILABLE= 64;
+
+-- 
+--  32 and 64 bit specific version for wow64 and the debugger
+-- 
+type
+  _NT_TIB32         = record
+ExceptionList   : DWORD;
+StackBase       : DWORD;
+StackLimit      : DWORD;
+SubSystemTib    : DWORD;
+t_002            : record
+      FiberData     : DWORD for position use 0;
+      Version       : DWORD for position use 0;
+    end record;
+ArbitraryUserPointer : DWORD;
+Self            : DWORD;
+  end record;
+  NT_TIB32          = _NT_TIB32;
+  PNT_TIB32         = ^_NT_TIB32;
+
+type
+  _NT_TIB64         = record
+ExceptionList   : basetsd.DWORD64;
+StackBase       : basetsd.DWORD64;
+StackLimit      : basetsd.DWORD64;
+SubSystemTib    : basetsd.DWORD64;
+t_003            : record
+      FiberData     : basetsd.DWORD64 for position use 0;
+      Version       : DWORD for position use 0;
+    end record;
+ArbitraryUserPointer : basetsd.DWORD64;
+Self            : basetsd.DWORD64;
+  end record;
+  NT_TIB64          = _NT_TIB64;
+  PNT_TIB64         = ^_NT_TIB64;
+
+const
+  THREAD_BASE_PRIORITY_LOWRT= 15;
+
+const
+  THREAD_BASE_PRIORITY_MAX= 2;
+
+type
+  _QUOTA_LIMITS     = record
+PagedPoolLimit  : basetsd.SIZE_T;
+NonPagedPoolLimit : basetsd.SIZE_T;
+MinimumWorkingSetSize : basetsd.SIZE_T;
+MaximumWorkingSetSize : basetsd.SIZE_T;
+PagefileLimit   : basetsd.SIZE_T;
+TimeLimit       : LARGE_INTEGER;
+  end record;
+  QUOTA_LIMITS      = _QUOTA_LIMITS;
+  PQUOTA_LIMITS     = ^_QUOTA_LIMITS;
+
+const
+  QUOTA_LIMITS_HARDWS_MIN_ENABLE= $01;
+
+const
+  QUOTA_LIMITS_HARDWS_MIN_DISABLE= $02;
+
+const
+  QUOTA_LIMITS_HARDWS_MAX_ENABLE= $04;
+
+const
+  QUOTA_LIMITS_HARDWS_MAX_DISABLE= $08;
+
+type
+  _QUOTA_LIMITS_EX  = record
+PagedPoolLimit  : basetsd.SIZE_T;
+NonPagedPoolLimit : basetsd.SIZE_T;
+MinimumWorkingSetSize : basetsd.SIZE_T;
+MaximumWorkingSetSize : basetsd.SIZE_T;
+PagefileLimit   : basetsd.SIZE_T;
+TimeLimit       : LARGE_INTEGER;
+Reserved1       : basetsd.SIZE_T;
+Reserved2       : basetsd.SIZE_T;
+Reserved3       : basetsd.SIZE_T;
+Reserved4       : basetsd.SIZE_T;
+Flags           : DWORD;
+Reserved5       : DWORD;
+  end record;
+  QUOTA_LIMITS_EX   = _QUOTA_LIMITS_EX;
+  PQUOTA_LIMITS_EX  = ^_QUOTA_LIMITS_EX;
+
+type
+  _IO_COUNTERS      = record
+ReadOperationCount : ULONGLONG;
+WriteOperationCount : ULONGLONG;
+OtherOperationCount : ULONGLONG;
+ReadTransferCount : ULONGLONG;
+WriteTransferCount : ULONGLONG;
+OtherTransferCount : ULONGLONG;
+  end record;
+  IO_COUNTERS       = _IO_COUNTERS;
+
+type
+PIO_COUNTERS      = ^IO_COUNTERS for machine_pointer use true;
+type
+  _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = record
+TotalUserTime   : LARGE_INTEGER;
+TotalKernelTime : LARGE_INTEGER;
+ThisPeriodTotalUserTime : LARGE_INTEGER;
+ThisPeriodTotalKernelTime : LARGE_INTEGER;
+TotalPageFaultCount : DWORD;
+TotalProcesses  : DWORD;
+ActiveProcesses : DWORD;
+TotalTerminatedProcesses : DWORD;
+  end record;
+  JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = _JOBOBJECT_BASIC_ACCOUNTING_INFORMATION;
+  PJOBOBJECT_BASIC_ACCOUNTING_INFORMATION = ^_JOBOBJECT_BASIC_ACCOUNTING_INFORMATION;
+
+type
+  _JOBOBJECT_BASIC_LIMIT_INFORMATION = record
+PerProcessUserTimeLimit : LARGE_INTEGER;
+PerJobUserTimeLimit : LARGE_INTEGER;
+LimitFlags      : DWORD;
+MinimumWorkingSetSize : basetsd.SIZE_T;
+MaximumWorkingSetSize : basetsd.SIZE_T;
+ActiveProcessLimit : DWORD;
+Affinity        : basetsd.ULONG_PTR;
+PriorityClass   : DWORD;
+SchedulingClass : DWORD;
+  end record;
+  JOBOBJECT_BASIC_LIMIT_INFORMATION = _JOBOBJECT_BASIC_LIMIT_INFORMATION;
+  PJOBOBJECT_BASIC_LIMIT_INFORMATION = ^_JOBOBJECT_BASIC_LIMIT_INFORMATION;
+
+type
+  _JOBOBJECT_EXTENDED_LIMIT_INFORMATION = record
+BasicLimitInformation : JOBOBJECT_BASIC_LIMIT_INFORMATION;
+IoInfo          : IO_COUNTERS;
+ProcessMemoryLimit : basetsd.SIZE_T;
+JobMemoryLimit  : basetsd.SIZE_T;
+PeakProcessMemoryUsed : basetsd.SIZE_T;
+PeakJobMemoryUsed : basetsd.SIZE_T;
+  end record;
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION = _JOBOBJECT_EXTENDED_LIMIT_INFORMATION;
+  PJOBOBJECT_EXTENDED_LIMIT_INFORMATION = ^_JOBOBJECT_EXTENDED_LIMIT_INFORMATION;
+
+type
+  _JOBOBJECT_BASIC_PROCESS_ID_LIST = record
+NumberOfAssignedProcesses : DWORD;
+NumberOfProcessIdsInList : DWORD;
+ProcessIdList   : array 0..0 of basetsd.ULONG_PTR;
+  end record;
+  JOBOBJECT_BASIC_PROCESS_ID_LIST = _JOBOBJECT_BASIC_PROCESS_ID_LIST;
+  PJOBOBJECT_BASIC_PROCESS_ID_LIST = ^_JOBOBJECT_BASIC_PROCESS_ID_LIST;
+
+type
+  _JOBOBJECT_BASIC_UI_RESTRICTIONS = record
+UIRestrictionsClass : DWORD;
+  end record;
+  JOBOBJECT_BASIC_UI_RESTRICTIONS = _JOBOBJECT_BASIC_UI_RESTRICTIONS;
+  PJOBOBJECT_BASIC_UI_RESTRICTIONS = ^_JOBOBJECT_BASIC_UI_RESTRICTIONS;
+
+type
+  _JOBOBJECT_SECURITY_LIMIT_INFORMATION = record
+SecurityLimitFlags : DWORD;
+JobToken        : t_HANDLE;
+SidsToDisable   : PTOKEN_GROUPS;
+PrivilegesToDelete : PTOKEN_PRIVILEGES;
+RestrictedSids  : PTOKEN_GROUPS;
+  end record;
+  JOBOBJECT_SECURITY_LIMIT_INFORMATION = _JOBOBJECT_SECURITY_LIMIT_INFORMATION;
+  PJOBOBJECT_SECURITY_LIMIT_INFORMATION = ^_JOBOBJECT_SECURITY_LIMIT_INFORMATION;
+
+type
+  _JOBOBJECT_END_OF_JOB_TIME_INFORMATION = record
+EndOfJobTimeAction : DWORD;
+  end record;
+  JOBOBJECT_END_OF_JOB_TIME_INFORMATION = _JOBOBJECT_END_OF_JOB_TIME_INFORMATION;
+  PJOBOBJECT_END_OF_JOB_TIME_INFORMATION = ^_JOBOBJECT_END_OF_JOB_TIME_INFORMATION;
+
+type
+  _JOBOBJECT_ASSOCIATE_COMPLETION_PORT = record
+CompletionKey   : PVOID;
+CompletionPort  : t_HANDLE;
+  end record;
+  JOBOBJECT_ASSOCIATE_COMPLETION_PORT = _JOBOBJECT_ASSOCIATE_COMPLETION_PORT;
+  PJOBOBJECT_ASSOCIATE_COMPLETION_PORT = ^_JOBOBJECT_ASSOCIATE_COMPLETION_PORT;
+
+type
+  _JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION = record
+BasicInfo       : JOBOBJECT_BASIC_ACCOUNTING_INFORMATION;
+IoInfo          : IO_COUNTERS;
+  end record;
+  JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION = _JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION;
+  PJOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION = ^_JOBOBJECT_BASIC_AND_IO_ACCOUNTING_INFORMATION;
+
+type
+  _JOBOBJECT_JOBSET_INFORMATION = record
+MemberLevel     : DWORD;
+  end record;
+  JOBOBJECT_JOBSET_INFORMATION = _JOBOBJECT_JOBSET_INFORMATION;
+  PJOBOBJECT_JOBSET_INFORMATION = ^_JOBOBJECT_JOBSET_INFORMATION;
+
+const
+  JOB_OBJECT_TERMINATE_AT_END_OF_JOB= 0;
+
+const
+  JOB_OBJECT_POST_AT_END_OF_JOB= 1;
+
+-- 
+--  Completion Port Messages for job objects
+-- 
+--  These values are returned via the lpNumberOfBytesTransferred parameter
+-- 
+const
+  JOB_OBJECT_MSG_END_OF_JOB_TIME= 1;
+
+const
+  JOB_OBJECT_MSG_END_OF_PROCESS_TIME= 2;
+
+const
+  JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT= 3;
+
+const
+  JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO= 4;
+
+const
+  JOB_OBJECT_MSG_NEW_PROCESS= 6;
+
+const
+  JOB_OBJECT_MSG_EXIT_PROCESS= 7;
+
+const
+  JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS= 8;
+
+const
+  JOB_OBJECT_MSG_PROCESS_MEMORY_LIMIT= 9;
+
+const
+  JOB_OBJECT_MSG_JOB_MEMORY_LIMIT= 10;
+
+-- 
+--  Basic Limits
+-- 
+const
+  JOB_OBJECT_LIMIT_WORKINGSET= $01;
+
+const
+  JOB_OBJECT_LIMIT_PROCESS_TIME= $02;
+
+const
+  JOB_OBJECT_LIMIT_JOB_TIME= $04;
+
+const
+  JOB_OBJECT_LIMIT_ACTIVE_PROCESS= $08;
+
+const
+  JOB_OBJECT_LIMIT_AFFINITY= $10;
+
+const
+  JOB_OBJECT_LIMIT_PRIORITY_CLASS= $20;
+
+const
+  JOB_OBJECT_LIMIT_PRESERVE_JOB_TIME= $40;
+
+const
+  JOB_OBJECT_LIMIT_SCHEDULING_CLASS= $80;
+
+-- 
+--  Extended Limits
+-- 
+const
+  JOB_OBJECT_LIMIT_PROCESS_MEMORY= $0100;
+
+const
+  JOB_OBJECT_LIMIT_JOB_MEMORY= $0200;
+
+const
+  JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION= $0400;
+
+const
+  JOB_OBJECT_LIMIT_BREAKAWAY_OK= $0800;
+
+const
+  JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK= $1000;
+
+const
+  JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE= $2000;
+
+const
+  JOB_OBJECT_LIMIT_RESERVED2= $4000;
+
+const
+  JOB_OBJECT_LIMIT_RESERVED3= $8000;
+
+const
+  JOB_OBJECT_LIMIT_RESERVED4= $10000;
+
+const
+  JOB_OBJECT_LIMIT_RESERVED5= $20000;
+
+const
+  JOB_OBJECT_LIMIT_RESERVED6= $40000;
+
+const
+  JOB_OBJECT_LIMIT_VALID_FLAGS= $7FFFF;
+
+const
+  JOB_OBJECT_BASIC_LIMIT_VALID_FLAGS= $FF;
+
+const
+  JOB_OBJECT_EXTENDED_LIMIT_VALID_FLAGS= $3FFF;
+
+const
+  JOB_OBJECT_RESERVED_LIMIT_VALID_FLAGS= $7FFFF;
+
+-- 
+--  UI restrictions for jobs
+-- 
+const
+  JOB_OBJECT_UILIMIT_NONE= $00;
+
+const
+  JOB_OBJECT_UILIMIT_HANDLES= $01;
+
+const
+  JOB_OBJECT_UILIMIT_READCLIPBOARD= $02;
+
+const
+  JOB_OBJECT_UILIMIT_WRITECLIPBOARD= $04;
+
+const
+  JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS= $08;
+
+const
+  JOB_OBJECT_UILIMIT_DISPLAYSETTINGS= $10;
+
+const
+  JOB_OBJECT_UILIMIT_GLOBALATOMS= $20;
+
+const
+  JOB_OBJECT_UILIMIT_DESKTOP= $40;
+
+const
+  JOB_OBJECT_UILIMIT_EXITWINDOWS= $80;
+
+const
+  JOB_OBJECT_UILIMIT_ALL= $FF;
+
+const
+  JOB_OBJECT_UI_VALID_FLAGS= $FF;
+
+const
+  JOB_OBJECT_SECURITY_NO_ADMIN= $01;
+
+const
+  JOB_OBJECT_SECURITY_RESTRICTED_TOKEN= $02;
+
+const
+  JOB_OBJECT_SECURITY_ONLY_TOKEN= $04;
+
+const
+  JOB_OBJECT_SECURITY_FILTER_TOKENS= $08;
+
+const
+  JOB_OBJECT_SECURITY_VALID_FLAGS= $0F;
+
+type
+_JOBOBJECTINFOCLASS= enum
+    JobObjectBasicAccountingInformation for ord use 1;
+    JobObjectBasicLimitInformation;
+    JobObjectBasicProcessIdList;
+    JobObjectBasicUIRestrictions;
+    JobObjectSecurityLimitInformation;
+    JobObjectEndOfJobTimeInformation;
+    JobObjectAssociateCompletionPortInformation;
+    JobObjectBasicAndIoAccountingInformation;
+    JobObjectExtendedLimitInformation;
+    JobObjectJobSetInformation;
+    MaxJobObjectInfoClass;
+  end enum for size use 4;
+  JOBOBJECTINFOCLASS = _JOBOBJECTINFOCLASS;
+-- 
+const
+  EVENT_MODIFY_STATE= $02;
+
+const
+  MUTANT_QUERY_STATE= $01;
+
+const
+  SEMAPHORE_MODIFY_STATE= $02;
+
+-- 
+--  Timer Specific Access Rights.
+-- 
+const
+  TIMER_QUERY_STATE = $01;
+
+const
+  TIMER_MODIFY_STATE= $02;
+
+const
+  TIME_ZONE_ID_UNKNOWN= 0;
+
+const
+  TIME_ZONE_ID_STANDARD= 1;
+
+const
+  TIME_ZONE_ID_DAYLIGHT= 2;
+
+type
+_LOGICAL_PROCESSOR_RELATIONSHIP= enum
+    RelationProcessorCore;
+    RelationNumaNode;
+  end enum for size use 4;
+  LOGICAL_PROCESSOR_RELATIONSHIP = _LOGICAL_PROCESSOR_RELATIONSHIP;
+const
+  LTP_PC_SMT        = $01;
+
+type
+  _SYSTEM_LOGICAL_PROCESSOR_INFORMATION = record
+ProcessorMask   : basetsd.ULONG_PTR;
+Relationship    : LOGICAL_PROCESSOR_RELATIONSHIP;
+t_004            : record
+  ProcessorCore     : record
+Flags           : BYTE;
+  end record for position use 0;
+  NumaNode          : record
+NodeNumber      : DWORD;
+  end record for position use 0;
+      Reserved      : array 0..1 of ULONGLONG for position use 0;
+    end record;
+  end record;
+  SYSTEM_LOGICAL_PROCESSOR_INFORMATION = _SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION = ^_SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+
+const
+  PROCESSOR_INTEL_386= 386;
+
+const
+  PROCESSOR_INTEL_486= 486;
+
+const
+  PROCESSOR_INTEL_PENTIUM= 586;
+
+const
+  PROCESSOR_INTEL_IA64= 2200;
+
+const
+  PROCESSOR_AMD_X8664= 8664;
+
+const
+  PROCESSOR_MIPS_R4000= 4000;
+
+const
+  PROCESSOR_ALPHA_21064= 21064;
+
+const
+  PROCESSOR_PPC_601 = 601;
+
+const
+  PROCESSOR_PPC_603 = 603;
+
+const
+  PROCESSOR_PPC_604 = 604;
+
+const
+  PROCESSOR_PPC_620 = 620;
+
+const
+  PROCESSOR_HITACHI_SH3= 10003;
+
+const
+  PROCESSOR_HITACHI_SH3E= 10004;
+
+const
+  PROCESSOR_HITACHI_SH4= 10005;
+
+const
+  PROCESSOR_MOTOROLA_821= 821;
+
+const
+  PROCESSOR_SHx_SH3 = 103;
+
+const
+  PROCESSOR_SHx_SH4 = 104;
+
+const
+  PROCESSOR_STRONGARM= 2577;
+
+const
+  PROCESSOR_ARM720  = 1824;
+
+const
+  PROCESSOR_ARM820  = 2080;
+
+const
+  PROCESSOR_ARM920  = 2336;
+
+const
+  PROCESSOR_ARM_7TDMI= 70001;
+
+const
+  PROCESSOR_OPTIL   = $494F;
+
+const
+  PROCESSOR_ARCHITECTURE_INTEL= 0;
+
+const
+  PROCESSOR_ARCHITECTURE_MIPS= 1;
+
+const
+  PROCESSOR_ARCHITECTURE_ALPHA= 2;
+
+const
+  PROCESSOR_ARCHITECTURE_PPC= 3;
+
+const
+  PROCESSOR_ARCHITECTURE_SHX= 4;
+
+const
+  PROCESSOR_ARCHITECTURE_ARM= 5;
+
+const
+  PROCESSOR_ARCHITECTURE_IA64= 6;
+
+const
+  PROCESSOR_ARCHITECTURE_ALPHA64= 7;
+
+const
+  PROCESSOR_ARCHITECTURE_MSIL= 8;
+
+const
+  PROCESSOR_ARCHITECTURE_AMD64= 9;
+
+const
+  PROCESSOR_ARCHITECTURE_IA32_ON_WIN64= 10;
+
+const
+  PROCESSOR_ARCHITECTURE_UNKNOWN= $FFFF;
+
+const
+  PF_FLOATING_POINT_PRECISION_ERRATA= 0;
+
+const
+  PF_FLOATING_POINT_EMULATED= 1;
+
+const
+  PF_COMPARE_EXCHANGE_DOUBLE= 2;
+
+const
+  PF_MMX_INSTRUCTIONS_AVAILABLE= 3;
+
+const
+  PF_PPC_MOVEMEM_64BIT_OK= 4;
+
+const
+  PF_ALPHA_BYTE_INSTRUCTIONS= 5;
+
+const
+  PF_XMMI_INSTRUCTIONS_AVAILABLE= 6;
+
+const
+  PF_3DNOW_INSTRUCTIONS_AVAILABLE= 7;
+
+const
+  PF_RDTSC_INSTRUCTION_AVAILABLE= 8;
+
+const
+  PF_PAE_ENABLED    = 9;
+
+const
+  PF_XMMI64_INSTRUCTIONS_AVAILABLE= 10;
+
+type
+  _MEMORY_BASIC_INFORMATION = record
+BaseAddress     : PVOID;
+AllocationBase  : PVOID;
+AllocationProtect : DWORD;
+RegionSize      : basetsd.SIZE_T;
+State           : DWORD;
+Protect         : DWORD;
+_Type           : DWORD;
+  end record;
+  MEMORY_BASIC_INFORMATION = _MEMORY_BASIC_INFORMATION;
+  PMEMORY_BASIC_INFORMATION = ^_MEMORY_BASIC_INFORMATION;
+
+type
+  _MEMORY_BASIC_INFORMATION32 = record
+BaseAddress     : DWORD;
+AllocationBase  : DWORD;
+AllocationProtect : DWORD;
+RegionSize      : DWORD;
+State           : DWORD;
+Protect         : DWORD;
+_Type           : DWORD;
+  end record;
+  MEMORY_BASIC_INFORMATION32 = _MEMORY_BASIC_INFORMATION32;
+  PMEMORY_BASIC_INFORMATION32 = ^_MEMORY_BASIC_INFORMATION32;
+
+type
+  _MEMORY_BASIC_INFORMATION64 = record
+BaseAddress     : ULONGLONG;
+AllocationBase  : ULONGLONG;
+AllocationProtect : DWORD;
+__alignment1    : DWORD;
+RegionSize      : ULONGLONG;
+State           : DWORD;
+Protect         : DWORD;
+_Type           : DWORD;
+__alignment2    : DWORD;
+  end record;
+  MEMORY_BASIC_INFORMATION64 = _MEMORY_BASIC_INFORMATION64;
+  PMEMORY_BASIC_INFORMATION64 = ^_MEMORY_BASIC_INFORMATION64;
+
+const
+  SECTION_QUERY     = $01;
+
+const
+  SECTION_MAP_WRITE = $02;
+
+const
+  SECTION_MAP_READ  = $04;
+
+const
+  SECTION_MAP_EXECUTE= $08;
+
+const
+  SECTION_EXTEND_SIZE= $10;
+
+const
+  PAGE_NOACCESS     = $01;
+
+const
+  PAGE_READONLY     = $02;
+
+const
+  PAGE_READWRITE    = $04;
+
+const
+  PAGE_WRITECOPY    = $08;
+
+const
+  PAGE_EXECUTE      = $10;
+
+const
+  PAGE_EXECUTE_READ = $20;
+
+const
+  PAGE_EXECUTE_READWRITE= $40;
+
+const
+  PAGE_EXECUTE_WRITECOPY= $80;
+
+const
+  PAGE_GUARD        = $0100;
+
+const
+  PAGE_NOCACHE      = $0200;
+
+const
+  PAGE_WRITECOMBINE = $0400;
+
+const
+  MEM_COMMIT        = $1000;
+
+const
+  MEM_RESERVE       = $2000;
+
+const
+  MEM_DECOMMIT      = $4000;
+
+const
+  MEM_RELEASE       = $8000;
+
+const
+  MEM_FREE          = $10000;
+
+const
+  MEM_PRIVATE       = $20000;
+
+const
+  MEM_MAPPED        = $40000;
+
+const
+  MEM_RESET         = $80000;
+
+const
+  MEM_TOP_DOWN      = $100000;
+
+const
+  MEM_WRITE_WATCH   = $200000;
+
+const
+  MEM_PHYSICAL      = $400000;
+
+const
+  MEM_LARGE_PAGES   = $20000000;
+
+const
+  MEM_4MB_PAGES     = $80000000;
+
+const
+  SEC_FILE          = $800000;
+
+const
+  SEC_IMAGE         = $1000000;
+
+const
+  SEC_RESERVE       = $4000000;
+
+const
+  SEC_COMMIT        = $8000000;
+
+const
+  SEC_NOCACHE       = $10000000;
+
+const
+  WRITE_WATCH_FLAG_RESET= $01;
+
+-- 
+--  Define access rights to files and directories
+-- 
+-- 
+--  The FILE_READ_DATA and FILE_WRITE_DATA constants are also defined in
+--  devioctl.h as FILE_READ_ACCESS and FILE_WRITE_ACCESS. The values for these
+--  constants *MUST* always be in sync.
+--  The values are redefined in devioctl.h because they must be available to
+--  both DOS and NT.
+-- 
+const
+  FILE_SHARE_READ   = $01;
+
+const
+  FILE_SHARE_WRITE  = $02;
+
+const
+  FILE_SHARE_DELETE = $04;
+
+const
+  FILE_ATTRIBUTE_READONLY= $01;
+
+const
+  FILE_ATTRIBUTE_HIDDEN= $02;
+
+const
+  FILE_ATTRIBUTE_SYSTEM= $04;
+
+const
+  FILE_ATTRIBUTE_DIRECTORY= $10;
+
+const
+  FILE_ATTRIBUTE_ARCHIVE= $20;
+
+const
+  FILE_ATTRIBUTE_DEVICE= $40;
+
+const
+  FILE_ATTRIBUTE_NORMAL= $80;
+
+const
+  FILE_ATTRIBUTE_TEMPORARY= $0100;
+
+const
+  FILE_ATTRIBUTE_SPARSE_FILE= $0200;
+
+const
+  FILE_ATTRIBUTE_REPARSE_POINT= $0400;
+
+const
+  FILE_ATTRIBUTE_COMPRESSED= $0800;
+
+const
+  FILE_ATTRIBUTE_OFFLINE= $1000;
+
+const
+  FILE_ATTRIBUTE_NOT_CONTENT_INDEXED= $2000;
+
+const
+  FILE_ATTRIBUTE_ENCRYPTED= $4000;
+
+const
+  FILE_NOTIFY_CHANGE_FILE_NAME= $01;
+
+const
+  FILE_NOTIFY_CHANGE_DIR_NAME= $02;
+
+const
+  FILE_NOTIFY_CHANGE_ATTRIBUTES= $04;
+
+const
+  FILE_NOTIFY_CHANGE_SIZE= $08;
+
+const
+  FILE_NOTIFY_CHANGE_LAST_WRITE= $10;
+
+const
+  FILE_NOTIFY_CHANGE_LAST_ACCESS= $20;
+
+const
+  FILE_NOTIFY_CHANGE_CREATION= $40;
+
+const
+  FILE_NOTIFY_CHANGE_SECURITY= $0100;
+
+const
+  FILE_ACTION_ADDED = $01;
+
+const
+  FILE_ACTION_REMOVED= $02;
+
+const
+  FILE_ACTION_MODIFIED= $03;
+
+const
+  FILE_ACTION_RENAMED_OLD_NAME= $04;
+
+const
+  FILE_ACTION_RENAMED_NEW_NAME= $05;
+
+const
+  FILE_CASE_SENSITIVE_SEARCH= $01;
+
+const
+  FILE_CASE_PRESERVED_NAMES= $02;
+
+const
+  FILE_UNICODE_ON_DISK= $04;
+
+const
+  FILE_PERSISTENT_ACLS= $08;
+
+const
+  FILE_FILE_COMPRESSION= $10;
+
+const
+  FILE_VOLUME_QUOTAS= $20;
+
+const
+  FILE_SUPPORTS_SPARSE_FILES= $40;
+
+const
+  FILE_SUPPORTS_REPARSE_POINTS= $80;
+
+const
+  FILE_SUPPORTS_REMOTE_STORAGE= $0100;
+
+const
+  FILE_VOLUME_IS_COMPRESSED= $8000;
+
+const
+  FILE_SUPPORTS_OBJECT_IDS= $10000;
+
+const
+  FILE_SUPPORTS_ENCRYPTION= $20000;
+
+const
+  FILE_NAMED_STREAMS= $40000;
+
+const
+  FILE_READ_ONLY_VOLUME= $80000;
+
+-- 
+--  Define the file notification information structure
+-- 
+type
+  _FILE_NOTIFY_INFORMATION = record
+NextEntryOffset : DWORD;
+Action          : DWORD;
+FileNameLength  : DWORD;
+FileName        : array 0..0 of WCHAR;
+  end record;
+  FILE_NOTIFY_INFORMATION = _FILE_NOTIFY_INFORMATION;
+  PFILE_NOTIFY_INFORMATION = ^_FILE_NOTIFY_INFORMATION;
+
+-- 
+--  Define segement buffer structure for scatter/gather read/write.
+-- 
+type
+  _FILE_SEGMENT_ELEMENT = record
+  Buffer          : PVOID64 for position use 0;
+  Alignment       : ULONGLONG for position use 0;
+  end record;
+
+  FILE_SEGMENT_ELEMENT = _FILE_SEGMENT_ELEMENT;
+  PFILE_SEGMENT_ELEMENT = ^_FILE_SEGMENT_ELEMENT;
+-- 
+--  The reparse GUID structure is used by all 3rd party layered drivers to
+--  store data in a reparse point. For non-Microsoft tags, The GUID field
+--  cannot be GUID_NULL.
+--  The constraints on reparse tags are defined below.
+--  Microsoft tags can also be used with this format of the reparse point buffer.
+-- 
+type
+  _REPARSE_GUID_DATA_BUFFER = record
+ReparseTag      : DWORD;
+ReparseDataLength : WORD;
+Reserved        : WORD;
+ReparseGuid     : guiddef.t_GUID;
+  GenericReparseBuffer : record
+DataBuffer      : array 0..0 of BYTE;
+  end record;
+  end record;
+  REPARSE_GUID_DATA_BUFFER = _REPARSE_GUID_DATA_BUFFER;
+  PREPARSE_GUID_DATA_BUFFER = ^_REPARSE_GUID_DATA_BUFFER;
+
+-- 
+--  Maximum allowed size of the reparse data.
+-- 
+-- 
+--  Predefined reparse tags.
+--  These tags need to avoid conflicting with IO_REMOUNT defined in ntos\inc\io.h
+-- 
+-- 
+--  The value of the following constant needs to satisfy the following conditions:
+--  (1) Be at least as large as the largest of the reserved tags.
+--  (2) Be strictly smaller than all the tags in use.
+-- 
+-- 
+--  The reparse tags are a DWORD. The 32 bits are laid out as follows:
+-- 
+--  3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
+--  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
+--  +-+-+-+-+-----------------------+-------------------------------+
+--  |M|R|N|R| Reserved bits | Reparse Tag Value |
+--  +-+-+-+-+-----------------------+-------------------------------+
+-- 
+--  M is the Microsoft bit. When set to 1, it denotes a tag owned by Microsoft.
+--  All ISVs must use a tag with a 0 in this position.
+--  Note: If a Microsoft tag is used by non-Microsoft software, the
+--  behavior is not defined.
+-- 
+--  R is reserved. Must be zero for non-Microsoft tags.
+-- 
+--  N is name surrogate. When set to 1, the file represents another named
+--  entity in the system.
+-- 
+--  The M and N bits are OR-able.
+--  The following macros check for the M and N bit values:
+-- 
+-- 
+--  Macro to determine whether a reparse point tag corresponds to a tag
+--  owned by Microsoft.
+-- 
+-- 
+--  Macro to determine whether a reparse point tag is a name surrogate
+-- 
+const
+  IO_COMPLETION_MODIFY_STATE= $02;
+
+const
+  DUPLICATE_CLOSE_SOURCE= $01;
+
+const
+  DUPLICATE_SAME_ACCESS= $02;
+
+type
+_SYSTEM_POWER_STATE= enum
+    PowerSystemUnspecified for ord use 0;
+    PowerSystemWorking for ord use 1;
+    PowerSystemSleeping1 for ord use 2;
+    PowerSystemSleeping2 for ord use 3;
+    PowerSystemSleeping3 for ord use 4;
+    PowerSystemHibernate for ord use 5;
+    PowerSystemShutdown for ord use 6;
+    PowerSystemMaximum for ord use 7;
+  end enum for size use 4;
+  SYSTEM_POWER_STATE = _SYSTEM_POWER_STATE;
+  PSYSTEM_POWER_STATE = ^_SYSTEM_POWER_STATE;
+const
+  POWER_SYSTEM_MAXIMUM= 7;
+
+type
+POWER_ACTION      = enum
+    PowerActionNone for ord use 0;
+    PowerActionReserved;
+    PowerActionSleep;
+    PowerActionHibernate;
+    PowerActionShutdown;
+    PowerActionShutdownReset;
+    PowerActionShutdownOff;
+    PowerActionWarmEject;
+  end enum for size use 4;
+  PPOWER_ACTION     = ^POWER_ACTION;
+type
+_DEVICE_POWER_STATE= enum
+    PowerDeviceUnspecified for ord use 0;
+    PowerDeviceD0;
+    PowerDeviceD1;
+    PowerDeviceD2;
+    PowerDeviceD3;
+    PowerDeviceMaximum;
+  end enum for size use 4;
+  DEVICE_POWER_STATE = _DEVICE_POWER_STATE;
+  PDEVICE_POWER_STATE = ^_DEVICE_POWER_STATE;
+type
+EXECUTION_STATE   = DWORD;
+type
+LATENCY_TIME      = enum
+    LT_DONT_CARE;
+    LT_LOWEST_LATENCY;
+  end enum for size use 4;
+--  end_ntminiport end_ntifs end_wdm end_ntddk
+-- -----------------------------------------------------------------------------
+--  Device Power Information
+--  Accessable via CM_Get_DevInst_Registry_Property_Ex(CM_DRP_DEVICE_POWER_DATA)
+-- -----------------------------------------------------------------------------
+const
+  PDCAP_D0_SUPPORTED= $01;
+
+const
+  PDCAP_D1_SUPPORTED= $02;
+
+const
+  PDCAP_D2_SUPPORTED= $04;
+
+const
+  PDCAP_D3_SUPPORTED= $08;
+
+const
+  PDCAP_WAKE_FROM_D0_SUPPORTED= $10;
+
+const
+  PDCAP_WAKE_FROM_D1_SUPPORTED= $20;
+
+const
+  PDCAP_WAKE_FROM_D2_SUPPORTED= $40;
+
+const
+  PDCAP_WAKE_FROM_D3_SUPPORTED= $80;
+
+const
+  PDCAP_WARM_EJECT_SUPPORTED= $0100;
+
+type
+  CM_Power_Data_s   = record
+PD_Size         : DWORD;
+PD_MostRecentPowerState : DEVICE_POWER_STATE;
+PD_Capabilities : DWORD;
+PD_D1Latency    : DWORD;
+PD_D2Latency    : DWORD;
+PD_D3Latency    : DWORD;
+PD_PowerStateMapping : array 0..POWER_SYSTEM_MAXIMUM-1 of DEVICE_POWER_STATE;
+PD_DeepestSystemWake : SYSTEM_POWER_STATE;
+  end record;
+  CM_POWER_DATA     = CM_Power_Data_s;
+  PCM_POWER_DATA    = ^CM_Power_Data_s;
+
+--  begin_ntddk
+type
+POWER_INFORMATION_LEVEL= enum
+    SystemPowerPolicyAc;
+    SystemPowerPolicyDc;
+    VerifySystemPolicyAc;
+    VerifySystemPolicyDc;
+    SystemPowerCapabilities;
+    SystemBatteryState;
+    SystemPowerStateHandler;
+    ProcessorStateHandler;
+    SystemPowerPolicyCurrent;
+    AdministratorPowerPolicy;
+    SystemReserveHiberFile;
+    ProcessorInformation;
+    SystemPowerInformation;
+    ProcessorStateHandler2;
+    LastWakeTime;
+    LastSleepTime;
+    SystemExecutionState;
+    SystemPowerStateNotifyHandler;
+    ProcessorPowerPolicyAc;
+    ProcessorPowerPolicyDc;
+    VerifyProcessorPowerPolicyAc;
+    VerifyProcessorPowerPolicyDc;
+    ProcessorPowerPolicyCurrent;
+    SystemPowerStateLogging;
+    SystemPowerLoggingEntry;
+  end enum for size use 4;
+--  begin_wdm
+-- 
+--  System power manager capabilities
+-- 
+type
+  BATTERY_REPORTING_SCALE = record
+Granularity     : DWORD;
+Capacity        : DWORD;
+  end record;
+  PBATTERY_REPORTING_SCALE = ^BATTERY_REPORTING_SCALE;
+
+-- 
+--  Power Policy Management interfaces
+-- 
+type
+  POWER_ACTION_POLICY = record
+Action          : POWER_ACTION;
+Flags           : DWORD;
+EventCode       : DWORD;
+  end record;
+  PPOWER_ACTION_POLICY = ^POWER_ACTION_POLICY;
+
+--  POWER_ACTION_POLICY->Flags:
+const
+  POWER_ACTION_QUERY_ALLOWED= $01;
+
+const
+  POWER_ACTION_UI_ALLOWED= $02;
+
+const
+  POWER_ACTION_OVERRIDE_APPS= $04;
+
+const
+  POWER_ACTION_LIGHTEST_FIRST= $10000000;
+
+const
+  POWER_ACTION_LOCK_CONSOLE= $20000000;
+
+const
+  POWER_ACTION_DISABLE_WAKES= $40000000;
+
+const
+  POWER_ACTION_CRITICAL= $80000000;
+
+--  POWER_ACTION_POLICY->EventCode flags
+const
+  POWER_LEVEL_USER_NOTIFY_TEXT= $01;
+
+const
+  POWER_LEVEL_USER_NOTIFY_SOUND= $02;
+
+const
+  POWER_LEVEL_USER_NOTIFY_EXEC= $04;
+
+const
+  POWER_USER_NOTIFY_BUTTON= $08;
+
+const
+  POWER_USER_NOTIFY_SHUTDOWN= $10;
+
+const
+  POWER_FORCE_TRIGGER_RESET= $80000000;
+
+--  system battery drain policies
+type
+  SYSTEM_POWER_LEVEL = record
+Enable          : BOOLEAN;
+Spare           : array 0..2 of BYTE;
+BatteryLevel    : DWORD;
+PowerPolicy     : POWER_ACTION_POLICY;
+MinSystemState  : SYSTEM_POWER_STATE;
+  end record;
+  PSYSTEM_POWER_LEVEL = ^SYSTEM_POWER_LEVEL;
+
+--  Discharge policy constants
+const
+  NUM_DISCHARGE_POLICIES= 4;
+
+const
+  DISCHARGE_POLICY_CRITICAL= 0;
+
+const
+  DISCHARGE_POLICY_LOW= 1;
+
+-- 
+--  Throttling policies
+-- 
+const
+  PO_THROTTLE_NONE  = 0;
+
+const
+  PO_THROTTLE_CONSTANT= 1;
+
+const
+  PO_THROTTLE_DEGRADE= 2;
+
+const
+  PO_THROTTLE_ADAPTIVE= 3;
+
+const
+  PO_THROTTLE_MAXIMUM= 4;
+
+--  system power policies
+type
+  _SYSTEM_POWER_POLICY = record
+Revision        : DWORD;
+PowerButton     : POWER_ACTION_POLICY;
+SleepButton     : POWER_ACTION_POLICY;
+LidClose        : POWER_ACTION_POLICY;
+LidOpenWake     : SYSTEM_POWER_STATE;
+Reserved        : DWORD;
+Idle            : POWER_ACTION_POLICY;
+IdleTimeout     : DWORD;
+IdleSensitivity : BYTE;
+DynamicThrottle : BYTE;
+Spare2          : array 0..1 of BYTE;
+MinSleep        : SYSTEM_POWER_STATE;
+MaxSleep        : SYSTEM_POWER_STATE;
+ReducedLatencySleep : SYSTEM_POWER_STATE;
+WinLogonFlags   : DWORD;
+Spare3          : DWORD;
+DozeS4Timeout   : DWORD;
+BroadcastCapacityResolution : DWORD;
+DischargePolicy : array 0..NUM_DISCHARGE_POLICIES-1 of SYSTEM_POWER_LEVEL;
+VideoTimeout    : DWORD;
+VideoDimDisplay : BOOLEAN;
+VideoReserved   : array 0..2 of DWORD;
+SpindownTimeout : DWORD;
+OptimizeForPower : BOOLEAN;
+FanThrottleTolerance : BYTE;
+ForcedThrottle  : BYTE;
+MinThrottle     : BYTE;
+OverThrottled   : POWER_ACTION_POLICY;
+  end record;
+  SYSTEM_POWER_POLICY = _SYSTEM_POWER_POLICY;
+  PSYSTEM_POWER_POLICY = ^_SYSTEM_POWER_POLICY;
+
+--  processor power policy state
+type
+  _PROCESSOR_POWER_POLICY_INFO = record
+TimeCheck       : DWORD;
+DemoteLimit     : DWORD;
+PromoteLimit    : DWORD;
+DemotePercent   : BYTE;
+PromotePercent  : BYTE;
+Spare           : array 0..1 of BYTE;
+AllowDemotion   : DWORD {:1};
+AllowPromotion  : DWORD {:1};
+Reserved        : DWORD {:30};
+  end record;
+  PROCESSOR_POWER_POLICY_INFO = _PROCESSOR_POWER_POLICY_INFO;
+  PPROCESSOR_POWER_POLICY_INFO = ^_PROCESSOR_POWER_POLICY_INFO;
+
+--  processor power policy
+type
+  _PROCESSOR_POWER_POLICY = record
+Revision        : DWORD;
+DynamicThrottle : BYTE;
+Spare           : array 0..2 of BYTE;
+DisableCStates  : DWORD {:1};
+Reserved        : DWORD {:31};
+PolicyCount     : DWORD;
+Policy          : array 0..2 of PROCESSOR_POWER_POLICY_INFO;
+  end record;
+  PROCESSOR_POWER_POLICY = _PROCESSOR_POWER_POLICY;
+  PPROCESSOR_POWER_POLICY = ^_PROCESSOR_POWER_POLICY;
+
+--  administrator power policy overrides
+type
+  _ADMINISTRATOR_POWER_POLICY = record
+MinSleep        : SYSTEM_POWER_STATE;
+MaxSleep        : SYSTEM_POWER_STATE;
+MinVideoTimeout : DWORD;
+MaxVideoTimeout : DWORD;
+MinSpindownTimeout : DWORD;
+MaxSpindownTimeout : DWORD;
+  end record;
+  ADMINISTRATOR_POWER_POLICY = _ADMINISTRATOR_POWER_POLICY;
+  PADMINISTRATOR_POWER_POLICY = ^_ADMINISTRATOR_POWER_POLICY;
+
+type
+  SYSTEM_POWER_CAPABILITIES = record
+PowerButtonPresent : BOOLEAN;
+SleepButtonPresent : BOOLEAN;
+LidPresent      : BOOLEAN;
+SystemS1        : BOOLEAN;
+SystemS2        : BOOLEAN;
+SystemS3        : BOOLEAN;
+SystemS4        : BOOLEAN;
+SystemS5        : BOOLEAN;
+HiberFilePresent : BOOLEAN;
+FullWake        : BOOLEAN;
+VideoDimPresent : BOOLEAN;
+ApmPresent      : BOOLEAN;
+UpsPresent      : BOOLEAN;
+ThermalControl  : BOOLEAN;
+ProcessorThrottle : BOOLEAN;
+ProcessorMinThrottle : BYTE;
+ProcessorMaxThrottle : BYTE;
+spare2          : array 0..3 of BYTE;
+DiskSpinDown    : BOOLEAN;
+spare3          : array 0..7 of BYTE;
+SystemBatteriesPresent : BOOLEAN;
+BatteriesAreShortTerm : BOOLEAN;
+BatteryScale    : array 0..2 of BATTERY_REPORTING_SCALE;
+AcOnLineWake    : SYSTEM_POWER_STATE;
+SoftLidWake     : SYSTEM_POWER_STATE;
+RtcWake         : SYSTEM_POWER_STATE;
+MinDeviceWakeState : SYSTEM_POWER_STATE;
+DefaultLowLatencyWake : SYSTEM_POWER_STATE;
+  end record;
+  PSYSTEM_POWER_CAPABILITIES = ^SYSTEM_POWER_CAPABILITIES;
+
+type
+  SYSTEM_BATTERY_STATE = record
+AcOnLine        : BOOLEAN;
+BatteryPresent  : BOOLEAN;
+Charging        : BOOLEAN;
+Discharging     : BOOLEAN;
+Spare1          : array 0..3 of BOOLEAN;
+MaxCapacity     : DWORD;
+RemainingCapacity : DWORD;
+Rate            : DWORD;
+EstimatedTime   : DWORD;
+DefaultAlert1   : DWORD;
+DefaultAlert2   : DWORD;
+  end record;
+  PSYSTEM_BATTERY_STATE = ^SYSTEM_BATTERY_STATE;
+
+-- 
+--  Image Format
+-- 
+-- ignored #include <pshpack4.h>
+--  4 byte packing is the default
+const
+  IMAGE_DOS_SIGNATURE= $5A4D;
+
+const
+  IMAGE_OS2_SIGNATURE= $454E;
+
+const
+  IMAGE_OS2_SIGNATURE_LE= $454C;
+
+const
+  IMAGE_VXD_SIGNATURE= $454C;
+
+const
+  IMAGE_NT_SIGNATURE= $4550;
+
+-- ignored #include <pshpack2.h>
+--  16 bit headers are 2 byte packed
+type
+  _IMAGE_DOS_HEADER = record
+e_magic         : WORD;
+e_cblp          : WORD;
+e_cp            : WORD;
+e_crlc          : WORD;
+e_cparhdr       : WORD;
+e_minalloc      : WORD;
+e_maxalloc      : WORD;
+e_ss            : WORD;
+e_sp            : WORD;
+e_csum          : WORD;
+e_ip            : WORD;
+e_cs            : WORD;
+e_lfarlc        : WORD;
+e_ovno          : WORD;
+e_res           : array 0..3 of WORD;
+e_oemid         : WORD;
+e_oeminfo       : WORD;
+e_res2          : array 0..9 of WORD;
+e_lfanew        : LONG;
+  end record;
+  IMAGE_DOS_HEADER  = _IMAGE_DOS_HEADER;
+  PIMAGE_DOS_HEADER = ^_IMAGE_DOS_HEADER;
+
+type
+  _IMAGE_OS2_HEADER = record
+ne_magic        : WORD;
+ne_ver          : CHAR;
+ne_rev          : CHAR;
+ne_enttab       : WORD;
+ne_cbenttab     : WORD;
+ne_crc          : LONG;
+ne_flags        : WORD;
+ne_autodata     : WORD;
+ne_heap         : WORD;
+ne_stack        : WORD;
+ne_csip         : LONG;
+ne_sssp         : LONG;
+ne_cseg         : WORD;
+ne_cmod         : WORD;
+ne_cbnrestab    : WORD;
+ne_segtab       : WORD;
+ne_rsrctab      : WORD;
+ne_restab       : WORD;
+ne_modtab       : WORD;
+ne_imptab       : WORD;
+ne_nrestab      : LONG;
+ne_cmovent      : WORD;
+ne_align        : WORD;
+ne_cres         : WORD;
+ne_exetyp       : BYTE;
+ne_flagsothers  : BYTE;
+ne_pretthunks   : WORD;
+ne_psegrefbytes : WORD;
+ne_swaparea     : WORD;
+ne_expver       : WORD;
+  end record;
+  IMAGE_OS2_HEADER  = _IMAGE_OS2_HEADER;
+  PIMAGE_OS2_HEADER = ^_IMAGE_OS2_HEADER;
+
+type
+  _IMAGE_VXD_HEADER = record
+e32_magic       : WORD;
+e32_border      : BYTE;
+e32_worder      : BYTE;
+e32_level       : DWORD;
+e32_cpu         : WORD;
+e32_os          : WORD;
+e32_ver         : DWORD;
+e32_mflags      : DWORD;
+e32_mpages      : DWORD;
+e32_startobj    : DWORD;
+e32_eip         : DWORD;
+e32_stackobj    : DWORD;
+e32_esp         : DWORD;
+e32_pagesize    : DWORD;
+e32_lastpagesize : DWORD;
+e32_fixupsize   : DWORD;
+e32_fixupsum    : DWORD;
+e32_ldrsize     : DWORD;
+e32_ldrsum      : DWORD;
+e32_objtab      : DWORD;
+e32_objcnt      : DWORD;
+e32_objmap      : DWORD;
+e32_itermap     : DWORD;
+e32_rsrctab     : DWORD;
+e32_rsrccnt     : DWORD;
+e32_restab      : DWORD;
+e32_enttab      : DWORD;
+e32_dirtab      : DWORD;
+e32_dircnt      : DWORD;
+e32_fpagetab    : DWORD;
+e32_frectab     : DWORD;
+e32_impmod      : DWORD;
+e32_impmodcnt   : DWORD;
+e32_impproc     : DWORD;
+e32_pagesum     : DWORD;
+e32_datapage    : DWORD;
+e32_preload     : DWORD;
+e32_nrestab     : DWORD;
+e32_cbnrestab   : DWORD;
+e32_nressum     : DWORD;
+e32_autodata    : DWORD;
+e32_debuginfo   : DWORD;
+e32_debuglen    : DWORD;
+e32_instpreload : DWORD;
+e32_instdemand  : DWORD;
+e32_heapsize    : DWORD;
+e32_res3        : array 0..11 of BYTE;
+e32_winresoff   : DWORD;
+e32_winreslen   : DWORD;
+e32_devid       : WORD;
+e32_ddkver      : WORD;
+  end record;
+  IMAGE_VXD_HEADER  = _IMAGE_VXD_HEADER;
+  PIMAGE_VXD_HEADER = ^_IMAGE_VXD_HEADER;
+
+-- ignored #include <poppack.h>
+--  Back to 4 byte packing
+-- 
+--  File header format.
+-- 
+type
+  _IMAGE_FILE_HEADER = record
+Machine         : WORD;
+NumberOfSections : WORD;
+TimeDateStamp   : DWORD;
+PointerToSymbolTable : DWORD;
+NumberOfSymbols : DWORD;
+SizeOfOptionalHeader : WORD;
+Characteristics : WORD;
+  end record;
+  IMAGE_FILE_HEADER = _IMAGE_FILE_HEADER;
+  PIMAGE_FILE_HEADER = ^_IMAGE_FILE_HEADER;
+
+const
+  IMAGE_SIZEOF_FILE_HEADER= 20;
+
+const
+  IMAGE_FILE_RELOCS_STRIPPED= $01;
+
+const
+  IMAGE_FILE_EXECUTABLE_IMAGE= $02;
+
+const
+  IMAGE_FILE_LINE_NUMS_STRIPPED= $04;
+
+const
+  IMAGE_FILE_LOCAL_SYMS_STRIPPED= $08;
+
+const
+  IMAGE_FILE_AGGRESIVE_WS_TRIM= $10;
+
+const
+  IMAGE_FILE_LARGE_ADDRESS_AWARE= $20;
+
+const
+  IMAGE_FILE_BYTES_REVERSED_LO= $80;
+
+const
+  IMAGE_FILE_32BIT_MACHINE= $0100;
+
+const
+  IMAGE_FILE_DEBUG_STRIPPED= $0200;
+
+const
+  IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP= $0400;
+
+const
+  IMAGE_FILE_NET_RUN_FROM_SWAP= $0800;
+
+const
+  IMAGE_FILE_SYSTEM = $1000;
+
+const
+  IMAGE_FILE_DLL    = $2000;
+
+const
+  IMAGE_FILE_UP_SYSTEM_ONLY= $4000;
+
+const
+  IMAGE_FILE_BYTES_REVERSED_HI= $8000;
+
+const
+  IMAGE_FILE_MACHINE_UNKNOWN= 0;
+
+const
+  IMAGE_FILE_MACHINE_I386= $014C;
+
+const
+  IMAGE_FILE_MACHINE_R3000= $0162;
+
+const
+  IMAGE_FILE_MACHINE_R4000= $0166;
+
+const
+  IMAGE_FILE_MACHINE_R10000= $0168;
+
+const
+  IMAGE_FILE_MACHINE_WCEMIPSV2= $0169;
+
+const
+  IMAGE_FILE_MACHINE_ALPHA= $0184;
+
+const
+  IMAGE_FILE_MACHINE_SH3= $01A2;
+
+const
+  IMAGE_FILE_MACHINE_SH3DSP= $01A3;
+
+const
+  IMAGE_FILE_MACHINE_SH3E= $01A4;
+
+const
+  IMAGE_FILE_MACHINE_SH4= $01A6;
+
+const
+  IMAGE_FILE_MACHINE_SH5= $01A8;
+
+const
+  IMAGE_FILE_MACHINE_ARM= $01C0;
+
+const
+  IMAGE_FILE_MACHINE_THUMB= $01C2;
+
+const
+  IMAGE_FILE_MACHINE_AM33= $01D3;
+
+const
+  IMAGE_FILE_MACHINE_POWERPC= $01F0;
+
+const
+  IMAGE_FILE_MACHINE_POWERPCFP= $01F1;
+
+const
+  IMAGE_FILE_MACHINE_IA64= $0200;
+
+const
+  IMAGE_FILE_MACHINE_MIPS16= $0266;
+
+const
+  IMAGE_FILE_MACHINE_ALPHA64= $0284;
+
+const
+  IMAGE_FILE_MACHINE_MIPSFPU= $0366;
+
+const
+  IMAGE_FILE_MACHINE_MIPSFPU16= $0466;
+
+const
+  IMAGE_FILE_MACHINE_TRICORE= $0520;
+
+const
+  IMAGE_FILE_MACHINE_CEF= $0CEF;
+
+const
+  IMAGE_FILE_MACHINE_EBC= $0EBC;
+
+const
+  IMAGE_FILE_MACHINE_AMD64= $8664;
+
+const
+  IMAGE_FILE_MACHINE_M32R= $9041;
+
+const
+  IMAGE_FILE_MACHINE_CEE= $C0EE;
+
+-- 
+--  Directory format.
+-- 
+type
+  _IMAGE_DATA_DIRECTORY = record
+VirtualAddress  : DWORD;
+Size            : DWORD;
+  end record;
+  IMAGE_DATA_DIRECTORY = _IMAGE_DATA_DIRECTORY;
+  PIMAGE_DATA_DIRECTORY = ^_IMAGE_DATA_DIRECTORY;
+
+const
+  IMAGE_NUMBEROF_DIRECTORY_ENTRIES= 16;
+
+-- 
+--  Optional header format.
+-- 
+type
+  _IMAGE_OPTIONAL_HEADER = record
+Magic           : WORD;
+MajorLinkerVersion : BYTE;
+MinorLinkerVersion : BYTE;
+SizeOfCode      : DWORD;
+SizeOfInitializedData : DWORD;
+SizeOfUninitializedData : DWORD;
+AddressOfEntryPoint : DWORD;
+BaseOfCode      : DWORD;
+BaseOfData      : DWORD;
+ImageBase       : DWORD;
+SectionAlignment : DWORD;
+FileAlignment   : DWORD;
+MajorOperatingSystemVersion : WORD;
+MinorOperatingSystemVersion : WORD;
+MajorImageVersion : WORD;
+MinorImageVersion : WORD;
+MajorSubsystemVersion : WORD;
+MinorSubsystemVersion : WORD;
+Win32VersionValue : DWORD;
+SizeOfImage     : DWORD;
+SizeOfHeaders   : DWORD;
+CheckSum        : DWORD;
+Subsystem       : WORD;
+DllCharacteristics : WORD;
+SizeOfStackReserve : DWORD;
+SizeOfStackCommit : DWORD;
+SizeOfHeapReserve : DWORD;
+SizeOfHeapCommit : DWORD;
+LoaderFlags     : DWORD;
+NumberOfRvaAndSizes : DWORD;
+DataDirectory   : array 0..IMAGE_NUMBEROF_DIRECTORY_ENTRIES-1 of IMAGE_DATA_DIRECTORY;
+  end record;
+  IMAGE_OPTIONAL_HEADER32 = _IMAGE_OPTIONAL_HEADER;
+  PIMAGE_OPTIONAL_HEADER32 = ^_IMAGE_OPTIONAL_HEADER;
+
+type
+  _IMAGE_ROM_OPTIONAL_HEADER = record
+Magic           : WORD;
+MajorLinkerVersion : BYTE;
+MinorLinkerVersion : BYTE;
+SizeOfCode      : DWORD;
+SizeOfInitializedData : DWORD;
+SizeOfUninitializedData : DWORD;
+AddressOfEntryPoint : DWORD;
+BaseOfCode      : DWORD;
+BaseOfData      : DWORD;
+BaseOfBss       : DWORD;
+GprMask         : DWORD;
+CprMask         : array 0..3 of DWORD;
+GpValue         : DWORD;
+  end record;
+  IMAGE_ROM_OPTIONAL_HEADER = _IMAGE_ROM_OPTIONAL_HEADER;
+  PIMAGE_ROM_OPTIONAL_HEADER = ^_IMAGE_ROM_OPTIONAL_HEADER;
+
+type
+  _IMAGE_OPTIONAL_HEADER64 = record
+Magic           : WORD;
+MajorLinkerVersion : BYTE;
+MinorLinkerVersion : BYTE;
+SizeOfCode      : DWORD;
+SizeOfInitializedData : DWORD;
+SizeOfUninitializedData : DWORD;
+AddressOfEntryPoint : DWORD;
+BaseOfCode      : DWORD;
+ImageBase       : ULONGLONG;
+SectionAlignment : DWORD;
+FileAlignment   : DWORD;
+MajorOperatingSystemVersion : WORD;
+MinorOperatingSystemVersion : WORD;
+MajorImageVersion : WORD;
+MinorImageVersion : WORD;
+MajorSubsystemVersion : WORD;
+MinorSubsystemVersion : WORD;
+Win32VersionValue : DWORD;
+SizeOfImage     : DWORD;
+SizeOfHeaders   : DWORD;
+CheckSum        : DWORD;
+Subsystem       : WORD;
+DllCharacteristics : WORD;
+SizeOfStackReserve : ULONGLONG;
+SizeOfStackCommit : ULONGLONG;
+SizeOfHeapReserve : ULONGLONG;
+SizeOfHeapCommit : ULONGLONG;
+LoaderFlags     : DWORD;
+NumberOfRvaAndSizes : DWORD;
+DataDirectory   : array 0..IMAGE_NUMBEROF_DIRECTORY_ENTRIES-1 of IMAGE_DATA_DIRECTORY;
+  end record;
+  IMAGE_OPTIONAL_HEADER64 = _IMAGE_OPTIONAL_HEADER64;
+  PIMAGE_OPTIONAL_HEADER64 = ^_IMAGE_OPTIONAL_HEADER64;
+
+const
+  IMAGE_SIZEOF_ROM_OPTIONAL_HEADER= 56;
+
+const
+  IMAGE_SIZEOF_STD_OPTIONAL_HEADER= 28;
+
+const
+  IMAGE_SIZEOF_NT_OPTIONAL32_HEADER= 224;
+
+const
+  IMAGE_SIZEOF_NT_OPTIONAL64_HEADER= 240;
+
+const
+  IMAGE_NT_OPTIONAL_HDR32_MAGIC= $010B;
+
+const
+  IMAGE_NT_OPTIONAL_HDR64_MAGIC= $020B;
+
+const
+  IMAGE_ROM_OPTIONAL_HDR_MAGIC= $0107;
+
+type
+IMAGE_OPTIONAL_HEADER = IMAGE_OPTIONAL_HEADER32;
+type
+PIMAGE_OPTIONAL_HEADER = PIMAGE_OPTIONAL_HEADER32;
+type
+  _IMAGE_NT_HEADERS64 = record
+Signature       : DWORD;
+FileHeader      : IMAGE_FILE_HEADER;
+OptionalHeader  : IMAGE_OPTIONAL_HEADER64;
+  end record;
+  IMAGE_NT_HEADERS64 = _IMAGE_NT_HEADERS64;
+  PIMAGE_NT_HEADERS64 = ^_IMAGE_NT_HEADERS64;
+
+type
+  _IMAGE_NT_HEADERS = record
+Signature       : DWORD;
+FileHeader      : IMAGE_FILE_HEADER;
+OptionalHeader  : IMAGE_OPTIONAL_HEADER32;
+  end record;
+  IMAGE_NT_HEADERS32 = _IMAGE_NT_HEADERS;
+  PIMAGE_NT_HEADERS32 = ^_IMAGE_NT_HEADERS;
+
+type
+  _IMAGE_ROM_HEADERS = record
+FileHeader      : IMAGE_FILE_HEADER;
+OptionalHeader  : IMAGE_ROM_OPTIONAL_HEADER;
+  end record;
+  IMAGE_ROM_HEADERS = _IMAGE_ROM_HEADERS;
+  PIMAGE_ROM_HEADERS = ^_IMAGE_ROM_HEADERS;
+
+type
+IMAGE_NT_HEADERS  = IMAGE_NT_HEADERS32;
+type
+PIMAGE_NT_HEADERS = PIMAGE_NT_HEADERS32;
+--  IMAGE_FIRST_SECTION doesn't need 32/64 versions since the file header is the same either way.
+--  Subsystem Values
+const
+  IMAGE_SUBSYSTEM_UNKNOWN= 0;
+
+const
+  IMAGE_SUBSYSTEM_NATIVE= 1;
+
+const
+  IMAGE_SUBSYSTEM_WINDOWS_GUI= 2;
+
+const
+  IMAGE_SUBSYSTEM_WINDOWS_CUI= 3;
+
+const
+  IMAGE_SUBSYSTEM_OS2_CUI= 5;
+
+const
+  IMAGE_SUBSYSTEM_POSIX_CUI= 7;
+
+const
+  IMAGE_SUBSYSTEM_NATIVE_WINDOWS= 8;
+
+const
+  IMAGE_SUBSYSTEM_WINDOWS_CE_GUI= 9;
+
+const
+  IMAGE_SUBSYSTEM_EFI_APPLICATION= 10;
+
+const
+  IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER= 11;
+
+const
+  IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER= 12;
+
+const
+  IMAGE_SUBSYSTEM_EFI_ROM= 13;
+
+const
+  IMAGE_SUBSYSTEM_XBOX= 14;
+
+--  DllCharacteristics Entries
+--  IMAGE_LIBRARY_PROCESS_INIT 0x0001 // Reserved.
+--  IMAGE_LIBRARY_PROCESS_TERM 0x0002 // Reserved.
+--  IMAGE_LIBRARY_THREAD_INIT 0x0004 // Reserved.
+--  IMAGE_LIBRARY_THREAD_TERM 0x0008 // Reserved.
+const
+  IMAGE_DLLCHARACTERISTICS_NO_ISOLATION= $0200;
+
+const
+  IMAGE_DLLCHARACTERISTICS_NO_SEH= $0400;
+
+const
+  IMAGE_DLLCHARACTERISTICS_NO_BIND= $0800;
+
+--  0x1000 // Reserved.
+const
+  IMAGE_DLLCHARACTERISTICS_WDM_DRIVER= $2000;
+
+--  0x4000 // Reserved.
+const
+  IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE= $8000;
+
+--  Directory Entries
+const
+  IMAGE_DIRECTORY_ENTRY_EXPORT= 0;
+
+const
+  IMAGE_DIRECTORY_ENTRY_IMPORT= 1;
+
+const
+  IMAGE_DIRECTORY_ENTRY_RESOURCE= 2;
+
+const
+  IMAGE_DIRECTORY_ENTRY_EXCEPTION= 3;
+
+const
+  IMAGE_DIRECTORY_ENTRY_SECURITY= 4;
+
+const
+  IMAGE_DIRECTORY_ENTRY_BASERELOC= 5;
+
+const
+  IMAGE_DIRECTORY_ENTRY_DEBUG= 6;
+
+--  IMAGE_DIRECTORY_ENTRY_COPYRIGHT 7 // (X86 usage)
+const
+  IMAGE_DIRECTORY_ENTRY_ARCHITECTURE= 7;
+
+const
+  IMAGE_DIRECTORY_ENTRY_GLOBALPTR= 8;
+
+const
+  IMAGE_DIRECTORY_ENTRY_TLS= 9;
+
+const
+  IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG= 10;
+
+const
+  IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT= 11;
+
+const
+  IMAGE_DIRECTORY_ENTRY_IAT= 12;
+
+const
+  IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT= 13;
+
+const
+  IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR= 14;
+
+-- 
+--  Non-COFF Object file header
+-- 
+type
+  ANON_OBJECT_HEADER = record
+Sig1            : WORD;
+Sig2            : WORD;
+Version         : WORD;
+Machine         : WORD;
+TimeDateStamp   : DWORD;
+ClassID         : guiddef.t_CLSID;
+SizeOfData      : DWORD;
+  end record;
+
+-- 
+--  Section header format.
+-- 
+const
+  IMAGE_SIZEOF_SHORT_NAME= 8;
+
+type
+  _IMAGE_SECTION_HEADER = record
+Name            : array 0..IMAGE_SIZEOF_SHORT_NAME-1 of BYTE;
+Misc             : record
+      PhysicalAddress : DWORD for position use 0;
+      VirtualSize   : DWORD for position use 0;
+    end record;
+VirtualAddress  : DWORD;
+SizeOfRawData   : DWORD;
+PointerToRawData : DWORD;
+PointerToRelocations : DWORD;
+PointerToLinenumbers : DWORD;
+NumberOfRelocations : WORD;
+NumberOfLinenumbers : WORD;
+Characteristics : DWORD;
+  end record;
+  IMAGE_SECTION_HEADER = _IMAGE_SECTION_HEADER;
+  PIMAGE_SECTION_HEADER = ^_IMAGE_SECTION_HEADER;
+
+const
+  IMAGE_SIZEOF_SECTION_HEADER= 40;
+
+-- 
+--  Section characteristics.
+-- 
+--  IMAGE_SCN_TYPE_REG 0x00000000 // Reserved.
+--  IMAGE_SCN_TYPE_DSECT 0x00000001 // Reserved.
+--  IMAGE_SCN_TYPE_NOLOAD 0x00000002 // Reserved.
+--  IMAGE_SCN_TYPE_GROUP 0x00000004 // Reserved.
+const
+  IMAGE_SCN_TYPE_NO_PAD= $08;
+
+--  IMAGE_SCN_TYPE_COPY 0x00000010 // Reserved.
+const
+  IMAGE_SCN_CNT_CODE= $20;
+
+const
+  IMAGE_SCN_CNT_INITIALIZED_DATA= $40;
+
+const
+  IMAGE_SCN_CNT_UNINITIALIZED_DATA= $80;
+
+const
+  IMAGE_SCN_LNK_OTHER= $0100;
+
+const
+  IMAGE_SCN_LNK_INFO= $0200;
+
+--  IMAGE_SCN_TYPE_OVER 0x00000400 // Reserved.
+const
+  IMAGE_SCN_LNK_REMOVE= $0800;
+
+const
+  IMAGE_SCN_LNK_COMDAT= $1000;
+
+--  0x00002000 // Reserved.
+--  IMAGE_SCN_MEM_PROTECTED - Obsolete 0x00004000
+const
+  IMAGE_SCN_NO_DEFER_SPEC_EXC= $4000;
+
+const
+  IMAGE_SCN_GPREL   = $8000;
+
+const
+  IMAGE_SCN_MEM_FARDATA= $8000;
+
+--  IMAGE_SCN_MEM_SYSHEAP - Obsolete 0x00010000
+const
+  IMAGE_SCN_MEM_PURGEABLE= $20000;
+
+const
+  IMAGE_SCN_MEM_16BIT= $20000;
+
+const
+  IMAGE_SCN_MEM_LOCKED= $40000;
+
+const
+  IMAGE_SCN_MEM_PRELOAD= $80000;
+
+const
+  IMAGE_SCN_ALIGN_1BYTES= $100000;
+
+const
+  IMAGE_SCN_ALIGN_2BYTES= $200000;
+
+const
+  IMAGE_SCN_ALIGN_4BYTES= $300000;
+
+const
+  IMAGE_SCN_ALIGN_8BYTES= $400000;
+
+const
+  IMAGE_SCN_ALIGN_16BYTES= $500000;
+
+const
+  IMAGE_SCN_ALIGN_32BYTES= $600000;
+
+const
+  IMAGE_SCN_ALIGN_64BYTES= $700000;
+
+const
+  IMAGE_SCN_ALIGN_128BYTES= $800000;
+
+const
+  IMAGE_SCN_ALIGN_256BYTES= $900000;
+
+const
+  IMAGE_SCN_ALIGN_512BYTES= $A00000;
+
+const
+  IMAGE_SCN_ALIGN_1024BYTES= $B00000;
+
+const
+  IMAGE_SCN_ALIGN_2048BYTES= $C00000;
+
+const
+  IMAGE_SCN_ALIGN_4096BYTES= $D00000;
+
+const
+  IMAGE_SCN_ALIGN_8192BYTES= $E00000;
+
+--  Unused 0x00F00000
+const
+  IMAGE_SCN_ALIGN_MASK= $F00000;
+
+const
+  IMAGE_SCN_LNK_NRELOC_OVFL= $1000000;
+
+const
+  IMAGE_SCN_MEM_DISCARDABLE= $2000000;
+
+const
+  IMAGE_SCN_MEM_NOT_CACHED= $4000000;
+
+const
+  IMAGE_SCN_MEM_NOT_PAGED= $8000000;
+
+const
+  IMAGE_SCN_MEM_SHARED= $10000000;
+
+const
+  IMAGE_SCN_MEM_EXECUTE= $20000000;
+
+const
+  IMAGE_SCN_MEM_READ= $40000000;
+
+const
+  IMAGE_SCN_MEM_WRITE= $80000000;
+
+-- 
+--  TLS Chaacteristic Flags
+-- 
+const
+  IMAGE_SCN_SCALE_INDEX= $01;
+
+-- ignored #include <pshpack2.h>
+--  Symbols, relocs, and linenumbers are 2 byte packed
+-- 
+--  Symbol format.
+-- 
+type
+  _IMAGE_SYMBOL     = record
+N                : record
+      ShortName     : array 0..7 of BYTE for position use 0;
+  Name              : record
+Short           : DWORD;
+Long            : DWORD;
+  end record for position use 0;
+      LongName      : array 0..1 of DWORD for position use 0;
+    end record;
+Value           : DWORD;
+SectionNumber   : SHORT;
+_Type           : WORD;
+StorageClass    : BYTE;
+NumberOfAuxSymbols : BYTE;
+  end record;
+  IMAGE_SYMBOL      = _IMAGE_SYMBOL;
+
+type
+PIMAGE_SYMBOL     = ^IMAGE_SYMBOL for machine_pointer use true;
+const
+  IMAGE_SIZEOF_SYMBOL= 18;
+
+-- 
+--  Section values.
+-- 
+--  Symbols have a section number of the section in which they are
+--  defined. Otherwise, section numbers have the following meanings:
+-- 
+const
+  IMAGE_SYM_SECTION_MAX= $FEFF;
+
+-- 
+--  Type (fundamental) values.
+-- 
+const
+  IMAGE_SYM_TYPE_NULL= $00;
+
+const
+  IMAGE_SYM_TYPE_VOID= $01;
+
+const
+  IMAGE_SYM_TYPE_CHAR= $02;
+
+const
+  IMAGE_SYM_TYPE_SHORT= $03;
+
+const
+  IMAGE_SYM_TYPE_INT= $04;
+
+const
+  IMAGE_SYM_TYPE_LONG= $05;
+
+const
+  IMAGE_SYM_TYPE_FLOAT= $06;
+
+const
+  IMAGE_SYM_TYPE_DOUBLE= $07;
+
+const
+  IMAGE_SYM_TYPE_STRUCT= $08;
+
+const
+  IMAGE_SYM_TYPE_UNION= $09;
+
+const
+  IMAGE_SYM_TYPE_ENUM= $0A;
+
+const
+  IMAGE_SYM_TYPE_MOE= $0B;
+
+const
+  IMAGE_SYM_TYPE_BYTE= $0C;
+
+const
+  IMAGE_SYM_TYPE_WORD= $0D;
+
+const
+  IMAGE_SYM_TYPE_UINT= $0E;
+
+const
+  IMAGE_SYM_TYPE_DWORD= $0F;
+
+const
+  IMAGE_SYM_TYPE_PCODE= $8000;
+
+-- 
+--  Type (derived) values.
+-- 
+const
+  IMAGE_SYM_DTYPE_NULL= 0;
+
+const
+  IMAGE_SYM_DTYPE_POINTER= 1;
+
+const
+  IMAGE_SYM_DTYPE_FUNCTION= 2;
+
+const
+  IMAGE_SYM_DTYPE_ARRAY= 3;
+
+-- 
+--  Storage classes.
+-- 
+const
+  IMAGE_SYM_CLASS_NULL= $00;
+
+const
+  IMAGE_SYM_CLASS_AUTOMATIC= $01;
+
+const
+  IMAGE_SYM_CLASS_EXTERNAL= $02;
+
+const
+  IMAGE_SYM_CLASS_STATIC= $03;
+
+const
+  IMAGE_SYM_CLASS_REGISTER= $04;
+
+const
+  IMAGE_SYM_CLASS_EXTERNAL_DEF= $05;
+
+const
+  IMAGE_SYM_CLASS_LABEL= $06;
+
+const
+  IMAGE_SYM_CLASS_UNDEFINED_LABEL= $07;
+
+const
+  IMAGE_SYM_CLASS_MEMBER_OF_STRUCT= $08;
+
+const
+  IMAGE_SYM_CLASS_ARGUMENT= $09;
+
+const
+  IMAGE_SYM_CLASS_STRUCT_TAG= $0A;
+
+const
+  IMAGE_SYM_CLASS_MEMBER_OF_UNION= $0B;
+
+const
+  IMAGE_SYM_CLASS_UNION_TAG= $0C;
+
+const
+  IMAGE_SYM_CLASS_TYPE_DEFINITION= $0D;
+
+const
+  IMAGE_SYM_CLASS_UNDEFINED_STATIC= $0E;
+
+const
+  IMAGE_SYM_CLASS_ENUM_TAG= $0F;
+
+const
+  IMAGE_SYM_CLASS_MEMBER_OF_ENUM= $10;
+
+const
+  IMAGE_SYM_CLASS_REGISTER_PARAM= $11;
+
+const
+  IMAGE_SYM_CLASS_BIT_FIELD= $12;
+
+const
+  IMAGE_SYM_CLASS_FAR_EXTERNAL= $44;
+
+const
+  IMAGE_SYM_CLASS_BLOCK= $64;
+
+const
+  IMAGE_SYM_CLASS_FUNCTION= $65;
+
+const
+  IMAGE_SYM_CLASS_END_OF_STRUCT= $66;
+
+const
+  IMAGE_SYM_CLASS_FILE= $67;
+
+--  new
+const
+  IMAGE_SYM_CLASS_SECTION= $68;
+
+const
+  IMAGE_SYM_CLASS_WEAK_EXTERNAL= $69;
+
+const
+  IMAGE_SYM_CLASS_CLR_TOKEN= $6B;
+
+--  type packing constants
+const
+  N_BTMASK          = $0F;
+
+const
+  N_TMASK           = $30;
+
+const
+  N_TMASK1          = $C0;
+
+const
+  N_TMASK2          = $F0;
+
+const
+  N_BTSHFT          = 4;
+
+const
+  N_TSHIFT          = 2;
+
+--  MACROS
+--  Basic Type of x
+--  Is x a pointer?
+--  Is x a function?
+--  Is x an array?
+--  Is x a structure, union, or enumeration TAG?
+-- 
+--  Auxiliary entry format.
+-- 
+type
+  _IMAGE_AUX_SYMBOL = record
+  Sym               : record
+TagIndex        : DWORD;
+Misc             : record
+  LnSz              : record
+Linenumber      : WORD;
+Size            : WORD;
+  end record for position use 0;
+      TotalSize     : DWORD for position use 0;
+    end record;
+FcnAry           : record
+  Function          : record
+PointerToLinenumber : DWORD;
+PointerToNextFunction : DWORD;
+  end record for position use 0;
+  _Array            : record
+Dimension       : array 0..3 of WORD;
+  end record for position use 0;
+    end record;
+TvIndex         : WORD;
+  end record for position use 0;
+  File              : record
+Name            : array 0..IMAGE_SIZEOF_SYMBOL-1 of BYTE;
+  end record for position use 0;
+  Section           : record
+Length          : DWORD;
+NumberOfRelocations : WORD;
+NumberOfLinenumbers : WORD;
+CheckSum        : DWORD;
+Number          : SHORT;
+Selection       : BYTE;
+  end record for position use 0;
+  end record;
+
+  IMAGE_AUX_SYMBOL  = _IMAGE_AUX_SYMBOL;
+type
+PIMAGE_AUX_SYMBOL = ^IMAGE_AUX_SYMBOL for machine_pointer use true;
+const
+  IMAGE_SIZEOF_AUX_SYMBOL= 18;
+
+type
+IMAGE_AUX_SYMBOL_TYPE= enum
+    IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF for ord use 1;
+  end enum for size use 4;
+-- ignored #include <pshpack2.h>
+type
+  IMAGE_AUX_SYMBOL_TOKEN_DEF = record
+bAuxType        : BYTE;
+bReserved       : BYTE;
+SymbolTableIndex : DWORD;
+rgbReserved     : array 0..11 of BYTE;
+  end record;
+
+type
+PIMAGE_AUX_SYMBOL_TOKEN_DEF = ^IMAGE_AUX_SYMBOL_TOKEN_DEF for machine_pointer use true;
+-- ignored #include <poppack.h>
+-- 
+--  Communal selection types.
+-- 
+const
+  IMAGE_COMDAT_SELECT_NODUPLICATES= 1;
+
+const
+  IMAGE_COMDAT_SELECT_ANY= 2;
+
+const
+  IMAGE_COMDAT_SELECT_SAME_SIZE= 3;
+
+const
+  IMAGE_COMDAT_SELECT_EXACT_MATCH= 4;
+
+const
+  IMAGE_COMDAT_SELECT_ASSOCIATIVE= 5;
+
+const
+  IMAGE_COMDAT_SELECT_LARGEST= 6;
+
+const
+  IMAGE_COMDAT_SELECT_NEWEST= 7;
+
+const
+  IMAGE_WEAK_EXTERN_SEARCH_NOLIBRARY= 1;
+
+const
+  IMAGE_WEAK_EXTERN_SEARCH_LIBRARY= 2;
+
+const
+  IMAGE_WEAK_EXTERN_SEARCH_ALIAS= 3;
+
+-- 
+--  Relocation format.
+-- 
+type
+  _IMAGE_RELOCATION = record
+t_005            : record
+      VirtualAddress : DWORD for position use 0;
+      RelocCount    : DWORD for position use 0;
+    end record;
+SymbolTableIndex : DWORD;
+_Type           : WORD;
+  end record;
+  IMAGE_RELOCATION  = _IMAGE_RELOCATION;
+
+type
+PIMAGE_RELOCATION = ^IMAGE_RELOCATION for machine_pointer use true;
+const
+  IMAGE_SIZEOF_RELOCATION= 10;
+
+-- 
+--  I386 relocation types.
+-- 
+const
+  IMAGE_REL_I386_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_I386_DIR16= $01;
+
+const
+  IMAGE_REL_I386_REL16= $02;
+
+const
+  IMAGE_REL_I386_DIR32= $06;
+
+const
+  IMAGE_REL_I386_DIR32NB= $07;
+
+const
+  IMAGE_REL_I386_SEG12= $09;
+
+const
+  IMAGE_REL_I386_SECTION= $0A;
+
+const
+  IMAGE_REL_I386_SECREL= $0B;
+
+const
+  IMAGE_REL_I386_TOKEN= $0C;
+
+const
+  IMAGE_REL_I386_SECREL7= $0D;
+
+const
+  IMAGE_REL_I386_REL32= $14;
+
+-- 
+--  MIPS relocation types.
+-- 
+const
+  IMAGE_REL_MIPS_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_MIPS_REFHALF= $01;
+
+const
+  IMAGE_REL_MIPS_REFWORD= $02;
+
+const
+  IMAGE_REL_MIPS_JMPADDR= $03;
+
+const
+  IMAGE_REL_MIPS_REFHI= $04;
+
+const
+  IMAGE_REL_MIPS_REFLO= $05;
+
+const
+  IMAGE_REL_MIPS_GPREL= $06;
+
+const
+  IMAGE_REL_MIPS_LITERAL= $07;
+
+const
+  IMAGE_REL_MIPS_SECTION= $0A;
+
+const
+  IMAGE_REL_MIPS_SECREL= $0B;
+
+const
+  IMAGE_REL_MIPS_SECRELLO= $0C;
+
+const
+  IMAGE_REL_MIPS_SECRELHI= $0D;
+
+const
+  IMAGE_REL_MIPS_TOKEN= $0E;
+
+const
+  IMAGE_REL_MIPS_JMPADDR16= $10;
+
+const
+  IMAGE_REL_MIPS_REFWORDNB= $22;
+
+const
+  IMAGE_REL_MIPS_PAIR= $25;
+
+-- 
+--  Alpha Relocation types.
+-- 
+const
+  IMAGE_REL_ALPHA_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_ALPHA_REFLONG= $01;
+
+const
+  IMAGE_REL_ALPHA_REFQUAD= $02;
+
+const
+  IMAGE_REL_ALPHA_GPREL32= $03;
+
+const
+  IMAGE_REL_ALPHA_LITERAL= $04;
+
+const
+  IMAGE_REL_ALPHA_LITUSE= $05;
+
+const
+  IMAGE_REL_ALPHA_GPDISP= $06;
+
+const
+  IMAGE_REL_ALPHA_BRADDR= $07;
+
+const
+  IMAGE_REL_ALPHA_HINT= $08;
+
+const
+  IMAGE_REL_ALPHA_INLINE_REFLONG= $09;
+
+const
+  IMAGE_REL_ALPHA_REFHI= $0A;
+
+const
+  IMAGE_REL_ALPHA_REFLO= $0B;
+
+const
+  IMAGE_REL_ALPHA_PAIR= $0C;
+
+const
+  IMAGE_REL_ALPHA_MATCH= $0D;
+
+const
+  IMAGE_REL_ALPHA_SECTION= $0E;
+
+const
+  IMAGE_REL_ALPHA_SECREL= $0F;
+
+const
+  IMAGE_REL_ALPHA_REFLONGNB= $10;
+
+const
+  IMAGE_REL_ALPHA_SECRELLO= $11;
+
+const
+  IMAGE_REL_ALPHA_SECRELHI= $12;
+
+const
+  IMAGE_REL_ALPHA_REFQ3= $13;
+
+const
+  IMAGE_REL_ALPHA_REFQ2= $14;
+
+const
+  IMAGE_REL_ALPHA_REFQ1= $15;
+
+const
+  IMAGE_REL_ALPHA_GPRELLO= $16;
+
+const
+  IMAGE_REL_ALPHA_GPRELHI= $17;
+
+-- 
+--  IBM PowerPC relocation types.
+-- 
+const
+  IMAGE_REL_PPC_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_PPC_ADDR64= $01;
+
+const
+  IMAGE_REL_PPC_ADDR32= $02;
+
+const
+  IMAGE_REL_PPC_ADDR24= $03;
+
+const
+  IMAGE_REL_PPC_ADDR16= $04;
+
+const
+  IMAGE_REL_PPC_ADDR14= $05;
+
+const
+  IMAGE_REL_PPC_REL24= $06;
+
+const
+  IMAGE_REL_PPC_REL14= $07;
+
+const
+  IMAGE_REL_PPC_TOCREL16= $08;
+
+const
+  IMAGE_REL_PPC_TOCREL14= $09;
+
+const
+  IMAGE_REL_PPC_ADDR32NB= $0A;
+
+const
+  IMAGE_REL_PPC_SECREL= $0B;
+
+const
+  IMAGE_REL_PPC_SECTION= $0C;
+
+const
+  IMAGE_REL_PPC_IFGLUE= $0D;
+
+const
+  IMAGE_REL_PPC_IMGLUE= $0E;
+
+const
+  IMAGE_REL_PPC_SECREL16= $0F;
+
+const
+  IMAGE_REL_PPC_REFHI= $10;
+
+const
+  IMAGE_REL_PPC_REFLO= $11;
+
+const
+  IMAGE_REL_PPC_PAIR= $12;
+
+const
+  IMAGE_REL_PPC_SECRELLO= $13;
+
+const
+  IMAGE_REL_PPC_SECRELHI= $14;
+
+const
+  IMAGE_REL_PPC_GPREL= $15;
+
+const
+  IMAGE_REL_PPC_TOKEN= $16;
+
+const
+  IMAGE_REL_PPC_TYPEMASK= $FF;
+
+--  Flag bits in IMAGE_RELOCATION.TYPE
+const
+  IMAGE_REL_PPC_NEG = $0100;
+
+const
+  IMAGE_REL_PPC_BRTAKEN= $0200;
+
+const
+  IMAGE_REL_PPC_BRNTAKEN= $0400;
+
+const
+  IMAGE_REL_PPC_TOCDEFN= $0800;
+
+-- 
+--  Hitachi SH3 relocation types.
+-- 
+const
+  IMAGE_REL_SH3_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_SH3_DIRECT16= $01;
+
+const
+  IMAGE_REL_SH3_DIRECT32= $02;
+
+const
+  IMAGE_REL_SH3_DIRECT8= $03;
+
+const
+  IMAGE_REL_SH3_DIRECT8_WORD= $04;
+
+const
+  IMAGE_REL_SH3_DIRECT8_LONG= $05;
+
+const
+  IMAGE_REL_SH3_DIRECT4= $06;
+
+const
+  IMAGE_REL_SH3_DIRECT4_WORD= $07;
+
+const
+  IMAGE_REL_SH3_DIRECT4_LONG= $08;
+
+const
+  IMAGE_REL_SH3_PCREL8_WORD= $09;
+
+const
+  IMAGE_REL_SH3_PCREL8_LONG= $0A;
+
+const
+  IMAGE_REL_SH3_PCREL12_WORD= $0B;
+
+const
+  IMAGE_REL_SH3_STARTOF_SECTION= $0C;
+
+const
+  IMAGE_REL_SH3_SIZEOF_SECTION= $0D;
+
+const
+  IMAGE_REL_SH3_SECTION= $0E;
+
+const
+  IMAGE_REL_SH3_SECREL= $0F;
+
+const
+  IMAGE_REL_SH3_DIRECT32_NB= $10;
+
+const
+  IMAGE_REL_SH3_GPREL4_LONG= $11;
+
+const
+  IMAGE_REL_SH3_TOKEN= $12;
+
+const
+  IMAGE_REL_ARM_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_ARM_ADDR32= $01;
+
+const
+  IMAGE_REL_ARM_ADDR32NB= $02;
+
+const
+  IMAGE_REL_ARM_BRANCH24= $03;
+
+const
+  IMAGE_REL_ARM_BRANCH11= $04;
+
+const
+  IMAGE_REL_ARM_TOKEN= $05;
+
+const
+  IMAGE_REL_ARM_GPREL12= $06;
+
+const
+  IMAGE_REL_ARM_GPREL7= $07;
+
+const
+  IMAGE_REL_ARM_BLX24= $08;
+
+const
+  IMAGE_REL_ARM_BLX11= $09;
+
+const
+  IMAGE_REL_ARM_SECTION= $0E;
+
+const
+  IMAGE_REL_ARM_SECREL= $0F;
+
+const
+  IMAGE_REL_AM_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_AM_ADDR32= $01;
+
+const
+  IMAGE_REL_AM_ADDR32NB= $02;
+
+const
+  IMAGE_REL_AM_CALL32= $03;
+
+const
+  IMAGE_REL_AM_FUNCINFO= $04;
+
+const
+  IMAGE_REL_AM_REL32_1= $05;
+
+const
+  IMAGE_REL_AM_REL32_2= $06;
+
+const
+  IMAGE_REL_AM_SECREL= $07;
+
+const
+  IMAGE_REL_AM_SECTION= $08;
+
+const
+  IMAGE_REL_AM_TOKEN= $09;
+
+-- 
+--  X86-64 relocations
+-- 
+const
+  IMAGE_REL_AMD64_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_AMD64_ADDR64= $01;
+
+const
+  IMAGE_REL_AMD64_ADDR32= $02;
+
+const
+  IMAGE_REL_AMD64_ADDR32NB= $03;
+
+const
+  IMAGE_REL_AMD64_REL32= $04;
+
+const
+  IMAGE_REL_AMD64_REL32_1= $05;
+
+const
+  IMAGE_REL_AMD64_REL32_2= $06;
+
+const
+  IMAGE_REL_AMD64_REL32_3= $07;
+
+const
+  IMAGE_REL_AMD64_REL32_4= $08;
+
+const
+  IMAGE_REL_AMD64_REL32_5= $09;
+
+const
+  IMAGE_REL_AMD64_SECTION= $0A;
+
+const
+  IMAGE_REL_AMD64_SECREL= $0B;
+
+const
+  IMAGE_REL_AMD64_SECREL7= $0C;
+
+const
+  IMAGE_REL_AMD64_TOKEN= $0D;
+
+const
+  IMAGE_REL_AMD64_SREL32= $0E;
+
+const
+  IMAGE_REL_AMD64_PAIR= $0F;
+
+const
+  IMAGE_REL_AMD64_SSPAN32= $10;
+
+-- 
+--  IA64 relocation types.
+-- 
+const
+  IMAGE_REL_IA64_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_IA64_IMM14= $01;
+
+const
+  IMAGE_REL_IA64_IMM22= $02;
+
+const
+  IMAGE_REL_IA64_IMM64= $03;
+
+const
+  IMAGE_REL_IA64_DIR32= $04;
+
+const
+  IMAGE_REL_IA64_DIR64= $05;
+
+const
+  IMAGE_REL_IA64_PCREL21B= $06;
+
+const
+  IMAGE_REL_IA64_PCREL21M= $07;
+
+const
+  IMAGE_REL_IA64_PCREL21F= $08;
+
+const
+  IMAGE_REL_IA64_GPREL22= $09;
+
+const
+  IMAGE_REL_IA64_LTOFF22= $0A;
+
+const
+  IMAGE_REL_IA64_SECTION= $0B;
+
+const
+  IMAGE_REL_IA64_SECREL22= $0C;
+
+const
+  IMAGE_REL_IA64_SECREL64I= $0D;
+
+const
+  IMAGE_REL_IA64_SECREL32= $0E;
+
+--  
+const
+  IMAGE_REL_IA64_DIR32NB= $10;
+
+const
+  IMAGE_REL_IA64_SREL14= $11;
+
+const
+  IMAGE_REL_IA64_SREL22= $12;
+
+const
+  IMAGE_REL_IA64_SREL32= $13;
+
+const
+  IMAGE_REL_IA64_UREL32= $14;
+
+const
+  IMAGE_REL_IA64_PCREL60X= $15;
+
+const
+  IMAGE_REL_IA64_PCREL60B= $16;
+
+const
+  IMAGE_REL_IA64_PCREL60F= $17;
+
+const
+  IMAGE_REL_IA64_PCREL60I= $18;
+
+const
+  IMAGE_REL_IA64_PCREL60M= $19;
+
+const
+  IMAGE_REL_IA64_IMMGPREL64= $1A;
+
+const
+  IMAGE_REL_IA64_TOKEN= $1B;
+
+const
+  IMAGE_REL_IA64_GPREL32= $1C;
+
+const
+  IMAGE_REL_IA64_ADDEND= $1F;
+
+-- 
+--  CEF relocation types.
+-- 
+const
+  IMAGE_REL_CEF_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_CEF_ADDR32= $01;
+
+const
+  IMAGE_REL_CEF_ADDR64= $02;
+
+const
+  IMAGE_REL_CEF_ADDR32NB= $03;
+
+const
+  IMAGE_REL_CEF_SECTION= $04;
+
+const
+  IMAGE_REL_CEF_SECREL= $05;
+
+const
+  IMAGE_REL_CEF_TOKEN= $06;
+
+-- 
+--  clr relocation types.
+-- 
+const
+  IMAGE_REL_CEE_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_CEE_ADDR32= $01;
+
+const
+  IMAGE_REL_CEE_ADDR64= $02;
+
+const
+  IMAGE_REL_CEE_ADDR32NB= $03;
+
+const
+  IMAGE_REL_CEE_SECTION= $04;
+
+const
+  IMAGE_REL_CEE_SECREL= $05;
+
+const
+  IMAGE_REL_CEE_TOKEN= $06;
+
+const
+  IMAGE_REL_M32R_ABSOLUTE= $00;
+
+const
+  IMAGE_REL_M32R_ADDR32= $01;
+
+const
+  IMAGE_REL_M32R_ADDR32NB= $02;
+
+const
+  IMAGE_REL_M32R_ADDR24= $03;
+
+const
+  IMAGE_REL_M32R_GPREL16= $04;
+
+const
+  IMAGE_REL_M32R_PCREL24= $05;
+
+const
+  IMAGE_REL_M32R_PCREL16= $06;
+
+const
+  IMAGE_REL_M32R_PCREL8= $07;
+
+const
+  IMAGE_REL_M32R_REFHALF= $08;
+
+const
+  IMAGE_REL_M32R_REFHI= $09;
+
+const
+  IMAGE_REL_M32R_REFLO= $0A;
+
+const
+  IMAGE_REL_M32R_PAIR= $0B;
+
+const
+  IMAGE_REL_M32R_SECTION= $0C;
+
+const
+  IMAGE_REL_M32R_SECREL32= $0D;
+
+const
+  IMAGE_REL_M32R_TOKEN= $0E;
+
+const
+  EMARCH_ENC_I17_IMM7B_INST_WORD_X= 3;
+
+const
+  EMARCH_ENC_I17_IMM7B_SIZE_X= 7;
+
+const
+  EMARCH_ENC_I17_IMM7B_INST_WORD_POS_X= 4;
+
+const
+  EMARCH_ENC_I17_IMM7B_VAL_POS_X= 0;
+
+const
+  EMARCH_ENC_I17_IMM9D_INST_WORD_X= 3;
+
+const
+  EMARCH_ENC_I17_IMM9D_SIZE_X= 9;
+
+const
+  EMARCH_ENC_I17_IMM9D_INST_WORD_POS_X= 18;
+
+const
+  EMARCH_ENC_I17_IMM9D_VAL_POS_X= 7;
+
+const
+  EMARCH_ENC_I17_IMM5C_INST_WORD_X= 3;
+
+const
+  EMARCH_ENC_I17_IMM5C_SIZE_X= 5;
+
+const
+  EMARCH_ENC_I17_IMM5C_INST_WORD_POS_X= 13;
+
+const
+  EMARCH_ENC_I17_IMM5C_VAL_POS_X= 16;
+
+const
+  EMARCH_ENC_I17_IC_INST_WORD_X= 3;
+
+const
+  EMARCH_ENC_I17_IC_SIZE_X= 1;
+
+const
+  EMARCH_ENC_I17_IC_INST_WORD_POS_X= 12;
+
+const
+  EMARCH_ENC_I17_IC_VAL_POS_X= 21;
+
+const
+  EMARCH_ENC_I17_IMM41a_INST_WORD_X= 1;
+
+const
+  EMARCH_ENC_I17_IMM41a_SIZE_X= 10;
+
+const
+  EMARCH_ENC_I17_IMM41a_INST_WORD_POS_X= 14;
+
+const
+  EMARCH_ENC_I17_IMM41a_VAL_POS_X= 22;
+
+const
+  EMARCH_ENC_I17_IMM41b_INST_WORD_X= 1;
+
+const
+  EMARCH_ENC_I17_IMM41b_SIZE_X= 8;
+
+const
+  EMARCH_ENC_I17_IMM41b_INST_WORD_POS_X= 24;
+
+const
+  EMARCH_ENC_I17_IMM41b_VAL_POS_X= 32;
+
+const
+  EMARCH_ENC_I17_IMM41c_INST_WORD_X= 2;
+
+const
+  EMARCH_ENC_I17_IMM41c_SIZE_X= 23;
+
+const
+  EMARCH_ENC_I17_IMM41c_INST_WORD_POS_X= 0;
+
+const
+  EMARCH_ENC_I17_IMM41c_VAL_POS_X= 40;
+
+const
+  EMARCH_ENC_I17_SIGN_INST_WORD_X= 3;
+
+const
+  EMARCH_ENC_I17_SIGN_SIZE_X= 1;
+
+const
+  EMARCH_ENC_I17_SIGN_INST_WORD_POS_X= 27;
+
+const
+  EMARCH_ENC_I17_SIGN_VAL_POS_X= 63;
+
+-- 
+--  Line number format.
+-- 
+type
+  _IMAGE_LINENUMBER = record
+_Type            : record
+      SymbolTableIndex : DWORD for position use 0;
+      VirtualAddress : DWORD for position use 0;
+    end record;
+Linenumber      : WORD;
+  end record;
+  IMAGE_LINENUMBER  = _IMAGE_LINENUMBER;
+
+type
+PIMAGE_LINENUMBER = ^IMAGE_LINENUMBER for machine_pointer use true;
+const
+  IMAGE_SIZEOF_LINENUMBER= 6;
+
+-- ignored #include <poppack.h>
+--  Back to 4 byte packing
+-- 
+--  Based relocation format.
+-- 
+type
+  _IMAGE_BASE_RELOCATION = record
+VirtualAddress  : DWORD;
+SizeOfBlock     : DWORD;
+  end record;
+  IMAGE_BASE_RELOCATION = _IMAGE_BASE_RELOCATION;
+
+type
+PIMAGE_BASE_RELOCATION = ^IMAGE_BASE_RELOCATION for machine_pointer use true;
+const
+  IMAGE_SIZEOF_BASE_RELOCATION= 8;
+
+-- 
+--  Based relocation types.
+-- 
+const
+  IMAGE_REL_BASED_ABSOLUTE= 0;
+
+const
+  IMAGE_REL_BASED_HIGH= 1;
+
+const
+  IMAGE_REL_BASED_LOW= 2;
+
+const
+  IMAGE_REL_BASED_HIGHLOW= 3;
+
+const
+  IMAGE_REL_BASED_HIGHADJ= 4;
+
+const
+  IMAGE_REL_BASED_MIPS_JMPADDR= 5;
+
+const
+  IMAGE_REL_BASED_MIPS_JMPADDR16= 9;
+
+const
+  IMAGE_REL_BASED_IA64_IMM64= 9;
+
+const
+  IMAGE_REL_BASED_DIR64= 10;
+
+-- 
+--  Archive format.
+-- 
+const
+  IMAGE_ARCHIVE_START_SIZE= 8;
+
+type
+  _IMAGE_ARCHIVE_MEMBER_HEADER = record
+Name            : array 0..15 of BYTE;
+Date            : array 0..11 of BYTE;
+UserID          : array 0..5 of BYTE;
+GroupID         : array 0..5 of BYTE;
+Mode            : array 0..7 of BYTE;
+Size            : array 0..9 of BYTE;
+EndHeader       : array 0..1 of BYTE;
+  end record;
+  IMAGE_ARCHIVE_MEMBER_HEADER = _IMAGE_ARCHIVE_MEMBER_HEADER;
+  PIMAGE_ARCHIVE_MEMBER_HEADER = ^_IMAGE_ARCHIVE_MEMBER_HEADER;
+
+const
+  IMAGE_SIZEOF_ARCHIVE_MEMBER_HDR= 60;
+
+-- 
+--  DLL support.
+-- 
+-- 
+--  Export Format
+-- 
+type
+  _IMAGE_EXPORT_DIRECTORY = record
+Characteristics : DWORD;
+TimeDateStamp   : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+Name            : DWORD;
+Base            : DWORD;
+NumberOfFunctions : DWORD;
+NumberOfNames   : DWORD;
+AddressOfFunctions : DWORD;
+AddressOfNames  : DWORD;
+AddressOfNameOrdinals : DWORD;
+  end record;
+  IMAGE_EXPORT_DIRECTORY = _IMAGE_EXPORT_DIRECTORY;
+  PIMAGE_EXPORT_DIRECTORY = ^_IMAGE_EXPORT_DIRECTORY;
+
+-- 
+--  Import Format
+-- 
+type
+  _IMAGE_IMPORT_BY_NAME = record
+Hint            : WORD;
+Name            : array 0..0 of BYTE;
+  end record;
+  IMAGE_IMPORT_BY_NAME = _IMAGE_IMPORT_BY_NAME;
+  PIMAGE_IMPORT_BY_NAME = ^_IMAGE_IMPORT_BY_NAME;
+
+-- ignored #include <pshpack8.h>
+--  Use align 8 for the 64-bit IAT.
+type
+  _IMAGE_THUNK_DATA64 = record
+u1               : record
+      ForwarderString : ULONGLONG for position use 0;
+      Function      : ULONGLONG for position use 0;
+      Ordinal       : ULONGLONG for position use 0;
+      AddressOfData : ULONGLONG for position use 0;
+    end record;
+  end record;
+  IMAGE_THUNK_DATA64 = _IMAGE_THUNK_DATA64;
+
+type
+PIMAGE_THUNK_DATA64 = ^IMAGE_THUNK_DATA64 for machine_pointer use true;
+-- ignored #include <poppack.h>
+--  Back to 4 byte packing
+type
+  _IMAGE_THUNK_DATA32 = record
+u1               : record
+      ForwarderString : DWORD for position use 0;
+      Function      : DWORD for position use 0;
+      Ordinal       : DWORD for position use 0;
+      AddressOfData : DWORD for position use 0;
+    end record;
+  end record;
+  IMAGE_THUNK_DATA32 = _IMAGE_THUNK_DATA32;
+
+type
+PIMAGE_THUNK_DATA32 = ^IMAGE_THUNK_DATA32 for machine_pointer use true;
+const
+  IMAGE_ORDINAL_FLAG32= $80000000;
+
+-- 
+--  Thread Local Storage
+-- 
+type
+PIMAGE_TLS_CALLBACK = ^procedure (
+    DllHandle       : PVOID;
+    Reason          : DWORD;
+    Reserved        : PVOID) for machine_pointer use true;
+type
+  _IMAGE_TLS_DIRECTORY64 = record
+StartAddressOfRawData : ULONGLONG;
+EndAddressOfRawData : ULONGLONG;
+AddressOfIndex  : ULONGLONG;
+AddressOfCallBacks : ULONGLONG;
+SizeOfZeroFill  : DWORD;
+Characteristics : DWORD;
+  end record;
+  IMAGE_TLS_DIRECTORY64 = _IMAGE_TLS_DIRECTORY64;
+
+type
+PIMAGE_TLS_DIRECTORY64 = ^IMAGE_TLS_DIRECTORY64 for machine_pointer use true;
+type
+  _IMAGE_TLS_DIRECTORY32 = record
+StartAddressOfRawData : DWORD;
+EndAddressOfRawData : DWORD;
+AddressOfIndex  : DWORD;
+AddressOfCallBacks : DWORD;
+SizeOfZeroFill  : DWORD;
+Characteristics : DWORD;
+  end record;
+  IMAGE_TLS_DIRECTORY32 = _IMAGE_TLS_DIRECTORY32;
+
+type
+PIMAGE_TLS_DIRECTORY32 = ^IMAGE_TLS_DIRECTORY32 for machine_pointer use true;
+type
+IMAGE_THUNK_DATA  = IMAGE_THUNK_DATA32;
+type
+PIMAGE_THUNK_DATA = PIMAGE_THUNK_DATA32;
+type
+IMAGE_TLS_DIRECTORY = IMAGE_TLS_DIRECTORY32;
+type
+PIMAGE_TLS_DIRECTORY = PIMAGE_TLS_DIRECTORY32;
+type
+  _IMAGE_IMPORT_DESCRIPTOR = record
+t_006            : record
+      Characteristics : DWORD for position use 0;
+      OriginalFirstThunk : DWORD for position use 0;
+    end record;
+TimeDateStamp   : DWORD;
+ForwarderChain  : DWORD;
+Name            : DWORD;
+FirstThunk      : DWORD;
+  end record;
+  IMAGE_IMPORT_DESCRIPTOR = _IMAGE_IMPORT_DESCRIPTOR;
+
+type
+PIMAGE_IMPORT_DESCRIPTOR = ^IMAGE_IMPORT_DESCRIPTOR for machine_pointer use true;
+-- 
+--  New format import descriptors pointed to by DataDirectory[ IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT ]
+-- 
+type
+  _IMAGE_BOUND_IMPORT_DESCRIPTOR = record
+TimeDateStamp   : DWORD;
+OffsetModuleName : WORD;
+NumberOfModuleForwarderRefs : WORD;
+  end record;
+  IMAGE_BOUND_IMPORT_DESCRIPTOR = _IMAGE_BOUND_IMPORT_DESCRIPTOR;
+  PIMAGE_BOUND_IMPORT_DESCRIPTOR = ^_IMAGE_BOUND_IMPORT_DESCRIPTOR;
+
+type
+  _IMAGE_BOUND_FORWARDER_REF = record
+TimeDateStamp   : DWORD;
+OffsetModuleName : WORD;
+Reserved        : WORD;
+  end record;
+  IMAGE_BOUND_FORWARDER_REF = _IMAGE_BOUND_FORWARDER_REF;
+  PIMAGE_BOUND_FORWARDER_REF = ^_IMAGE_BOUND_FORWARDER_REF;
+
+-- 
+--  Resource Format.
+-- 
+-- 
+--  Resource directory consists of two counts, following by a variable length
+--  array of directory entries. The first count is the number of entries at
+--  beginning of the array that have actual names associated with each entry.
+--  The entries are in ascending order, case insensitive strings. The second
+--  count is the number of entries that immediately follow the named entries.
+--  This second count identifies the number of entries that have 16-bit integer
+--  Ids as their name. These entries are also sorted in ascending order.
+-- 
+--  This structure allows fast lookup by either name or number, but for any
+--  given resource entry only one form of lookup is supported, not both.
+--  This is consistant with the syntax of the .RC file and the .RES file.
+-- 
+type
+  _IMAGE_RESOURCE_DIRECTORY = record
+Characteristics : DWORD;
+TimeDateStamp   : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+NumberOfNamedEntries : WORD;
+NumberOfIdEntries : WORD;
+  end record;
+  IMAGE_RESOURCE_DIRECTORY = _IMAGE_RESOURCE_DIRECTORY;
+  PIMAGE_RESOURCE_DIRECTORY = ^_IMAGE_RESOURCE_DIRECTORY;
+
+const
+  IMAGE_RESOURCE_NAME_IS_STRING= $80000000;
+
+const
+  IMAGE_RESOURCE_DATA_IS_DIRECTORY= $80000000;
+
+-- 
+--  Each directory contains the 32-bit Name of the entry and an offset,
+--  relative to the beginning of the resource directory of the data associated
+--  with this directory entry. If the name of the entry is an actual text
+--  string instead of an integer Id, then the high order bit of the name field
+--  is set to one and the low order 31-bits are an offset, relative to the
+--  beginning of the resource directory of the string, which is of type
+--  IMAGE_RESOURCE_DIRECTORY_STRING. Otherwise the high bit is clear and the
+--  low-order 16-bits are the integer Id that identify this resource directory
+--  entry. If the directory entry is yet another resource directory (i.e. a
+--  subdirectory), then the high order bit of the offset field will be
+--  set to indicate this. Otherwise the high bit is clear and the offset
+--  field points to a resource data entry.
+-- 
+type
+  _IMAGE_RESOURCE_DIRECTORY_ENTRY = record
+t_007            : record
+NameOffset      : DWORD {:31};
+NameIsString    : DWORD {:1};
+      Name          : DWORD for position use 0;
+      Id            : WORD for position use 0;
+    end record;
+t_008            : record
+      OffsetToData  : DWORD for position use 0;
+OffsetToDirectory : DWORD {:31};
+DataIsDirectory : DWORD {:1};
+    end record;
+  end record;
+  IMAGE_RESOURCE_DIRECTORY_ENTRY = _IMAGE_RESOURCE_DIRECTORY_ENTRY;
+  PIMAGE_RESOURCE_DIRECTORY_ENTRY = ^_IMAGE_RESOURCE_DIRECTORY_ENTRY;
+
+-- 
+--  For resource directory entries that have actual string names, the Name
+--  field of the directory entry points to an object of the following type.
+--  All of these string objects are stored together after the last resource
+--  directory entry and before the first resource data object. This minimizes
+--  the impact of these variable length objects on the alignment of the fixed
+--  size directory entry objects.
+-- 
+type
+  _IMAGE_RESOURCE_DIRECTORY_STRING = record
+Length          : WORD;
+NameString      : array 0..0 of CHAR;
+  end record;
+  IMAGE_RESOURCE_DIRECTORY_STRING = _IMAGE_RESOURCE_DIRECTORY_STRING;
+  PIMAGE_RESOURCE_DIRECTORY_STRING = ^_IMAGE_RESOURCE_DIRECTORY_STRING;
+
+type
+  _IMAGE_RESOURCE_DIR_STRING_U = record
+Length          : WORD;
+NameString      : array 0..0 of WCHAR;
+  end record;
+  IMAGE_RESOURCE_DIR_STRING_U = _IMAGE_RESOURCE_DIR_STRING_U;
+  PIMAGE_RESOURCE_DIR_STRING_U = ^_IMAGE_RESOURCE_DIR_STRING_U;
+
+-- 
+--  Each resource data entry describes a leaf node in the resource directory
+--  tree. It contains an offset, relative to the beginning of the resource
+--  directory of the data for the resource, a size field that gives the number
+--  of bytes of data at that offset, a CodePage that should be used when
+--  decoding code point values within the resource data. Typically for new
+--  applications the code page would be the unicode code page.
+-- 
+type
+  _IMAGE_RESOURCE_DATA_ENTRY = record
+OffsetToData    : DWORD;
+Size            : DWORD;
+CodePage        : DWORD;
+Reserved        : DWORD;
+  end record;
+  IMAGE_RESOURCE_DATA_ENTRY = _IMAGE_RESOURCE_DATA_ENTRY;
+  PIMAGE_RESOURCE_DATA_ENTRY = ^_IMAGE_RESOURCE_DATA_ENTRY;
+
+-- 
+--  Load Configuration Directory Entry
+-- 
+type
+  IMAGE_LOAD_CONFIG_DIRECTORY32 = record
+Size            : DWORD;
+TimeDateStamp   : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+GlobalFlagsClear : DWORD;
+GlobalFlagsSet  : DWORD;
+CriticalSectionDefaultTimeout : DWORD;
+DeCommitFreeBlockThreshold : DWORD;
+DeCommitTotalFreeThreshold : DWORD;
+LockPrefixTable : DWORD;
+MaximumAllocationSize : DWORD;
+VirtualMemoryThreshold : DWORD;
+ProcessHeapFlags : DWORD;
+ProcessAffinityMask : DWORD;
+CSDVersion      : WORD;
+Reserved1       : WORD;
+EditList        : DWORD;
+SecurityCookie  : DWORD;
+SEHandlerTable  : DWORD;
+SEHandlerCount  : DWORD;
+  end record;
+  PIMAGE_LOAD_CONFIG_DIRECTORY32 = ^IMAGE_LOAD_CONFIG_DIRECTORY32;
+
+type
+  IMAGE_LOAD_CONFIG_DIRECTORY64 = record
+Size            : DWORD;
+TimeDateStamp   : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+GlobalFlagsClear : DWORD;
+GlobalFlagsSet  : DWORD;
+CriticalSectionDefaultTimeout : DWORD;
+DeCommitFreeBlockThreshold : ULONGLONG;
+DeCommitTotalFreeThreshold : ULONGLONG;
+LockPrefixTable : ULONGLONG;
+MaximumAllocationSize : ULONGLONG;
+VirtualMemoryThreshold : ULONGLONG;
+ProcessAffinityMask : ULONGLONG;
+ProcessHeapFlags : DWORD;
+CSDVersion      : WORD;
+Reserved1       : WORD;
+EditList        : ULONGLONG;
+SecurityCookie  : ULONGLONG;
+SEHandlerTable  : ULONGLONG;
+SEHandlerCount  : ULONGLONG;
+  end record;
+  PIMAGE_LOAD_CONFIG_DIRECTORY64 = ^IMAGE_LOAD_CONFIG_DIRECTORY64;
+
+type
+IMAGE_LOAD_CONFIG_DIRECTORY = IMAGE_LOAD_CONFIG_DIRECTORY32;
+type
+PIMAGE_LOAD_CONFIG_DIRECTORY = PIMAGE_LOAD_CONFIG_DIRECTORY32;
+-- 
+--  WIN CE Exception table format
+-- 
+-- 
+--  Function table entry format. Function table is pointed to by the
+--  IMAGE_DIRECTORY_ENTRY_EXCEPTION directory entry.
+-- 
+type
+  _IMAGE_CE_RUNTIME_FUNCTION_ENTRY = record
+FuncStart       : DWORD;
+PrologLen       : DWORD {:8};
+FuncLen         : DWORD {:22};
+ThirtyTwoBit    : DWORD {:1};
+ExceptionFlag   : DWORD {:1};
+  end record;
+  IMAGE_CE_RUNTIME_FUNCTION_ENTRY = _IMAGE_CE_RUNTIME_FUNCTION_ENTRY;
+  PIMAGE_CE_RUNTIME_FUNCTION_ENTRY = ^_IMAGE_CE_RUNTIME_FUNCTION_ENTRY;
+
+type
+  _IMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY = record
+BeginAddress    : ULONGLONG;
+EndAddress      : ULONGLONG;
+ExceptionHandler : ULONGLONG;
+HandlerData     : ULONGLONG;
+PrologEndAddress : ULONGLONG;
+  end record;
+  IMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY = _IMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY;
+  PIMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY = ^_IMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY;
+
+type
+  _IMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY = record
+BeginAddress    : DWORD;
+EndAddress      : DWORD;
+ExceptionHandler : DWORD;
+HandlerData     : DWORD;
+PrologEndAddress : DWORD;
+  end record;
+  IMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY = _IMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY;
+  PIMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY = ^_IMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY;
+
+type
+  _IMAGE_RUNTIME_FUNCTION_ENTRY = record
+BeginAddress    : DWORD;
+EndAddress      : DWORD;
+UnwindInfoAddress : DWORD;
+  end record;
+  _PIMAGE_RUNTIME_FUNCTION_ENTRY = ^_IMAGE_RUNTIME_FUNCTION_ENTRY;
+
+type
+IMAGE_IA64_RUNTIME_FUNCTION_ENTRY = _IMAGE_RUNTIME_FUNCTION_ENTRY;
+type
+PIMAGE_IA64_RUNTIME_FUNCTION_ENTRY = _PIMAGE_RUNTIME_FUNCTION_ENTRY;
+type
+IMAGE_RUNTIME_FUNCTION_ENTRY = _IMAGE_RUNTIME_FUNCTION_ENTRY;
+type
+PIMAGE_RUNTIME_FUNCTION_ENTRY = _PIMAGE_RUNTIME_FUNCTION_ENTRY;
+-- 
+--  Debug Format
+-- 
+type
+  _IMAGE_DEBUG_DIRECTORY = record
+Characteristics : DWORD;
+TimeDateStamp   : DWORD;
+MajorVersion    : WORD;
+MinorVersion    : WORD;
+_Type           : DWORD;
+SizeOfData      : DWORD;
+AddressOfRawData : DWORD;
+PointerToRawData : DWORD;
+  end record;
+  IMAGE_DEBUG_DIRECTORY = _IMAGE_DEBUG_DIRECTORY;
+  PIMAGE_DEBUG_DIRECTORY = ^_IMAGE_DEBUG_DIRECTORY;
+
+const
+  IMAGE_DEBUG_TYPE_UNKNOWN= 0;
+
+const
+  IMAGE_DEBUG_TYPE_COFF= 1;
+
+const
+  IMAGE_DEBUG_TYPE_CODEVIEW= 2;
+
+const
+  IMAGE_DEBUG_TYPE_FPO= 3;
+
+const
+  IMAGE_DEBUG_TYPE_MISC= 4;
+
+const
+  IMAGE_DEBUG_TYPE_EXCEPTION= 5;
+
+const
+  IMAGE_DEBUG_TYPE_FIXUP= 6;
+
+const
+  IMAGE_DEBUG_TYPE_OMAP_TO_SRC= 7;
+
+const
+  IMAGE_DEBUG_TYPE_OMAP_FROM_SRC= 8;
+
+const
+  IMAGE_DEBUG_TYPE_BORLAND= 9;
+
+const
+  IMAGE_DEBUG_TYPE_RESERVED10= 10;
+
+const
+  IMAGE_DEBUG_TYPE_CLSID= 11;
+
+type
+  _IMAGE_COFF_SYMBOLS_HEADER = record
+NumberOfSymbols : DWORD;
+LvaToFirstSymbol : DWORD;
+NumberOfLinenumbers : DWORD;
+LvaToFirstLinenumber : DWORD;
+RvaToFirstByteOfCode : DWORD;
+RvaToLastByteOfCode : DWORD;
+RvaToFirstByteOfData : DWORD;
+RvaToLastByteOfData : DWORD;
+  end record;
+  IMAGE_COFF_SYMBOLS_HEADER = _IMAGE_COFF_SYMBOLS_HEADER;
+  PIMAGE_COFF_SYMBOLS_HEADER = ^_IMAGE_COFF_SYMBOLS_HEADER;
+
+const
+  FRAME_FPO         = 0;
+
+const
+  FRAME_TRAP        = 1;
+
+const
+  FRAME_TSS         = 2;
+
+const
+  FRAME_NONFPO      = 3;
+
+type
+  _FPO_DATA         = record
+ulOffStart      : DWORD;
+cbProcSize      : DWORD;
+cdwLocals       : DWORD;
+cdwParams       : WORD;
+cbProlog        : WORD {:8};
+cbRegs          : WORD {:3};
+fHasSEH         : WORD {:1};
+fUseBP          : WORD {:1};
+reserved        : WORD {:1};
+cbFrame         : WORD {:2};
+  end record;
+  FPO_DATA          = _FPO_DATA;
+  PFPO_DATA         = ^_FPO_DATA;
+
+const
+  SIZEOF_RFPO_DATA  = 16;
+
+const
+  IMAGE_DEBUG_MISC_EXENAME= 1;
+
+type
+  _IMAGE_DEBUG_MISC = record
+DataType        : DWORD;
+Length          : DWORD;
+Unicode         : BOOLEAN;
+Reserved        : array 0..2 of BYTE;
+Data            : array 0..0 of BYTE;
+  end record;
+  IMAGE_DEBUG_MISC  = _IMAGE_DEBUG_MISC;
+  PIMAGE_DEBUG_MISC = ^_IMAGE_DEBUG_MISC;
+
+-- 
+--  Function table extracted from MIPS/ALPHA/IA64 images. Does not contain
+--  information needed only for runtime support. Just those fields for
+--  each entry needed by a debugger.
+-- 
+type
+  _IMAGE_FUNCTION_ENTRY = record
+StartingAddress : DWORD;
+EndingAddress   : DWORD;
+EndOfPrologue   : DWORD;
+  end record;
+  IMAGE_FUNCTION_ENTRY = _IMAGE_FUNCTION_ENTRY;
+  PIMAGE_FUNCTION_ENTRY = ^_IMAGE_FUNCTION_ENTRY;
+
+type
+  _IMAGE_FUNCTION_ENTRY64 = record
+StartingAddress : ULONGLONG;
+EndingAddress   : ULONGLONG;
+t_009            : record
+      EndOfPrologue : ULONGLONG for position use 0;
+      UnwindInfoAddress : ULONGLONG for position use 0;
+    end record;
+  end record;
+  IMAGE_FUNCTION_ENTRY64 = _IMAGE_FUNCTION_ENTRY64;
+  PIMAGE_FUNCTION_ENTRY64 = ^_IMAGE_FUNCTION_ENTRY64;
+
+-- 
+--  Debugging information can be stripped from an image file and placed
+--  in a separate .DBG file, whose file name part is the same as the
+--  image file name part (e.g. symbols for CMD.EXE could be stripped
+--  and placed in CMD.DBG). This is indicated by the IMAGE_FILE_DEBUG_STRIPPED
+--  flag in the Characteristics field of the file header. The beginning of
+--  the .DBG file contains the following structure which captures certain
+--  information from the image file. This allows a debug to proceed even if
+--  the original image file is not accessable. This header is followed by
+--  zero of more IMAGE_SECTION_HEADER structures, followed by zero or more
+--  IMAGE_DEBUG_DIRECTORY structures. The latter structures and those in
+--  the image file contain file offsets relative to the beginning of the
+--  .DBG file.
+-- 
+--  If symbols have been stripped from an image, the IMAGE_DEBUG_MISC structure
+--  is left in the image file, but not mapped. This allows a debugger to
+--  compute the name of the .DBG file, from the name of the image in the
+--  IMAGE_DEBUG_MISC structure.
+-- 
+type
+  _IMAGE_SEPARATE_DEBUG_HEADER = record
+Signature       : WORD;
+Flags           : WORD;
+Machine         : WORD;
+Characteristics : WORD;
+TimeDateStamp   : DWORD;
+CheckSum        : DWORD;
+ImageBase       : DWORD;
+SizeOfImage     : DWORD;
+NumberOfSections : DWORD;
+ExportedNamesSize : DWORD;
+DebugDirectorySize : DWORD;
+SectionAlignment : DWORD;
+Reserved        : array 0..1 of DWORD;
+  end record;
+  IMAGE_SEPARATE_DEBUG_HEADER = _IMAGE_SEPARATE_DEBUG_HEADER;
+  PIMAGE_SEPARATE_DEBUG_HEADER = ^_IMAGE_SEPARATE_DEBUG_HEADER;
+
+type
+  _NON_PAGED_DEBUG_INFO = record
+Signature       : WORD;
+Flags           : WORD;
+Size            : DWORD;
+Machine         : WORD;
+Characteristics : WORD;
+TimeDateStamp   : DWORD;
+CheckSum        : DWORD;
+SizeOfImage     : DWORD;
+ImageBase       : ULONGLONG;
+  end record;
+  NON_PAGED_DEBUG_INFO = _NON_PAGED_DEBUG_INFO;
+  PNON_PAGED_DEBUG_INFO = ^_NON_PAGED_DEBUG_INFO;
+
+const
+  IMAGE_SEPARATE_DEBUG_SIGNATURE= $4944;
+
+const
+  NON_PAGED_DEBUG_SIGNATURE= $494E;
+
+const
+  IMAGE_SEPARATE_DEBUG_FLAGS_MASK= $8000;
+
+const
+  IMAGE_SEPARATE_DEBUG_MISMATCH= $8000;
+
+--  old checksum didn't match.
+-- 
+--  The .arch section is made up of headers, each describing an amask position/value
+--  pointing to an array of IMAGE_ARCHITECTURE_ENTRY's. Each "array" (both the header
+--  and entry arrays) are terminiated by a quadword of 0xffffffffL.
+-- 
+--  NOTE: There may be quadwords of 0 sprinkled around and must be skipped.
+-- 
+type
+  _ImageArchitectureHeader = record
+AmaskValue      : unsigned 32 {:1};
+AmaskShift      : unsigned 32 {:8};
+FirstEntryRVA   : DWORD;
+  end record;
+  IMAGE_ARCHITECTURE_HEADER = _ImageArchitectureHeader;
+  PIMAGE_ARCHITECTURE_HEADER = ^_ImageArchitectureHeader;
+
+type
+  _ImageArchitectureEntry = record
+FixupInstRVA    : DWORD;
+NewInst         : DWORD;
+  end record;
+  IMAGE_ARCHITECTURE_ENTRY = _ImageArchitectureEntry;
+  PIMAGE_ARCHITECTURE_ENTRY = ^_ImageArchitectureEntry;
+
+-- ignored #include <poppack.h>
+--  Back to the initial value
+--  The following structure defines the new import object. Note the values of the first two fields,
+--  which must be set as stated in order to differentiate old and new import members.
+--  Following this structure, the linker emits two null-terminated strings used to recreate the
+--  import at the time of use. The first string is the import's name, the second is the dll's name.
+const
+  IMPORT_OBJECT_HDR_SIG2= $FFFF;
+
+type
+  IMPORT_OBJECT_HEADER = record
+Sig1            : WORD;
+Sig2            : WORD;
+Version         : WORD;
+Machine         : WORD;
+TimeDateStamp   : DWORD;
+SizeOfData      : DWORD;
+t_010            : record
+      Ordinal       : WORD for position use 0;
+      Hint          : WORD for position use 0;
+    end record;
+_Type           : WORD {:2};
+NameType        : WORD {:3};
+Reserved        : WORD {:11};
+  end record;
+
+type
+IMPORT_OBJECT_TYPE= enum
+    IMPORT_OBJECT_CODE for ord use 0;
+    IMPORT_OBJECT_DATA for ord use 1;
+    IMPORT_OBJECT_CONST for ord use 2;
+  end enum for size use 4;
+type
+IMPORT_OBJECT_NAME_TYPE= enum
+    IMPORT_OBJECT_ORDINAL for ord use 0;
+    IMPORT_OBJECT_NAME for ord use 1;
+    IMPORT_OBJECT_NAME_NO_PREFIX for ord use 2;
+    IMPORT_OBJECT_NAME_UNDECORATE for ord use 3;
+  end enum for size use 4;
+type
+ReplacesCorHdrNumericDefines= enum
+    COMIMAGE_FLAGS_ILONLY for ord use $01;
+    COMIMAGE_FLAGS_32BITREQUIRED for ord use $02;
+    COMIMAGE_FLAGS_IL_LIBRARY for ord use $04;
+    COMIMAGE_FLAGS_STRONGNAMESIGNED for ord use $08;
+    COMIMAGE_FLAGS_TRACKDEBUGDATA for ord use $10000;
+    COR_VERSION_MAJOR_V2 for ord use 2;
+    -- COR_VERSION_MAJOR for ord use COR_VERSION_MAJOR_V2:ord;
+    COR_VERSION_MINOR for ord use 0;
+    COR_DELETED_NAME_LENGTH for ord use 8;
+    COR_VTABLEGAP_NAME_LENGTH for ord use 8;
+    NATIVE_TYPE_MAX_CB for ord use 1;
+    COR_ILMETHOD_SECT_SMALL_MAX_DATASIZE for ord use $FF;
+    IMAGE_COR_MIH_METHODRVA for ord use $01;
+    IMAGE_COR_MIH_EHRVA for ord use $02;
+    IMAGE_COR_MIH_BASICBLOCK for ord use $08;
+    COR_VTABLE_32BIT for ord use $01;
+    COR_VTABLE_64BIT for ord use $02;
+    COR_VTABLE_FROM_UNMANAGED for ord use $04;
+    COR_VTABLE_CALL_MOST_DERIVED for ord use $10;
+    IMAGE_COR_EATJ_THUNK_SIZE for ord use 32;
+    MAX_CLASS_NAME  for ord use 1024;
+    MAX_PACKAGE_NAME for ord use 1024;
+  end enum for size use 4;
+--  COM+ 2.0 header structure.
+type
+  IMAGE_COR20_HEADER = record
+cb              : DWORD;
+MajorRuntimeVersion : WORD;
+MinorRuntimeVersion : WORD;
+MetaData        : IMAGE_DATA_DIRECTORY;
+Flags           : DWORD;
+EntryPointToken : DWORD;
+Resources       : IMAGE_DATA_DIRECTORY;
+StrongNameSignature : IMAGE_DATA_DIRECTORY;
+CodeManagerTable : IMAGE_DATA_DIRECTORY;
+VTableFixups    : IMAGE_DATA_DIRECTORY;
+ExportAddressTableJumps : IMAGE_DATA_DIRECTORY;
+ManagedNativeHeader : IMAGE_DATA_DIRECTORY;
+  end record;
+  PIMAGE_COR20_HEADER = ^IMAGE_COR20_HEADER;
+
+-- 
+--  End Image Format
+-- 
+-- 
+--  for move macros
+-- 
+-- ignored #include <string.h>
+-- #pragma  warning(push)
+-- #pragma  warning(disable:4324) // structure padded due to align()
+-- #pragma  warning(pop)
+type
+  _SLIST_HEADER = record
+  Alignment       : ULONGLONG for position use 0;
+Next            : SINGLE_LIST_ENTRY;
+Depth           : WORD;
+Sequence        : WORD;
+  end record;
+
+  SLIST_HEADER      = _SLIST_HEADER;
+  PSLIST_HEADER     = ^_SLIST_HEADER;
+const
+  HEAP_NO_SERIALIZE = $01;
+
+const
+  HEAP_GROWABLE     = $02;
+
+const
+  HEAP_GENERATE_EXCEPTIONS= $04;
+
+const
+  HEAP_ZERO_MEMORY  = $08;
+
+const
+  HEAP_REALLOC_IN_PLACE_ONLY= $10;
+
+const
+  HEAP_TAIL_CHECKING_ENABLED= $20;
+
+const
+  HEAP_FREE_CHECKING_ENABLED= $40;
+
+const
+  HEAP_DISABLE_COALESCE_ON_FREE= $80;
+
+const
+  HEAP_CREATE_ALIGN_16= $10000;
+
+const
+  HEAP_CREATE_ENABLE_TRACING= $20000;
+
+const
+  HEAP_MAXIMUM_TAG  = $0FFF;
+
+const
+  HEAP_PSEUDO_TAG_FLAG= $8000;
+
+const
+  HEAP_TAG_SHIFT    = 18;
+
+procedure RtlCaptureContext(
+    ContextRecord   : out CONTEXT );
+#pragma convention(RtlCaptureContext,system);
+#pragma import(RtlCaptureContext,'RtlCaptureContext','kernel32.dll');
+
+const
+  IS_TEXT_UNICODE_ASCII16= $01;
+
+const
+  IS_TEXT_UNICODE_REVERSE_ASCII16= $10;
+
+const
+  IS_TEXT_UNICODE_STATISTICS= $02;
+
+const
+  IS_TEXT_UNICODE_REVERSE_STATISTICS= $20;
+
+const
+  IS_TEXT_UNICODE_CONTROLS= $04;
+
+const
+  IS_TEXT_UNICODE_REVERSE_CONTROLS= $40;
+
+const
+  IS_TEXT_UNICODE_SIGNATURE= $08;
+
+const
+  IS_TEXT_UNICODE_REVERSE_SIGNATURE= $80;
+
+const
+  IS_TEXT_UNICODE_ILLEGAL_CHARS= $0100;
+
+const
+  IS_TEXT_UNICODE_ODD_LENGTH= $0200;
+
+const
+  IS_TEXT_UNICODE_DBCS_LEADBYTE= $0400;
+
+const
+  IS_TEXT_UNICODE_NULL_BYTES= $1000;
+
+const
+  IS_TEXT_UNICODE_UNICODE_MASK= $0F;
+
+const
+  IS_TEXT_UNICODE_REVERSE_MASK= $F0;
+
+const
+  IS_TEXT_UNICODE_NOT_UNICODE_MASK= $0F00;
+
+const
+  IS_TEXT_UNICODE_NOT_ASCII_MASK= $F000;
+
+type
+  _MESSAGE_RESOURCE_ENTRY = record
+Length          : WORD;
+Flags           : WORD;
+Text            : array 0..0 of BYTE;
+  end record;
+  MESSAGE_RESOURCE_ENTRY = _MESSAGE_RESOURCE_ENTRY;
+  PMESSAGE_RESOURCE_ENTRY = ^_MESSAGE_RESOURCE_ENTRY;
+
+const
+  MESSAGE_RESOURCE_UNICODE= $01;
+
+type
+  _MESSAGE_RESOURCE_BLOCK = record
+LowId           : DWORD;
+HighId          : DWORD;
+OffsetToEntries : DWORD;
+  end record;
+  MESSAGE_RESOURCE_BLOCK = _MESSAGE_RESOURCE_BLOCK;
+  PMESSAGE_RESOURCE_BLOCK = ^_MESSAGE_RESOURCE_BLOCK;
+
+type
+  _MESSAGE_RESOURCE_DATA = record
+NumberOfBlocks  : DWORD;
+Blocks          : array 0..0 of MESSAGE_RESOURCE_BLOCK;
+  end record;
+  MESSAGE_RESOURCE_DATA = _MESSAGE_RESOURCE_DATA;
+  PMESSAGE_RESOURCE_DATA = ^_MESSAGE_RESOURCE_DATA;
+
+type
+  _OSVERSIONINFOA   = record
+dwOSVersionInfoSize : DWORD;
+dwMajorVersion  : DWORD;
+dwMinorVersion  : DWORD;
+dwBuildNumber   : DWORD;
+dwPlatformId    : DWORD;
+szCSDVersion    : array 0..127 of CHAR;
+  end record;
+  OSVERSIONINFOA    = _OSVERSIONINFOA;
+  POSVERSIONINFOA   = ^_OSVERSIONINFOA;
+  LPOSVERSIONINFOA  = ^_OSVERSIONINFOA;
+
+type
+  _OSVERSIONINFOW   = record
+dwOSVersionInfoSize : DWORD;
+dwMajorVersion  : DWORD;
+dwMinorVersion  : DWORD;
+dwBuildNumber   : DWORD;
+dwPlatformId    : DWORD;
+szCSDVersion    : array 0..127 of WCHAR;
+  end record;
+  OSVERSIONINFOW    = _OSVERSIONINFOW;
+  POSVERSIONINFOW   = ^_OSVERSIONINFOW;
+  LPOSVERSIONINFOW  = ^_OSVERSIONINFOW;
+  RTL_OSVERSIONINFOW = _OSVERSIONINFOW;
+  PRTL_OSVERSIONINFOW = ^_OSVERSIONINFOW;
+
+#if #declared UNICODE; then;
+type
+OSVERSIONINFO     = OSVERSIONINFOW;
+type
+POSVERSIONINFO    = POSVERSIONINFOW;
+type
+LPOSVERSIONINFO   = LPOSVERSIONINFOW;
+#else;
+type
+OSVERSIONINFO     = OSVERSIONINFOA;
+type
+POSVERSIONINFO    = POSVERSIONINFOA;
+type
+LPOSVERSIONINFO   = LPOSVERSIONINFOA;
+#end if;
+
+type
+  _OSVERSIONINFOEXA = record
+dwOSVersionInfoSize : DWORD;
+dwMajorVersion  : DWORD;
+dwMinorVersion  : DWORD;
+dwBuildNumber   : DWORD;
+dwPlatformId    : DWORD;
+szCSDVersion    : array 0..127 of CHAR;
+wServicePackMajor : WORD;
+wServicePackMinor : WORD;
+wSuiteMask      : WORD;
+wProductType    : BYTE;
+wReserved       : BYTE;
+  end record;
+  OSVERSIONINFOEXA  = _OSVERSIONINFOEXA;
+  POSVERSIONINFOEXA = ^_OSVERSIONINFOEXA;
+  LPOSVERSIONINFOEXA = ^_OSVERSIONINFOEXA;
+
+type
+  _OSVERSIONINFOEXW = record
+dwOSVersionInfoSize : DWORD;
+dwMajorVersion  : DWORD;
+dwMinorVersion  : DWORD;
+dwBuildNumber   : DWORD;
+dwPlatformId    : DWORD;
+szCSDVersion    : array 0..127 of WCHAR;
+wServicePackMajor : WORD;
+wServicePackMinor : WORD;
+wSuiteMask      : WORD;
+wProductType    : BYTE;
+wReserved       : BYTE;
+  end record;
+  OSVERSIONINFOEXW  = _OSVERSIONINFOEXW;
+  POSVERSIONINFOEXW = ^_OSVERSIONINFOEXW;
+  LPOSVERSIONINFOEXW = ^_OSVERSIONINFOEXW;
+  RTL_OSVERSIONINFOEXW = _OSVERSIONINFOEXW;
+  PRTL_OSVERSIONINFOEXW = ^_OSVERSIONINFOEXW;
+
+#if #declared UNICODE; then;
+type
+OSVERSIONINFOEX   = OSVERSIONINFOEXW;
+type
+POSVERSIONINFOEX  = POSVERSIONINFOEXW;
+type
+LPOSVERSIONINFOEX = LPOSVERSIONINFOEXW;
+#else;
+type
+OSVERSIONINFOEX   = OSVERSIONINFOEXA;
+type
+POSVERSIONINFOEX  = POSVERSIONINFOEXA;
+type
+LPOSVERSIONINFOEX = LPOSVERSIONINFOEXA;
+#end if;
+
+-- 
+--  RtlVerifyVersionInfo() conditions
+-- 
+const
+  VER_EQUAL         = 1;
+
+const
+  VER_GREATER       = 2;
+
+const
+  VER_GREATER_EQUAL = 3;
+
+const
+  VER_LESS          = 4;
+
+const
+  VER_LESS_EQUAL    = 5;
+
+const
+  VER_AND           = 6;
+
+const
+  VER_OR            = 7;
+
+const
+  VER_CONDITION_MASK= 7;
+
+const
+  VER_NUM_BITS_PER_CONDITION_MASK= 3;
+
+-- 
+--  RtlVerifyVersionInfo() type mask bits
+-- 
+const
+  VER_MINORVERSION  = $01;
+
+const
+  VER_MAJORVERSION  = $02;
+
+const
+  VER_BUILDNUMBER   = $04;
+
+const
+  VER_PLATFORMID    = $08;
+
+const
+  VER_SERVICEPACKMINOR= $10;
+
+const
+  VER_SERVICEPACKMAJOR= $20;
+
+const
+  VER_SUITENAME     = $40;
+
+const
+  VER_PRODUCT_TYPE  = $80;
+
+-- 
+--  RtlVerifyVersionInfo() os product type values
+-- 
+const
+  VER_NT_WORKSTATION= $01;
+
+const
+  VER_NT_DOMAIN_CONTROLLER= $02;
+
+const
+  VER_NT_SERVER     = $03;
+
+-- 
+--  dwPlatformId defines:
+-- 
+const
+  VER_PLATFORM_WIN32s= 0;
+
+const
+  VER_PLATFORM_WIN32_WINDOWS= 1;
+
+const
+  VER_PLATFORM_WIN32_NT= 2;
+
+-- 
+-- 
+--  VerifyVersionInfo() macro to set the condition mask
+-- 
+--  For documentation sakes here's the old version of the macro that got
+--  changed to call an API
+--  #define VER_SET_CONDITION(_m_,_t_,_c_) _m_=(_m_|(_c_<<(1<<_t_)))
+-- 
+procedure VerSetConditionMask(
+    ConditionMask   : in ULONGLONG; 
+    TypeMask        : in DWORD; 
+    Condition       : in BYTE)
+                      return ULONGLONG;
+#pragma convention(VerSetConditionMask,system);
+#pragma import(VerSetConditionMask,'VerSetConditionMask','kernel32.dll');
+
+-- 
+type  _RTL_CRITICAL_SECTION;
+
+type
+  _RTL_CRITICAL_SECTION_DEBUG = record
+_Type           : WORD;
+CreatorBackTraceIndex : WORD;
+  CriticalSection   : ^_RTL_CRITICAL_SECTION;
+ProcessLocksList : LIST_ENTRY;
+EntryCount      : DWORD;
+ContentionCount : DWORD;
+Spare           : array 0..1 of DWORD;
+  end record;
+  RTL_CRITICAL_SECTION_DEBUG = _RTL_CRITICAL_SECTION_DEBUG;
+  PRTL_CRITICAL_SECTION_DEBUG = ^_RTL_CRITICAL_SECTION_DEBUG;
+  RTL_RESOURCE_DEBUG = _RTL_CRITICAL_SECTION_DEBUG;
+  PRTL_RESOURCE_DEBUG = ^_RTL_CRITICAL_SECTION_DEBUG;
+
+const
+  RTL_CRITSECT_TYPE = 0;
+
+const
+  RTL_RESOURCE_TYPE = 1;
+
+type
+  _RTL_CRITICAL_SECTION = record
+DebugInfo       : PRTL_CRITICAL_SECTION_DEBUG;
+LockCount       : LONG;
+RecursionCount  : LONG;
+OwningThread    : t_HANDLE;
+LockSemaphore   : t_HANDLE;
+SpinCount       : basetsd.ULONG_PTR;
+  end record;
+  RTL_CRITICAL_SECTION = _RTL_CRITICAL_SECTION;
+  PRTL_CRITICAL_SECTION = ^_RTL_CRITICAL_SECTION;
+
+type
+RTL_VERIFIER_DLL_LOAD_CALLBACK = ^procedure (
+    DllName         : PWSTR;
+    DllBase         : PVOID;
+    DllSize         : basetsd.SIZE_T;
+    Reserved        : PVOID) for machine_pointer use true;
+type
+RTL_VERIFIER_DLL_UNLOAD_CALLBACK = ^procedure (
+    DllName         : PWSTR;
+    DllBase         : PVOID;
+    DllSize         : basetsd.SIZE_T;
+    Reserved        : PVOID) for machine_pointer use true;
+type
+RTL_VERIFIER_NTDLLHEAPFREE_CALLBACK = ^procedure (
+    AllocationBase  : PVOID;
+    AllocationSize  : basetsd.SIZE_T) for machine_pointer use true;
+type
+  _RTL_VERIFIER_THUNK_DESCRIPTOR = record
+ThunkName       : PCHAR;
+ThunkOldAddress : PVOID;
+ThunkNewAddress : PVOID;
+  end record;
+  RTL_VERIFIER_THUNK_DESCRIPTOR = _RTL_VERIFIER_THUNK_DESCRIPTOR;
+  PRTL_VERIFIER_THUNK_DESCRIPTOR = ^_RTL_VERIFIER_THUNK_DESCRIPTOR;
+
+type
+  _RTL_VERIFIER_DLL_DESCRIPTOR = record
+DllName         : PWCHAR;
+DllFlags        : DWORD;
+DllAddress      : PVOID;
+DllThunks       : PRTL_VERIFIER_THUNK_DESCRIPTOR;
+  end record;
+  RTL_VERIFIER_DLL_DESCRIPTOR = _RTL_VERIFIER_DLL_DESCRIPTOR;
+  PRTL_VERIFIER_DLL_DESCRIPTOR = ^_RTL_VERIFIER_DLL_DESCRIPTOR;
+
+type
+  _RTL_VERIFIER_PROVIDER_DESCRIPTOR = record
+Length          : DWORD;
+ProviderDlls    : PRTL_VERIFIER_DLL_DESCRIPTOR;
+ProviderDllLoadCallback : RTL_VERIFIER_DLL_LOAD_CALLBACK;
+ProviderDllUnloadCallback : RTL_VERIFIER_DLL_UNLOAD_CALLBACK;
+VerifierImage   : PWSTR;
+VerifierFlags   : DWORD;
+VerifierDebug   : DWORD;
+RtlpGetStackTraceAddress : PVOID;
+RtlpDebugPageHeapCreate : PVOID;
+RtlpDebugPageHeapDestroy : PVOID;
+ProviderNtdllHeapFreeCallback : RTL_VERIFIER_NTDLLHEAPFREE_CALLBACK;
+  end record;
+  RTL_VERIFIER_PROVIDER_DESCRIPTOR = _RTL_VERIFIER_PROVIDER_DESCRIPTOR;
+  PRTL_VERIFIER_PROVIDER_DESCRIPTOR = ^_RTL_VERIFIER_PROVIDER_DESCRIPTOR;
+
+-- 
+--  Application verifier standard flags
+-- 
+const
+  RTL_VRF_FLG_FULL_PAGE_HEAP= $01;
+
+const
+  RTL_VRF_FLG_RESERVED_DONOTUSE= $02;
+
+const
+  RTL_VRF_FLG_HANDLE_CHECKS= $04;
+
+const
+  RTL_VRF_FLG_STACK_CHECKS= $08;
+
+const
+  RTL_VRF_FLG_APPCOMPAT_CHECKS= $10;
+
+const
+  RTL_VRF_FLG_TLS_CHECKS= $20;
+
+const
+  RTL_VRF_FLG_DIRTY_STACKS= $40;
+
+const
+  RTL_VRF_FLG_RPC_CHECKS= $80;
+
+const
+  RTL_VRF_FLG_COM_CHECKS= $0100;
+
+const
+  RTL_VRF_FLG_DANGEROUS_APIS= $0200;
+
+const
+  RTL_VRF_FLG_RACE_CHECKS= $0400;
+
+const
+  RTL_VRF_FLG_DEADLOCK_CHECKS= $0800;
+
+const
+  RTL_VRF_FLG_FIRST_CHANCE_EXCEPTION_CHECKS= $1000;
+
+const
+  RTL_VRF_FLG_VIRTUAL_MEM_CHECKS= $2000;
+
+const
+  RTL_VRF_FLG_ENABLE_LOGGING= $4000;
+
+const
+  RTL_VRF_FLG_FAST_FILL_HEAP= $8000;
+
+const
+  RTL_VRF_FLG_VIRTUAL_SPACE_TRACKING= $10000;
+
+const
+  RTL_VRF_FLG_ENABLED_SYSTEM_WIDE= $20000;
+
+const
+  RTL_VRF_FLG_MISCELLANEOUS_CHECKS= $20000;
+
+const
+  RTL_VRF_FLG_LOCK_CHECKS= $40000;
+
+-- 
+--  Application verifier standard stop codes
+-- 
+const
+  APPLICATION_VERIFIER_INTERNAL_ERROR= $80000000;
+
+const
+  APPLICATION_VERIFIER_INTERNAL_WARNING= $40000000;
+
+const
+  APPLICATION_VERIFIER_NO_BREAK= $20000000;
+
+const
+  APPLICATION_VERIFIER_CONTINUABLE_BREAK= $10000000;
+
+const
+  APPLICATION_VERIFIER_UNKNOWN_ERROR= $01;
+
+const
+  APPLICATION_VERIFIER_ACCESS_VIOLATION= $02;
+
+const
+  APPLICATION_VERIFIER_UNSYNCHRONIZED_ACCESS= $03;
+
+const
+  APPLICATION_VERIFIER_EXTREME_SIZE_REQUEST= $04;
+
+const
+  APPLICATION_VERIFIER_BAD_HEAP_HANDLE= $05;
+
+const
+  APPLICATION_VERIFIER_SWITCHED_HEAP_HANDLE= $06;
+
+const
+  APPLICATION_VERIFIER_DOUBLE_FREE= $07;
+
+const
+  APPLICATION_VERIFIER_CORRUPTED_HEAP_BLOCK= $08;
+
+const
+  APPLICATION_VERIFIER_DESTROY_PROCESS_HEAP= $09;
+
+const
+  APPLICATION_VERIFIER_UNEXPECTED_EXCEPTION= $0A;
+
+const
+  APPLICATION_VERIFIER_STACK_OVERFLOW= $0B;
+
+const
+  APPLICATION_VERIFIER_TERMINATE_THREAD_CALL= $0100;
+
+const
+  APPLICATION_VERIFIER_INVALID_EXIT_PROCESS_CALL= $0101;
+
+const
+  APPLICATION_VERIFIER_EXIT_THREAD_OWNS_LOCK= $0200;
+
+const
+  APPLICATION_VERIFIER_LOCK_IN_UNLOADED_DLL= $0201;
+
+const
+  APPLICATION_VERIFIER_LOCK_IN_FREED_HEAP= $0202;
+
+const
+  APPLICATION_VERIFIER_LOCK_DOUBLE_INITIALIZE= $0203;
+
+const
+  APPLICATION_VERIFIER_LOCK_IN_FREED_MEMORY= $0204;
+
+const
+  APPLICATION_VERIFIER_LOCK_CORRUPTED= $0205;
+
+const
+  APPLICATION_VERIFIER_LOCK_INVALID_OWNER= $0206;
+
+const
+  APPLICATION_VERIFIER_LOCK_INVALID_RECURSION_COUNT= $0207;
+
+const
+  APPLICATION_VERIFIER_LOCK_INVALID_LOCK_COUNT= $0208;
+
+const
+  APPLICATION_VERIFIER_LOCK_OVER_RELEASED= $0209;
+
+const
+  APPLICATION_VERIFIER_LOCK_NOT_INITIALIZED= $0210;
+
+const
+  APPLICATION_VERIFIER_LOCK_ALREADY_INITIALIZED= $0211;
+
+const
+  APPLICATION_VERIFIER_INVALID_HANDLE= $0300;
+
+const
+  APPLICATION_VERIFIER_INVALID_TLS_VALUE= $0301;
+
+const
+  APPLICATION_VERIFIER_INCORRECT_WAIT_CALL= $0302;
+
+const
+  APPLICATION_VERIFIER_NULL_HANDLE= $0303;
+
+const
+  APPLICATION_VERIFIER_WAIT_IN_DLLMAIN= $0304;
+
+const
+  APPLICATION_VERIFIER_COM_ERROR= $0400;
+
+const
+  APPLICATION_VERIFIER_COM_API_IN_DLLMAIN= $0401;
+
+const
+  APPLICATION_VERIFIER_COM_UNHANDLED_EXCEPTION= $0402;
+
+const
+  APPLICATION_VERIFIER_COM_UNBALANCED_COINIT= $0403;
+
+const
+  APPLICATION_VERIFIER_COM_UNBALANCED_OLEINIT= $0404;
+
+const
+  APPLICATION_VERIFIER_COM_UNBALANCED_SWC= $0405;
+
+const
+  APPLICATION_VERIFIER_COM_NULL_DACL= $0406;
+
+const
+  APPLICATION_VERIFIER_COM_UNSAFE_IMPERSONATION= $0407;
+
+const
+  APPLICATION_VERIFIER_COM_SMUGGLED_WRAPPER= $0408;
+
+const
+  APPLICATION_VERIFIER_COM_SMUGGLED_PROXY= $0409;
+
+const
+  APPLICATION_VERIFIER_COM_CF_SUCCESS_WITH_NULL= $040A;
+
+const
+  APPLICATION_VERIFIER_COM_GCO_SUCCESS_WITH_NULL= $040B;
+
+const
+  APPLICATION_VERIFIER_COM_OBJECT_IN_FREED_MEMORY= $040C;
+
+const
+  APPLICATION_VERIFIER_COM_OBJECT_IN_UNLOADED_DLL= $040D;
+
+const
+  APPLICATION_VERIFIER_COM_VTBL_IN_FREED_MEMORY= $040E;
+
+const
+  APPLICATION_VERIFIER_COM_VTBL_IN_UNLOADED_DLL= $040F;
+
+const
+  APPLICATION_VERIFIER_COM_HOLDING_LOCKS_ON_CALL= $0410;
+
+const
+  APPLICATION_VERIFIER_RPC_ERROR= $0500;
+
+const
+  APPLICATION_VERIFIER_INVALID_FREEMEM= $0600;
+
+const
+  APPLICATION_VERIFIER_INVALID_ALLOCMEM= $0601;
+
+const
+  APPLICATION_VERIFIER_INVALID_MAPVIEW= $0602;
+
+const
+  APPLICATION_VERIFIER_PROBE_INVALID_ADDRESS= $0603;
+
+const
+  APPLICATION_VERIFIER_PROBE_FREE_MEM= $0604;
+
+const
+  APPLICATION_VERIFIER_PROBE_GUARD_PAGE= $0605;
+
+const
+  APPLICATION_VERIFIER_PROBE_NULL= $0606;
+
+const
+  APPLICATION_VERIFIER_PROBE_INVALID_START_OR_SIZE= $0607;
+
+type
+t_014=^_EXCEPTION_POINTERS for machine_pointer use true;
+
+PVECTORED_EXCEPTION_HANDLER = ^procedure (
+    ExceptionInfo   : t_014)
+                      return LONG for machine_pointer use true;
+const
+  SEF_DACL_AUTO_INHERIT= $01;
+
+const
+  SEF_SACL_AUTO_INHERIT= $02;
+
+const
+  SEF_DEFAULT_DESCRIPTOR_FOR_OBJECT= $04;
+
+const
+  SEF_AVOID_PRIVILEGE_CHECK= $08;
+
+const
+  SEF_AVOID_OWNER_CHECK= $10;
+
+const
+  SEF_DEFAULT_OWNER_FROM_PARENT= $20;
+
+const
+  SEF_DEFAULT_GROUP_FROM_PARENT= $40;
+
+type
+_HEAP_INFORMATION_CLASS= enum
+    HeapCompatibilityInformation;
+  end enum for size use 4;
+  HEAP_INFORMATION_CLASS = _HEAP_INFORMATION_CLASS;
+-- 
+--  Multiple alloc-free APIS
+-- 
+const
+  WT_EXECUTEDEFAULT = $00;
+
+const
+  WT_EXECUTEINIOTHREAD= $01;
+
+const
+  WT_EXECUTEINUITHREAD= $02;
+
+const
+  WT_EXECUTEINWAITTHREAD= $04;
+
+const
+  WT_EXECUTEONLYONCE= $08;
+
+const
+  WT_EXECUTEINTIMERTHREAD= $20;
+
+const
+  WT_EXECUTELONGFUNCTION= $10;
+
+const
+  WT_EXECUTEINPERSISTENTIOTHREAD= $40;
+
+const
+  WT_EXECUTEINPERSISTENTTHREAD= $80;
+
+const
+  WT_TRANSFER_IMPERSONATION= $0100;
+
+type
+WAITORTIMERCALLBACKFUNC = ^procedure (
+    _001            : PVOID;
+    _002            : BOOLEAN) for machine_pointer use true;
+type
+WORKERCALLBACKFUNC = ^procedure (
+    _001            : PVOID) for machine_pointer use true;
+type
+APC_CALLBACK_FUNCTION = ^procedure (
+    _001            : DWORD;
+    _002            : PVOID;
+    _003            : PVOID) for machine_pointer use true;
+const
+  WT_EXECUTEINLONGTHREAD= $10;
+
+const
+  WT_EXECUTEDELETEWAIT= $08;
+
+type
+_ACTIVATION_CONTEXT_INFO_CLASS= enum
+    ActivationContextBasicInformation for ord use 1;
+    ActivationContextDetailedInformation for ord use 2;
+    AssemblyDetailedInformationInActivationContext for ord use 3;
+    FileInformationInAssemblyOfAssemblyInActivationContext for ord use 4;
+    MaxActivationContextInfoClass;
+    AssemblyDetailedInformationInActivationContxt for ord use 3;
+    FileInformationInAssemblyOfAssemblyInActivationContxt for ord use 4;
+  end enum for size use 4;
+  ACTIVATION_CONTEXT_INFO_CLASS = _ACTIVATION_CONTEXT_INFO_CLASS;
+type
+  _ACTIVATION_CONTEXT_QUERY_INDEX = record
+ulAssemblyIndex : DWORD;
+ulFileIndexInAssembly : DWORD;
+  end record;
+  ACTIVATION_CONTEXT_QUERY_INDEX = _ACTIVATION_CONTEXT_QUERY_INDEX;
+  PACTIVATION_CONTEXT_QUERY_INDEX = ^_ACTIVATION_CONTEXT_QUERY_INDEX;
+
+type
+  PCACTIVATION_CONTEXT_QUERY_INDEX = ^const _ACTIVATION_CONTEXT_QUERY_INDEX;
+type
+  _ASSEMBLY_FILE_DETAILED_INFORMATION = record
+ulFlags         : DWORD;
+ulFilenameLength : DWORD;
+ulPathLength    : DWORD;
+lpFileName      : PCWSTR;
+lpFilePath      : PCWSTR;
+  end record;
+  ASSEMBLY_FILE_DETAILED_INFORMATION = _ASSEMBLY_FILE_DETAILED_INFORMATION;
+  PASSEMBLY_FILE_DETAILED_INFORMATION = ^_ASSEMBLY_FILE_DETAILED_INFORMATION;
+
+type
+PCASSEMBLY_FILE_DETAILED_INFORMATION = ^ASSEMBLY_FILE_DETAILED_INFORMATION for machine_pointer use true;
+-- 
+--  compatibility with old names
+--  The new names use "file" consistently.
+-- 
+type
+  _ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION = record
+ulFlags         : DWORD;
+ulEncodedAssemblyIdentityLength : DWORD;
+ulManifestPathType : DWORD;
+ulManifestPathLength : DWORD;
+liManifestLastWriteTime : LARGE_INTEGER;
+ulPolicyPathType : DWORD;
+ulPolicyPathLength : DWORD;
+liPolicyLastWriteTime : LARGE_INTEGER;
+ulMetadataSatelliteRosterIndex : DWORD;
+ulManifestVersionMajor : DWORD;
+ulManifestVersionMinor : DWORD;
+ulPolicyVersionMajor : DWORD;
+ulPolicyVersionMinor : DWORD;
+ulAssemblyDirectoryNameLength : DWORD;
+lpAssemblyEncodedAssemblyIdentity : PCWSTR;
+lpAssemblyManifestPath : PCWSTR;
+lpAssemblyPolicyPath : PCWSTR;
+lpAssemblyDirectoryName : PCWSTR;
+ulFileCount     : DWORD;
+  end record;
+  ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION = _ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION;
+  PACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION = ^_ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION;
+
+type
+  PCACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION = ^const _ACTIVATION_CONTEXT_ASSEMBLY_DETAILED_INFORMATION;
+type
+  _ACTIVATION_CONTEXT_DETAILED_INFORMATION = record
+dwFlags         : DWORD;
+ulFormatVersion : DWORD;
+ulAssemblyCount : DWORD;
+ulRootManifestPathType : DWORD;
+ulRootManifestPathChars : DWORD;
+ulRootConfigurationPathType : DWORD;
+ulRootConfigurationPathChars : DWORD;
+ulAppDirPathType : DWORD;
+ulAppDirPathChars : DWORD;
+lpRootManifestPath : PCWSTR;
+lpRootConfigurationPath : PCWSTR;
+lpAppDirPath    : PCWSTR;
+  end record;
+  ACTIVATION_CONTEXT_DETAILED_INFORMATION = _ACTIVATION_CONTEXT_DETAILED_INFORMATION;
+  PACTIVATION_CONTEXT_DETAILED_INFORMATION = ^_ACTIVATION_CONTEXT_DETAILED_INFORMATION;
+
+type
+  PCACTIVATION_CONTEXT_DETAILED_INFORMATION = ^const _ACTIVATION_CONTEXT_DETAILED_INFORMATION;
+const
+  DLL_PROCESS_ATTACH= 1;
+
+const
+  DLL_THREAD_ATTACH = 2;
+
+const
+  DLL_THREAD_DETACH = 3;
+
+const
+  DLL_PROCESS_DETACH= 0;
+
+const
+  DLL_PROCESS_VERIFIER= 4;
+
+-- 
+--  Defines for the READ flags for Eventlogging
+-- 
+const
+  EVENTLOG_SEQUENTIAL_READ= $01;
+
+const
+  EVENTLOG_SEEK_READ= $02;
+
+const
+  EVENTLOG_FORWARDS_READ= $04;
+
+const
+  EVENTLOG_BACKWARDS_READ= $08;
+
+-- 
+--  The types of events that can be logged.
+-- 
+const
+  EVENTLOG_SUCCESS  = $00;
+
+const
+  EVENTLOG_ERROR_TYPE= $01;
+
+const
+  EVENTLOG_WARNING_TYPE= $02;
+
+const
+  EVENTLOG_INFORMATION_TYPE= $04;
+
+const
+  EVENTLOG_AUDIT_SUCCESS= $08;
+
+const
+  EVENTLOG_AUDIT_FAILURE= $10;
+
+-- 
+--  Defines for the WRITE flags used by Auditing for paired events
+--  These are not implemented in Product 1
+-- 
+const
+  EVENTLOG_START_PAIRED_EVENT= $01;
+
+const
+  EVENTLOG_END_PAIRED_EVENT= $02;
+
+const
+  EVENTLOG_END_ALL_PAIRED_EVENTS= $04;
+
+const
+  EVENTLOG_PAIRED_EVENT_ACTIVE= $08;
+
+const
+  EVENTLOG_PAIRED_EVENT_INACTIVE= $10;
+
+-- 
+--  Structure that defines the header of the Eventlog record. This is the
+--  fixed-sized portion before all the variable-length strings, binary
+--  data and pad bytes.
+-- 
+--  TimeGenerated is the time it was generated at the client.
+--  TimeWritten is the time it was put into the log at the server end.
+-- 
+type
+  _EVENTLOGRECORD   = record
+Length          : DWORD;
+Reserved        : DWORD;
+RecordNumber    : DWORD;
+TimeGenerated   : DWORD;
+TimeWritten     : DWORD;
+EventID         : DWORD;
+EventType       : WORD;
+NumStrings      : WORD;
+EventCategory   : WORD;
+ReservedFlags   : WORD;
+ClosingRecordNumber : DWORD;
+StringOffset    : DWORD;
+UserSidLength   : DWORD;
+UserSidOffset   : DWORD;
+DataLength      : DWORD;
+DataOffset      : DWORD;
+  end record;
+  EVENTLOGRECORD    = _EVENTLOGRECORD;
+  PEVENTLOGRECORD   = ^_EVENTLOGRECORD;
+
+-- SS: start of changes to support clustering
+-- SS: ideally the
+const
+  MAXLOGICALLOGNAMESIZE= 256;
+
+-- #pragma  warning(push)
+-- #pragma  warning(disable : 4200)
+-- #pragma  warning(pop)
+-- #pragma  warning(default : 4200)
+-- SS: end of changes to support clustering
+-- 
+--  begin_ntddk begin_wdm begin_nthal
+-- 
+--  Registry Specific Access Rights.
+-- 
+-- 
+--  Open/Create Options
+-- 
+--  when system is rebooted
+--  when system is rebooted
+--  symbolic link
+--  special access rules
+--  privilege required
+-- 
+--  Key creation/open disposition
+-- 
+-- 
+--  hive format to be used by Reg(Nt)SaveKeyEx
+-- 
+const
+  REG_STANDARD_FORMAT= 1;
+
+const
+  REG_LATEST_FORMAT = 2;
+
+const
+  REG_NO_COMPRESSION= 4;
+
+-- 
+--  Key restore flags
+-- 
+-- 
+--  Unload Flags
+-- 
+const
+  REG_FORCE_UNLOAD  = 1;
+
+--  end_ntddk end_wdm end_nthal
+-- 
+--  Notify filter values
+-- 
+-- 
+-- 
+--  Predefined Value Types.
+-- 
+--  (with environment variable references)
+--  end_ntddk end_wdm end_nthal
+--  begin_ntddk begin_wdm begin_nthal
+-- 
+--  Service Types (Bit Mask)
+-- 
+const
+  SERVICE_KERNEL_DRIVER= $01;
+
+const
+  SERVICE_FILE_SYSTEM_DRIVER= $02;
+
+const
+  SERVICE_ADAPTER   = $04;
+
+const
+  SERVICE_RECOGNIZER_DRIVER= $08;
+
+const
+  SERVICE_WIN32_OWN_PROCESS= $10;
+
+const
+  SERVICE_WIN32_SHARE_PROCESS= $20;
+
+const
+  SERVICE_INTERACTIVE_PROCESS= $0100;
+
+-- 
+--  Start Type
+-- 
+const
+  SERVICE_BOOT_START= $00;
+
+const
+  SERVICE_SYSTEM_START= $01;
+
+const
+  SERVICE_AUTO_START= $02;
+
+const
+  SERVICE_DEMAND_START= $03;
+
+const
+  SERVICE_DISABLED  = $04;
+
+-- 
+--  Error control type
+-- 
+const
+  SERVICE_ERROR_IGNORE= $00;
+
+const
+  SERVICE_ERROR_NORMAL= $01;
+
+const
+  SERVICE_ERROR_SEVERE= $02;
+
+const
+  SERVICE_ERROR_CRITICAL= $03;
+
+-- 
+-- 
+--  Define the registry driver node enumerations
+-- 
+type
+_CM_SERVICE_NODE_TYPE= enum
+    DriverType   ; --for ord use SERVICE_KERNEL_DRIVER:ord;
+    FileSystemType ; --for ord use SERVICE_FILE_SYSTEM_DRIVER:ord;
+    Win32ServiceOwnProcess ; --for ord use SERVICE_WIN32_OWN_PROCESS:ord;
+    Win32ServiceShareProcess ; --for ord use SERVICE_WIN32_SHARE_PROCESS:ord;
+    AdapterType  ; --for ord use SERVICE_ADAPTER:ord;
+    RecognizerType ; --for ord use SERVICE_RECOGNIZER_DRIVER:ord;
+  end enum for size use 4;
+  SERVICE_NODE_TYPE = _CM_SERVICE_NODE_TYPE;
+type
+_CM_SERVICE_LOAD_TYPE= enum
+    BootLoad     ; --for ord use SERVICE_BOOT_START:ord;
+    SystemLoad   ; --for ord use SERVICE_SYSTEM_START:ord;
+    AutoLoad     ; --for ord use SERVICE_AUTO_START:ord;
+    DemandLoad   ; --for ord use SERVICE_DEMAND_START:ord;
+    DisableLoad  ; --for ord use SERVICE_DISABLED:ord;
+  end enum for size use 4;
+  SERVICE_LOAD_TYPE = _CM_SERVICE_LOAD_TYPE;
+type
+_CM_ERROR_CONTROL_TYPE= enum
+    IgnoreError  ; --for ord use SERVICE_ERROR_IGNORE:ord;
+    NormalError  ; --for ord use SERVICE_ERROR_NORMAL:ord;
+    SevereError  ; --for ord use SERVICE_ERROR_SEVERE:ord;
+    CriticalError ; --for ord use SERVICE_ERROR_CRITICAL:ord;
+  end enum for size use 4;
+  SERVICE_ERROR_TYPE = _CM_ERROR_CONTROL_TYPE;
+-- 
+--  IOCTL_TAPE_ERASE definitions
+-- 
+const
+  TAPE_ERASE_SHORT  = 0;
+
+const
+  TAPE_ERASE_LONG   = 1;
+
+type
+  _TAPE_ERASE       = record
+_Type           : DWORD;
+Immediate       : BOOLEAN;
+  end record;
+  TAPE_ERASE        = _TAPE_ERASE;
+  PTAPE_ERASE       = ^_TAPE_ERASE;
+
+-- 
+--  IOCTL_TAPE_PREPARE definitions
+-- 
+const
+  TAPE_LOAD         = 0;
+
+const
+  TAPE_UNLOAD       = 1;
+
+const
+  TAPE_TENSION      = 2;
+
+const
+  TAPE_LOCK         = 3;
+
+const
+  TAPE_UNLOCK       = 4;
+
+const
+  TAPE_FORMAT       = 5;
+
+type
+  _TAPE_PREPARE     = record
+Operation       : DWORD;
+Immediate       : BOOLEAN;
+  end record;
+  TAPE_PREPARE      = _TAPE_PREPARE;
+  PTAPE_PREPARE     = ^_TAPE_PREPARE;
+
+-- 
+--  IOCTL_TAPE_WRITE_MARKS definitions
+-- 
+const
+  TAPE_SETMARKS     = 0;
+
+const
+  TAPE_FILEMARKS    = 1;
+
+const
+  TAPE_SHORT_FILEMARKS= 2;
+
+const
+  TAPE_LONG_FILEMARKS= 3;
+
+type
+  _TAPE_WRITE_MARKS = record
+_Type           : DWORD;
+Count           : DWORD;
+Immediate       : BOOLEAN;
+  end record;
+  TAPE_WRITE_MARKS  = _TAPE_WRITE_MARKS;
+  PTAPE_WRITE_MARKS = ^_TAPE_WRITE_MARKS;
+
+-- 
+--  IOCTL_TAPE_GET_POSITION definitions
+-- 
+const
+  TAPE_ABSOLUTE_POSITION= 0;
+
+const
+  TAPE_LOGICAL_POSITION= 1;
+
+const
+  TAPE_PSEUDO_LOGICAL_POSITION= 2;
+
+type
+  _TAPE_GET_POSITION = record
+_Type           : DWORD;
+Partition       : DWORD;
+Offset          : LARGE_INTEGER;
+  end record;
+  TAPE_GET_POSITION = _TAPE_GET_POSITION;
+  PTAPE_GET_POSITION = ^_TAPE_GET_POSITION;
+
+-- 
+--  IOCTL_TAPE_SET_POSITION definitions
+-- 
+const
+  TAPE_REWIND       = 0;
+
+const
+  TAPE_ABSOLUTE_BLOCK= 1;
+
+const
+  TAPE_LOGICAL_BLOCK= 2;
+
+const
+  TAPE_PSEUDO_LOGICAL_BLOCK= 3;
+
+const
+  TAPE_SPACE_END_OF_DATA= 4;
+
+const
+  TAPE_SPACE_RELATIVE_BLOCKS= 5;
+
+const
+  TAPE_SPACE_FILEMARKS= 6;
+
+const
+  TAPE_SPACE_SEQUENTIAL_FMKS= 7;
+
+const
+  TAPE_SPACE_SETMARKS= 8;
+
+const
+  TAPE_SPACE_SEQUENTIAL_SMKS= 9;
+
+type
+  _TAPE_SET_POSITION = record
+Method          : DWORD;
+Partition       : DWORD;
+Offset          : LARGE_INTEGER;
+Immediate       : BOOLEAN;
+  end record;
+  TAPE_SET_POSITION = _TAPE_SET_POSITION;
+  PTAPE_SET_POSITION = ^_TAPE_SET_POSITION;
+
+-- 
+--  IOCTL_TAPE_GET_DRIVE_PARAMS definitions
+-- 
+-- 
+--  Definitions for FeaturesLow parameter
+-- 
+const
+  TAPE_DRIVE_FIXED  = $01;
+
+const
+  TAPE_DRIVE_SELECT = $02;
+
+const
+  TAPE_DRIVE_INITIATOR= $04;
+
+const
+  TAPE_DRIVE_ERASE_SHORT= $10;
+
+const
+  TAPE_DRIVE_ERASE_LONG= $20;
+
+const
+  TAPE_DRIVE_ERASE_BOP_ONLY= $40;
+
+const
+  TAPE_DRIVE_ERASE_IMMEDIATE= $80;
+
+const
+  TAPE_DRIVE_TAPE_CAPACITY= $0100;
+
+const
+  TAPE_DRIVE_TAPE_REMAINING= $0200;
+
+const
+  TAPE_DRIVE_FIXED_BLOCK= $0400;
+
+const
+  TAPE_DRIVE_VARIABLE_BLOCK= $0800;
+
+const
+  TAPE_DRIVE_WRITE_PROTECT= $1000;
+
+const
+  TAPE_DRIVE_EOT_WZ_SIZE= $2000;
+
+const
+  TAPE_DRIVE_ECC    = $10000;
+
+const
+  TAPE_DRIVE_COMPRESSION= $20000;
+
+const
+  TAPE_DRIVE_PADDING= $40000;
+
+const
+  TAPE_DRIVE_REPORT_SMKS= $80000;
+
+const
+  TAPE_DRIVE_GET_ABSOLUTE_BLK= $100000;
+
+const
+  TAPE_DRIVE_GET_LOGICAL_BLK= $200000;
+
+const
+  TAPE_DRIVE_SET_EOT_WZ_SIZE= $400000;
+
+const
+  TAPE_DRIVE_EJECT_MEDIA= $1000000;
+
+const
+  TAPE_DRIVE_CLEAN_REQUESTS= $2000000;
+
+const
+  TAPE_DRIVE_SET_CMP_BOP_ONLY= $4000000;
+
+const
+  TAPE_DRIVE_RESERVED_BIT= $80000000;
+
+--  //can't be a low features bit!
+--  //reserved; high features only
+-- 
+--  Definitions for FeaturesHigh parameter
+-- 
+const
+  TAPE_DRIVE_LOAD_UNLOAD= $80000001;
+
+const
+  TAPE_DRIVE_TENSION= $80000002;
+
+const
+  TAPE_DRIVE_LOCK_UNLOCK= $80000004;
+
+const
+  TAPE_DRIVE_REWIND_IMMEDIATE= $80000008;
+
+const
+  TAPE_DRIVE_SET_BLOCK_SIZE= $80000010;
+
+const
+  TAPE_DRIVE_LOAD_UNLD_IMMED= $80000020;
+
+const
+  TAPE_DRIVE_TENSION_IMMED= $80000040;
+
+const
+  TAPE_DRIVE_LOCK_UNLK_IMMED= $80000080;
+
+const
+  TAPE_DRIVE_SET_ECC= $80000100;
+
+const
+  TAPE_DRIVE_SET_COMPRESSION= $80000200;
+
+const
+  TAPE_DRIVE_SET_PADDING= $80000400;
+
+const
+  TAPE_DRIVE_SET_REPORT_SMKS= $80000800;
+
+const
+  TAPE_DRIVE_ABSOLUTE_BLK= $80001000;
+
+const
+  TAPE_DRIVE_ABS_BLK_IMMED= $80002000;
+
+const
+  TAPE_DRIVE_LOGICAL_BLK= $80004000;
+
+const
+  TAPE_DRIVE_LOG_BLK_IMMED= $80008000;
+
+const
+  TAPE_DRIVE_END_OF_DATA= $80010000;
+
+const
+  TAPE_DRIVE_RELATIVE_BLKS= $80020000;
+
+const
+  TAPE_DRIVE_FILEMARKS= $80040000;
+
+const
+  TAPE_DRIVE_SEQUENTIAL_FMKS= $80080000;
+
+const
+  TAPE_DRIVE_SETMARKS= $80100000;
+
+const
+  TAPE_DRIVE_SEQUENTIAL_SMKS= $80200000;
+
+const
+  TAPE_DRIVE_REVERSE_POSITION= $80400000;
+
+const
+  TAPE_DRIVE_SPACE_IMMEDIATE= $80800000;
+
+const
+  TAPE_DRIVE_WRITE_SETMARKS= $81000000;
+
+const
+  TAPE_DRIVE_WRITE_FILEMARKS= $82000000;
+
+const
+  TAPE_DRIVE_WRITE_SHORT_FMKS= $84000000;
+
+const
+  TAPE_DRIVE_WRITE_LONG_FMKS= $88000000;
+
+const
+  TAPE_DRIVE_WRITE_MARK_IMMED= $90000000;
+
+const
+  TAPE_DRIVE_FORMAT = $A0000000;
+
+const
+  TAPE_DRIVE_FORMAT_IMMEDIATE= $C0000000;
+
+const
+  TAPE_DRIVE_HIGH_FEATURES= $80000000;
+
+type
+  _TAPE_GET_DRIVE_PARAMETERS = record
+ECC             : BOOLEAN;
+Compression     : BOOLEAN;
+DataPadding     : BOOLEAN;
+ReportSetmarks  : BOOLEAN;
+DefaultBlockSize : DWORD;
+MaximumBlockSize : DWORD;
+MinimumBlockSize : DWORD;
+MaximumPartitionCount : DWORD;
+FeaturesLow     : DWORD;
+FeaturesHigh    : DWORD;
+EOTWarningZoneSize : DWORD;
+  end record;
+  TAPE_GET_DRIVE_PARAMETERS = _TAPE_GET_DRIVE_PARAMETERS;
+  PTAPE_GET_DRIVE_PARAMETERS = ^_TAPE_GET_DRIVE_PARAMETERS;
+
+-- 
+--  IOCTL_TAPE_SET_DRIVE_PARAMETERS definitions
+-- 
+type
+  _TAPE_SET_DRIVE_PARAMETERS = record
+ECC             : BOOLEAN;
+Compression     : BOOLEAN;
+DataPadding     : BOOLEAN;
+ReportSetmarks  : BOOLEAN;
+EOTWarningZoneSize : DWORD;
+  end record;
+  TAPE_SET_DRIVE_PARAMETERS = _TAPE_SET_DRIVE_PARAMETERS;
+  PTAPE_SET_DRIVE_PARAMETERS = ^_TAPE_SET_DRIVE_PARAMETERS;
+
+-- 
+--  IOCTL_TAPE_GET_MEDIA_PARAMETERS definitions
+-- 
+type
+  _TAPE_GET_MEDIA_PARAMETERS = record
+Capacity        : LARGE_INTEGER;
+Remaining       : LARGE_INTEGER;
+BlockSize       : DWORD;
+PartitionCount  : DWORD;
+WriteProtected  : BOOLEAN;
+  end record;
+  TAPE_GET_MEDIA_PARAMETERS = _TAPE_GET_MEDIA_PARAMETERS;
+  PTAPE_GET_MEDIA_PARAMETERS = ^_TAPE_GET_MEDIA_PARAMETERS;
+
+-- 
+--  IOCTL_TAPE_SET_MEDIA_PARAMETERS definitions
+-- 
+type
+  _TAPE_SET_MEDIA_PARAMETERS = record
+BlockSize       : DWORD;
+  end record;
+  TAPE_SET_MEDIA_PARAMETERS = _TAPE_SET_MEDIA_PARAMETERS;
+  PTAPE_SET_MEDIA_PARAMETERS = ^_TAPE_SET_MEDIA_PARAMETERS;
+
+-- 
+--  IOCTL_TAPE_CREATE_PARTITION definitions
+-- 
+const
+  TAPE_FIXED_PARTITIONS= 0;
+
+const
+  TAPE_SELECT_PARTITIONS= 1;
+
+const
+  TAPE_INITIATOR_PARTITIONS= 2;
+
+type
+  _TAPE_CREATE_PARTITION = record
+Method          : DWORD;
+Count           : DWORD;
+Size            : DWORD;
+  end record;
+  TAPE_CREATE_PARTITION = _TAPE_CREATE_PARTITION;
+  PTAPE_CREATE_PARTITION = ^_TAPE_CREATE_PARTITION;
+
+-- 
+--  WMI Methods
+-- 
+const
+  TAPE_QUERY_DRIVE_PARAMETERS= 0;
+
+const
+  TAPE_QUERY_MEDIA_CAPACITY= 1;
+
+const
+  TAPE_CHECK_FOR_DRIVE_PROBLEM= 2;
+
+const
+  TAPE_QUERY_IO_ERROR_DATA= 3;
+
+const
+  TAPE_QUERY_DEVICE_ERROR_DATA= 4;
+
+type
+  _TAPE_WMI_OPERATIONS = record
+Method          : DWORD;
+DataBufferSize  : DWORD;
+DataBuffer      : PVOID;
+  end record;
+  TAPE_WMI_OPERATIONS = _TAPE_WMI_OPERATIONS;
+  PTAPE_WMI_OPERATIONS = ^_TAPE_WMI_OPERATIONS;
+
+-- 
+--  Type of drive errors
+-- 
+type
+_TAPE_DRIVE_PROBLEM_TYPE= enum
+    TapeDriveProblemNone;
+    TapeDriveReadWriteWarning;
+    TapeDriveReadWriteError;
+    TapeDriveReadWarning;
+    TapeDriveWriteWarning;
+    TapeDriveReadError;
+    TapeDriveWriteError;
+    TapeDriveHardwareError;
+    TapeDriveUnsupportedMedia;
+    TapeDriveScsiConnectionError;
+    TapeDriveTimetoClean;
+    TapeDriveCleanDriveNow;
+    TapeDriveMediaLifeExpired;
+    TapeDriveSnappedTape;
+  end enum for size use 4;
+  TAPE_DRIVE_PROBLEM_TYPE = _TAPE_DRIVE_PROBLEM_TYPE;
+--  winnt_only
+
+end winnt;

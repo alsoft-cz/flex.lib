@@ -1,0 +1,3953 @@
+----------------------------------------------------------------------------------------------------
+module winspool =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,wingdi,winbase;
+
+-- /*++
+-- 
+-- Copyright (c) 1990-1998  Microsoft Corporation
+-- 
+-- Module Name:
+-- 
+--     WinSpool.h
+-- 
+-- Abstract:
+-- 
+--     Header file for Print APIs
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- skip #include <prsht.h> not found
+type
+  _PRINTER_INFO_1A  = record
+Flags           : DWORD;
+pDescription    : LPSTR;
+pName           : LPSTR;
+pComment        : LPSTR;
+  end record;
+  PRINTER_INFO_1A   = _PRINTER_INFO_1A;
+  PPRINTER_INFO_1A  = ^_PRINTER_INFO_1A;
+  LPPRINTER_INFO_1A = ^_PRINTER_INFO_1A;
+
+type
+  _PRINTER_INFO_1W  = record
+Flags           : DWORD;
+pDescription    : LPWSTR;
+pName           : LPWSTR;
+pComment        : LPWSTR;
+  end record;
+  PRINTER_INFO_1W   = _PRINTER_INFO_1W;
+  PPRINTER_INFO_1W  = ^_PRINTER_INFO_1W;
+  LPPRINTER_INFO_1W = ^_PRINTER_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_1    = PRINTER_INFO_1W;
+type
+PPRINTER_INFO_1   = PPRINTER_INFO_1W;
+type
+LPPRINTER_INFO_1  = LPPRINTER_INFO_1W;
+#else;
+type
+PRINTER_INFO_1    = PRINTER_INFO_1A;
+type
+PPRINTER_INFO_1   = PPRINTER_INFO_1A;
+type
+LPPRINTER_INFO_1  = LPPRINTER_INFO_1A;
+#end if;
+
+type
+  _PRINTER_INFO_2A  = record
+pServerName     : LPSTR;
+pPrinterName    : LPSTR;
+pShareName      : LPSTR;
+pPortName       : LPSTR;
+pDriverName     : LPSTR;
+pComment        : LPSTR;
+pLocation       : LPSTR;
+pDevMode        : LPDEVMODEA;
+pSepFile        : LPSTR;
+pPrintProcessor : LPSTR;
+pDatatype       : LPSTR;
+pParameters     : LPSTR;
+pSecurityDescriptor : PSECURITY_DESCRIPTOR;
+Attributes      : DWORD;
+Priority        : DWORD;
+DefaultPriority : DWORD;
+StartTime       : DWORD;
+UntilTime       : DWORD;
+Status          : DWORD;
+cJobs           : DWORD;
+AveragePPM      : DWORD;
+  end record;
+  PRINTER_INFO_2A   = _PRINTER_INFO_2A;
+  PPRINTER_INFO_2A  = ^_PRINTER_INFO_2A;
+  LPPRINTER_INFO_2A = ^_PRINTER_INFO_2A;
+
+type
+  _PRINTER_INFO_2W  = record
+pServerName     : LPWSTR;
+pPrinterName    : LPWSTR;
+pShareName      : LPWSTR;
+pPortName       : LPWSTR;
+pDriverName     : LPWSTR;
+pComment        : LPWSTR;
+pLocation       : LPWSTR;
+pDevMode        : LPDEVMODEW;
+pSepFile        : LPWSTR;
+pPrintProcessor : LPWSTR;
+pDatatype       : LPWSTR;
+pParameters     : LPWSTR;
+pSecurityDescriptor : PSECURITY_DESCRIPTOR;
+Attributes      : DWORD;
+Priority        : DWORD;
+DefaultPriority : DWORD;
+StartTime       : DWORD;
+UntilTime       : DWORD;
+Status          : DWORD;
+cJobs           : DWORD;
+AveragePPM      : DWORD;
+  end record;
+  PRINTER_INFO_2W   = _PRINTER_INFO_2W;
+  PPRINTER_INFO_2W  = ^_PRINTER_INFO_2W;
+  LPPRINTER_INFO_2W = ^_PRINTER_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_2    = PRINTER_INFO_2W;
+type
+PPRINTER_INFO_2   = PPRINTER_INFO_2W;
+type
+LPPRINTER_INFO_2  = LPPRINTER_INFO_2W;
+#else;
+type
+PRINTER_INFO_2    = PRINTER_INFO_2A;
+type
+PPRINTER_INFO_2   = PPRINTER_INFO_2A;
+type
+LPPRINTER_INFO_2  = LPPRINTER_INFO_2A;
+#end if;
+
+type
+  _PRINTER_INFO_3   = record
+pSecurityDescriptor : PSECURITY_DESCRIPTOR;
+  end record;
+  PRINTER_INFO_3    = _PRINTER_INFO_3;
+  PPRINTER_INFO_3   = ^_PRINTER_INFO_3;
+  LPPRINTER_INFO_3  = ^_PRINTER_INFO_3;
+
+type
+  _PRINTER_INFO_4A  = record
+pPrinterName    : LPSTR;
+pServerName     : LPSTR;
+Attributes      : DWORD;
+  end record;
+  PRINTER_INFO_4A   = _PRINTER_INFO_4A;
+  PPRINTER_INFO_4A  = ^_PRINTER_INFO_4A;
+  LPPRINTER_INFO_4A = ^_PRINTER_INFO_4A;
+
+type
+  _PRINTER_INFO_4W  = record
+pPrinterName    : LPWSTR;
+pServerName     : LPWSTR;
+Attributes      : DWORD;
+  end record;
+  PRINTER_INFO_4W   = _PRINTER_INFO_4W;
+  PPRINTER_INFO_4W  = ^_PRINTER_INFO_4W;
+  LPPRINTER_INFO_4W = ^_PRINTER_INFO_4W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_4    = PRINTER_INFO_4W;
+type
+PPRINTER_INFO_4   = PPRINTER_INFO_4W;
+type
+LPPRINTER_INFO_4  = LPPRINTER_INFO_4W;
+#else;
+type
+PRINTER_INFO_4    = PRINTER_INFO_4A;
+type
+PPRINTER_INFO_4   = PPRINTER_INFO_4A;
+type
+LPPRINTER_INFO_4  = LPPRINTER_INFO_4A;
+#end if;
+
+type
+  _PRINTER_INFO_5A  = record
+pPrinterName    : LPSTR;
+pPortName       : LPSTR;
+Attributes      : DWORD;
+DeviceNotSelectedTimeout : DWORD;
+TransmissionRetryTimeout : DWORD;
+  end record;
+  PRINTER_INFO_5A   = _PRINTER_INFO_5A;
+  PPRINTER_INFO_5A  = ^_PRINTER_INFO_5A;
+  LPPRINTER_INFO_5A = ^_PRINTER_INFO_5A;
+
+type
+  _PRINTER_INFO_5W  = record
+pPrinterName    : LPWSTR;
+pPortName       : LPWSTR;
+Attributes      : DWORD;
+DeviceNotSelectedTimeout : DWORD;
+TransmissionRetryTimeout : DWORD;
+  end record;
+  PRINTER_INFO_5W   = _PRINTER_INFO_5W;
+  PPRINTER_INFO_5W  = ^_PRINTER_INFO_5W;
+  LPPRINTER_INFO_5W = ^_PRINTER_INFO_5W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_5    = PRINTER_INFO_5W;
+type
+PPRINTER_INFO_5   = PPRINTER_INFO_5W;
+type
+LPPRINTER_INFO_5  = LPPRINTER_INFO_5W;
+#else;
+type
+PRINTER_INFO_5    = PRINTER_INFO_5A;
+type
+PPRINTER_INFO_5   = PPRINTER_INFO_5A;
+type
+LPPRINTER_INFO_5  = LPPRINTER_INFO_5A;
+#end if;
+
+type
+  _PRINTER_INFO_6   = record
+dwStatus        : DWORD;
+  end record;
+  PRINTER_INFO_6    = _PRINTER_INFO_6;
+  PPRINTER_INFO_6   = ^_PRINTER_INFO_6;
+  LPPRINTER_INFO_6  = ^_PRINTER_INFO_6;
+
+type
+  _PRINTER_INFO_7A  = record
+pszObjectGUID   : LPSTR;
+dwAction        : DWORD;
+  end record;
+  PRINTER_INFO_7A   = _PRINTER_INFO_7A;
+  PPRINTER_INFO_7A  = ^_PRINTER_INFO_7A;
+  LPPRINTER_INFO_7A = ^_PRINTER_INFO_7A;
+
+type
+  _PRINTER_INFO_7W  = record
+pszObjectGUID   : LPWSTR;
+dwAction        : DWORD;
+  end record;
+  PRINTER_INFO_7W   = _PRINTER_INFO_7W;
+  PPRINTER_INFO_7W  = ^_PRINTER_INFO_7W;
+  LPPRINTER_INFO_7W = ^_PRINTER_INFO_7W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_7    = PRINTER_INFO_7W;
+type
+PPRINTER_INFO_7   = PPRINTER_INFO_7W;
+type
+LPPRINTER_INFO_7  = LPPRINTER_INFO_7W;
+#else;
+type
+PRINTER_INFO_7    = PRINTER_INFO_7A;
+type
+PPRINTER_INFO_7   = PPRINTER_INFO_7A;
+type
+LPPRINTER_INFO_7  = LPPRINTER_INFO_7A;
+#end if;
+
+const
+  DSPRINT_PUBLISH   = $01;
+
+const
+  DSPRINT_UPDATE    = $02;
+
+const
+  DSPRINT_UNPUBLISH = $04;
+
+const
+  DSPRINT_REPUBLISH = $08;
+
+const
+  DSPRINT_PENDING   = $80000000;
+
+type
+  _PRINTER_INFO_8A  = record
+pDevMode        : LPDEVMODEA;
+  end record;
+  PRINTER_INFO_8A   = _PRINTER_INFO_8A;
+  PPRINTER_INFO_8A  = ^_PRINTER_INFO_8A;
+  LPPRINTER_INFO_8A = ^_PRINTER_INFO_8A;
+
+type
+  _PRINTER_INFO_8W  = record
+pDevMode        : LPDEVMODEW;
+  end record;
+  PRINTER_INFO_8W   = _PRINTER_INFO_8W;
+  PPRINTER_INFO_8W  = ^_PRINTER_INFO_8W;
+  LPPRINTER_INFO_8W = ^_PRINTER_INFO_8W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_8    = PRINTER_INFO_8W;
+type
+PPRINTER_INFO_8   = PPRINTER_INFO_8W;
+type
+LPPRINTER_INFO_8  = LPPRINTER_INFO_8W;
+#else;
+type
+PRINTER_INFO_8    = PRINTER_INFO_8A;
+type
+PPRINTER_INFO_8   = PPRINTER_INFO_8A;
+type
+LPPRINTER_INFO_8  = LPPRINTER_INFO_8A;
+#end if;
+
+type
+  _PRINTER_INFO_9A  = record
+pDevMode        : LPDEVMODEA;
+  end record;
+  PRINTER_INFO_9A   = _PRINTER_INFO_9A;
+  PPRINTER_INFO_9A  = ^_PRINTER_INFO_9A;
+  LPPRINTER_INFO_9A = ^_PRINTER_INFO_9A;
+
+type
+  _PRINTER_INFO_9W  = record
+pDevMode        : LPDEVMODEW;
+  end record;
+  PRINTER_INFO_9W   = _PRINTER_INFO_9W;
+  PPRINTER_INFO_9W  = ^_PRINTER_INFO_9W;
+  LPPRINTER_INFO_9W = ^_PRINTER_INFO_9W;
+
+#if #declared UNICODE; then;
+type
+PRINTER_INFO_9    = PRINTER_INFO_9W;
+type
+PPRINTER_INFO_9   = PPRINTER_INFO_9W;
+type
+LPPRINTER_INFO_9  = LPPRINTER_INFO_9W;
+#else;
+type
+PRINTER_INFO_9    = PRINTER_INFO_9A;
+type
+PPRINTER_INFO_9   = PPRINTER_INFO_9A;
+type
+LPPRINTER_INFO_9  = LPPRINTER_INFO_9A;
+#end if;
+
+const
+  PRINTER_CONTROL_PAUSE= 1;
+
+const
+  PRINTER_CONTROL_RESUME= 2;
+
+const
+  PRINTER_CONTROL_PURGE= 3;
+
+const
+  PRINTER_CONTROL_SET_STATUS= 4;
+
+const
+  PRINTER_STATUS_PAUSED= $01;
+
+const
+  PRINTER_STATUS_ERROR= $02;
+
+const
+  PRINTER_STATUS_PENDING_DELETION= $04;
+
+const
+  PRINTER_STATUS_PAPER_JAM= $08;
+
+const
+  PRINTER_STATUS_PAPER_OUT= $10;
+
+const
+  PRINTER_STATUS_MANUAL_FEED= $20;
+
+const
+  PRINTER_STATUS_PAPER_PROBLEM= $40;
+
+const
+  PRINTER_STATUS_OFFLINE= $80;
+
+const
+  PRINTER_STATUS_IO_ACTIVE= $0100;
+
+const
+  PRINTER_STATUS_BUSY= $0200;
+
+const
+  PRINTER_STATUS_PRINTING= $0400;
+
+const
+  PRINTER_STATUS_OUTPUT_BIN_FULL= $0800;
+
+const
+  PRINTER_STATUS_NOT_AVAILABLE= $1000;
+
+const
+  PRINTER_STATUS_WAITING= $2000;
+
+const
+  PRINTER_STATUS_PROCESSING= $4000;
+
+const
+  PRINTER_STATUS_INITIALIZING= $8000;
+
+const
+  PRINTER_STATUS_WARMING_UP= $10000;
+
+const
+  PRINTER_STATUS_TONER_LOW= $20000;
+
+const
+  PRINTER_STATUS_NO_TONER= $40000;
+
+const
+  PRINTER_STATUS_PAGE_PUNT= $80000;
+
+const
+  PRINTER_STATUS_USER_INTERVENTION= $100000;
+
+const
+  PRINTER_STATUS_OUT_OF_MEMORY= $200000;
+
+const
+  PRINTER_STATUS_DOOR_OPEN= $400000;
+
+const
+  PRINTER_STATUS_SERVER_UNKNOWN= $800000;
+
+const
+  PRINTER_STATUS_POWER_SAVE= $1000000;
+
+const
+  PRINTER_ATTRIBUTE_QUEUED= $01;
+
+const
+  PRINTER_ATTRIBUTE_DIRECT= $02;
+
+const
+  PRINTER_ATTRIBUTE_DEFAULT= $04;
+
+const
+  PRINTER_ATTRIBUTE_SHARED= $08;
+
+const
+  PRINTER_ATTRIBUTE_NETWORK= $10;
+
+const
+  PRINTER_ATTRIBUTE_HIDDEN= $20;
+
+const
+  PRINTER_ATTRIBUTE_LOCAL= $40;
+
+const
+  PRINTER_ATTRIBUTE_ENABLE_DEVQ= $80;
+
+const
+  PRINTER_ATTRIBUTE_KEEPPRINTEDJOBS= $0100;
+
+const
+  PRINTER_ATTRIBUTE_DO_COMPLETE_FIRST= $0200;
+
+const
+  PRINTER_ATTRIBUTE_WORK_OFFLINE= $0400;
+
+const
+  PRINTER_ATTRIBUTE_ENABLE_BIDI= $0800;
+
+const
+  PRINTER_ATTRIBUTE_RAW_ONLY= $1000;
+
+const
+  PRINTER_ATTRIBUTE_PUBLISHED= $2000;
+
+const
+  PRINTER_ATTRIBUTE_FAX= $4000;
+
+const
+  PRINTER_ATTRIBUTE_TS= $8000;
+
+const
+  NO_PRIORITY       = 0;
+
+const
+  MAX_PRIORITY      = 99;
+
+const
+  MIN_PRIORITY      = 1;
+
+const
+  DEF_PRIORITY      = 1;
+
+type
+  _JOB_INFO_1A      = record
+JobId           : DWORD;
+pPrinterName    : LPSTR;
+pMachineName    : LPSTR;
+pUserName       : LPSTR;
+pDocument       : LPSTR;
+pDatatype       : LPSTR;
+pStatus         : LPSTR;
+Status          : DWORD;
+Priority        : DWORD;
+Position        : DWORD;
+TotalPages      : DWORD;
+PagesPrinted    : DWORD;
+Submitted       : t_SYSTEMTIME;
+  end record;
+  JOB_INFO_1A       = _JOB_INFO_1A;
+  PJOB_INFO_1A      = ^_JOB_INFO_1A;
+  LPJOB_INFO_1A     = ^_JOB_INFO_1A;
+
+type
+  _JOB_INFO_1W      = record
+JobId           : DWORD;
+pPrinterName    : LPWSTR;
+pMachineName    : LPWSTR;
+pUserName       : LPWSTR;
+pDocument       : LPWSTR;
+pDatatype       : LPWSTR;
+pStatus         : LPWSTR;
+Status          : DWORD;
+Priority        : DWORD;
+Position        : DWORD;
+TotalPages      : DWORD;
+PagesPrinted    : DWORD;
+Submitted       : t_SYSTEMTIME;
+  end record;
+  JOB_INFO_1W       = _JOB_INFO_1W;
+  PJOB_INFO_1W      = ^_JOB_INFO_1W;
+  LPJOB_INFO_1W     = ^_JOB_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+JOB_INFO_1        = JOB_INFO_1W;
+type
+PJOB_INFO_1       = PJOB_INFO_1W;
+type
+LPJOB_INFO_1      = LPJOB_INFO_1W;
+#else;
+type
+JOB_INFO_1        = JOB_INFO_1A;
+type
+PJOB_INFO_1       = PJOB_INFO_1A;
+type
+LPJOB_INFO_1      = LPJOB_INFO_1A;
+#end if;
+
+type
+  _JOB_INFO_2A      = record
+JobId           : DWORD;
+pPrinterName    : LPSTR;
+pMachineName    : LPSTR;
+pUserName       : LPSTR;
+pDocument       : LPSTR;
+pNotifyName     : LPSTR;
+pDatatype       : LPSTR;
+pPrintProcessor : LPSTR;
+pParameters     : LPSTR;
+pDriverName     : LPSTR;
+pDevMode        : LPDEVMODEA;
+pStatus         : LPSTR;
+pSecurityDescriptor : PSECURITY_DESCRIPTOR;
+Status          : DWORD;
+Priority        : DWORD;
+Position        : DWORD;
+StartTime       : DWORD;
+UntilTime       : DWORD;
+TotalPages      : DWORD;
+Size            : DWORD;
+Submitted       : t_SYSTEMTIME;
+Time            : DWORD;
+PagesPrinted    : DWORD;
+  end record;
+  JOB_INFO_2A       = _JOB_INFO_2A;
+  PJOB_INFO_2A      = ^_JOB_INFO_2A;
+  LPJOB_INFO_2A     = ^_JOB_INFO_2A;
+
+type
+  _JOB_INFO_2W      = record
+JobId           : DWORD;
+pPrinterName    : LPWSTR;
+pMachineName    : LPWSTR;
+pUserName       : LPWSTR;
+pDocument       : LPWSTR;
+pNotifyName     : LPWSTR;
+pDatatype       : LPWSTR;
+pPrintProcessor : LPWSTR;
+pParameters     : LPWSTR;
+pDriverName     : LPWSTR;
+pDevMode        : LPDEVMODEW;
+pStatus         : LPWSTR;
+pSecurityDescriptor : PSECURITY_DESCRIPTOR;
+Status          : DWORD;
+Priority        : DWORD;
+Position        : DWORD;
+StartTime       : DWORD;
+UntilTime       : DWORD;
+TotalPages      : DWORD;
+Size            : DWORD;
+Submitted       : t_SYSTEMTIME;
+Time            : DWORD;
+PagesPrinted    : DWORD;
+  end record;
+  JOB_INFO_2W       = _JOB_INFO_2W;
+  PJOB_INFO_2W      = ^_JOB_INFO_2W;
+  LPJOB_INFO_2W     = ^_JOB_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+JOB_INFO_2        = JOB_INFO_2W;
+type
+PJOB_INFO_2       = PJOB_INFO_2W;
+type
+LPJOB_INFO_2      = LPJOB_INFO_2W;
+#else;
+type
+JOB_INFO_2        = JOB_INFO_2A;
+type
+PJOB_INFO_2       = PJOB_INFO_2A;
+type
+LPJOB_INFO_2      = LPJOB_INFO_2A;
+#end if;
+
+type
+  _JOB_INFO_3       = record
+JobId           : DWORD;
+NextJobId       : DWORD;
+Reserved        : DWORD;
+  end record;
+  JOB_INFO_3        = _JOB_INFO_3;
+  PJOB_INFO_3       = ^_JOB_INFO_3;
+  LPJOB_INFO_3      = ^_JOB_INFO_3;
+
+const
+  JOB_CONTROL_PAUSE = 1;
+
+const
+  JOB_CONTROL_RESUME= 2;
+
+const
+  JOB_CONTROL_CANCEL= 3;
+
+const
+  JOB_CONTROL_RESTART= 4;
+
+const
+  JOB_CONTROL_DELETE= 5;
+
+const
+  JOB_CONTROL_SENT_TO_PRINTER= 6;
+
+const
+  JOB_CONTROL_LAST_PAGE_EJECTED= 7;
+
+const
+  JOB_STATUS_PAUSED = $01;
+
+const
+  JOB_STATUS_ERROR  = $02;
+
+const
+  JOB_STATUS_DELETING= $04;
+
+const
+  JOB_STATUS_SPOOLING= $08;
+
+const
+  JOB_STATUS_PRINTING= $10;
+
+const
+  JOB_STATUS_OFFLINE= $20;
+
+const
+  JOB_STATUS_PAPEROUT= $40;
+
+const
+  JOB_STATUS_PRINTED= $80;
+
+const
+  JOB_STATUS_DELETED= $0100;
+
+const
+  JOB_STATUS_BLOCKED_DEVQ= $0200;
+
+const
+  JOB_STATUS_USER_INTERVENTION= $0400;
+
+const
+  JOB_STATUS_RESTART= $0800;
+
+const
+  JOB_STATUS_COMPLETE= $1000;
+
+const
+  JOB_POSITION_UNSPECIFIED= 0;
+
+type
+  _ADDJOB_INFO_1A   = record
+Path            : LPSTR;
+JobId           : DWORD;
+  end record;
+  ADDJOB_INFO_1A    = _ADDJOB_INFO_1A;
+  PADDJOB_INFO_1A   = ^_ADDJOB_INFO_1A;
+  LPADDJOB_INFO_1A  = ^_ADDJOB_INFO_1A;
+
+type
+  _ADDJOB_INFO_1W   = record
+Path            : LPWSTR;
+JobId           : DWORD;
+  end record;
+  ADDJOB_INFO_1W    = _ADDJOB_INFO_1W;
+  PADDJOB_INFO_1W   = ^_ADDJOB_INFO_1W;
+  LPADDJOB_INFO_1W  = ^_ADDJOB_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+ADDJOB_INFO_1     = ADDJOB_INFO_1W;
+type
+PADDJOB_INFO_1    = PADDJOB_INFO_1W;
+type
+LPADDJOB_INFO_1   = LPADDJOB_INFO_1W;
+#else;
+type
+ADDJOB_INFO_1     = ADDJOB_INFO_1A;
+type
+PADDJOB_INFO_1    = PADDJOB_INFO_1A;
+type
+LPADDJOB_INFO_1   = LPADDJOB_INFO_1A;
+#end if;
+
+type
+  _DRIVER_INFO_1A   = record
+pName           : LPSTR;
+  end record;
+  DRIVER_INFO_1A    = _DRIVER_INFO_1A;
+  PDRIVER_INFO_1A   = ^_DRIVER_INFO_1A;
+  LPDRIVER_INFO_1A  = ^_DRIVER_INFO_1A;
+
+type
+  _DRIVER_INFO_1W   = record
+pName           : LPWSTR;
+  end record;
+  DRIVER_INFO_1W    = _DRIVER_INFO_1W;
+  PDRIVER_INFO_1W   = ^_DRIVER_INFO_1W;
+  LPDRIVER_INFO_1W  = ^_DRIVER_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_1     = DRIVER_INFO_1W;
+type
+PDRIVER_INFO_1    = PDRIVER_INFO_1W;
+type
+LPDRIVER_INFO_1   = LPDRIVER_INFO_1W;
+#else;
+type
+DRIVER_INFO_1     = DRIVER_INFO_1A;
+type
+PDRIVER_INFO_1    = PDRIVER_INFO_1A;
+type
+LPDRIVER_INFO_1   = LPDRIVER_INFO_1A;
+#end if;
+
+type
+  _DRIVER_INFO_2A   = record
+cVersion        : DWORD;
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDriverPath     : LPSTR;
+pDataFile       : LPSTR;
+pConfigFile     : LPSTR;
+  end record;
+  DRIVER_INFO_2A    = _DRIVER_INFO_2A;
+  PDRIVER_INFO_2A   = ^_DRIVER_INFO_2A;
+  LPDRIVER_INFO_2A  = ^_DRIVER_INFO_2A;
+
+type
+  _DRIVER_INFO_2W   = record
+cVersion        : DWORD;
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDriverPath     : LPWSTR;
+pDataFile       : LPWSTR;
+pConfigFile     : LPWSTR;
+  end record;
+  DRIVER_INFO_2W    = _DRIVER_INFO_2W;
+  PDRIVER_INFO_2W   = ^_DRIVER_INFO_2W;
+  LPDRIVER_INFO_2W  = ^_DRIVER_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_2     = DRIVER_INFO_2W;
+type
+PDRIVER_INFO_2    = PDRIVER_INFO_2W;
+type
+LPDRIVER_INFO_2   = LPDRIVER_INFO_2W;
+#else;
+type
+DRIVER_INFO_2     = DRIVER_INFO_2A;
+type
+PDRIVER_INFO_2    = PDRIVER_INFO_2A;
+type
+LPDRIVER_INFO_2   = LPDRIVER_INFO_2A;
+#end if;
+
+type
+  _DRIVER_INFO_3A   = record
+cVersion        : DWORD;
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDriverPath     : LPSTR;
+pDataFile       : LPSTR;
+pConfigFile     : LPSTR;
+pHelpFile       : LPSTR;
+pDependentFiles : LPSTR;
+pMonitorName    : LPSTR;
+pDefaultDataType : LPSTR;
+  end record;
+  DRIVER_INFO_3A    = _DRIVER_INFO_3A;
+  PDRIVER_INFO_3A   = ^_DRIVER_INFO_3A;
+  LPDRIVER_INFO_3A  = ^_DRIVER_INFO_3A;
+
+type
+  _DRIVER_INFO_3W   = record
+cVersion        : DWORD;
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDriverPath     : LPWSTR;
+pDataFile       : LPWSTR;
+pConfigFile     : LPWSTR;
+pHelpFile       : LPWSTR;
+pDependentFiles : LPWSTR;
+pMonitorName    : LPWSTR;
+pDefaultDataType : LPWSTR;
+  end record;
+  DRIVER_INFO_3W    = _DRIVER_INFO_3W;
+  PDRIVER_INFO_3W   = ^_DRIVER_INFO_3W;
+  LPDRIVER_INFO_3W  = ^_DRIVER_INFO_3W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_3     = DRIVER_INFO_3W;
+type
+PDRIVER_INFO_3    = PDRIVER_INFO_3W;
+type
+LPDRIVER_INFO_3   = LPDRIVER_INFO_3W;
+#else;
+type
+DRIVER_INFO_3     = DRIVER_INFO_3A;
+type
+PDRIVER_INFO_3    = PDRIVER_INFO_3A;
+type
+LPDRIVER_INFO_3   = LPDRIVER_INFO_3A;
+#end if;
+
+type
+  _DRIVER_INFO_4A   = record
+cVersion        : DWORD;
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDriverPath     : LPSTR;
+pDataFile       : LPSTR;
+pConfigFile     : LPSTR;
+pHelpFile       : LPSTR;
+pDependentFiles : LPSTR;
+pMonitorName    : LPSTR;
+pDefaultDataType : LPSTR;
+pszzPreviousNames : LPSTR;
+  end record;
+  DRIVER_INFO_4A    = _DRIVER_INFO_4A;
+  PDRIVER_INFO_4A   = ^_DRIVER_INFO_4A;
+  LPDRIVER_INFO_4A  = ^_DRIVER_INFO_4A;
+
+type
+  _DRIVER_INFO_4W   = record
+cVersion        : DWORD;
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDriverPath     : LPWSTR;
+pDataFile       : LPWSTR;
+pConfigFile     : LPWSTR;
+pHelpFile       : LPWSTR;
+pDependentFiles : LPWSTR;
+pMonitorName    : LPWSTR;
+pDefaultDataType : LPWSTR;
+pszzPreviousNames : LPWSTR;
+  end record;
+  DRIVER_INFO_4W    = _DRIVER_INFO_4W;
+  PDRIVER_INFO_4W   = ^_DRIVER_INFO_4W;
+  LPDRIVER_INFO_4W  = ^_DRIVER_INFO_4W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_4     = DRIVER_INFO_4W;
+type
+PDRIVER_INFO_4    = PDRIVER_INFO_4W;
+type
+LPDRIVER_INFO_4   = LPDRIVER_INFO_4W;
+#else;
+type
+DRIVER_INFO_4     = DRIVER_INFO_4A;
+type
+PDRIVER_INFO_4    = PDRIVER_INFO_4A;
+type
+LPDRIVER_INFO_4   = LPDRIVER_INFO_4A;
+#end if;
+
+type
+  _DRIVER_INFO_5A   = record
+cVersion        : DWORD;
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDriverPath     : LPSTR;
+pDataFile       : LPSTR;
+pConfigFile     : LPSTR;
+dwDriverAttributes : DWORD;
+dwConfigVersion : DWORD;
+dwDriverVersion : DWORD;
+  end record;
+  DRIVER_INFO_5A    = _DRIVER_INFO_5A;
+  PDRIVER_INFO_5A   = ^_DRIVER_INFO_5A;
+  LPDRIVER_INFO_5A  = ^_DRIVER_INFO_5A;
+
+type
+  _DRIVER_INFO_5W   = record
+cVersion        : DWORD;
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDriverPath     : LPWSTR;
+pDataFile       : LPWSTR;
+pConfigFile     : LPWSTR;
+dwDriverAttributes : DWORD;
+dwConfigVersion : DWORD;
+dwDriverVersion : DWORD;
+  end record;
+  DRIVER_INFO_5W    = _DRIVER_INFO_5W;
+  PDRIVER_INFO_5W   = ^_DRIVER_INFO_5W;
+  LPDRIVER_INFO_5W  = ^_DRIVER_INFO_5W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_5     = DRIVER_INFO_5W;
+type
+PDRIVER_INFO_5    = PDRIVER_INFO_5W;
+type
+LPDRIVER_INFO_5   = LPDRIVER_INFO_5W;
+#else;
+type
+DRIVER_INFO_5     = DRIVER_INFO_5A;
+type
+PDRIVER_INFO_5    = PDRIVER_INFO_5A;
+type
+LPDRIVER_INFO_5   = LPDRIVER_INFO_5A;
+#end if;
+
+type
+  _DRIVER_INFO_6A   = record
+cVersion        : DWORD;
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDriverPath     : LPSTR;
+pDataFile       : LPSTR;
+pConfigFile     : LPSTR;
+pHelpFile       : LPSTR;
+pDependentFiles : LPSTR;
+pMonitorName    : LPSTR;
+pDefaultDataType : LPSTR;
+pszzPreviousNames : LPSTR;
+ftDriverDate    : t_FILETIME;
+dwlDriverVersion : DWORDLONG;
+pszMfgName      : LPSTR;
+pszOEMUrl       : LPSTR;
+pszHardwareID   : LPSTR;
+pszProvider     : LPSTR;
+  end record;
+  DRIVER_INFO_6A    = _DRIVER_INFO_6A;
+  PDRIVER_INFO_6A   = ^_DRIVER_INFO_6A;
+  LPDRIVER_INFO_6A  = ^_DRIVER_INFO_6A;
+
+type
+  _DRIVER_INFO_6W   = record
+cVersion        : DWORD;
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDriverPath     : LPWSTR;
+pDataFile       : LPWSTR;
+pConfigFile     : LPWSTR;
+pHelpFile       : LPWSTR;
+pDependentFiles : LPWSTR;
+pMonitorName    : LPWSTR;
+pDefaultDataType : LPWSTR;
+pszzPreviousNames : LPWSTR;
+ftDriverDate    : t_FILETIME;
+dwlDriverVersion : DWORDLONG;
+pszMfgName      : LPWSTR;
+pszOEMUrl       : LPWSTR;
+pszHardwareID   : LPWSTR;
+pszProvider     : LPWSTR;
+  end record;
+  DRIVER_INFO_6W    = _DRIVER_INFO_6W;
+  PDRIVER_INFO_6W   = ^_DRIVER_INFO_6W;
+  LPDRIVER_INFO_6W  = ^_DRIVER_INFO_6W;
+
+#if #declared UNICODE; then;
+type
+DRIVER_INFO_6     = DRIVER_INFO_6W;
+type
+PDRIVER_INFO_6    = PDRIVER_INFO_6W;
+type
+LPDRIVER_INFO_6   = LPDRIVER_INFO_6W;
+#else;
+type
+DRIVER_INFO_6     = DRIVER_INFO_6A;
+type
+PDRIVER_INFO_6    = PDRIVER_INFO_6A;
+type
+LPDRIVER_INFO_6   = LPDRIVER_INFO_6A;
+#end if;
+
+--  FLAGS for dwDriverAttributes
+const
+  DRIVER_KERNELMODE = $01;
+
+const
+  DRIVER_USERMODE   = $02;
+
+--  FLAGS for DeletePrinterDriverEx.
+const
+  DPD_DELETE_UNUSED_FILES= $01;
+
+const
+  DPD_DELETE_SPECIFIC_VERSION= $02;
+
+const
+  DPD_DELETE_ALL_FILES= $04;
+
+--  FLAGS for AddPrinterDriverEx.
+const
+  APD_STRICT_UPGRADE= $01;
+
+const
+  APD_STRICT_DOWNGRADE= $02;
+
+const
+  APD_COPY_ALL_FILES= $04;
+
+const
+  APD_COPY_NEW_FILES= $08;
+
+const
+  APD_COPY_FROM_DIRECTORY= $10;
+
+--  String for EnumPrinterDrivers. Used by Windows Update
+type
+  _DOC_INFO_1A      = record
+pDocName        : LPSTR;
+pOutputFile     : LPSTR;
+pDatatype       : LPSTR;
+  end record;
+  DOC_INFO_1A       = _DOC_INFO_1A;
+  PDOC_INFO_1A      = ^_DOC_INFO_1A;
+  LPDOC_INFO_1A     = ^_DOC_INFO_1A;
+
+type
+  _DOC_INFO_1W      = record
+pDocName        : LPWSTR;
+pOutputFile     : LPWSTR;
+pDatatype       : LPWSTR;
+  end record;
+  DOC_INFO_1W       = _DOC_INFO_1W;
+  PDOC_INFO_1W      = ^_DOC_INFO_1W;
+  LPDOC_INFO_1W     = ^_DOC_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+DOC_INFO_1        = DOC_INFO_1W;
+type
+PDOC_INFO_1       = PDOC_INFO_1W;
+type
+LPDOC_INFO_1      = LPDOC_INFO_1W;
+#else;
+type
+DOC_INFO_1        = DOC_INFO_1A;
+type
+PDOC_INFO_1       = PDOC_INFO_1A;
+type
+LPDOC_INFO_1      = LPDOC_INFO_1A;
+#end if;
+
+type
+  _FORM_INFO_1A     = record
+Flags           : DWORD;
+pName           : LPSTR;
+Size            : SIZEL;
+ImageableArea   : RECTL;
+  end record;
+  FORM_INFO_1A      = _FORM_INFO_1A;
+  PFORM_INFO_1A     = ^_FORM_INFO_1A;
+  LPFORM_INFO_1A    = ^_FORM_INFO_1A;
+
+type
+  _FORM_INFO_1W     = record
+Flags           : DWORD;
+pName           : LPWSTR;
+Size            : SIZEL;
+ImageableArea   : RECTL;
+  end record;
+  FORM_INFO_1W      = _FORM_INFO_1W;
+  PFORM_INFO_1W     = ^_FORM_INFO_1W;
+  LPFORM_INFO_1W    = ^_FORM_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+FORM_INFO_1       = FORM_INFO_1W;
+type
+PFORM_INFO_1      = PFORM_INFO_1W;
+type
+LPFORM_INFO_1     = LPFORM_INFO_1W;
+#else;
+type
+FORM_INFO_1       = FORM_INFO_1A;
+type
+PFORM_INFO_1      = PFORM_INFO_1A;
+type
+LPFORM_INFO_1     = LPFORM_INFO_1A;
+#end if;
+
+type
+  _DOC_INFO_2A      = record
+pDocName        : LPSTR;
+pOutputFile     : LPSTR;
+pDatatype       : LPSTR;
+dwMode          : DWORD;
+JobId           : DWORD;
+  end record;
+  DOC_INFO_2A       = _DOC_INFO_2A;
+  PDOC_INFO_2A      = ^_DOC_INFO_2A;
+  LPDOC_INFO_2A     = ^_DOC_INFO_2A;
+
+type
+  _DOC_INFO_2W      = record
+pDocName        : LPWSTR;
+pOutputFile     : LPWSTR;
+pDatatype       : LPWSTR;
+dwMode          : DWORD;
+JobId           : DWORD;
+  end record;
+  DOC_INFO_2W       = _DOC_INFO_2W;
+  PDOC_INFO_2W      = ^_DOC_INFO_2W;
+  LPDOC_INFO_2W     = ^_DOC_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+DOC_INFO_2        = DOC_INFO_2W;
+type
+PDOC_INFO_2       = PDOC_INFO_2W;
+type
+LPDOC_INFO_2      = LPDOC_INFO_2W;
+#else;
+type
+DOC_INFO_2        = DOC_INFO_2A;
+type
+PDOC_INFO_2       = PDOC_INFO_2A;
+type
+LPDOC_INFO_2      = LPDOC_INFO_2A;
+#end if;
+
+const
+  DI_CHANNEL        = 1;
+
+const
+  DI_READ_SPOOL_JOB = 3;
+
+type
+  _DOC_INFO_3A      = record
+pDocName        : LPSTR;
+pOutputFile     : LPSTR;
+pDatatype       : LPSTR;
+dwFlags         : DWORD;
+  end record;
+  DOC_INFO_3A       = _DOC_INFO_3A;
+  PDOC_INFO_3A      = ^_DOC_INFO_3A;
+  LPDOC_INFO_3A     = ^_DOC_INFO_3A;
+
+type
+  _DOC_INFO_3W      = record
+pDocName        : LPWSTR;
+pOutputFile     : LPWSTR;
+pDatatype       : LPWSTR;
+dwFlags         : DWORD;
+  end record;
+  DOC_INFO_3W       = _DOC_INFO_3W;
+  PDOC_INFO_3W      = ^_DOC_INFO_3W;
+  LPDOC_INFO_3W     = ^_DOC_INFO_3W;
+
+#if #declared UNICODE; then;
+type
+DOC_INFO_3        = DOC_INFO_3W;
+type
+PDOC_INFO_3       = PDOC_INFO_3W;
+type
+LPDOC_INFO_3      = LPDOC_INFO_3W;
+#else;
+type
+DOC_INFO_3        = DOC_INFO_3A;
+type
+PDOC_INFO_3       = PDOC_INFO_3A;
+type
+LPDOC_INFO_3      = LPDOC_INFO_3A;
+#end if;
+
+const
+  DI_MEMORYMAP_WRITE= $01;
+
+const
+  FORM_USER         = $00;
+
+const
+  FORM_BUILTIN      = $01;
+
+const
+  FORM_PRINTER      = $02;
+
+type
+  _PRINTPROCESSOR_INFO_1A = record
+pName           : LPSTR;
+  end record;
+  PRINTPROCESSOR_INFO_1A = _PRINTPROCESSOR_INFO_1A;
+  PPRINTPROCESSOR_INFO_1A = ^_PRINTPROCESSOR_INFO_1A;
+  LPPRINTPROCESSOR_INFO_1A = ^_PRINTPROCESSOR_INFO_1A;
+
+type
+  _PRINTPROCESSOR_INFO_1W = record
+pName           : LPWSTR;
+  end record;
+  PRINTPROCESSOR_INFO_1W = _PRINTPROCESSOR_INFO_1W;
+  PPRINTPROCESSOR_INFO_1W = ^_PRINTPROCESSOR_INFO_1W;
+  LPPRINTPROCESSOR_INFO_1W = ^_PRINTPROCESSOR_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+PRINTPROCESSOR_INFO_1 = PRINTPROCESSOR_INFO_1W;
+type
+PPRINTPROCESSOR_INFO_1 = PPRINTPROCESSOR_INFO_1W;
+type
+LPPRINTPROCESSOR_INFO_1 = LPPRINTPROCESSOR_INFO_1W;
+#else;
+type
+PRINTPROCESSOR_INFO_1 = PRINTPROCESSOR_INFO_1A;
+type
+PPRINTPROCESSOR_INFO_1 = PPRINTPROCESSOR_INFO_1A;
+type
+LPPRINTPROCESSOR_INFO_1 = LPPRINTPROCESSOR_INFO_1A;
+#end if;
+
+type
+  _PRINTPROCESSOR_CAPS_1 = record
+dwLevel         : DWORD;
+dwNupOptions    : DWORD;
+dwPageOrderFlags : DWORD;
+dwNumberOfCopies : DWORD;
+  end record;
+  PRINTPROCESSOR_CAPS_1 = _PRINTPROCESSOR_CAPS_1;
+  PPRINTPROCESSOR_CAPS_1 = ^_PRINTPROCESSOR_CAPS_1;
+
+const
+  NORMAL_PRINT      = $00;
+
+const
+  REVERSE_PRINT     = $01;
+
+type
+  _PORT_INFO_1A     = record
+pName           : LPSTR;
+  end record;
+  PORT_INFO_1A      = _PORT_INFO_1A;
+  PPORT_INFO_1A     = ^_PORT_INFO_1A;
+  LPPORT_INFO_1A    = ^_PORT_INFO_1A;
+
+type
+  _PORT_INFO_1W     = record
+pName           : LPWSTR;
+  end record;
+  PORT_INFO_1W      = _PORT_INFO_1W;
+  PPORT_INFO_1W     = ^_PORT_INFO_1W;
+  LPPORT_INFO_1W    = ^_PORT_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+PORT_INFO_1       = PORT_INFO_1W;
+type
+PPORT_INFO_1      = PPORT_INFO_1W;
+type
+LPPORT_INFO_1     = LPPORT_INFO_1W;
+#else;
+type
+PORT_INFO_1       = PORT_INFO_1A;
+type
+PPORT_INFO_1      = PPORT_INFO_1A;
+type
+LPPORT_INFO_1     = LPPORT_INFO_1A;
+#end if;
+
+type
+  _PORT_INFO_2A     = record
+pPortName       : LPSTR;
+pMonitorName    : LPSTR;
+pDescription    : LPSTR;
+fPortType       : DWORD;
+Reserved        : DWORD;
+  end record;
+  PORT_INFO_2A      = _PORT_INFO_2A;
+  PPORT_INFO_2A     = ^_PORT_INFO_2A;
+  LPPORT_INFO_2A    = ^_PORT_INFO_2A;
+
+type
+  _PORT_INFO_2W     = record
+pPortName       : LPWSTR;
+pMonitorName    : LPWSTR;
+pDescription    : LPWSTR;
+fPortType       : DWORD;
+Reserved        : DWORD;
+  end record;
+  PORT_INFO_2W      = _PORT_INFO_2W;
+  PPORT_INFO_2W     = ^_PORT_INFO_2W;
+  LPPORT_INFO_2W    = ^_PORT_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+PORT_INFO_2       = PORT_INFO_2W;
+type
+PPORT_INFO_2      = PPORT_INFO_2W;
+type
+LPPORT_INFO_2     = LPPORT_INFO_2W;
+#else;
+type
+PORT_INFO_2       = PORT_INFO_2A;
+type
+PPORT_INFO_2      = PPORT_INFO_2A;
+type
+LPPORT_INFO_2     = LPPORT_INFO_2A;
+#end if;
+
+const
+  PORT_TYPE_WRITE   = $01;
+
+const
+  PORT_TYPE_READ    = $02;
+
+const
+  PORT_TYPE_REDIRECTED= $04;
+
+const
+  PORT_TYPE_NET_ATTACHED= $08;
+
+type
+  _PORT_INFO_3A     = record
+dwStatus        : DWORD;
+pszStatus       : LPSTR;
+dwSeverity      : DWORD;
+  end record;
+  PORT_INFO_3A      = _PORT_INFO_3A;
+  PPORT_INFO_3A     = ^_PORT_INFO_3A;
+  LPPORT_INFO_3A    = ^_PORT_INFO_3A;
+
+type
+  _PORT_INFO_3W     = record
+dwStatus        : DWORD;
+pszStatus       : LPWSTR;
+dwSeverity      : DWORD;
+  end record;
+  PORT_INFO_3W      = _PORT_INFO_3W;
+  PPORT_INFO_3W     = ^_PORT_INFO_3W;
+  LPPORT_INFO_3W    = ^_PORT_INFO_3W;
+
+#if #declared UNICODE; then;
+type
+PORT_INFO_3       = PORT_INFO_3W;
+type
+PPORT_INFO_3      = PPORT_INFO_3W;
+type
+LPPORT_INFO_3     = LPPORT_INFO_3W;
+#else;
+type
+PORT_INFO_3       = PORT_INFO_3A;
+type
+PPORT_INFO_3      = PPORT_INFO_3A;
+type
+LPPORT_INFO_3     = LPPORT_INFO_3A;
+#end if;
+
+const
+  PORT_STATUS_TYPE_ERROR= 1;
+
+const
+  PORT_STATUS_TYPE_WARNING= 2;
+
+const
+  PORT_STATUS_TYPE_INFO= 3;
+
+const
+  PORT_STATUS_OFFLINE= 1;
+
+const
+  PORT_STATUS_PAPER_JAM= 2;
+
+const
+  PORT_STATUS_PAPER_OUT= 3;
+
+const
+  PORT_STATUS_OUTPUT_BIN_FULL= 4;
+
+const
+  PORT_STATUS_PAPER_PROBLEM= 5;
+
+const
+  PORT_STATUS_NO_TONER= 6;
+
+const
+  PORT_STATUS_DOOR_OPEN= 7;
+
+const
+  PORT_STATUS_USER_INTERVENTION= 8;
+
+const
+  PORT_STATUS_OUT_OF_MEMORY= 9;
+
+const
+  PORT_STATUS_TONER_LOW= 10;
+
+const
+  PORT_STATUS_WARMING_UP= 11;
+
+const
+  PORT_STATUS_POWER_SAVE= 12;
+
+type
+  _MONITOR_INFO_1A  = record
+pName           : LPSTR;
+  end record;
+  MONITOR_INFO_1A   = _MONITOR_INFO_1A;
+  PMONITOR_INFO_1A  = ^_MONITOR_INFO_1A;
+  LPMONITOR_INFO_1A = ^_MONITOR_INFO_1A;
+
+type
+  _MONITOR_INFO_1W  = record
+pName           : LPWSTR;
+  end record;
+  MONITOR_INFO_1W   = _MONITOR_INFO_1W;
+  PMONITOR_INFO_1W  = ^_MONITOR_INFO_1W;
+  LPMONITOR_INFO_1W = ^_MONITOR_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+MONITOR_INFO_1    = MONITOR_INFO_1W;
+type
+PMONITOR_INFO_1   = PMONITOR_INFO_1W;
+type
+LPMONITOR_INFO_1  = LPMONITOR_INFO_1W;
+#else;
+type
+MONITOR_INFO_1    = MONITOR_INFO_1A;
+type
+PMONITOR_INFO_1   = PMONITOR_INFO_1A;
+type
+LPMONITOR_INFO_1  = LPMONITOR_INFO_1A;
+#end if;
+
+type
+  _MONITOR_INFO_2A  = record
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDLLName        : LPSTR;
+  end record;
+  MONITOR_INFO_2A   = _MONITOR_INFO_2A;
+  PMONITOR_INFO_2A  = ^_MONITOR_INFO_2A;
+  LPMONITOR_INFO_2A = ^_MONITOR_INFO_2A;
+
+type
+  _MONITOR_INFO_2W  = record
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDLLName        : LPWSTR;
+  end record;
+  MONITOR_INFO_2W   = _MONITOR_INFO_2W;
+  PMONITOR_INFO_2W  = ^_MONITOR_INFO_2W;
+  LPMONITOR_INFO_2W = ^_MONITOR_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+MONITOR_INFO_2    = MONITOR_INFO_2W;
+type
+PMONITOR_INFO_2   = PMONITOR_INFO_2W;
+type
+LPMONITOR_INFO_2  = LPMONITOR_INFO_2W;
+#else;
+type
+MONITOR_INFO_2    = MONITOR_INFO_2A;
+type
+PMONITOR_INFO_2   = PMONITOR_INFO_2A;
+type
+LPMONITOR_INFO_2  = LPMONITOR_INFO_2A;
+#end if;
+
+type
+  _DATATYPES_INFO_1A = record
+pName           : LPSTR;
+  end record;
+  DATATYPES_INFO_1A = _DATATYPES_INFO_1A;
+  PDATATYPES_INFO_1A = ^_DATATYPES_INFO_1A;
+  LPDATATYPES_INFO_1A = ^_DATATYPES_INFO_1A;
+
+type
+  _DATATYPES_INFO_1W = record
+pName           : LPWSTR;
+  end record;
+  DATATYPES_INFO_1W = _DATATYPES_INFO_1W;
+  PDATATYPES_INFO_1W = ^_DATATYPES_INFO_1W;
+  LPDATATYPES_INFO_1W = ^_DATATYPES_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+DATATYPES_INFO_1  = DATATYPES_INFO_1W;
+type
+PDATATYPES_INFO_1 = PDATATYPES_INFO_1W;
+type
+LPDATATYPES_INFO_1 = LPDATATYPES_INFO_1W;
+#else;
+type
+DATATYPES_INFO_1  = DATATYPES_INFO_1A;
+type
+PDATATYPES_INFO_1 = PDATATYPES_INFO_1A;
+type
+LPDATATYPES_INFO_1 = LPDATATYPES_INFO_1A;
+#end if;
+
+type
+  _PRINTER_DEFAULTSA = record
+pDatatype       : LPSTR;
+pDevMode        : LPDEVMODEA;
+DesiredAccess   : ACCESS_MASK;
+  end record;
+  PRINTER_DEFAULTSA = _PRINTER_DEFAULTSA;
+  PPRINTER_DEFAULTSA = ^_PRINTER_DEFAULTSA;
+  LPPRINTER_DEFAULTSA = ^_PRINTER_DEFAULTSA;
+
+type
+  _PRINTER_DEFAULTSW = record
+pDatatype       : LPWSTR;
+pDevMode        : LPDEVMODEW;
+DesiredAccess   : ACCESS_MASK;
+  end record;
+  PRINTER_DEFAULTSW = _PRINTER_DEFAULTSW;
+  PPRINTER_DEFAULTSW = ^_PRINTER_DEFAULTSW;
+  LPPRINTER_DEFAULTSW = ^_PRINTER_DEFAULTSW;
+
+#if #declared UNICODE; then;
+type
+PRINTER_DEFAULTS  = PRINTER_DEFAULTSW;
+type
+PPRINTER_DEFAULTS = PPRINTER_DEFAULTSW;
+type
+LPPRINTER_DEFAULTS = LPPRINTER_DEFAULTSW;
+#else;
+type
+PRINTER_DEFAULTS  = PRINTER_DEFAULTSA;
+type
+PPRINTER_DEFAULTS = PPRINTER_DEFAULTSA;
+type
+LPPRINTER_DEFAULTS = LPPRINTER_DEFAULTSA;
+#end if;
+
+type
+  _PRINTER_ENUM_VALUESA = record
+pValueName      : LPSTR;
+cbValueName     : DWORD;
+dwType          : DWORD;
+pData           : LPBYTE;
+cbData          : DWORD;
+  end record;
+  PRINTER_ENUM_VALUESA = _PRINTER_ENUM_VALUESA;
+  PPRINTER_ENUM_VALUESA = ^_PRINTER_ENUM_VALUESA;
+  LPPRINTER_ENUM_VALUESA = ^_PRINTER_ENUM_VALUESA;
+
+type
+  _PRINTER_ENUM_VALUESW = record
+pValueName      : LPWSTR;
+cbValueName     : DWORD;
+dwType          : DWORD;
+pData           : LPBYTE;
+cbData          : DWORD;
+  end record;
+  PRINTER_ENUM_VALUESW = _PRINTER_ENUM_VALUESW;
+  PPRINTER_ENUM_VALUESW = ^_PRINTER_ENUM_VALUESW;
+  LPPRINTER_ENUM_VALUESW = ^_PRINTER_ENUM_VALUESW;
+
+#if #declared UNICODE; then;
+type
+PRINTER_ENUM_VALUES = PRINTER_ENUM_VALUESW;
+type
+PPRINTER_ENUM_VALUES = PPRINTER_ENUM_VALUESW;
+type
+LPPRINTER_ENUM_VALUES = LPPRINTER_ENUM_VALUESW;
+#else;
+type
+PRINTER_ENUM_VALUES = PRINTER_ENUM_VALUESA;
+type
+PPRINTER_ENUM_VALUES = PPRINTER_ENUM_VALUESA;
+type
+LPPRINTER_ENUM_VALUES = LPPRINTER_ENUM_VALUESA;
+#end if;
+
+procedure EnumPrintersA(
+    Flags           : in DWORD; 
+    Name            : in LPSTR; 
+    Level           : in DWORD; 
+    pPrinterEnum    : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintersA,system);
+#pragma import(EnumPrintersA,'EnumPrintersA','winspool.dll');
+
+procedure EnumPrintersW(
+    Flags           : in DWORD; 
+    Name            : in LPWSTR; 
+    Level           : in DWORD; 
+    pPrinterEnum    : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintersW,system);
+#pragma import(EnumPrintersW,'EnumPrintersW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrinters;
+  EnumPrintersW 
+#end EnumPrinters;
+#else;
+#template EnumPrinters;
+  EnumPrintersA 
+#end EnumPrinters;
+#end if;
+
+const
+  PRINTER_ENUM_DEFAULT= $01;
+
+const
+  PRINTER_ENUM_LOCAL= $02;
+
+const
+  PRINTER_ENUM_CONNECTIONS= $04;
+
+const
+  PRINTER_ENUM_FAVORITE= $04;
+
+const
+  PRINTER_ENUM_NAME = $08;
+
+const
+  PRINTER_ENUM_REMOTE= $10;
+
+const
+  PRINTER_ENUM_SHARED= $20;
+
+const
+  PRINTER_ENUM_NETWORK= $40;
+
+const
+  PRINTER_ENUM_EXPAND= $4000;
+
+const
+  PRINTER_ENUM_CONTAINER= $8000;
+
+const
+  PRINTER_ENUM_ICONMASK= $FF0000;
+
+const
+  PRINTER_ENUM_ICON1= $10000;
+
+const
+  PRINTER_ENUM_ICON2= $20000;
+
+const
+  PRINTER_ENUM_ICON3= $40000;
+
+const
+  PRINTER_ENUM_ICON4= $80000;
+
+const
+  PRINTER_ENUM_ICON5= $100000;
+
+const
+  PRINTER_ENUM_ICON6= $200000;
+
+const
+  PRINTER_ENUM_ICON7= $400000;
+
+const
+  PRINTER_ENUM_ICON8= $800000;
+
+const
+  PRINTER_ENUM_HIDE = $1000000;
+
+const
+  SPOOL_FILE_PERSISTENT= $01;
+
+const
+  SPOOL_FILE_TEMPORARY= $02;
+
+procedure OpenPrinterA(
+    pPrinterName    : in LPSTR; 
+    phPrinter       : out winnt.t_HANDLE ; 
+    pDefault        : in LPPRINTER_DEFAULTSA)
+                      return BOOL;
+#pragma convention(OpenPrinterA,system);
+#pragma import(OpenPrinterA,'OpenPrinterA','winspool.dll');
+
+procedure OpenPrinterW(
+    pPrinterName    : in LPWSTR; 
+    phPrinter       : out winnt.t_HANDLE ; 
+    pDefault        : in LPPRINTER_DEFAULTSW)
+                      return BOOL;
+#pragma convention(OpenPrinterW,system);
+#pragma import(OpenPrinterW,'OpenPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template OpenPrinter;
+  OpenPrinterW 
+#end OpenPrinter;
+#else;
+#template OpenPrinter;
+  OpenPrinterA 
+#end OpenPrinter;
+#end if;
+
+procedure ResetPrinterA(
+    hPrinter        : in t_HANDLE; 
+    pDefault        : in LPPRINTER_DEFAULTSA)
+                      return BOOL;
+#pragma convention(ResetPrinterA,system);
+#pragma import(ResetPrinterA,'ResetPrinterA','winspool.dll');
+
+procedure ResetPrinterW(
+    hPrinter        : in t_HANDLE; 
+    pDefault        : in LPPRINTER_DEFAULTSW)
+                      return BOOL;
+#pragma convention(ResetPrinterW,system);
+#pragma import(ResetPrinterW,'ResetPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template ResetPrinter;
+  ResetPrinterW 
+#end ResetPrinter;
+#else;
+#template ResetPrinter;
+  ResetPrinterA 
+#end ResetPrinter;
+#end if;
+
+procedure SetJobA(
+    hPrinter        : in t_HANDLE; 
+    JobId           : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : in LPBYTE; 
+    Command         : in DWORD)
+                      return BOOL;
+#pragma convention(SetJobA,system);
+#pragma import(SetJobA,'SetJobA','winspool.dll');
+
+procedure SetJobW(
+    hPrinter        : in t_HANDLE; 
+    JobId           : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : in LPBYTE; 
+    Command         : in DWORD)
+                      return BOOL;
+#pragma convention(SetJobW,system);
+#pragma import(SetJobW,'SetJobW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetJob;
+  SetJobW 
+#end SetJob;
+#else;
+#template SetJob;
+  SetJobA 
+#end SetJob;
+#end if;
+
+procedure GetJobA(
+    hPrinter        : in t_HANDLE; 
+    JobId           : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetJobA,system);
+#pragma import(GetJobA,'GetJobA','winspool.dll');
+
+procedure GetJobW(
+    hPrinter        : in t_HANDLE; 
+    JobId           : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetJobW,system);
+#pragma import(GetJobW,'GetJobW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetJob;
+  GetJobW 
+#end GetJob;
+#else;
+#template GetJob;
+  GetJobA 
+#end GetJob;
+#end if;
+
+procedure EnumJobsA(
+    hPrinter        : in t_HANDLE; 
+    FirstJob        : in DWORD; 
+    NoJobs          : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumJobsA,system);
+#pragma import(EnumJobsA,'EnumJobsA','winspool.dll');
+
+procedure EnumJobsW(
+    hPrinter        : in t_HANDLE; 
+    FirstJob        : in DWORD; 
+    NoJobs          : in DWORD; 
+    Level           : in DWORD; 
+    pJob            : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumJobsW,system);
+#pragma import(EnumJobsW,'EnumJobsW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumJobs;
+  EnumJobsW 
+#end EnumJobs;
+#else;
+#template EnumJobs;
+  EnumJobsA 
+#end EnumJobs;
+#end if;
+
+procedure AddPrinterA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pPrinter        : in LPBYTE)
+                      return t_HANDLE;
+#pragma convention(AddPrinterA,system);
+#pragma import(AddPrinterA,'AddPrinterA','winspool.dll');
+
+procedure AddPrinterW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pPrinter        : in LPBYTE)
+                      return t_HANDLE;
+#pragma convention(AddPrinterW,system);
+#pragma import(AddPrinterW,'AddPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrinter;
+  AddPrinterW 
+#end AddPrinter;
+#else;
+#template AddPrinter;
+  AddPrinterA 
+#end AddPrinter;
+#end if;
+
+procedure DeletePrinter(
+    hPrinter        : in out {!}t_HANDLE)
+                      return BOOL;
+#pragma convention(DeletePrinter,system);
+#pragma import(DeletePrinter,'DeletePrinter','winspool.dll');
+
+procedure SetPrinterA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pPrinter        : in LPBYTE; 
+    Command         : in DWORD)
+                      return BOOL;
+#pragma convention(SetPrinterA,system);
+#pragma import(SetPrinterA,'SetPrinterA','winspool.dll');
+
+procedure SetPrinterW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pPrinter        : in LPBYTE; 
+    Command         : in DWORD)
+                      return BOOL;
+#pragma convention(SetPrinterW,system);
+#pragma import(SetPrinterW,'SetPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetPrinter;
+  SetPrinterW 
+#end SetPrinter;
+#else;
+#template SetPrinter;
+  SetPrinterA 
+#end SetPrinter;
+#end if;
+
+procedure GetPrinterA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pPrinter        : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterA,system);
+#pragma import(GetPrinterA,'GetPrinterA','winspool.dll');
+
+procedure GetPrinterW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pPrinter        : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterW,system);
+#pragma import(GetPrinterW,'GetPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrinter;
+  GetPrinterW 
+#end GetPrinter;
+#else;
+#template GetPrinter;
+  GetPrinterA 
+#end GetPrinter;
+#end if;
+
+procedure AddPrinterDriverA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE )
+                      return BOOL;
+#pragma convention(AddPrinterDriverA,system);
+#pragma import(AddPrinterDriverA,'AddPrinterDriverA','winspool.dll');
+
+procedure AddPrinterDriverW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE )
+                      return BOOL;
+#pragma convention(AddPrinterDriverW,system);
+#pragma import(AddPrinterDriverW,'AddPrinterDriverW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrinterDriver;
+  AddPrinterDriverW 
+#end AddPrinterDriver;
+#else;
+#template AddPrinterDriver;
+  AddPrinterDriverA 
+#end AddPrinterDriver;
+#end if;
+
+procedure AddPrinterDriverExA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : in out BYTE ; 
+    dwFileCopyFlags : in DWORD)
+                      return BOOL;
+#pragma convention(AddPrinterDriverExA,system);
+#pragma import(AddPrinterDriverExA,'AddPrinterDriverExA','winspool.dll');
+
+procedure AddPrinterDriverExW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : in out BYTE ; 
+    dwFileCopyFlags : in DWORD)
+                      return BOOL;
+#pragma convention(AddPrinterDriverExW,system);
+#pragma import(AddPrinterDriverExW,'AddPrinterDriverExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrinterDriverEx;
+  AddPrinterDriverExW 
+#end AddPrinterDriverEx;
+#else;
+#template AddPrinterDriverEx;
+  AddPrinterDriverExA 
+#end AddPrinterDriverEx;
+#end if;
+
+procedure EnumPrinterDriversA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrinterDriversA,system);
+#pragma import(EnumPrinterDriversA,'EnumPrinterDriversA','winspool.dll');
+
+procedure EnumPrinterDriversW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrinterDriversW,system);
+#pragma import(EnumPrinterDriversW,'EnumPrinterDriversW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrinterDrivers;
+  EnumPrinterDriversW 
+#end EnumPrinterDrivers;
+#else;
+#template EnumPrinterDrivers;
+  EnumPrinterDriversA 
+#end EnumPrinterDrivers;
+#end if;
+
+procedure GetPrinterDriverA(
+    hPrinter        : in t_HANDLE; 
+    pEnvironment    : in LPSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterDriverA,system);
+#pragma import(GetPrinterDriverA,'GetPrinterDriverA','winspool.dll');
+
+procedure GetPrinterDriverW(
+    hPrinter        : in t_HANDLE; 
+    pEnvironment    : in LPWSTR; 
+    Level           : in DWORD; 
+    pDriverInfo     : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterDriverW,system);
+#pragma import(GetPrinterDriverW,'GetPrinterDriverW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrinterDriver;
+  GetPrinterDriverW 
+#end GetPrinterDriver;
+#else;
+#template GetPrinterDriver;
+  GetPrinterDriverA 
+#end GetPrinterDriver;
+#end if;
+
+procedure GetPrinterDriverDirectoryA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    Level           : in DWORD; 
+    pDriverDirectory : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterDriverDirectoryA,system);
+#pragma import(GetPrinterDriverDirectoryA,'GetPrinterDriverDirectoryA','winspool.dll');
+
+procedure GetPrinterDriverDirectoryW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    Level           : in DWORD; 
+    pDriverDirectory : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrinterDriverDirectoryW,system);
+#pragma import(GetPrinterDriverDirectoryW,'GetPrinterDriverDirectoryW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrinterDriverDirectory;
+  GetPrinterDriverDirectoryW 
+#end GetPrinterDriverDirectory;
+#else;
+#template GetPrinterDriverDirectory;
+  GetPrinterDriverDirectoryA 
+#end GetPrinterDriverDirectory;
+#end if;
+
+procedure DeletePrinterDriverA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pDriverName     : in LPSTR)
+                      return BOOL;
+#pragma convention(DeletePrinterDriverA,system);
+#pragma import(DeletePrinterDriverA,'DeletePrinterDriverA','winspool.dll');
+
+procedure DeletePrinterDriverW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pDriverName     : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeletePrinterDriverW,system);
+#pragma import(DeletePrinterDriverW,'DeletePrinterDriverW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterDriver;
+  DeletePrinterDriverW 
+#end DeletePrinterDriver;
+#else;
+#template DeletePrinterDriver;
+  DeletePrinterDriverA 
+#end DeletePrinterDriver;
+#end if;
+
+procedure DeletePrinterDriverExA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pDriverName     : in LPSTR; 
+    dwDeleteFlag    : in DWORD; 
+    dwVersionFlag   : in DWORD)
+                      return BOOL;
+#pragma convention(DeletePrinterDriverExA,system);
+#pragma import(DeletePrinterDriverExA,'DeletePrinterDriverExA','winspool.dll');
+
+procedure DeletePrinterDriverExW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pDriverName     : in LPWSTR; 
+    dwDeleteFlag    : in DWORD; 
+    dwVersionFlag   : in DWORD)
+                      return BOOL;
+#pragma convention(DeletePrinterDriverExW,system);
+#pragma import(DeletePrinterDriverExW,'DeletePrinterDriverExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterDriverEx;
+  DeletePrinterDriverExW 
+#end DeletePrinterDriverEx;
+#else;
+#template DeletePrinterDriverEx;
+  DeletePrinterDriverExA 
+#end DeletePrinterDriverEx;
+#end if;
+
+procedure AddPrintProcessorA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pPathName       : in LPSTR; 
+    pPrintProcessorName : in LPSTR)
+                      return BOOL;
+#pragma convention(AddPrintProcessorA,system);
+#pragma import(AddPrintProcessorA,'AddPrintProcessorA','winspool.dll');
+
+procedure AddPrintProcessorW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pPathName       : in LPWSTR; 
+    pPrintProcessorName : in LPWSTR)
+                      return BOOL;
+#pragma convention(AddPrintProcessorW,system);
+#pragma import(AddPrintProcessorW,'AddPrintProcessorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrintProcessor;
+  AddPrintProcessorW 
+#end AddPrintProcessor;
+#else;
+#template AddPrintProcessor;
+  AddPrintProcessorA 
+#end AddPrintProcessor;
+#end if;
+
+procedure EnumPrintProcessorsA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    Level           : in DWORD; 
+    pPrintProcessorInfo : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintProcessorsA,system);
+#pragma import(EnumPrintProcessorsA,'EnumPrintProcessorsA','winspool.dll');
+
+procedure EnumPrintProcessorsW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    Level           : in DWORD; 
+    pPrintProcessorInfo : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintProcessorsW,system);
+#pragma import(EnumPrintProcessorsW,'EnumPrintProcessorsW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrintProcessors;
+  EnumPrintProcessorsW 
+#end EnumPrintProcessors;
+#else;
+#template EnumPrintProcessors;
+  EnumPrintProcessorsA 
+#end EnumPrintProcessors;
+#end if;
+
+procedure GetPrintProcessorDirectoryA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    Level           : in DWORD; 
+    pPrintProcessorInfo : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrintProcessorDirectoryA,system);
+#pragma import(GetPrintProcessorDirectoryA,'GetPrintProcessorDirectoryA','winspool.dll');
+
+procedure GetPrintProcessorDirectoryW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    Level           : in DWORD; 
+    pPrintProcessorInfo : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetPrintProcessorDirectoryW,system);
+#pragma import(GetPrintProcessorDirectoryW,'GetPrintProcessorDirectoryW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrintProcessorDirectory;
+  GetPrintProcessorDirectoryW 
+#end GetPrintProcessorDirectory;
+#else;
+#template GetPrintProcessorDirectory;
+  GetPrintProcessorDirectoryA 
+#end GetPrintProcessorDirectory;
+#end if;
+
+procedure EnumPrintProcessorDatatypesA(
+    pName           : in LPSTR; 
+    pPrintProcessorName : in LPSTR; 
+    Level           : in DWORD; 
+    pDatatypes      : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintProcessorDatatypesA,system);
+#pragma import(EnumPrintProcessorDatatypesA,'EnumPrintProcessorDatatypesA','winspool.dll');
+
+procedure EnumPrintProcessorDatatypesW(
+    pName           : in LPWSTR; 
+    pPrintProcessorName : in LPWSTR; 
+    Level           : in DWORD; 
+    pDatatypes      : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPrintProcessorDatatypesW,system);
+#pragma import(EnumPrintProcessorDatatypesW,'EnumPrintProcessorDatatypesW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrintProcessorDatatypes;
+  EnumPrintProcessorDatatypesW 
+#end EnumPrintProcessorDatatypes;
+#else;
+#template EnumPrintProcessorDatatypes;
+  EnumPrintProcessorDatatypesA 
+#end EnumPrintProcessorDatatypes;
+#end if;
+
+procedure DeletePrintProcessorA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pPrintProcessorName : in LPSTR)
+                      return BOOL;
+#pragma convention(DeletePrintProcessorA,system);
+#pragma import(DeletePrintProcessorA,'DeletePrintProcessorA','winspool.dll');
+
+procedure DeletePrintProcessorW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pPrintProcessorName : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeletePrintProcessorW,system);
+#pragma import(DeletePrintProcessorW,'DeletePrintProcessorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrintProcessor;
+  DeletePrintProcessorW 
+#end DeletePrintProcessor;
+#else;
+#template DeletePrintProcessor;
+  DeletePrintProcessorA 
+#end DeletePrintProcessor;
+#end if;
+
+procedure StartDocPrinterA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pDocInfo        : in LPBYTE)
+                      return DWORD;
+#pragma convention(StartDocPrinterA,system);
+#pragma import(StartDocPrinterA,'StartDocPrinterA','winspool.dll');
+
+procedure StartDocPrinterW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pDocInfo        : in LPBYTE)
+                      return DWORD;
+#pragma convention(StartDocPrinterW,system);
+#pragma import(StartDocPrinterW,'StartDocPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template StartDocPrinter;
+  StartDocPrinterW 
+#end StartDocPrinter;
+#else;
+#template StartDocPrinter;
+  StartDocPrinterA 
+#end StartDocPrinter;
+#end if;
+
+procedure StartPagePrinter(
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(StartPagePrinter,system);
+#pragma import(StartPagePrinter,'StartPagePrinter','winspool.dll');
+
+procedure WritePrinter(
+    hPrinter        : in t_HANDLE; 
+    pBuf            : in LPVOID; 
+    cbBuf           : in DWORD; 
+    pcWritten       : out DWORD )
+                      return BOOL;
+#pragma convention(WritePrinter,system);
+#pragma import(WritePrinter,'WritePrinter','winspool.dll');
+
+procedure FlushPrinter(
+    hPrinter        : in t_HANDLE; 
+    pBuf            : in LPVOID; 
+    cbBuf           : in DWORD; 
+    pcWritten       : out DWORD ; 
+    cSleep          : in DWORD)
+                      return BOOL;
+#pragma convention(FlushPrinter,system);
+#pragma import(FlushPrinter,'FlushPrinter','winspool.dll');
+
+procedure EndPagePrinter(
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(EndPagePrinter,system);
+#pragma import(EndPagePrinter,'EndPagePrinter','winspool.dll');
+
+procedure AbortPrinter(
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(AbortPrinter,system);
+#pragma import(AbortPrinter,'AbortPrinter','winspool.dll');
+
+procedure ReadPrinter(
+    hPrinter        : in t_HANDLE; 
+    pBuf            : out unchecked ; 
+    cbBuf           : in DWORD; 
+    pNoBytesRead    : out DWORD )
+                      return BOOL;
+#pragma convention(ReadPrinter,system);
+#pragma import(ReadPrinter,'ReadPrinter','winspool.dll');
+
+procedure EndDocPrinter(
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(EndDocPrinter,system);
+#pragma import(EndDocPrinter,'EndDocPrinter','winspool.dll');
+
+procedure AddJobA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pData           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(AddJobA,system);
+#pragma import(AddJobA,'AddJobA','winspool.dll');
+
+procedure AddJobW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pData           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(AddJobW,system);
+#pragma import(AddJobW,'AddJobW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddJob;
+  AddJobW 
+#end AddJob;
+#else;
+#template AddJob;
+  AddJobA 
+#end AddJob;
+#end if;
+
+procedure ScheduleJob(
+    hPrinter        : in t_HANDLE; 
+    JobId           : in DWORD)
+                      return BOOL;
+#pragma convention(ScheduleJob,system);
+#pragma import(ScheduleJob,'ScheduleJob','winspool.dll');
+
+procedure PrinterProperties(
+    hWnd            : in t_HWND; 
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(PrinterProperties,system);
+#pragma import(PrinterProperties,'PrinterProperties','winspool.dll');
+
+procedure DocumentPropertiesA(
+    hWnd            : in t_HWND; 
+    hPrinter        : in t_HANDLE; 
+    pDeviceName     : in LPSTR; 
+    pDevModeOutput  : out _devicemodeA; 
+    pDevModeInput   : in PDEVMODEA; 
+    fMode           : in DWORD)
+                      return LONG;
+#pragma convention(DocumentPropertiesA,system);
+#pragma import(DocumentPropertiesA,'DocumentPropertiesA','winspool.dll');
+
+procedure DocumentPropertiesW(
+    hWnd            : in t_HWND; 
+    hPrinter        : in t_HANDLE; 
+    pDeviceName     : in LPWSTR; 
+    pDevModeOutput  : out _devicemodeW; 
+    pDevModeInput   : in PDEVMODEW; 
+    fMode           : in DWORD)
+                      return LONG;
+#pragma convention(DocumentPropertiesW,system);
+#pragma import(DocumentPropertiesW,'DocumentPropertiesW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DocumentProperties;
+  DocumentPropertiesW 
+#end DocumentProperties;
+#else;
+#template DocumentProperties;
+  DocumentPropertiesA 
+#end DocumentProperties;
+#end if;
+
+procedure AdvancedDocumentPropertiesA(
+    hWnd            : in t_HWND; 
+    hPrinter        : in t_HANDLE; 
+    pDeviceName     : in LPSTR; 
+    pDevModeOutput  : out _devicemodeA; 
+    pDevModeInput   : in PDEVMODEA)
+                      return LONG;
+#pragma convention(AdvancedDocumentPropertiesA,system);
+#pragma import(AdvancedDocumentPropertiesA,'AdvancedDocumentPropertiesA','winspool.dll');
+
+procedure AdvancedDocumentPropertiesW(
+    hWnd            : in t_HWND; 
+    hPrinter        : in t_HANDLE; 
+    pDeviceName     : in LPWSTR; 
+    pDevModeOutput  : out _devicemodeW; 
+    pDevModeInput   : in PDEVMODEW)
+                      return LONG;
+#pragma convention(AdvancedDocumentPropertiesW,system);
+#pragma import(AdvancedDocumentPropertiesW,'AdvancedDocumentPropertiesW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AdvancedDocumentProperties;
+  AdvancedDocumentPropertiesW 
+#end AdvancedDocumentProperties;
+#else;
+#template AdvancedDocumentProperties;
+  AdvancedDocumentPropertiesA 
+#end AdvancedDocumentProperties;
+#end if;
+
+procedure ExtDeviceMode(
+    hWnd            : in t_HWND; 
+    hInst           : in t_HANDLE; 
+    pDevModeOutput  : out _devicemodeA; 
+    pDeviceName     : in LPSTR; 
+    pPort           : in LPSTR; 
+    pDevModeInput   : in LPDEVMODEA; 
+    pProfile        : in LPSTR; 
+    fMode           : in DWORD)
+                      return LONG;
+#pragma import(ExtDeviceMode,'ExtDeviceMode','winspool.dll');
+
+procedure GetPrinterDataA(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPSTR; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    nSize           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return DWORD;
+#pragma convention(GetPrinterDataA,system);
+#pragma import(GetPrinterDataA,'GetPrinterDataA','winspool.dll');
+
+procedure GetPrinterDataW(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPWSTR; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    nSize           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return DWORD;
+#pragma convention(GetPrinterDataW,system);
+#pragma import(GetPrinterDataW,'GetPrinterDataW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrinterData;
+  GetPrinterDataW 
+#end GetPrinterData;
+#else;
+#template GetPrinterData;
+  GetPrinterDataA 
+#end GetPrinterData;
+#end if;
+
+procedure GetPrinterDataExA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR; 
+    pValueName      : in LPCSTR; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    nSize           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return DWORD;
+#pragma convention(GetPrinterDataExA,system);
+#pragma import(GetPrinterDataExA,'GetPrinterDataExA','winspool.dll');
+
+procedure GetPrinterDataExW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR; 
+    pValueName      : in LPCWSTR; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    nSize           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return DWORD;
+#pragma convention(GetPrinterDataExW,system);
+#pragma import(GetPrinterDataExW,'GetPrinterDataExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetPrinterDataEx;
+  GetPrinterDataExW 
+#end GetPrinterDataEx;
+#else;
+#template GetPrinterDataEx;
+  GetPrinterDataExA 
+#end GetPrinterDataEx;
+#end if;
+
+procedure EnumPrinterDataA(
+    hPrinter        : in t_HANDLE; 
+    dwIndex         : in DWORD; 
+    pValueName      : out CHARSTR ; 
+    cbValueName     : in DWORD; 
+    pcbValueName    : out DWORD ; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    cbData          : in DWORD; 
+    pcbData         : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterDataA,system);
+#pragma import(EnumPrinterDataA,'EnumPrinterDataA','winspool.dll');
+
+procedure EnumPrinterDataW(
+    hPrinter        : in t_HANDLE; 
+    dwIndex         : in DWORD; 
+    pValueName      : out WCHARSTR ; 
+    cbValueName     : in DWORD; 
+    pcbValueName    : out DWORD ; 
+    pType           : out DWORD ; 
+    pData           : out BYTE ; 
+    cbData          : in DWORD; 
+    pcbData         : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterDataW,system);
+#pragma import(EnumPrinterDataW,'EnumPrinterDataW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrinterData;
+  EnumPrinterDataW 
+#end EnumPrinterData;
+#else;
+#template EnumPrinterData;
+  EnumPrinterDataA 
+#end EnumPrinterData;
+#end if;
+
+procedure EnumPrinterDataExA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR; 
+    pEnumValues     : out BYTE ; 
+    cbEnumValues    : in DWORD; 
+    pcbEnumValues   : out DWORD ; 
+    pnEnumValues    : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterDataExA,system);
+#pragma import(EnumPrinterDataExA,'EnumPrinterDataExA','winspool.dll');
+
+procedure EnumPrinterDataExW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR; 
+    pEnumValues     : out BYTE ; 
+    cbEnumValues    : in DWORD; 
+    pcbEnumValues   : out DWORD ; 
+    pnEnumValues    : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterDataExW,system);
+#pragma import(EnumPrinterDataExW,'EnumPrinterDataExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrinterDataEx;
+  EnumPrinterDataExW 
+#end EnumPrinterDataEx;
+#else;
+#template EnumPrinterDataEx;
+  EnumPrinterDataExA 
+#end EnumPrinterDataEx;
+#end if;
+
+procedure EnumPrinterKeyA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR; 
+    pSubkey         : out CHARSTR ; 
+    cbSubkey        : in DWORD; 
+    pcbSubkey       : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterKeyA,system);
+#pragma import(EnumPrinterKeyA,'EnumPrinterKeyA','winspool.dll');
+
+procedure EnumPrinterKeyW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR; 
+    pSubkey         : out WCHARSTR ; 
+    cbSubkey        : in DWORD; 
+    pcbSubkey       : out DWORD )
+                      return DWORD;
+#pragma convention(EnumPrinterKeyW,system);
+#pragma import(EnumPrinterKeyW,'EnumPrinterKeyW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPrinterKey;
+  EnumPrinterKeyW 
+#end EnumPrinterKey;
+#else;
+#template EnumPrinterKey;
+  EnumPrinterKeyA 
+#end EnumPrinterKey;
+#end if;
+
+procedure SetPrinterDataA(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPSTR; 
+    _Type           : in DWORD; 
+    pData           : in LPBYTE; 
+    cbData          : in DWORD)
+                      return DWORD;
+#pragma convention(SetPrinterDataA,system);
+#pragma import(SetPrinterDataA,'SetPrinterDataA','winspool.dll');
+
+procedure SetPrinterDataW(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPWSTR; 
+    _Type           : in DWORD; 
+    pData           : in LPBYTE; 
+    cbData          : in DWORD)
+                      return DWORD;
+#pragma convention(SetPrinterDataW,system);
+#pragma import(SetPrinterDataW,'SetPrinterDataW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetPrinterData;
+  SetPrinterDataW 
+#end SetPrinterData;
+#else;
+#template SetPrinterData;
+  SetPrinterDataA 
+#end SetPrinterData;
+#end if;
+
+procedure SetPrinterDataExA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR; 
+    pValueName      : in LPCSTR; 
+    _Type           : in DWORD; 
+    pData           : in LPBYTE; 
+    cbData          : in DWORD)
+                      return DWORD;
+#pragma convention(SetPrinterDataExA,system);
+#pragma import(SetPrinterDataExA,'SetPrinterDataExA','winspool.dll');
+
+procedure SetPrinterDataExW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR; 
+    pValueName      : in LPCWSTR; 
+    _Type           : in DWORD; 
+    pData           : in LPBYTE; 
+    cbData          : in DWORD)
+                      return DWORD;
+#pragma convention(SetPrinterDataExW,system);
+#pragma import(SetPrinterDataExW,'SetPrinterDataExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetPrinterDataEx;
+  SetPrinterDataExW 
+#end SetPrinterDataEx;
+#else;
+#template SetPrinterDataEx;
+  SetPrinterDataExA 
+#end SetPrinterDataEx;
+#end if;
+
+procedure DeletePrinterDataA(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterDataA,system);
+#pragma import(DeletePrinterDataA,'DeletePrinterDataA','winspool.dll');
+
+procedure DeletePrinterDataW(
+    hPrinter        : in t_HANDLE; 
+    pValueName      : in LPWSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterDataW,system);
+#pragma import(DeletePrinterDataW,'DeletePrinterDataW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterData;
+  DeletePrinterDataW 
+#end DeletePrinterData;
+#else;
+#template DeletePrinterData;
+  DeletePrinterDataA 
+#end DeletePrinterData;
+#end if;
+
+procedure DeletePrinterDataExA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR; 
+    pValueName      : in LPCSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterDataExA,system);
+#pragma import(DeletePrinterDataExA,'DeletePrinterDataExA','winspool.dll');
+
+procedure DeletePrinterDataExW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR; 
+    pValueName      : in LPCWSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterDataExW,system);
+#pragma import(DeletePrinterDataExW,'DeletePrinterDataExW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterDataEx;
+  DeletePrinterDataExW 
+#end DeletePrinterDataEx;
+#else;
+#template DeletePrinterDataEx;
+  DeletePrinterDataExA 
+#end DeletePrinterDataEx;
+#end if;
+
+procedure DeletePrinterKeyA(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterKeyA,system);
+#pragma import(DeletePrinterKeyA,'DeletePrinterKeyA','winspool.dll');
+
+procedure DeletePrinterKeyW(
+    hPrinter        : in t_HANDLE; 
+    pKeyName        : in LPCWSTR)
+                      return DWORD;
+#pragma convention(DeletePrinterKeyW,system);
+#pragma import(DeletePrinterKeyW,'DeletePrinterKeyW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterKey;
+  DeletePrinterKeyW 
+#end DeletePrinterKey;
+#else;
+#template DeletePrinterKey;
+  DeletePrinterKeyA 
+#end DeletePrinterKey;
+#end if;
+
+const
+  PRINTER_NOTIFY_TYPE= $00;
+
+const
+  JOB_NOTIFY_TYPE   = $01;
+
+const
+  PRINTER_NOTIFY_FIELD_SERVER_NAME= $00;
+
+const
+  PRINTER_NOTIFY_FIELD_PRINTER_NAME= $01;
+
+const
+  PRINTER_NOTIFY_FIELD_SHARE_NAME= $02;
+
+const
+  PRINTER_NOTIFY_FIELD_PORT_NAME= $03;
+
+const
+  PRINTER_NOTIFY_FIELD_DRIVER_NAME= $04;
+
+const
+  PRINTER_NOTIFY_FIELD_COMMENT= $05;
+
+const
+  PRINTER_NOTIFY_FIELD_LOCATION= $06;
+
+const
+  PRINTER_NOTIFY_FIELD_DEVMODE= $07;
+
+const
+  PRINTER_NOTIFY_FIELD_SEPFILE= $08;
+
+const
+  PRINTER_NOTIFY_FIELD_PRINT_PROCESSOR= $09;
+
+const
+  PRINTER_NOTIFY_FIELD_PARAMETERS= $0A;
+
+const
+  PRINTER_NOTIFY_FIELD_DATATYPE= $0B;
+
+const
+  PRINTER_NOTIFY_FIELD_SECURITY_DESCRIPTOR= $0C;
+
+const
+  PRINTER_NOTIFY_FIELD_ATTRIBUTES= $0D;
+
+const
+  PRINTER_NOTIFY_FIELD_PRIORITY= $0E;
+
+const
+  PRINTER_NOTIFY_FIELD_DEFAULT_PRIORITY= $0F;
+
+const
+  PRINTER_NOTIFY_FIELD_START_TIME= $10;
+
+const
+  PRINTER_NOTIFY_FIELD_UNTIL_TIME= $11;
+
+const
+  PRINTER_NOTIFY_FIELD_STATUS= $12;
+
+const
+  PRINTER_NOTIFY_FIELD_STATUS_STRING= $13;
+
+const
+  PRINTER_NOTIFY_FIELD_CJOBS= $14;
+
+const
+  PRINTER_NOTIFY_FIELD_AVERAGE_PPM= $15;
+
+const
+  PRINTER_NOTIFY_FIELD_TOTAL_PAGES= $16;
+
+const
+  PRINTER_NOTIFY_FIELD_PAGES_PRINTED= $17;
+
+const
+  PRINTER_NOTIFY_FIELD_TOTAL_BYTES= $18;
+
+const
+  PRINTER_NOTIFY_FIELD_BYTES_PRINTED= $19;
+
+const
+  PRINTER_NOTIFY_FIELD_OBJECT_GUID= $1A;
+
+const
+  JOB_NOTIFY_FIELD_PRINTER_NAME= $00;
+
+const
+  JOB_NOTIFY_FIELD_MACHINE_NAME= $01;
+
+const
+  JOB_NOTIFY_FIELD_PORT_NAME= $02;
+
+const
+  JOB_NOTIFY_FIELD_USER_NAME= $03;
+
+const
+  JOB_NOTIFY_FIELD_NOTIFY_NAME= $04;
+
+const
+  JOB_NOTIFY_FIELD_DATATYPE= $05;
+
+const
+  JOB_NOTIFY_FIELD_PRINT_PROCESSOR= $06;
+
+const
+  JOB_NOTIFY_FIELD_PARAMETERS= $07;
+
+const
+  JOB_NOTIFY_FIELD_DRIVER_NAME= $08;
+
+const
+  JOB_NOTIFY_FIELD_DEVMODE= $09;
+
+const
+  JOB_NOTIFY_FIELD_STATUS= $0A;
+
+const
+  JOB_NOTIFY_FIELD_STATUS_STRING= $0B;
+
+const
+  JOB_NOTIFY_FIELD_SECURITY_DESCRIPTOR= $0C;
+
+const
+  JOB_NOTIFY_FIELD_DOCUMENT= $0D;
+
+const
+  JOB_NOTIFY_FIELD_PRIORITY= $0E;
+
+const
+  JOB_NOTIFY_FIELD_POSITION= $0F;
+
+const
+  JOB_NOTIFY_FIELD_SUBMITTED= $10;
+
+const
+  JOB_NOTIFY_FIELD_START_TIME= $11;
+
+const
+  JOB_NOTIFY_FIELD_UNTIL_TIME= $12;
+
+const
+  JOB_NOTIFY_FIELD_TIME= $13;
+
+const
+  JOB_NOTIFY_FIELD_TOTAL_PAGES= $14;
+
+const
+  JOB_NOTIFY_FIELD_PAGES_PRINTED= $15;
+
+const
+  JOB_NOTIFY_FIELD_TOTAL_BYTES= $16;
+
+const
+  JOB_NOTIFY_FIELD_BYTES_PRINTED= $17;
+
+type
+  _PRINTER_NOTIFY_OPTIONS_TYPE = record
+_Type           : WORD;
+Reserved0       : WORD;
+Reserved1       : DWORD;
+Reserved2       : DWORD;
+Count           : DWORD;
+pFields         : PWORD;
+  end record;
+  PRINTER_NOTIFY_OPTIONS_TYPE = _PRINTER_NOTIFY_OPTIONS_TYPE;
+  PPRINTER_NOTIFY_OPTIONS_TYPE = ^_PRINTER_NOTIFY_OPTIONS_TYPE;
+  LPPRINTER_NOTIFY_OPTIONS_TYPE = ^_PRINTER_NOTIFY_OPTIONS_TYPE;
+
+const
+  PRINTER_NOTIFY_OPTIONS_REFRESH= $01;
+
+type
+  _PRINTER_NOTIFY_OPTIONS = record
+Version         : DWORD;
+Flags           : DWORD;
+Count           : DWORD;
+pTypes          : PPRINTER_NOTIFY_OPTIONS_TYPE;
+  end record;
+  PRINTER_NOTIFY_OPTIONS = _PRINTER_NOTIFY_OPTIONS;
+  PPRINTER_NOTIFY_OPTIONS = ^_PRINTER_NOTIFY_OPTIONS;
+  LPPRINTER_NOTIFY_OPTIONS = ^_PRINTER_NOTIFY_OPTIONS;
+
+const
+  PRINTER_NOTIFY_INFO_DISCARDED= $01;
+
+type
+  _PRINTER_NOTIFY_INFO_DATA = record
+_Type           : WORD;
+Field           : WORD;
+Reserved        : DWORD;
+Id              : DWORD;
+NotifyData       : record
+      adwData       : array 0..1 of DWORD for position use 0;
+  Data              : record
+cbBuf           : DWORD;
+pBuf            : LPVOID;
+  end record for position use 0;
+    end record;
+  end record;
+  PRINTER_NOTIFY_INFO_DATA = _PRINTER_NOTIFY_INFO_DATA;
+  PPRINTER_NOTIFY_INFO_DATA = ^_PRINTER_NOTIFY_INFO_DATA;
+  LPPRINTER_NOTIFY_INFO_DATA = ^_PRINTER_NOTIFY_INFO_DATA;
+
+type
+  _PRINTER_NOTIFY_INFO = record
+Version         : DWORD;
+Flags           : DWORD;
+Count           : DWORD;
+aData           : array 0..0 of PRINTER_NOTIFY_INFO_DATA;
+  end record;
+  PRINTER_NOTIFY_INFO = _PRINTER_NOTIFY_INFO;
+  PPRINTER_NOTIFY_INFO = ^_PRINTER_NOTIFY_INFO;
+  LPPRINTER_NOTIFY_INFO = ^_PRINTER_NOTIFY_INFO;
+
+type
+  _BINARY_CONTAINER = record
+cbBuf           : DWORD;
+pData           : LPBYTE;
+  end record;
+  BINARY_CONTAINER  = _BINARY_CONTAINER;
+  PBINARY_CONTAINER = ^_BINARY_CONTAINER;
+
+type
+  _BIDI_DATA        = record
+dwBidiType      : DWORD;
+u                : record
+      bData         : BOOL for position use 0;
+      iData         : LONG for position use 0;
+      sData         : LPWSTR for position use 0;
+      fData         : t_FLOAT for position use 0;
+      biData        : BINARY_CONTAINER for position use 0;
+    end record;
+  end record;
+  BIDI_DATA         = _BIDI_DATA;
+  PBIDI_DATA        = ^_BIDI_DATA;
+  LPBIDI_DATA       = ^_BIDI_DATA;
+
+type
+  _BIDI_REQUEST_DATA = record
+dwReqNumber     : DWORD;
+pSchema         : LPWSTR;
+data            : BIDI_DATA;
+  end record;
+  BIDI_REQUEST_DATA = _BIDI_REQUEST_DATA;
+  PBIDI_REQUEST_DATA = ^_BIDI_REQUEST_DATA;
+  LPBIDI_REQUEST_DATA = ^_BIDI_REQUEST_DATA;
+
+type
+  _BIDI_REQUEST_CONTAINER = record
+Version         : DWORD;
+Flags           : DWORD;
+Count           : DWORD;
+aData           : array 0..0 of BIDI_REQUEST_DATA;
+  end record;
+  BIDI_REQUEST_CONTAINER = _BIDI_REQUEST_CONTAINER;
+  PBIDI_REQUEST_CONTAINER = ^_BIDI_REQUEST_CONTAINER;
+  LPBIDI_REQUEST_CONTAINER = ^_BIDI_REQUEST_CONTAINER;
+
+type
+  _BIDI_RESPONSE_DATA = record
+dwResult        : DWORD;
+dwReqNumber     : DWORD;
+pSchema         : LPWSTR;
+data            : BIDI_DATA;
+  end record;
+  BIDI_RESPONSE_DATA = _BIDI_RESPONSE_DATA;
+  PBIDI_RESPONSE_DATA = ^_BIDI_RESPONSE_DATA;
+  LPBIDI_RESPONSE_DATA = ^_BIDI_RESPONSE_DATA;
+
+type
+  _BIDI_RESPONSE_CONTAINER = record
+Version         : DWORD;
+Flags           : DWORD;
+Count           : DWORD;
+aData           : array 0..0 of BIDI_RESPONSE_DATA;
+  end record;
+  BIDI_RESPONSE_CONTAINER = _BIDI_RESPONSE_CONTAINER;
+  PBIDI_RESPONSE_CONTAINER = ^_BIDI_RESPONSE_CONTAINER;
+  LPBIDI_RESPONSE_CONTAINER = ^_BIDI_RESPONSE_CONTAINER;
+
+type
+BIDI_TYPE         = enum
+    BIDI_NULL       for ord use 0;
+    BIDI_INT        for ord use 1;
+    BIDI_FLOAT      for ord use 2;
+    BIDI_BOOL       for ord use 3;
+    BIDI_STRING     for ord use 4;
+    BIDI_TEXT       for ord use 5;
+    BIDI_ENUM       for ord use 6;
+    BIDI_BLOB       for ord use 7;
+  end enum for size use 4;
+const
+  BIDI_ACCESS_ADMINISTRATOR= $01;
+
+const
+  BIDI_ACCESS_USER  = $02;
+
+-- /*
+--     Error code for bidi apis
+-- */
+const
+  ERROR_BIDI_STATUS_OK= 0;
+
+const
+  ERROR_BIDI_ERROR_BASE= 13000;
+
+procedure WaitForPrinterChange(
+    hPrinter        : in t_HANDLE; 
+    Flags           : in DWORD)
+                      return DWORD;
+#pragma convention(WaitForPrinterChange,system);
+#pragma import(WaitForPrinterChange,'WaitForPrinterChange','winspool.dll');
+
+procedure FindFirstPrinterChangeNotification(
+    hPrinter        : in t_HANDLE; 
+    fdwFlags        : in DWORD; 
+    fdwOptions      : in DWORD; 
+    pPrinterNotifyOptions : in LPVOID)
+                      return t_HANDLE;
+#pragma convention(FindFirstPrinterChangeNotification,system);
+#pragma import(FindFirstPrinterChangeNotification,'FindFirstPrinterChangeNotification','winspool.dll');
+
+procedure FindNextPrinterChangeNotification(
+    hChange         : in t_HANDLE; 
+    pdwChange       : out DWORD ; 
+    pvReserved      : in LPVOID; 
+    ppPrinterNotifyInfo : out LPVOID)
+                      return BOOL;
+#pragma convention(FindNextPrinterChangeNotification,system);
+#pragma import(FindNextPrinterChangeNotification,'FindNextPrinterChangeNotification','winspool.dll');
+
+procedure FreePrinterNotifyInfo(
+    pPrinterNotifyInfo : in PPRINTER_NOTIFY_INFO)
+                      return BOOL;
+#pragma convention(FreePrinterNotifyInfo,system);
+#pragma import(FreePrinterNotifyInfo,'FreePrinterNotifyInfo','winspool.dll');
+
+procedure FindClosePrinterChangeNotification(
+    hChange         : in t_HANDLE)
+                      return BOOL;
+#pragma convention(FindClosePrinterChangeNotification,system);
+#pragma import(FindClosePrinterChangeNotification,'FindClosePrinterChangeNotification','winspool.dll');
+
+const
+  PRINTER_CHANGE_ADD_PRINTER= $01;
+
+const
+  PRINTER_CHANGE_SET_PRINTER= $02;
+
+const
+  PRINTER_CHANGE_DELETE_PRINTER= $04;
+
+const
+  PRINTER_CHANGE_FAILED_CONNECTION_PRINTER= $08;
+
+const
+  PRINTER_CHANGE_PRINTER= $FF;
+
+const
+  PRINTER_CHANGE_ADD_JOB= $0100;
+
+const
+  PRINTER_CHANGE_SET_JOB= $0200;
+
+const
+  PRINTER_CHANGE_DELETE_JOB= $0400;
+
+const
+  PRINTER_CHANGE_WRITE_JOB= $0800;
+
+const
+  PRINTER_CHANGE_JOB= $FF00;
+
+const
+  PRINTER_CHANGE_ADD_FORM= $10000;
+
+const
+  PRINTER_CHANGE_SET_FORM= $20000;
+
+const
+  PRINTER_CHANGE_DELETE_FORM= $40000;
+
+const
+  PRINTER_CHANGE_FORM= $70000;
+
+const
+  PRINTER_CHANGE_ADD_PORT= $100000;
+
+const
+  PRINTER_CHANGE_CONFIGURE_PORT= $200000;
+
+const
+  PRINTER_CHANGE_DELETE_PORT= $400000;
+
+const
+  PRINTER_CHANGE_PORT= $700000;
+
+const
+  PRINTER_CHANGE_ADD_PRINT_PROCESSOR= $1000000;
+
+const
+  PRINTER_CHANGE_DELETE_PRINT_PROCESSOR= $4000000;
+
+const
+  PRINTER_CHANGE_PRINT_PROCESSOR= $7000000;
+
+const
+  PRINTER_CHANGE_ADD_PRINTER_DRIVER= $10000000;
+
+const
+  PRINTER_CHANGE_SET_PRINTER_DRIVER= $20000000;
+
+const
+  PRINTER_CHANGE_DELETE_PRINTER_DRIVER= $40000000;
+
+const
+  PRINTER_CHANGE_PRINTER_DRIVER= $70000000;
+
+const
+  PRINTER_CHANGE_TIMEOUT= $80000000;
+
+const
+  PRINTER_CHANGE_ALL= $7777FFFF;
+
+procedure PrinterMessageBoxA(
+    hPrinter        : in t_HANDLE; 
+    Error           : in DWORD; 
+    hWnd            : in t_HWND; 
+    pText           : in LPSTR; 
+    pCaption        : in LPSTR; 
+    dwType          : in DWORD)
+                      return DWORD;
+#pragma convention(PrinterMessageBoxA,system);
+#pragma import(PrinterMessageBoxA,'PrinterMessageBoxA','winspool.dll');
+
+procedure PrinterMessageBoxW(
+    hPrinter        : in t_HANDLE; 
+    Error           : in DWORD; 
+    hWnd            : in t_HWND; 
+    pText           : in LPWSTR; 
+    pCaption        : in LPWSTR; 
+    dwType          : in DWORD)
+                      return DWORD;
+#pragma convention(PrinterMessageBoxW,system);
+#pragma import(PrinterMessageBoxW,'PrinterMessageBoxW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template PrinterMessageBox;
+  PrinterMessageBoxW 
+#end PrinterMessageBox;
+#else;
+#template PrinterMessageBox;
+  PrinterMessageBoxA 
+#end PrinterMessageBox;
+#end if;
+
+const
+  PRINTER_ERROR_INFORMATION= $80000000;
+
+const
+  PRINTER_ERROR_WARNING= $40000000;
+
+const
+  PRINTER_ERROR_SEVERE= $20000000;
+
+const
+  PRINTER_ERROR_OUTOFPAPER= $01;
+
+const
+  PRINTER_ERROR_JAM = $02;
+
+const
+  PRINTER_ERROR_OUTOFTONER= $04;
+
+procedure ClosePrinter(
+    hPrinter        : in t_HANDLE)
+                      return BOOL;
+#pragma convention(ClosePrinter,system);
+#pragma import(ClosePrinter,'ClosePrinter','winspool.dll');
+
+procedure AddFormA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pForm           : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddFormA,system);
+#pragma import(AddFormA,'AddFormA','winspool.dll');
+
+procedure AddFormW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pForm           : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddFormW,system);
+#pragma import(AddFormW,'AddFormW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddForm;
+  AddFormW 
+#end AddForm;
+#else;
+#template AddForm;
+  AddFormA 
+#end AddForm;
+#end if;
+
+procedure DeleteFormA(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPSTR)
+                      return BOOL;
+#pragma convention(DeleteFormA,system);
+#pragma import(DeleteFormA,'DeleteFormA','winspool.dll');
+
+procedure DeleteFormW(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeleteFormW,system);
+#pragma import(DeleteFormW,'DeleteFormW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeleteForm;
+  DeleteFormW 
+#end DeleteForm;
+#else;
+#template DeleteForm;
+  DeleteFormA 
+#end DeleteForm;
+#end if;
+
+procedure GetFormA(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPSTR; 
+    Level           : in DWORD; 
+    pForm           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetFormA,system);
+#pragma import(GetFormA,'GetFormA','winspool.dll');
+
+procedure GetFormW(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPWSTR; 
+    Level           : in DWORD; 
+    pForm           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD )
+                      return BOOL;
+#pragma convention(GetFormW,system);
+#pragma import(GetFormW,'GetFormW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetForm;
+  GetFormW 
+#end GetForm;
+#else;
+#template GetForm;
+  GetFormA 
+#end GetForm;
+#end if;
+
+procedure SetFormA(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPSTR; 
+    Level           : in DWORD; 
+    pForm           : in LPBYTE)
+                      return BOOL;
+#pragma convention(SetFormA,system);
+#pragma import(SetFormA,'SetFormA','winspool.dll');
+
+procedure SetFormW(
+    hPrinter        : in t_HANDLE; 
+    pFormName       : in LPWSTR; 
+    Level           : in DWORD; 
+    pForm           : in LPBYTE)
+                      return BOOL;
+#pragma convention(SetFormW,system);
+#pragma import(SetFormW,'SetFormW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetForm;
+  SetFormW 
+#end SetForm;
+#else;
+#template SetForm;
+  SetFormA 
+#end SetForm;
+#end if;
+
+procedure EnumFormsA(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pForm           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumFormsA,system);
+#pragma import(EnumFormsA,'EnumFormsA','winspool.dll');
+
+procedure EnumFormsW(
+    hPrinter        : in t_HANDLE; 
+    Level           : in DWORD; 
+    pForm           : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumFormsW,system);
+#pragma import(EnumFormsW,'EnumFormsW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumForms;
+  EnumFormsW 
+#end EnumForms;
+#else;
+#template EnumForms;
+  EnumFormsA 
+#end EnumForms;
+#end if;
+
+procedure EnumMonitorsA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pMonitors       : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumMonitorsA,system);
+#pragma import(EnumMonitorsA,'EnumMonitorsA','winspool.dll');
+
+procedure EnumMonitorsW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pMonitors       : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumMonitorsW,system);
+#pragma import(EnumMonitorsW,'EnumMonitorsW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumMonitors;
+  EnumMonitorsW 
+#end EnumMonitors;
+#else;
+#template EnumMonitors;
+  EnumMonitorsA 
+#end EnumMonitors;
+#end if;
+
+procedure AddMonitorA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pMonitors       : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddMonitorA,system);
+#pragma import(AddMonitorA,'AddMonitorA','winspool.dll');
+
+procedure AddMonitorW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pMonitors       : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddMonitorW,system);
+#pragma import(AddMonitorW,'AddMonitorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddMonitor;
+  AddMonitorW 
+#end AddMonitor;
+#else;
+#template AddMonitor;
+  AddMonitorA 
+#end AddMonitor;
+#end if;
+
+procedure DeleteMonitorA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pMonitorName    : in LPSTR)
+                      return BOOL;
+#pragma convention(DeleteMonitorA,system);
+#pragma import(DeleteMonitorA,'DeleteMonitorA','winspool.dll');
+
+procedure DeleteMonitorW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pMonitorName    : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeleteMonitorW,system);
+#pragma import(DeleteMonitorW,'DeleteMonitorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeleteMonitor;
+  DeleteMonitorW 
+#end DeleteMonitor;
+#else;
+#template DeleteMonitor;
+  DeleteMonitorA 
+#end DeleteMonitor;
+#end if;
+
+procedure EnumPortsA(
+    pName           : in LPSTR; 
+    Level           : in DWORD; 
+    pPorts          : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPortsA,system);
+#pragma import(EnumPortsA,'EnumPortsA','winspool.dll');
+
+procedure EnumPortsW(
+    pName           : in LPWSTR; 
+    Level           : in DWORD; 
+    pPorts          : out BYTE ; 
+    cbBuf           : in DWORD; 
+    pcbNeeded       : out DWORD ; 
+    pcReturned      : out DWORD )
+                      return BOOL;
+#pragma convention(EnumPortsW,system);
+#pragma import(EnumPortsW,'EnumPortsW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template EnumPorts;
+  EnumPortsW 
+#end EnumPorts;
+#else;
+#template EnumPorts;
+  EnumPortsA 
+#end EnumPorts;
+#end if;
+
+procedure AddPortA(
+    pName           : in LPSTR; 
+    hWnd            : in t_HWND; 
+    pMonitorName    : in LPSTR)
+                      return BOOL;
+#pragma convention(AddPortA,system);
+#pragma import(AddPortA,'AddPortA','winspool.dll');
+
+procedure AddPortW(
+    pName           : in LPWSTR; 
+    hWnd            : in t_HWND; 
+    pMonitorName    : in LPWSTR)
+                      return BOOL;
+#pragma convention(AddPortW,system);
+#pragma import(AddPortW,'AddPortW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPort;
+  AddPortW 
+#end AddPort;
+#else;
+#template AddPort;
+  AddPortA 
+#end AddPort;
+#end if;
+
+procedure ConfigurePortA(
+    pName           : in LPSTR; 
+    hWnd            : in t_HWND; 
+    pPortName       : in LPSTR)
+                      return BOOL;
+#pragma convention(ConfigurePortA,system);
+#pragma import(ConfigurePortA,'ConfigurePortA','winspool.dll');
+
+procedure ConfigurePortW(
+    pName           : in LPWSTR; 
+    hWnd            : in t_HWND; 
+    pPortName       : in LPWSTR)
+                      return BOOL;
+#pragma convention(ConfigurePortW,system);
+#pragma import(ConfigurePortW,'ConfigurePortW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template ConfigurePort;
+  ConfigurePortW 
+#end ConfigurePort;
+#else;
+#template ConfigurePort;
+  ConfigurePortA 
+#end ConfigurePort;
+#end if;
+
+procedure DeletePortA(
+    pName           : in LPSTR; 
+    hWnd            : in t_HWND; 
+    pPortName       : in LPSTR)
+                      return BOOL;
+#pragma convention(DeletePortA,system);
+#pragma import(DeletePortA,'DeletePortA','winspool.dll');
+
+procedure DeletePortW(
+    pName           : in LPWSTR; 
+    hWnd            : in t_HWND; 
+    pPortName       : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeletePortW,system);
+#pragma import(DeletePortW,'DeletePortW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePort;
+  DeletePortW 
+#end DeletePort;
+#else;
+#template DeletePort;
+  DeletePortA 
+#end DeletePort;
+#end if;
+
+procedure XcvDataW(
+    hXcv            : in t_HANDLE; 
+    pszDataName     : in PCWSTR; 
+    pInputData      : in PBYTE; 
+    cbInputData     : in DWORD; 
+    pOutputData     : out BYTE ; 
+    cbOutputData    : in DWORD; 
+    pcbOutputNeeded : out DWORD ; 
+    pdwStatus       : out DWORD )
+                      return BOOL;
+#pragma convention(XcvDataW,system);
+#pragma import(XcvDataW,'XcvDataW','winspool.dll');
+
+procedure GetDefaultPrinterA(
+    pszBuffer       : in LPSTR; 
+    pcchBuffer      : in LPDWORD)
+                      return BOOL;
+#pragma convention(GetDefaultPrinterA,system);
+#pragma import(GetDefaultPrinterA,'GetDefaultPrinterA','winspool.dll');
+
+procedure GetDefaultPrinterW(
+    pszBuffer       : in LPWSTR; 
+    pcchBuffer      : in LPDWORD)
+                      return BOOL;
+#pragma convention(GetDefaultPrinterW,system);
+#pragma import(GetDefaultPrinterW,'GetDefaultPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template GetDefaultPrinter;
+  GetDefaultPrinterW 
+#end GetDefaultPrinter;
+#else;
+#template GetDefaultPrinter;
+  GetDefaultPrinterA 
+#end GetDefaultPrinter;
+#end if;
+
+procedure SetDefaultPrinterA(
+    pszPrinter      : in LPCSTR)
+                      return BOOL;
+#pragma convention(SetDefaultPrinterA,system);
+#pragma import(SetDefaultPrinterA,'SetDefaultPrinterA','winspool.dll');
+
+procedure SetDefaultPrinterW(
+    pszPrinter      : in LPCWSTR)
+                      return BOOL;
+#pragma convention(SetDefaultPrinterW,system);
+#pragma import(SetDefaultPrinterW,'SetDefaultPrinterW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetDefaultPrinter;
+  SetDefaultPrinterW 
+#end SetDefaultPrinter;
+#else;
+#template SetDefaultPrinter;
+  SetDefaultPrinterA 
+#end SetDefaultPrinter;
+#end if;
+
+procedure SetPortA(
+    pName           : in LPSTR; 
+    pPortName       : in LPSTR; 
+    dwLevel         : in DWORD; 
+    pPortInfo       : in LPBYTE)
+                      return BOOL;
+#pragma convention(SetPortA,system);
+#pragma import(SetPortA,'SetPortA','winspool.dll');
+
+procedure SetPortW(
+    pName           : in LPWSTR; 
+    pPortName       : in LPWSTR; 
+    dwLevel         : in DWORD; 
+    pPortInfo       : in LPBYTE)
+                      return BOOL;
+#pragma convention(SetPortW,system);
+#pragma import(SetPortW,'SetPortW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template SetPort;
+  SetPortW 
+#end SetPort;
+#else;
+#template SetPort;
+  SetPortA 
+#end SetPort;
+#end if;
+
+procedure AddPrinterConnectionA(
+    pName           : in LPSTR)
+                      return BOOL;
+#pragma convention(AddPrinterConnectionA,system);
+#pragma import(AddPrinterConnectionA,'AddPrinterConnectionA','winspool.dll');
+
+procedure AddPrinterConnectionW(
+    pName           : in LPWSTR)
+                      return BOOL;
+#pragma convention(AddPrinterConnectionW,system);
+#pragma import(AddPrinterConnectionW,'AddPrinterConnectionW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrinterConnection;
+  AddPrinterConnectionW 
+#end AddPrinterConnection;
+#else;
+#template AddPrinterConnection;
+  AddPrinterConnectionA 
+#end AddPrinterConnection;
+#end if;
+
+procedure DeletePrinterConnectionA(
+    pName           : in LPSTR)
+                      return BOOL;
+#pragma convention(DeletePrinterConnectionA,system);
+#pragma import(DeletePrinterConnectionA,'DeletePrinterConnectionA','winspool.dll');
+
+procedure DeletePrinterConnectionW(
+    pName           : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeletePrinterConnectionW,system);
+#pragma import(DeletePrinterConnectionW,'DeletePrinterConnectionW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrinterConnection;
+  DeletePrinterConnectionW 
+#end DeletePrinterConnection;
+#else;
+#template DeletePrinterConnection;
+  DeletePrinterConnectionA 
+#end DeletePrinterConnection;
+#end if;
+
+procedure ConnectToPrinterDlg(
+    hwnd            : in t_HWND; 
+    Flags           : in DWORD)
+                      return t_HANDLE;
+#pragma convention(ConnectToPrinterDlg,system);
+#pragma import(ConnectToPrinterDlg,'ConnectToPrinterDlg','winspool.dll');
+
+type
+  _PROVIDOR_INFO_1A = record
+pName           : LPSTR;
+pEnvironment    : LPSTR;
+pDLLName        : LPSTR;
+  end record;
+  PROVIDOR_INFO_1A  = _PROVIDOR_INFO_1A;
+  PPROVIDOR_INFO_1A = ^_PROVIDOR_INFO_1A;
+  LPPROVIDOR_INFO_1A = ^_PROVIDOR_INFO_1A;
+
+type
+  _PROVIDOR_INFO_1W = record
+pName           : LPWSTR;
+pEnvironment    : LPWSTR;
+pDLLName        : LPWSTR;
+  end record;
+  PROVIDOR_INFO_1W  = _PROVIDOR_INFO_1W;
+  PPROVIDOR_INFO_1W = ^_PROVIDOR_INFO_1W;
+  LPPROVIDOR_INFO_1W = ^_PROVIDOR_INFO_1W;
+
+#if #declared UNICODE; then;
+type
+PROVIDOR_INFO_1   = PROVIDOR_INFO_1W;
+type
+PPROVIDOR_INFO_1  = PPROVIDOR_INFO_1W;
+type
+LPPROVIDOR_INFO_1 = LPPROVIDOR_INFO_1W;
+#else;
+type
+PROVIDOR_INFO_1   = PROVIDOR_INFO_1A;
+type
+PPROVIDOR_INFO_1  = PPROVIDOR_INFO_1A;
+type
+LPPROVIDOR_INFO_1 = LPPROVIDOR_INFO_1A;
+#end if;
+
+type
+  _PROVIDOR_INFO_2A = record
+pOrder          : LPSTR;
+  end record;
+  PROVIDOR_INFO_2A  = _PROVIDOR_INFO_2A;
+  PPROVIDOR_INFO_2A = ^_PROVIDOR_INFO_2A;
+  LPPROVIDOR_INFO_2A = ^_PROVIDOR_INFO_2A;
+
+type
+  _PROVIDOR_INFO_2W = record
+pOrder          : LPWSTR;
+  end record;
+  PROVIDOR_INFO_2W  = _PROVIDOR_INFO_2W;
+  PPROVIDOR_INFO_2W = ^_PROVIDOR_INFO_2W;
+  LPPROVIDOR_INFO_2W = ^_PROVIDOR_INFO_2W;
+
+#if #declared UNICODE; then;
+type
+PROVIDOR_INFO_2   = PROVIDOR_INFO_2W;
+type
+PPROVIDOR_INFO_2  = PPROVIDOR_INFO_2W;
+type
+LPPROVIDOR_INFO_2 = LPPROVIDOR_INFO_2W;
+#else;
+type
+PROVIDOR_INFO_2   = PROVIDOR_INFO_2A;
+type
+PPROVIDOR_INFO_2  = PPROVIDOR_INFO_2A;
+type
+LPPROVIDOR_INFO_2 = LPPROVIDOR_INFO_2A;
+#end if;
+
+procedure AddPrintProvidorA(
+    pName           : in LPSTR; 
+    level           : in DWORD; 
+    pProvidorInfo   : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddPrintProvidorA,system);
+#pragma import(AddPrintProvidorA,'AddPrintProvidorA','winspool.dll');
+
+procedure AddPrintProvidorW(
+    pName           : in LPWSTR; 
+    level           : in DWORD; 
+    pProvidorInfo   : in LPBYTE)
+                      return BOOL;
+#pragma convention(AddPrintProvidorW,system);
+#pragma import(AddPrintProvidorW,'AddPrintProvidorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template AddPrintProvidor;
+  AddPrintProvidorW 
+#end AddPrintProvidor;
+#else;
+#template AddPrintProvidor;
+  AddPrintProvidorA 
+#end AddPrintProvidor;
+#end if;
+
+procedure DeletePrintProvidorA(
+    pName           : in LPSTR; 
+    pEnvironment    : in LPSTR; 
+    pPrintProvidorName : in LPSTR)
+                      return BOOL;
+#pragma convention(DeletePrintProvidorA,system);
+#pragma import(DeletePrintProvidorA,'DeletePrintProvidorA','winspool.dll');
+
+procedure DeletePrintProvidorW(
+    pName           : in LPWSTR; 
+    pEnvironment    : in LPWSTR; 
+    pPrintProvidorName : in LPWSTR)
+                      return BOOL;
+#pragma convention(DeletePrintProvidorW,system);
+#pragma import(DeletePrintProvidorW,'DeletePrintProvidorW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template DeletePrintProvidor;
+  DeletePrintProvidorW 
+#end DeletePrintProvidor;
+#else;
+#template DeletePrintProvidor;
+  DeletePrintProvidorA 
+#end DeletePrintProvidor;
+#end if;
+
+procedure IsValidDevmodeA(
+    pDevmode        : in PDEVMODEA; 
+    DevmodeSize     : in size_t)
+                      return BOOL;
+#pragma convention(IsValidDevmodeA,system);
+#pragma import(IsValidDevmodeA,'IsValidDevmodeA','winspool.dll');
+
+procedure IsValidDevmodeW(
+    pDevmode        : in PDEVMODEW; 
+    DevmodeSize     : in size_t)
+                      return BOOL;
+#pragma convention(IsValidDevmodeW,system);
+#pragma import(IsValidDevmodeW,'IsValidDevmodeW','winspool.dll');
+
+#if #declared UNICODE; then;
+#template IsValidDevmode;
+  IsValidDevmodeW 
+#end IsValidDevmode;
+#else;
+#template IsValidDevmode;
+  IsValidDevmodeA 
+#end IsValidDevmode;
+#end if;
+
+-- /*
+--  * SetPrinterData and GetPrinterData Server Handle Key values
+--  */
+const
+  SERVER_ACCESS_ADMINISTER= $01;
+
+const
+  SERVER_ACCESS_ENUMERATE= $02;
+
+const
+  PRINTER_ACCESS_ADMINISTER= $04;
+
+const
+  PRINTER_ACCESS_USE= $08;
+
+const
+  JOB_ACCESS_ADMINISTER= $10;
+
+const
+  JOB_ACCESS_READ   = $20;
+
+-- /*
+--  * Access rights for print servers
+--  */
+-- /*
+--  * Access rights for printers
+--  */
+-- /*
+--  * Access rights for jobs
+--  */
+-- /*
+--  * DS Print-Queue property tables
+--  */
+--  Predefined Registry Keys used by Set/GetPrinterDataEx
+--  DS Print-Queue properties
+-- /*
+--     -- Additional Print-Queue properties --
+-- 
+--     These properties are not defined in the default Directory Services Schema,
+--     but should be used when extending the Schema so a consistent interface is maintained.
+-- 
+-- */
+
+end winspool;

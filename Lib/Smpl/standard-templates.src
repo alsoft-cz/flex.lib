@@ -1,0 +1,46 @@
+----------------------------------------------------------------------------------------------------
+module {standard.}templates =
+-- Flex Standard Library
+-- Miscellaneous #define's
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+#template exchange (a,b);
+-- Exchanges values of variables "A" and "B". Neither "A" nor "B" shall be named "_".
+-- "A" and "B" shall be of the same type or at least of two compatible types.
+----------------------------------------------------------------------------------------------------
+  declare
+    _ : (a):type;
+  begin
+    _:=a;
+    a:=b;
+    b:=_;
+    end declare
+  #end exchange;
+
+
+
+----------------------------------------------------------------------------------------------------
+#template new_or_adjust (pointer_to_object,number_of_items);
+-- Allocates new object or adjusts the size of an already allocated object to hold at least
+-- [number_of_items] unused items.
+----------------------------------------------------------------------------------------------------
+  begin
+    if pointer_to_object=nil then
+      new pointer_to_object range number_of_items;
+    elsif pointer_to_object^:length+number_of_items>pointer_to_object^:last then
+      --%%TODO(ADJUST) adjust pointer_to_object range pointer_to_object^:length+number_of_items;
+      declare
+        _          : pointer_to_object:type;
+      begin
+        new _ range pointer_to_object^:length+number_of_items;
+        _^:=pointer_to_object^;
+        discard pointer_to_object;
+        pointer_to_object:=_;
+        end declare;
+      end if;
+    end declare;
+  #end new_or_adjust;
+
+end templates;

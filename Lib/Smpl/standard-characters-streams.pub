@@ -1,0 +1,57 @@
+----------------------------------------------------------------------------------------------------
+class public c_stream_text_writer = extend c_stream_generic_writer; expose c_text_writer;
+-- implementace zapisovace textu do streamu
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_text_writer(
+    target         : p_output_stream;               -- vystupni stream
+    encoder        : p_character_encoder:=nil);     -- vystupni kodovani znaku
+  --------------------------------------------------------------------------------------------------
+  end c_stream_text_writer;
+type p_stream_text_writer = ^class c_stream_text_writer;
+
+
+message
+  -- short buffer
+  string_buffer_overflow : exception;
+----------------------------------------------------------------------------------------------------
+class public c_stream_text_reader = extend c_stream_generic_reader; expose c_text_reader;
+-- implementace ctenare textu ze streamu
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_text_reader(
+    source         : p_input_stream;                -- zdrojovy stream
+    decoder        : p_character_decoder:=nil);     -- kodovani vstupnich znaku
+  --------------------------------------------------------------------------------------------------
+  end c_stream_text_reader;
+type p_stream_text_reader = ^class c_stream_text_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_input_stream_text_recoder = extend c_stream_reader_filter;
+-- implementace prekodovavace znaku
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_recoder(
+    source         : p_input_stream;
+    decoder        : p_character_decoder:=nil;
+    encoder        : p_character_encoder:=nil);
+  --------------------------------------------------------------------------------------------------
+  end c_input_stream_text_recoder;
+type p_input_stream_text_recoder = ^class c_input_stream_text_recoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_text_recoder = extend c_stream_writer_filter;
+-- implementace prekodovavace znaku
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_recoder(
+    target         : p_output_stream;
+    encoder        : p_character_encoder:=nil;
+    decoder        : p_character_decoder:=nil);
+  --------------------------------------------------------------------------------------------------
+  end c_output_stream_text_recoder;
+type p_output_stream_text_recoder = ^class c_output_stream_text_recoder;

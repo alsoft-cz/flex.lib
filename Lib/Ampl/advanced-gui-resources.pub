@@ -1,0 +1,171 @@
+----------------------------------------------------------------------------------------------------
+module public resources =
+-- GUI system resources wraper.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+-- Foerward declarations
+class c_gr_brush;  type p_gr_brush  = ^class c_gr_brush;
+class c_gr_pen;    type p_gr_pen    = ^class c_gr_pen; 
+class c_gr_font;   type p_gr_font   = ^class c_gr_font;
+class c_gr_cursor; type p_gr_cursor = ^class c_gr_cursor;
+class c_gr_icon;   type p_gr_icon   = ^class c_gr_icon; 
+class c_gr_bitmap; type p_gr_bitmap = ^class c_gr_bitmap;
+
+
+type 
+  t_resource_name       = t_char32str;
+  t_pen_style           = t_pointer;
+  t_brush_style         = t_pointer;
+  t_font_style          = enum 
+      tsf_striked;
+      tfs_bold;
+      end enum;
+  t_font_styles         = set of t_font_style;
+  t_hatch_style         = t_pointer;
+  t_font_name           = t_char32str;           
+  t_rgb_color           = record
+    red                 : t_unsigned8;
+    green               : t_unsigned8;
+    blue                : t_unsigned8;
+    end record;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_graphic_resource = {extend c_class;}
+-- Base graphic resource class.
+----------------------------------------------------------------------------------------------------
+
+    end c_graphic_resource;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_brush = extend c_graphic_resource;
+-- Brush graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create (
+        _name          : t_resource_name;       -- resource name identifier
+  --          validity      : t_resource_validity;   { platnost                                        }
+        _style         : t_pen_style;           -- brush style
+        _hatch         : t_hatch_style;         -- brush hatch style
+        _color         : t_rgb_color);          -- resource rgb color
+    -- Creates a brush resource with supplied attributes.
+    ------------------------------------------------------------------------------------------------
+    end c_gr_brush;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_pen = extend c_graphic_resource;
+-- Pen graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create (
+        _name          : t_resource_name;       -- resource name identifier
+--        _validity      : t_resource_validity;   { platnost                                        }
+        _style         : t_pen_style;           -- pen style
+        _width         : t_unsigned;            -- width 
+        _color         : t_rgb_color);          -- resource rgb color
+    -- Creates a pen resource with supplied attribute.s
+    ------------------------------------------------------------------------------------------------
+
+    end c_gr_pen;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_font = extend c_graphic_resource;
+-- Font graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static create (
+        _name          : t_resource_name;       -- resource name identifier
+--        _validity      : t_resource_validity;   { platnost                                        }
+        _font_name     : t_font_name;           -- name of the font
+        _width         : t_unsigned;            -- width of the font
+        _height        : t_unsigned;            -- height of the font in units 
+        _color         : t_rgb_color;           -- resource rgb color
+        _proportional  : t_logical;             -- proportional/fixed flag 
+        _styles        : t_font_styles);        -- set of font styles
+    -- Creates a font resource with supplied attributes.
+    ------------------------------------------------------------------------------------------------
+    end c_gr_font;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_bitmap = extend c_graphic_resource;
+-- Bitmap graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_bitmap;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_icon = extend c_graphic_resource;
+-- Icon graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_icon;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gr_cursor = extend c_graphic_resource;
+-- Cursor graphic resource.
+----------------------------------------------------------------------------------------------------
+
+    end c_gr_cursor;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_resource_manager = {extend c_class;}
+-- Storage container for created resources.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    -- %% TODO a‘ budou tagy tak se v¨echny resourcy budou vytv ©e p©es tenhle jeden create_resource
+    -- mo‘n 
+    -- static create_resource;
+    -- Creates resource and inserts it into appropriate list of resources .
+    ------------------------------------------------------------------------------------------------
+    static create_pen (
+        _name          : t_resource_name;       -- resource name identifier
+--        _validity      : t_resource_validity;   { platnost                                        }
+        _style         : t_pen_style;           -- pen style
+        _width         : t_unsigned;            -- width 
+        _color         : t_rgb_color)           -- resource rgb color 
+        return p_gr_pen;
+    -- Creates an instance of a pen resource object and returns pointer to it
+    ------------------------------------------------------------------------------------------------
+    static create_brush (
+        _name          : t_resource_name;       -- resource name identifier
+  --          validity      : t_resource_validity;   { platnost                                        }
+        _style         : t_pen_style;           -- brush style
+        _hatch         : t_hatch_style;         -- brush hatch style
+        _color         : t_rgb_color)           -- resource rgb color
+        return p_gr_brush;
+    -- Creates an instance of a brush resource object and returns pointer to it
+    ------------------------------------------------------------------------------------------------
+    static discard_resource;
+    -- Removes resource from its list and free memory used by it.
+    ------------------------------------------------------------------------------------------------
+    -- static get_resource_by ... 
+    -- Gets resource of approptiate type by ... 
+    ------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------
+
+    end c_resource_manager;
+
+
+end resources;

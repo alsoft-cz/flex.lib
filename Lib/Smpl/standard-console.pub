@@ -1,0 +1,63 @@
+----------------------------------------------------------------------------------------------------
+module public console =
+-- Console I/O.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- <heading>Console Coordinate System</heading>
+-- The console coordinate system is zero-based two-dimensional. A position is specified by two
+-- unsigned numbers - the horizontal (x) and vertical (y) coordinate.
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  standard.streams;
+
+type
+  -- position of the cursor on the console
+  t_cursor_position_x = protected t_unsigned;
+  t_cursor_position_y = protected t_unsigned;
+  t_cursor_coordinates = record
+    x              : t_cursor_position_x;
+    y              : t_cursor_position_y;
+    end record;
+  p_cursor_coordinates = ^t_cursor_coordinates;
+
+----------------------------------------------------------------------------------------------------
+#separate public streams;
+----------------------------------------------------------------------------------------------------
+#separate public formatters;
+----------------------------------------------------------------------------------------------------
+
+var
+  -- text output stream to easy sequential console output
+  console_output           : p_output_stream;
+  console_writer           : p_text_writer;
+
+  console_error_output     : p_output_stream;
+  console_error_writer     : p_text_writer;
+
+  console_input            : p_input_stream;
+  console_reader           : p_text_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write (
+    s              : in t_char32ustr);           -- string to write
+-- Writes the string <par>s</par> to the actual cursor position and moves the cursor to the first
+-- position after the text. When the text doesn't fit to the actual line, it is splitted to as
+-- many lines as necessary. When the text needs to be wrapped beyond the last line of the console, 
+-- the console's content is scrolled by one line up.
+----------------------------------------------------------------------------------------------------
+procedure write_line (
+    s              : in t_char32ustr);           -- string to write
+-- Does the same as <ent>write</ent> and then moves the cursor to the beginning of the next line 
+-- following the end of the text. When the output ends on the last line of the console, the 
+-- console's content is scrolled by one line up.
+----------------------------------------------------------------------------------------------------
+procedure set_cursor_position (
+  x              : in t_cursor_position_x;       -- horizontal position
+  y              : in t_cursor_position_y);      -- vertical position
+----------------------------------------------------------------------------------------------------
+end console;

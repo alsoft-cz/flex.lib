@@ -1,0 +1,64 @@
+----------------------------------------------------------------------------------------------------
+-- h2debug
+----------------------------------------------------------------------------------------------------
+-- Pouhou zmenou modulu v declaraci with se docili zmeny zapisu na sekundar se zapisem do souboru
+-- a naopak debug <-> h2debug :-)
+----------------------------------------------------------------------------------------------------
+
+module h2debug =
+
+with
+  filedef,files,txtfiles,str;
+
+const
+  filename         = 'd:\debug.txt';
+
+----------------------------------------------------------------------------------------------------
+procedure debugfileopen;
+-- Otevreni souboru pro zapis
+----------------------------------------------------------------------------------------------------
+procedure debugfileclose;
+-- Uzavreni souboru pro zapis
+----------------------------------------------------------------------------------------------------
+procedure write2(s:str255);
+-- Zapis retezce do souboru
+----------------------------------------------------------------------------------------------------
+
+private
+
+var
+  debugfile        : file;
+
+----------------------------------------------------------------------------------------------------
+procedure debugfileopen =
+-- Otevreni souboru pro zapis
+----------------------------------------------------------------------------------------------------
+var
+  bchyba           : boolean;
+
+begin
+  finit(debugfile,filename);
+  fcreate(debugfile,fmodew);
+  txtopen(debugfile,4096,bchyba);
+  end debugfileopen;
+
+----------------------------------------------------------------------------------------------------
+procedure debugfileclose =
+-- Uzavreni souboru pro zapis
+----------------------------------------------------------------------------------------------------
+begin
+  txtflush(debugfile);
+  txtclose(debugfile);
+  fclose(debugfile);
+  end debugfileclose;
+
+----------------------------------------------------------------------------------------------------
+procedure write2 =
+-- Zapis retezce do souboru
+----------------------------------------------------------------------------------------------------
+begin
+  txtwrite(debugfile,s);
+  end write2;
+
+end h2debug;
+

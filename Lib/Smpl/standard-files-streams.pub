@@ -1,0 +1,144 @@
+----------------------------------------------------------------------------------------------------
+class public c_file_output_stream = extend c_output_stream;
+-- zapisujici stream s ukoncenim v souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file);
+  -- pripoji otevreny podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  static create ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- vytvori podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_file_output_stream;
+type p_file_output_stream = ^class c_file_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_file_input_stream = extend c_input_stream;
+-- cteci stream se zdrojem v souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file);
+  -- pripoji otevreny podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_file_input_stream;
+type p_file_input_stream = ^class c_file_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_buffered_file_output_stream = extend c_output_stream_buffer;
+-- zapisujici stream s bufferem s ukoncenim v souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file);
+  ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  static create ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- vytvori podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_buffered_file_output_stream;
+type p_buffered_file_output_stream = ^class c_buffered_file_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_buffered_file_input_stream = extend c_input_stream_buffer;
+-- cteci stream s bufferem se zdrojem v souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file);
+  ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_buffered_file_input_stream;
+type p_buffered_file_input_stream = ^class c_buffered_file_input_stream;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_text_file_reader = extend c_stream_text_reader;
+-- ctenar textoveho souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file;
+    decoder        : p_character_decoder:=nil);  -- kodovani vstupnich znaku
+  ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    decoder        : p_character_decoder:=nil;   -- kodovani vstupnich znaku
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_text_file_reader;
+type p_text_file_reader = ^class c_text_file_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_text_file_writer = extend c_stream_text_writer;
+-- zapisujici textoveho souboru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init ( 
+    file           : in p_file;
+    encoder        : p_character_encoder:=nil);  -- vystupni kodovani znaku
+   ------------------------------------------------------------------------------------------------
+  static open ( 
+    name           : in t_text_name;
+    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- otevre podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  static create ( 
+    name           : in t_text_name;
+    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku
+    sharing        : in t_file_sharing_set       -- requested sharing mode
+                        := tfss_not_shared;
+    always         : in t_logical:=false);       -- T-create new file even when one exists
+  -- vytvori podrizeny soubor
+  ------------------------------------------------------------------------------------------------
+  end c_text_file_writer;
+type p_text_file_writer = ^class c_text_file_writer;

@@ -1,0 +1,35 @@
+#option warning(all,false);
+#separate public standard;
+#separate private standard;
+
+----------------------------------------------------------------------------------------------------
+program hello_task =
+-- Hello task.
+-- Programming Language Flex Samples.
+-- Copyright (C) 2003 A && L soft, s.r.o.
+----------------------------------------------------------------------------------------------------
+with
+   standard.console,
+   standard.tasks;
+
+----------------------------------------------------------------------------------------------------
+class c_my_task = extend c_task ;
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  override run =
+  --------------------------------------------------------------------------------------------------
+  begin
+    write_line('Hello task !');
+    end run;
+  end c_my_task;
+
+var
+  mytask1          : c_my_task;
+  mytask2          : c_my_task;
+
+begin
+  mytask1.start(0);
+  mytask2.start(0);
+  mytask1.wait;
+  mytask2.wait;
+  end hello_task;

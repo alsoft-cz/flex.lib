@@ -1,0 +1,179 @@
+----------------------------------------------------------------------------------------------------
+module winefs =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,wincrypt,winbase;
+
+-- +---------------------------------------------------------------------------
+-- 
+--  Microsoft Windows
+--  Copyright (C) Microsoft Corporation, 1992-1999.
+-- 
+--  File: winefs.h
+-- 
+--  Contents: EFS Data and prototypes.
+-- 
+-- ----------------------------------------------------------------------------
+-- #pragma  once
+-- +---------------------------------------------------------------------------------/
+--  /
+--  /
+--  Data Structures /
+--  /
+--  /
+-- ----------------------------------------------------------------------------------/
+-- 
+--  Encoded Certificate
+-- 
+type
+  _CERTIFICATE_BLOB = record
+dwCertEncodingType : DWORD;
+cbData          : DWORD;
+pbData          : PBYTE;
+  end record;
+  EFS_CERTIFICATE_BLOB = _CERTIFICATE_BLOB;
+  PEFS_CERTIFICATE_BLOB = ^_CERTIFICATE_BLOB;
+
+-- 
+--  Certificate Hash
+-- 
+type
+  _EFS_HASH_BLOB    = record
+cbData          : DWORD;
+pbData          : PBYTE;
+  end record;
+  EFS_HASH_BLOB     = _EFS_HASH_BLOB;
+  PEFS_HASH_BLOB    = ^_EFS_HASH_BLOB;
+
+-- 
+--  RPC blob
+-- 
+type
+  _EFS_RPC_BLOB     = record
+cbData          : DWORD;
+pbData          : PBYTE;
+  end record;
+  EFS_RPC_BLOB      = _EFS_RPC_BLOB;
+  PEFS_RPC_BLOB     = ^_EFS_RPC_BLOB;
+
+type
+  _EFS_KEY_INFO     = record
+dwVersion       : DWORD;
+Entropy         : ULONG;
+Algorithm       : ALG_ID;
+KeyLength       : ULONG;
+  end record;
+  EFS_KEY_INFO      = _EFS_KEY_INFO;
+  PEFS_KEY_INFO     = ^_EFS_KEY_INFO;
+
+-- 
+--  Input to add a user to an encrypted file
+-- 
+type
+  _ENCRYPTION_CERTIFICATE = record
+cbTotalLength   : DWORD;
+pUserSid        : ^t_SID;
+pCertBlob       : PEFS_CERTIFICATE_BLOB;
+  end record;
+  ENCRYPTION_CERTIFICATE = _ENCRYPTION_CERTIFICATE;
+  PENCRYPTION_CERTIFICATE = ^_ENCRYPTION_CERTIFICATE;
+
+const
+  MAX_SID_SIZE      = 256;
+
+type
+  _ENCRYPTION_CERTIFICATE_HASH = record
+cbTotalLength   : DWORD;
+pUserSid        : ^t_SID;
+pHash           : PEFS_HASH_BLOB;
+lpDisplayInformation : LPWSTR;
+  end record;
+  ENCRYPTION_CERTIFICATE_HASH = _ENCRYPTION_CERTIFICATE_HASH;
+  PENCRYPTION_CERTIFICATE_HASH = ^_ENCRYPTION_CERTIFICATE_HASH;
+
+type
+  _ENCRYPTION_CERTIFICATE_HASH_LIST = record
+nCert_Hash      : DWORD;
+pUsers          : ^PENCRYPTION_CERTIFICATE_HASH;
+  end record;
+  ENCRYPTION_CERTIFICATE_HASH_LIST = _ENCRYPTION_CERTIFICATE_HASH_LIST;
+  PENCRYPTION_CERTIFICATE_HASH_LIST = ^_ENCRYPTION_CERTIFICATE_HASH_LIST;
+
+type
+  _ENCRYPTION_CERTIFICATE_LIST = record
+nUsers          : DWORD;
+pUsers          : ^PENCRYPTION_CERTIFICATE;
+  end record;
+  ENCRYPTION_CERTIFICATE_LIST = _ENCRYPTION_CERTIFICATE_LIST;
+  PENCRYPTION_CERTIFICATE_LIST = ^_ENCRYPTION_CERTIFICATE_LIST;
+
+-- +---------------------------------------------------------------------------------/
+--  /
+--  /
+--  Prototypes /
+--  /
+--  /
+-- ----------------------------------------------------------------------------------/
+procedure QueryUsersOnEncryptedFile(
+    lpFileName      : in LPCWSTR; 
+    pUsers          : out PENCRYPTION_CERTIFICATE_HASH_LIST)
+                      return DWORD;
+#pragma convention(QueryUsersOnEncryptedFile,system);
+#pragma import(QueryUsersOnEncryptedFile,'QueryUsersOnEncryptedFile','advapi32.dll');
+
+procedure QueryRecoveryAgentsOnEncryptedFile(
+    lpFileName      : in LPCWSTR; 
+    pRecoveryAgents : out PENCRYPTION_CERTIFICATE_HASH_LIST)
+                      return DWORD;
+#pragma convention(QueryRecoveryAgentsOnEncryptedFile,system);
+#pragma import(QueryRecoveryAgentsOnEncryptedFile,'QueryRecoveryAgentsOnEncryptedFile','advapi32.dll');
+
+procedure RemoveUsersFromEncryptedFile(
+    lpFileName      : in LPCWSTR; 
+    pHashes         : in PENCRYPTION_CERTIFICATE_HASH_LIST)
+                      return DWORD;
+#pragma convention(RemoveUsersFromEncryptedFile,system);
+#pragma import(RemoveUsersFromEncryptedFile,'RemoveUsersFromEncryptedFile','advapi32.dll');
+
+procedure AddUsersToEncryptedFile(
+    lpFileName      : in LPCWSTR; 
+    pUsers          : in PENCRYPTION_CERTIFICATE_LIST)
+                      return DWORD;
+#pragma convention(AddUsersToEncryptedFile,system);
+#pragma import(AddUsersToEncryptedFile,'AddUsersToEncryptedFile','advapi32.dll');
+
+procedure SetUserFileEncryptionKey(
+    pEncryptionCertificate : in PENCRYPTION_CERTIFICATE)
+                      return DWORD;
+#pragma convention(SetUserFileEncryptionKey,system);
+#pragma import(SetUserFileEncryptionKey,'SetUserFileEncryptionKey','advapi32.dll');
+
+procedure FreeEncryptionCertificateHashList(
+    pHashes         : in PENCRYPTION_CERTIFICATE_HASH_LIST);
+#pragma convention(FreeEncryptionCertificateHashList,system);
+#pragma import(FreeEncryptionCertificateHashList,'FreeEncryptionCertificateHashList','advapi32.dll');
+
+procedure EncryptionDisable(
+    DirPath         : in LPCWSTR; 
+    Disable         : in BOOL)
+                      return BOOL;
+#pragma convention(EncryptionDisable,system);
+#pragma import(EncryptionDisable,'EncryptionDisable','advapi32.dll');
+
+procedure DuplicateEncryptionInfoFile(
+    SrcFileName     : in LPCWSTR; 
+    DstFileName     : in LPCWSTR; 
+    dwCreationDistribution : in DWORD; 
+    dwAttributes    : in DWORD; 
+    lpSecurityAttributes : in LPSECURITY_ATTRIBUTES)
+                      return DWORD;
+#pragma convention(DuplicateEncryptionInfoFile,system);
+#pragma import(DuplicateEncryptionInfoFile,'DuplicateEncryptionInfoFile','advapi32.dll');
+
+
+end winefs;

@@ -1,0 +1,49 @@
+----------------------------------------------------------------------------------------------------
+module guiddef =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- +---------------------------------------------------------------------------
+-- 
+--  Microsoft Windows
+--  Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+--  File: guiddef.h
+-- 
+--  Contents: GUID definition
+-- 
+-- ----------------------------------------------------------------------------
+type
+  _GUID             = record
+Data1           : unsigned 32;
+Data2           : unsigned 16;
+Data3           : unsigned 16;
+Data4           : array 0..7 of character 8;
+  end record;
+  t_GUID            = _GUID;
+
+type
+LPGUID            = ^t_GUID for machine_pointer use true;
+type
+LPCGUID           = ^t_GUID for machine_pointer use true;
+type
+t_IID             = t_GUID;
+type
+LPIID             = ^t_IID for machine_pointer use true;
+type
+t_CLSID           = t_GUID;
+type
+p_CLSID           = ^t_CLSID for machine_pointer use true;
+type
+FMTID             = t_GUID;
+type
+LPFMTID           = ^FMTID for machine_pointer use true;
+-- ignored #include <string.h>
+--  Faster (but makes code fatter) inline version...use sparingly
+--  Same type, different name
+--  A couple of C++ helpers
+
+end guiddef;

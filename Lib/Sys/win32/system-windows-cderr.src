@@ -1,0 +1,131 @@
+----------------------------------------------------------------------------------------------------
+module cderr =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /*****************************************************************************\
+-- *                                                                             *
+-- * cderr.h -     Common dialog error return codes                              *
+-- *                                                                             *
+-- * Version 1.0								      *
+-- *                                                                             *
+-- * Copyright (c) 1992-1999, Microsoft Corp.	All rights reserved.	      *
+-- *                                                                             *
+-- \*****************************************************************************/
+-- #pragma  once
+const
+  CDERR_DIALOGFAILURE= $FFFF;
+
+const
+  CDERR_GENERALCODES= $00;
+
+const
+  CDERR_STRUCTSIZE  = $01;
+
+const
+  CDERR_INITIALIZATION= $02;
+
+const
+  CDERR_NOTEMPLATE  = $03;
+
+const
+  CDERR_NOHINSTANCE = $04;
+
+const
+  CDERR_LOADSTRFAILURE= $05;
+
+const
+  CDERR_FINDRESFAILURE= $06;
+
+const
+  CDERR_LOADRESFAILURE= $07;
+
+const
+  CDERR_LOCKRESFAILURE= $08;
+
+const
+  CDERR_MEMALLOCFAILURE= $09;
+
+const
+  CDERR_MEMLOCKFAILURE= $0A;
+
+const
+  CDERR_NOHOOK      = $0B;
+
+const
+  CDERR_REGISTERMSGFAIL= $0C;
+
+const
+  PDERR_PRINTERCODES= $1000;
+
+const
+  PDERR_SETUPFAILURE= $1001;
+
+const
+  PDERR_PARSEFAILURE= $1002;
+
+const
+  PDERR_RETDEFFAILURE= $1003;
+
+const
+  PDERR_LOADDRVFAILURE= $1004;
+
+const
+  PDERR_GETDEVMODEFAIL= $1005;
+
+const
+  PDERR_INITFAILURE = $1006;
+
+const
+  PDERR_NODEVICES   = $1007;
+
+const
+  PDERR_NODEFAULTPRN= $1008;
+
+const
+  PDERR_DNDMMISMATCH= $1009;
+
+const
+  PDERR_CREATEICFAILURE= $100A;
+
+const
+  PDERR_PRINTERNOTFOUND= $100B;
+
+const
+  PDERR_DEFAULTDIFFERENT= $100C;
+
+const
+  CFERR_CHOOSEFONTCODES= $2000;
+
+const
+  CFERR_NOFONTS     = $2001;
+
+const
+  CFERR_MAXLESSTHANMIN= $2002;
+
+const
+  FNERR_FILENAMECODES= $3000;
+
+const
+  FNERR_SUBCLASSFAILURE= $3001;
+
+const
+  FNERR_INVALIDFILENAME= $3002;
+
+const
+  FNERR_BUFFERTOOSMALL= $3003;
+
+const
+  FRERR_FINDREPLACECODES= $4000;
+
+const
+  FRERR_BUFFERLENGTHZERO= $4001;
+
+const
+  CCERR_CHOOSECOLORCODES= $5000;
+
+
+end cderr;

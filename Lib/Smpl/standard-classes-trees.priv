@@ -1,0 +1,2128 @@
+----------------------------------------------------------------------------------------------------
+module private trees =
+-- Data structures - trees.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- K implemetaci iter tor–:
+-- Nepou‘¡vaj¡ z sobn¡k, jedin‚, co si pamatuj¡, je aktu ln¡ prvek - [current_node]
+-- V˜konn‚ funkce : 
+--   reset - ta najde prvn¡ prvek k iterov n¡ a ulo‘¡ ho do [current_node]
+--   find_next - p©e‡te si hodnotu z [current_node] a ulo‘¡ do n¡ dal¨¡ prvek, p©¡padnˆ nil, pokud u‘
+--     v [current_node] byl posledn¡ prvek
+-- Invarianty proch zen¡ - pom haj¡ konstruovat algoritmy pro proch zen¡:
+-- M me strom s o‡¡slovan˜mi vrcholy, vrchol ‡¡slo 1 se projde jako prvn¡, vrchol ‡¡slo 2 druh˜ atd.
+-- Pak plat¡:
+-- Prefix:
+-- pro libovoln˜ podstrom plat¡, ‘e jeho ko©en m  nejmen¨¡ ‡¡slo z cel‚ho podstromu
+-- pro ka‘d‚ dva uzly ve stejn‚ hloubce plat¡, ‘e ten vlevo m  men¨¡ ‡¡slo
+-- Postfix:
+-- pro libovoln˜ podstrom plat¡, ‘e jeho ko©en m  nejvˆt¨¡ ‡¡slo z cel‚ho podstromu
+-- pro ka‘d‚ dva uzly ve stejn‚ hloubce plat¡, ‘e ten vlevo m  men¨¡ ‡¡slo
+-- Infix:
+-- O‡¡slovan˜ strom je vyhled vac¡, tzn. pro ka‘d˜ podstrom plat¡, ‘e ‡¡sla v¨ech uzl– lev‚ho podstromu
+-- jsou men¨¡ ne‘ ‡¡slo ko©ene a ‡¡sla v¨ech uzl– prav‚ho podstromu jsou vˆt¨¡ ne‘ ‡¡slo ko©ene.
+-- Inverzn¡ po©ad¡:
+-- Sta‡¡ vymˆnit [left] za [right] u bin rn¡m strom–, p©¡padnˆ [get_last] za [get_first] a [get_next]
+-- za [get_prev] u obecn˜ch strom–
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_binary_tree_node =
+-- Uzel bin rn¡ho stromu.
+----------------------------------------------------------------------------------------------------
+
+    end c_binary_tree_node;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_binary_tree =
+-- Bin rn¡ vyhled vac¡ strom s podporou AVL. 
+----------------------------------------------------------------------------------------------------
+
+    with
+      supervised c_binary_tree_node;
+ 
+    var
+      avl          : t_logical;                  -- T-vyva‘ovat
+      unique_key   : t_logical;                  -- T-pouze uzly se stejn˜mi kl¡‡i
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializace stromu.
+    --   Pokud je [homogenous] nastaven na true, ve stromˆ mohou b˜t jen uzly typu [item_type].
+    --   Pokud je [unique_key] nastaven na true, ve stromˆ nemohou b˜t uzly se stejn˜m kl¡‡em.
+    --   Pokud je [avl] nastaven na true, strom bude se bude vyva‘ovat.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud je ji‘ strom definov n
+      if this.root<>nil then
+        -- inicializace neprobˆhne
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- set up basic parameters
+      this.item_type:=item_type;
+      this.avl:=avl;
+      this.unique_key:=unique_key;
+      this.homogenous:=homogenous;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_node_rec (
+        i_current_node : in p_binary_tree_node;  -- aktu ln¡ uzel
+        node           : in p_binary_tree_node)  -- hledan˜ uzel
+        return t_logical =                       -- T-uzel nalezen
+    -- Vrac¡ [true], pokud je [node] prvkem stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- hledan˜ uzel mus¡ b˜t definovan˜
+      if i_current_node=nil then
+        result:=false;
+        return;
+        end if;
+
+      -- jsou si oba uzly rovny?
+      if i_current_node=node then
+        -- ano, vr tit True
+        result:=true;
+        return;
+        end if;
+
+      -- porovnat kl¡‡e uzl–
+      case compare(i_current_node,node)
+        -- je aktu ln¡ uzel vˆt¨¡ ne‘ hledan˜ uzel?
+        when cn_bigger do
+            -- jdi doleva
+            result:=has_node_rec(i_current_node^.left,node);
+
+        -- je aktu ln¡ uzel men¨¡ ne‘ hledan˜ uzel?
+        when cn_smaller do
+            -- jdi doprava
+            result:=has_node_rec(i_current_node^.right,node);
+
+        -- kl¡‡e jsou si rovny, ale zat¡m nen¡ nalezen hledan˜ uzel
+        when cn_equal do
+            -- jedn  se o avl strom s mo‘nost¡ m¡t v¡ce stejn˜ch kl¡‡–?
+            if avl and not unique_key then
+              -- ano, prohledat cel˜ podstrom, nej©¡ve prav˜, pokud uzel nebude nalezen, prohledat lev˜
+              result:=has_node_rec(i_current_node^.right,node);
+              if not result then
+                result:=has_node_rec(i_current_node^.left,node);
+                end if;
+              return;
+
+            -- pokud to nen¡ alv, mohou b˜t ve stromˆ uzly se stejn˜mi kl¡‡i?
+            elsif not unique_key then
+              -- ano, j¡t doprava
+              result:=has_node_rec(i_current_node^.right,node);
+
+            -- hledan˜ uzel nebyl nalezen
+            else
+              result:=false;
+              return;
+              end if;
+        end case;
+      end has_node_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_node =
+    -- Vrac¡ [true], pokud je [node] prvkem stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- hledan˜ uzel mus¡ b˜t definovan˜
+      if node=nil then
+        return;
+        end if;
+
+      -- hledat uzel
+      result:=has_node_rec(root,node);
+      end has_node;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_root =
+    -- Vr t¡ ko©enov˜ uzel. Pokud uzel nen¡ definov n, vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vr t¡ root node
+      result:=root;
+      end get_root;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static node_weight (
+        node       : p_binary_tree_node)         -- zkouman˜ uzel
+        return t_unsigned =                      -- v ha uzlu
+    -- Vr t¡ v hu uzlu stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud uzel existuje, vr tit jeho v hu, pokud uzel neexistuje vr tit 0
+      if node=nil
+        then result:=0
+        else result:=node^.weight;
+        end if;
+      end node_weight;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static ll_rot (
+        node       : in out p_binary_tree_node) =       -- kritick˜ uzel
+    -- LL rotace.
+    ------------------------------------------------------------------------------------------------
+    var 
+      plnode          : p_binary_tree_node;      -- node^.left
+      pxrnode         : p_binary_tree_node;      -- node^.left^.right
+      weightleftright : t_unsigned;              -- node^.left^.right^.weight
+      nodeup          : p_binary_tree_node;      -- node^.up
+
+    begin
+      -- inicializovat promˆnn‚
+      plnode:=node^.left;
+      pxrnode:=plnode^.right;
+      weightleftright:=node_weight(pxrnode);
+
+      -- rotace uzl–
+      node^.left:=pxrnode;
+      plnode^.right:=node;
+
+      -- nastavit v hy
+      node^.weight:=1+weightleftright;
+      plnode^.weight:=1+node^.weight;
+
+      -- nastavit zpˆtn‚ ukazatele
+      plnode^.up:=node^.up;
+      nodeup:=node^.up;
+      node^.up:=plnode;
+      if pxrnode<>nil then
+        pxrnode^.up:=node;
+        end if;
+
+      -- byl [root] kritick˜m uzlem?
+      if node=root 
+        -- ano, nastavit nov˜ root
+        then 
+          root:=plnode;
+
+        -- ne, nav zat p©edka b˜val‚ho kritick‚ho uzlu na [plnode]
+        else
+          -- byl kritick˜ uzel na p©edka nav z n zleva? nava‘ uzel zleva, jinak zprava 
+          if nodeup^.left=node
+            then nodeup^.left:=plnode;
+            else nodeup^.right:=plnode;
+            end if;
+          end if;
+      
+      -- nastavit nov˜ orotovan˜ uzel
+      node:=plnode;
+      end ll_rot;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static rr_rot (
+        node       : in out p_binary_tree_node) =       -- kritick˜ uzel
+    -- RR rotace.
+    ------------------------------------------------------------------------------------------------
+    var 
+      prnode          : p_binary_tree_node;             -- node^.right
+      pxlnode         : p_binary_tree_node;             -- node^.right^.left
+      weightrightleft : t_unsigned;              -- node^.right^.left^.weight
+      nodeup          : p_binary_tree_node;             -- node^.up
+
+    begin
+      -- inicializovat promˆnn‚
+      prnode:=node^.right;
+      pxlnode:=prnode^.left;
+      weightrightleft:=node_weight(pxlnode);
+
+      -- rotace uzl–
+      node^.right:=pxlnode;
+      prnode^.left:=node;
+
+      -- nastavit v hy
+      node^.weight:=1+weightrightleft;
+      prnode^.weight:=1+node^.weight;
+
+      -- nastavit zpˆtn‚ ukazatele
+      prnode^.up:=node^.up;
+      nodeup:=node^.up;
+      node^.up:=prnode;
+      if pxlnode<>nil then
+        pxlnode^.up:=node;
+        end if;
+
+      -- byl [root] kritick˜m uzlem?
+      if node=root 
+        -- ano, nastavit nov˜ root
+        then 
+          root:=prnode;
+
+        -- ne, nav zat p©edka b˜val‚ho kritick‚ho uzlu na [prnode]
+        else
+          -- byl kritick˜ uzel na p©edka nav z n zleva? nava‘ uzel zleva, jinak zprava 
+          if nodeup^.left=node
+            then nodeup^.left:=prnode;  
+            else nodeup^.right:=prnode; 
+            end if;
+          end if;
+
+      -- nastavit nov˜ orotovan˜ uzel
+      node:=prnode;
+      end rr_rot;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static dlr_rot (
+        node       : in out p_binary_tree_node) =       -- kritick˜ uzel
+    -- dlr rotace.
+    ------------------------------------------------------------------------------------------------
+    var
+      plnode          : p_binary_tree_node;             -- node^.left
+      pxrnode         : p_binary_tree_node;             -- node^.left^.right
+      weightleftright : t_unsigned;              -- node^.left^.right^.weight
+      nodeup          : p_binary_tree_node;             -- node^.up
+
+    begin
+      -- inicializovat promˆnn‚
+      plnode:=node^.left;
+      pxrnode:=plnode^.right;
+      weightleftright:=node_weight(pxrnode);
+
+      -- nastavit zpˆtn‚ ukazatele
+      pxrnode^.up:=node^.up;
+      plnode^.up:=pxrnode;
+      nodeup:=node^.up;
+      node^.up:=pxrnode;
+      if pxrnode^.left<>nil then
+        pxrnode^.left^.up:=plnode;
+        end if;
+      if pxrnode^.right<>nil then
+        pxrnode^.right^.up:=node;
+        end if;
+
+      -- rotace uzl–
+      plnode^.right := pxrnode^.left;
+      node^.left := pxrnode^.right;
+      pxrnode^.left := plnode;
+      pxrnode^.right := node;
+
+      -- nastavit v hy
+      node^.weight := weightleftright;
+      plnode^.weight := node^.weight;
+      pxrnode^.weight := node_weight(plnode);
+
+      -- byl [root] kritick˜m uzlem?
+      if node=root 
+        -- ano, nastavit nov˜ root
+        then 
+          root:=pxrnode;
+
+        -- ne, nav zat p©edka b˜val‚ho kritick‚ho uzlu na [pxrnode]
+        else
+          -- byl kritick˜ uzel na p©edka nav z n zleva? nava‘ uzel zleva, jinak zprava 
+          if nodeup^.left=node 
+            then nodeup^.left:=pxrnode;  
+            else nodeup^.right:=pxrnode; 
+            end if;
+          end if;
+
+      -- nastavit nov˜ orotovan˜ uzel
+      node:=pxrnode;
+      end dlr_rot;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static drl_rot (
+        node       : in out p_binary_tree_node) =       -- kritick˜ uzel
+    -- DRL rotace.
+    ------------------------------------------------------------------------------------------------
+    var
+      prnode          : p_binary_tree_node;             -- node^.right
+      noderightleft   : p_binary_tree_node;             -- node^.right^.left
+      weightrightleft : t_unsigned;              -- node^.right^.left^.weight
+      nodeup          : p_binary_tree_node;             -- node^.up
+
+    begin
+      -- inicializovat promˆnn‚
+      prnode:=node^.right;
+      noderightleft:=prnode^.left;
+      weightrightleft:=node_weight(noderightleft);
+
+      -- nastavit zpˆtn‚ ukazatele
+      noderightleft^.up:=node^.up;
+      prnode^.up:=noderightleft;
+      nodeup:=node^.up;
+      node^.up:=noderightleft;
+      if noderightleft^.right<>nil then
+        noderightleft^.right^.up:=prnode;
+        end if;
+      if noderightleft^.left<>nil then
+        noderightleft^.left^.up:=node;
+        end if;
+
+      -- rotace uzl–
+      prnode^.left:=noderightleft^.right;
+      node^.right:=noderightleft^.left;
+      noderightleft^.right:=prnode;
+      noderightleft^.left:=node;
+
+      -- nastavit v hy
+      node^.weight:=weightrightleft;
+      prnode^.weight:=node^.weight;
+      noderightleft^.weight:=node_weight(prnode);
+
+      -- byl [root] kritick˜m uzlem?
+      if node=root 
+        -- ano, nastavit nov˜ root
+        then 
+          root:=noderightleft;
+
+        -- ne, nav zat p©edka b˜val‚ho kritick‚ho uzlu na [noderightleft]
+        else
+          -- byl kritick˜ uzel na p©edka nav z n zleva? nava‘ uzel zleva, jinak zprava 
+          if nodeup^.left=node 
+            then nodeup^.left:=noderightleft;  
+            else nodeup^.right:=noderightleft; 
+            end if;
+          end if;
+
+      -- nastavit nov˜ orotovan˜ uzel
+      node:=noderightleft;
+      end drl_rot;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static make_avl (
+        i_current_node : in out p_binary_tree_node; -- potenci ln¡ kritick˜ uzel
+        critical     : out t_logical) =          -- T-kritick˜ uzel vyv ‘en
+    -- Vytvo©¡ z uzlu, kter˜ je kritick˜, uzel vyv ‘en˜. Nevyv ‘enost mus¡ b˜t prvn¡ho stupnˆ (=|2|),
+    -- pokud je vˆt¨¡, sn¡‘¡ stupe¤ nevyv ‘enosti uzlu. Pokud je men¨¡, nen¡ prov dˆna ‘ dn  akce.
+    ------------------------------------------------------------------------------------------------
+    var
+      plnode         : p_binary_tree_node;       -- i_current_node^.left
+      prnode         : p_binary_tree_node;       -- i_current_node^.right
+      hl             : t_unsigned;               -- plnode^.weight
+      hr             : t_unsigned;               -- prnode^.weight
+      hll            : t_unsigned;               -- left^.left^.weight
+      hlr            : t_unsigned;               -- left^.right^.weight
+      hrl            : t_unsigned;               -- right^.left^.weight
+      hrr            : t_unsigned;               -- right^.right^.weight
+
+    begin
+      -- p©edpoklad nenalezen¡ kritick‚ho uzlu
+      critical:=false;
+
+      -- uzel mus¡ existovat
+      if i_current_node=nil then
+        return;
+        end if;
+
+      -- inicializovat promˆnn‚
+      plnode:=i_current_node^.left;
+      prnode:=i_current_node^.right;
+      hl:=node_weight(plnode);
+      hr:=node_weight(prnode);
+
+      -- je uzel kritick˜ a tˆ‘s¡ vlevo?
+      if hl>hr+1 then
+        -- ano, zjistit v˜¨ky n sledovn¡k– lev‚ho uzlu
+        if plnode<>nil 
+          then
+            hll:=node_weight(i_current_node^.left^.left);
+            hlr:=node_weight(i_current_node^.left^.right);
+          else
+            hll:=0;
+            hlr:=0;
+            end if;
+
+        -- zjisit typ vyva‘ov n¡
+        if hll>=hlr
+          then
+            -- LL rorace
+            ll_rot(i_current_node);
+            critical:=true;
+          else
+            -- DLR rorace
+            dlr_rot(i_current_node);
+            critical:=true;
+            end if;
+
+      -- je uzel kritick˜ a tˆ‘s¡ vpravo?
+      elsif hl+1<hr then
+        -- ano, zjistit v˜¨ky n sledovn¡k– prav‚ho uzlu
+        if prnode<>nil 
+          then 
+            hrr:=node_weight(i_current_node^.right^.right);
+            hrl:=node_weight(i_current_node^.right^.left);
+          else 
+            hrr:=0;
+            hrl:=0;
+            end if;
+
+        -- zjisit typ vyva‘ov n¡
+        if hrr>=hrl
+          then
+            -- RR rorace
+            rr_rot(i_current_node);
+            critical:=true;
+          else
+            -- DRL rotace
+            drl_rot(i_current_node);
+            critical:=true;
+            end if;
+
+      -- korekce vah, pokud se nemuselo vyva‘ovat
+      elsif hl>hr
+        then i_current_node^.weight:=1+hl;
+        else i_current_node^.weight:=1+hr;
+      end if;
+    end make_avl;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_left (
+        i_current_node : in p_binary_tree_node;           -- aktu ln¡ uzel 
+        node         : in p_binary_tree_node) =         -- vkl dan˜ uzel
+    -- P©id  uzel [node] pod uzel [i_current_node] zleva, pokud je voln‚ m¡sto.
+    ------------------------------------------------------------------------------------------------
+    begin
+      if i_current_node^.left=nil then
+        -- ano, vlo‘ uzel doleva
+        node^.weight:=1;
+        node^.left:=nil;
+        node^.right:=nil;
+        node^.up:=i_current_node;
+        i_current_node^.left:=node;
+
+        -- zv˜¨it po‡et uzl– ve stromu o 1
+        succ count;
+        end if;
+      end insert_left;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_right (
+        i_current_node : in p_binary_tree_node;           -- aktu ln¡ uzel 
+        node         : in p_binary_tree_node) =         -- vkl dan˜ uzel
+    -- P©id  uzel [node] pod uzel [i_current_node] zprava, pokud je voln‚ m¡sto.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- je vpravo voln‚ m¡sto?
+      if i_current_node^.right=nil then
+        -- ano, vlo‘ uzel doprava
+        node^.weight:=1;
+        node^.left:=nil;
+        node^.right:=nil;
+        node^.up:=i_current_node;
+        i_current_node^.right:=node;
+
+        -- zv˜¨it po‡et uzl– ve stromu o 1
+        succ count;
+        end if;
+      end insert_right;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_avl_rec (
+        i_current_node : in out p_binary_tree_node;       -- aktu ln¡ uzel 
+        node         : in p_binary_tree_node;           -- vkl dan˜ uzel
+        critical     : in out t_logical) =       -- T-nalezen kritick˜ uzel
+    -- Vlo‘¡ uzel bez kontroly na neunik tnost kl¡‡e i duplicitu uzlu do stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- aktu ln¡ uzel mus¡ b˜t definov n
+      if i_current_node=nil then
+        return;
+        end if;
+
+      -- porovnat kl¡‡e obou uzl–
+      case compare(node,i_current_node)
+        -- je hledan˜ kl¡‡ uzlu men¨¡ ne‘ aktu ln¡?
+        when cn_smaller do 
+            -- pokud existuje lev˜ n sledn¡k, jdi doleva, jinak vlo‘ vlevo
+            if i_current_node^.left<>nil
+              then insert_avl_rec(i_current_node^.left,node,critical);
+              else insert_left(i_current_node,node);
+              end if;
+
+        -- je hledan˜ kl¡‡ uzlu vˆt¨¡ ne‘ aktu ln¡?
+        when cn_bigger do
+            -- pokud existuje prav˜ n sledn¡k, jdi doprava, jinak vlo‘ vravo
+            if i_current_node^.right<>nil
+              then insert_avl_rec(i_current_node^.right,node,critical);
+              else insert_right(i_current_node,node);
+              end if
+
+        -- kl¡‡e jsou si rovny
+        when cn_equal do
+          -- pokud existuje prav˜ n sledn¡k, jdi doprava, jinak vlo‘ doprava
+          if i_current_node^.right<>nil 
+            then insert_avl_rec(i_current_node^.right,node,critical)
+            else insert_right(i_current_node,node);
+            end if;
+          end case;
+
+      -- m  se uzel vyva‘ovat?
+      if avl and not critical then
+        -- vyv ‘it uzel
+        make_avl(i_current_node,critical);
+        end if;
+      end insert_avl_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_rec (
+        i_current_node : in out p_binary_tree_node;       -- aktu ln¡ uzel 
+        node         : in p_binary_tree_node;           -- vkl dan˜ uzel
+        critical     : in out t_logical) =       -- T-nalezen kritick˜ uzel
+    -- P©id  uzel. Pokud se m  vlo‘it uzel se stejn˜m kl¡‡em, jak˜ u‘ ve stromu existuje, 
+    -- nov˜ uzel se vlo‘¡ doprava.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- aktu ln¡ uzel mus¡ b˜t definov n
+      if i_current_node=nil then
+        return;
+        end if;
+
+      -- je ve stromˆ ji‘ uzel obsa‘en?
+      if i_current_node=node then
+        -- ano, chyba
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- porovnat kl¡‡e obou uzl–
+      case compare(node,i_current_node)
+        -- je hledan˜ kl¡‡ uzlu men¨¡ ne‘ aktu ln¡?
+        when cn_smaller do 
+            -- pokud existuje lev˜ n sledn¡k, jdi doleva, jinak vlo‘ vlevo
+            if i_current_node^.left<>nil
+              then insert_rec(i_current_node^.left,node,critical);
+              else insert_left(i_current_node,node);
+              end if;
+
+        -- je hledan˜ kl¡‡ uzlu vˆt¨¡ ne‘ aktu ln¡?
+        when cn_bigger do
+            -- pokud existuje prav˜ n sledn¡k, jdi doprava, jinak vlo‘ vravo
+            if i_current_node^.right<>nil
+              then insert_rec(i_current_node^.right,node,critical);
+              else insert_right(i_current_node,node);
+              end if
+
+        -- kl¡‡e jsou si rovny
+        when cn_equal do
+            -- ano, je povoleno vkl dat uzly s duplicitn¡mi kl¡‡i?
+            if not unique_key
+              -- ano, pokusit se j¡t d l
+              then
+                -- jde o avl strom?
+                if avl 
+                  -- ano, budou se muset testovat obˆ vˆtve na existenci [node]
+                  then
+                    -- je v podstromu duplicitn¡ uzel?
+                    if not has_node_rec(i_current_node,node)
+                      -- ne, vlo‘ nov˜ uzel
+                      then
+                        insert_avl_rec(i_current_node,node,critical);
+
+                      -- ano, chyba
+                      else
+                        execute(event_error);
+                        raise tree_error;
+                      end if;
+
+                  -- nejde o avl, ale mohou se vkl dat uzly se stejn˜mi kl¡‡i
+                  else
+                    -- pokud existuje prav˜ n sledn¡k, jdi doprava, jinak vlo‘ doprava
+                    if i_current_node^.right<>nil 
+                      then insert_rec(i_current_node^.right,node,critical)
+                      else insert_right(i_current_node,node);
+                      end if;
+                    end if;
+
+              -- ne, chyba
+              else 
+                execute(event_error);
+                raise tree_error;
+              end if;
+          end case;
+
+      -- m  se uzel vyva‘ovat?
+      if avl and not critical then
+        -- vyv ‘it uzel
+        make_avl(i_current_node,critical);
+        end if;
+      end insert_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert =
+    -- P©id  uzel do stromu. Pokud se m  vlo‘it uzel se stejn˜m kl¡‡em, jak˜ u‘ ve stromu
+    -- existuje, nov˜ uzel se vlo‘¡ doprava.
+    ------------------------------------------------------------------------------------------------
+    var
+      node         : p_binary_tree_node;                -- vkl dan˜ uzel
+      critical     : t_logical:=false;           -- T-nalezen kritick˜ uzel
+
+    begin
+      -- p©etypovat
+      node:=p_binary_tree_node(item);
+
+      -- p©id van˜ uzel mus¡ existovat
+      if node=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- je ko©en definov n?
+      if root=nil then
+        -- vlo‘it uzel
+        node^.weight:=1;
+        node^.left:=nil;
+        node^.right:=nil;
+        node^.up:=nil;
+        root:=node;
+
+        -- zv˜¨it po‡et uzl– ve stromu o 1
+        succ count;
+        return;
+        end if;
+
+      -- vlo‘it uzel
+      insert_rec(root,node,critical);
+      end insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static merge_subtree_rec (
+        node       : p_binary_tree_node) =              -- ko©enov˜ uzel p©id van‚ho stromu
+    -- Spoj¡ dva stromy do jednoho. Stom [tree] reprezentuje strom p©id van˜ch uzl– do stromu
+    -- reprezentovanou instanc¡ t‚to t©¡dy. Pokud uxistuj¡ dva uzly se stejn˜m kl¡‡em, je uzel 
+    -- do stromu vlo‘en v z vislosti na parametru [unique_key].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestli‘e ko©en p©id van‚ho stromu nen¡ definov n, ukon‡i rekurzi
+      if node=nil then
+        return;
+        end if;
+
+      -- proch zet stromem
+      merge_subtree_rec(node^.left);
+      merge_subtree_rec(node^.right);
+
+      -- vlo‘it do stromu uzel [node]
+      insert(node);
+      end merge_subtree_rec;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static merge_subtree =
+    -- Spoj¡ dva stromy do jednoho. Stom [tree] reprezentuje strom p©id van˜ch uzl– do stromu
+    -- reprezentovanou instanc¡ t‚to t©¡dy. Pokud uxistuj¡ dva uzly se stejn˜m kl¡‡em, je uzel 
+    -- do stromu vlo‘en v z vislosti na parametru [unique_key].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- spojit stromy
+      merge_subtree_rec(tree.root);
+
+      -- deinicializace p©ipojovan‚ho stromu
+      tree.root:=nil;
+      tree.count:=0;
+      end merge_subtree;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static bonded_remove_rec (
+        i_current_node : in out p_binary_tree_node;
+        node         : in p_binary_tree_node) =
+    -- Vyjme uzel, kter˜ m  prav‚ho syna nebo oba syny.
+    ------------------------------------------------------------------------------------------------
+    var
+      li_current_node : p_binary_tree_node;               -- i_current_node
+      critical      : t_logical;                 -- nevyu‘it  promˆnn 
+
+    begin
+      -- nastavit lok ln¡ [i_current_node]
+      li_current_node:=i_current_node;
+
+      -- uzel mus¡ existovat
+      if li_current_node=nil then
+        return;
+        end if;
+
+      -- existuje prav˜ uzel?
+      if li_current_node^.right<>nil 
+        -- ano, j¡t doprava
+        then
+          bonded_remove_rec(li_current_node^.right,node);
+
+        -- ne, vyjmout uzel
+        else
+          -- ano, odstranit uzel [node]
+          -- nav zat lev‚ho syna nejpravˆj¨¡ho uzlu na p©edposledn¡ proch zen˜ uzel
+          if li_current_node^.up^.left=li_current_node 
+            then li_current_node^.up^.left:=li_current_node^.left;
+            else li_current_node^.up^.right:=li_current_node^.left;
+            end if;
+
+          -- z¡skan˜ voln˜ uzel ulo‘it do stromu na m¡sto ru¨en‚ho uzlu
+          li_current_node^.left:=node^.left;
+          li_current_node^.right:=node^.right;
+          li_current_node^.up:=node^.up;
+          li_current_node^.weight:=node^.weight;
+
+          -- pokud ru¨en˜ uzel nem  p©edch–dce, zru¨it ko©en
+          if node^.up=nil then
+            root:=li_current_node;
+
+          -- jinak p©edat vazbu p©edka na m¡sto ru¨en‚ho uzlu
+          elsif node^.up^.left=node
+            then node^.up^.left:=li_current_node;
+            else node^.up^.right:=li_current_node;
+            end if;
+
+          -- nastavenit zpˆtn‚ vazby prav‚ho uzlu uzkazuj¡c¡ nyn¡ ¨patnˆ na smazan˜ uzel
+          if li_current_node^.right<>nil then
+            li_current_node^.right^.up:=li_current_node;
+            end if;
+
+          -- nastavit zpˆtn‚ vazby lev‚ho uzlu uzkazuj¡c¡ nyn¡ ¨patnˆ na smazan˜ uzel
+          if li_current_node^.left<>nil then
+            li_current_node^.left^.up:=li_current_node;
+            end if;
+          end if;
+  
+      -- m  se uzel vyva‘ovat?
+      if avl then
+        -- vyv ‘it uzel
+        make_avl(li_current_node,critical);
+        end if;
+      end bonded_remove_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override remove =
+    -- Vyjme uzel ze stromu.
+    ------------------------------------------------------------------------------------------------
+    var 
+      node         : p_binary_tree_node;                -- uzel pro vyjmut¡ ze stromu
+      critical     : t_logical;                  -- nevyu‘it  promˆnn 
+
+    begin
+      -- p©etypovat [item]
+      node:=p_binary_tree_node(item);
+
+      -- ru¨en˜ uzel mus¡ b˜t definovan˜
+      if node=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud nen¡ uzel ve stromu nalezen, konec
+      if not has_node(node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- m  ru¨en˜ uzel odkaz jen na prav‚ho potomka nebo na ‘ dn‚ho?
+      if node^.left=nil 
+        -- ano
+        then
+          -- m  ru¨en˜ uzel p©edka?
+          if node^.up=nil then
+            -- ne, nastavit nov˜ ko©en
+            root:=node^.right;
+
+            -- pokud existovala prav  vˆtev
+            if root<>nil then
+              -- nastavit p©edka nov‚ho ko©enu na nil
+              root^.up:=nil;
+              end if;
+
+          -- ano, ko©en m  p©edka, tud¡‘ spoj¡me p©edka s n sledn¡kem
+          elsif node^.up^.left=node 
+            then node^.up^.left:=node^.right;
+            else node^.up^.right:=node^.right;
+            end if;
+
+        -- ne, m  odkaz na lev‚ho nebo na oba potomky
+        else
+          -- odebere uzel
+          bonded_remove_rec(node^.left,node);
+          end if;
+
+      -- sn¡‘it po‡et uzl– ve stromu o 1
+      pred count;
+
+      -- m  se vyva‘ovat?
+      if avl then
+        -- vyva‘ovat uzly a‘ ke ko©eni
+        loop
+          -- j¡t na p©edka
+          node:=node^.up;
+      
+          -- vyv ‘it uzel
+          make_avl(node,critical);
+          until node=root or node=nil;
+        end if;
+      end remove;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_node_count (
+        node       : in p_binary_tree_node;         -- aktu ln¡ uzel 
+        count      : in out t_unsigned) =        -- po‡et uzl– (pod)stromu
+    -- Spo‡¡t  po‡et uzl– v podstromu v‡etnˆ uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestli‘e [node] nen¡ definov n, ukon‡i rekurzi
+      if node=nil then 
+        return;
+        end if;
+
+      -- po‡et uzl– je o jeden vˆt¨¡
+      succ count;
+
+      -- proch zet stromem 
+      get_node_count(node^.left,count);
+      get_node_count(node^.right,count);
+      end get_node_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static split_subtree =
+    -- Vyjme ze stromu podstrom v‡etnˆ uzlu [node] a vytvo©¡ a inicializuje novou instance 
+    -- tr¡dy [c_binary_tree]. Pokud uzel nen¡ nalezen, vrac¡ pr zdn˜ strom se stejn˜mi parametry jako
+    -- m  instace tohoto stromu.
+    ------------------------------------------------------------------------------------------------
+    var
+      lnode        : p_binary_tree_node;                -- ko©en nov‚ho stromu
+
+    begin
+      -- ko©en podstromu/stromu
+      lnode:=node;
+
+      -- uzel mus¡ b˜t ve stromˆ nalezen
+      if not has_node(lnode) then
+        -- nen¡ nalezen, chyba
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- je odpojovan˜ uzel r–zn˜ od [root]?
+      if lnode^.up<>nil 
+        -- ano, r–zn˜ od ko©enu
+        then
+          -- odpojit uzel z p–vodn¡ho stromu
+          if lnode^.up^.left=lnode 
+            then lnode^.up^.left:=nil
+            else lnode^.up^.right:=nil
+            end if;
+
+        -- ne, vymazat cel˜ strom 
+        else
+          root:=nil;
+          end if;
+
+      -- nastavit p©edka nov‚ho ko©enu na nil
+      lnode^.up:=nil;
+
+      -- inicializovat nov˜ strom
+      subtree.init(this.item_type,this.avl,this.unique_key,this.homogenous);
+
+      -- m  se p–vodn¡ strom znovu ustanovit?
+      if avl then
+        -- nastavit po‡et uzl– p–vodn¡ho stromu
+        count:=0;
+
+        -- vytvo©it p–vodn¡ strom na promˆnnou subtree pro vyvol n¡ merge_subtree
+        subtree.root:=root;
+
+        -- zru¨it cel˜ p–vodn¡ strom a zapamatovat si p–vodn¡ [root] pro znovuustanoven¡
+        root:=nil;
+
+        -- znovupostavit strom
+        merge_subtree(subtree);
+        end if;
+
+      -- spo‡¡tat po‡et uzl– strom–
+      subtree.count:=0;
+      get_node_count(lnode,subtree.count);
+
+      -- pokud nebyl strom znovu sestaven p©es avl, spo‡¡tat po‡et uzl– v p–vodn¡m stromu
+      if not avl then
+        count-subtree.count;
+        end if;
+
+      -- vytvo©it nov˜ strom
+      subtree.root:=lnode;
+      end split_subtree;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete =
+    -- Sma‘e uzel ze stromu a uvoln¡ pamˆt.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vyjmout uzel
+      remove(item);
+
+      -- uvolnit uzel z pamˆti
+      discard item;
+      end delete;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_subtree =
+    -- Sma‘e podstrom v‡etnˆ uzlu [node] ze stromu a uvoln¡ pamˆt.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestli‘e [node] nen¡ definov n, ukon‡i rekurzi
+      if node=nil then 
+        return;
+        end if;
+
+      -- proch zet stromem 
+      delete_subtree(node^.left);
+      delete_subtree(node^.right);
+
+      -- vyjmout uzel
+      remove(node);
+ 
+      -- uvolnit uzel z pamˆti
+      discard node;
+      end delete_subtree;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_all_rec (
+        node       : in out p_binary_tree_node) =       -- ru¨en  vˆtev
+    -- Zru¨¡ celou vˆtev stromu a uvoln¡ jejich pamˆŸ. Maz n¡ je rychlej¨¡, je pou‘ita v metodˆ
+    -- delete_all. P©i smaz n¡ vˆtve nemus¡ ji‘ b˜t strom vyv ‘en.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestli‘e [node] nen¡ definov n, ukon‡it rekurzi
+      if node=nil then 
+        return;
+        end if;
+
+      -- proch zet stromem 
+      delete_all_rec(node^.left);
+      delete_all_rec(node^.right);
+
+      -- uvolnit uzel z pamˆti
+      discard node;
+      end delete_all_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete_all =
+    -- Sma‘e v¨echny uzly ze stromu a uvoln¡ pamˆt.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smazat cel˜ strom
+      delete_all_rec(root);
+      end delete_all;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_rec (
+        tree       : p_binary_tree_node;
+        node       : p_binary_tree_node)
+        return p_binary_tree_node =
+    -- Vyhled  uzel, kter˜ je rovn˜ [node]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializovat
+      result:=nil;
+
+      -- uzel nebyl nalezen
+      if tree=nil then return end if;
+
+      -- porovnat kl¡‡e uzl–
+      case compare(tree,node)
+        -- je aktu ln¡ uzel vˆt¨¡ ne‘ hledan˜ uzel?
+        when cn_bigger do
+            -- jdi doleva
+            result:=find_rec(tree^.left,node);
+
+        -- je aktu ln¡ uzel men¨¡ ne‘ hledan˜ uzel?
+        when cn_smaller do
+            -- jdi doprava
+            result:=find_rec(tree^.right,node);
+
+        -- kl¡‡e jsou si rovny, ale zat¡m nen¡ nalezen hledan˜ uzel
+        when cn_equal do
+            result:=tree;
+        end case;
+
+      end find_rec;
+
+    ------------------------------------------------------------------------------------------------
+    static find =
+    -- Vyhled  uzel, kter˜ je rovn˜ [node]
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=find_rec(root,node);
+      end find;
+
+    end c_binary_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_binary_tree_iterator =
+-- Iterator.
+----------------------------------------------------------------------------------------------------
+
+    with
+      supervised c_binary_tree_node;
+
+    var 
+      direction    : t_tree_walking_direction;   -- ©¡zen¡ iterace
+      tree         : p_binary_tree;              -- subjekt iterace
+      current_node : p_binary_tree_node;         -- aktu ln¡ uzel
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje iterator pou‘¡van˜ pro pr–chod stromem.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializece ©¡d¡c¡ch promˆnn˜ch
+      this.direction:=direction;
+      this.tree:=^tree;
+
+      -- resetov n¡
+      reset;
+      end init;
+
+
+ 
+    ------------------------------------------------------------------------------------------------
+    override reset =
+    -- Resetuje iterator do stavu po inicializaci.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- do‡asn‚ nastaven¡ [current_node]
+      current_node:=tree^.get_root;
+
+      -- strom je pr zdn˜
+      if current_node=nil then return end if;
+
+      case direction
+        -- prefix
+        when ttwd_prefix do 
+          -- nic nedˆlat - ko©en je prvn¡
+
+        -- inverzn¡ prefix
+        when ttwd_inv_prefix do 
+          -- nic nedˆlat - ko©en je prvn¡
+
+        -- postfix
+        when ttwd_postfix do 
+          -- naj¡t potomka
+          loop
+            -- nejd©¡ve zkusit lev˜ podstrom, kdy‘ nen¡ zad n, tak prav˜
+            if current_node^.left<>nil then current_node:=current_node^.left;
+            elsif current_node^.right<>nil then current_node:=current_node^.right;
+            else break;
+              end if;
+            end loop;
+
+        -- inverzn¡ postfix
+        when ttwd_inv_postfix do 
+          -- naj¡t potomka
+          loop
+            -- nejd©¡ve zkusit prav˜ podstrom, kdy‘ nen¡ zad n, tak lev˜
+            if current_node^.right<>nil then current_node:=current_node^.right;
+            elsif current_node^.left<>nil then current_node:=current_node^.left;
+            else break;
+              end if;
+            end loop;
+
+        -- infix
+        when ttwd_infix do
+          -- j¡t co nejv¡ce doleva
+          while current_node^.left<>nil loop
+            current_node:=current_node^.left;
+            end loop;
+
+        -- inverzn¡ infix
+        when ttwd_inv_infix do
+          -- j¡t co nejv¡ce doprava
+          while current_node^.right<>nil loop
+            current_node:=current_node^.right;
+            end loop;
+        end case;
+
+      end reset;
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_next =
+    -- Do [current_node] ulo‘¡ dal¨¡ proch zen˜ uzel
+    -- P©edpokl d  [current_node]<>nil
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- ur‡it smˆr proch zen¡
+      case direction
+        -- prefix
+        when ttwd_prefix do
+          -- pokud to jde doleva, j¡t do lev‚ho podstromu
+          if current_node^.left<>nil then
+            current_node:=current_node^.left;
+
+          -- pokud to jde doprava, j¡t do prav‚ho podstromu
+          elsif current_node^.right<>nil then
+            current_node:=current_node^.right;
+            
+          -- nejde to do podstromu, mus¡me se vr tit nahoru
+          else
+            -- j¡t nahoru tak dlouho, dokud se ned  odbo‡it doprava dol–
+            while current_node<>nil loop
+              -- ¨plh me po lev‚ vˆtvi a prav  vˆtev m  n sledn¡ky?
+              if current_node^.up<>nil and then current_node^.up^.left=current_node and then current_node^.up^.right<>nil then
+                current_node:=current_node^.up^.right;
+                return;
+                end if;
+
+              -- j¡t nahoru
+              current_node:=current_node^.up;
+              end loop;
+            end if;
+
+        -- inverzn¡ prefix
+        when ttwd_inv_prefix do
+          -- pokud to jde doprava, j¡t do prav‚ho podstromu
+          if current_node^.right<>nil then
+            current_node:=current_node^.right;
+
+          -- pokud to jde doleva, j¡t do lev‚ho podstromu
+          elsif current_node^.left<>nil then
+            current_node:=current_node^.left;
+
+          -- nejde to do podstromu, mus¡me se vr tit nahoru
+          else
+            -- j¡t nahoru tak dlouho, dokud se ned  odbo‡it doleva dol–
+            while current_node<>nil loop
+              -- ¨plh me po prav‚ vˆtvi a lev  vˆtev m  n sledn¡ky?
+              if current_node^.up<>nil and then current_node^.up^.right=current_node and then current_node^.up^.left<>nil then
+                current_node:=current_node^.up^.left;
+                return;
+                end if;
+
+              -- j¡t nahoru
+              current_node:=current_node^.up;
+              end loop;
+            end if;
+
+        -- postfix
+        when ttwd_postfix do
+          -- pokud to jde, j¡t doprava na stejnou £rove¤ a pak co nejv¡ce dol–
+          if current_node^.up<>nil and then current_node^.up^.left=current_node and then current_node^.up^.right<>nil then
+            current_node:=current_node^.up^.right;
+
+            -- co nejv¡ce dol–
+            loop
+              if current_node^.left<>nil then current_node:=current_node^.left;
+              elsif current_node^.right<>nil then current_node:=current_node^.right;
+              else break;
+                end if;
+              end loop;
+
+          else 
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+
+        -- inverzn¡ postfix
+        when ttwd_inv_postfix do
+          -- pokud to jde, j¡t doleva na stejnou £rove¤ a pak co nejv¡ce dol–
+          if current_node^.up<>nil and then current_node^.up^.right=current_node and then current_node^.up^.left<>nil then
+            current_node:=current_node^.up^.left;
+
+            -- co nejv¡ce dol–
+            loop
+              if current_node^.right<>nil then current_node:=current_node^.right;
+              elsif current_node^.left<>nil then current_node:=current_node^.left;
+              else break;
+                end if;
+              end loop;
+
+          else 
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+
+        -- infix
+        when ttwd_infix do
+          -- kdy‘ to jde doprava, tak doprava
+          if current_node^.right<>nil then
+            current_node:=current_node^.right;
+
+            -- co nejv¡ce doleva
+            while current_node^.left<>nil loop
+              current_node:=current_node^.left;
+              end loop;
+
+          else
+            -- jinak nahoru, nejd©¡ve o kolik to jde po prav‚ vˆtvi - vracen¡ se, pak je¨tˆ o jednu nahoru
+            while current_node^.up<>nil and then current_node^.up^.right=current_node loop
+              current_node:=current_node^.up;
+              end loop;
+
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+
+        -- inverzn¡ infix
+        when ttwd_inv_infix do
+          -- kdy‘ to jde doleva, tak doleva
+          if current_node^.left<>nil then
+            current_node:=current_node^.left;
+
+            -- co nejv¡ce doprava
+            while current_node^.right<>nil loop
+              current_node:=current_node^.right;
+              end loop;
+
+          else
+            -- jinak nahoru, nejd©¡ve o kolik to jde po lev‚ vˆtvi - vracen¡ se, pak je¨tˆ o jednu nahoru
+            while current_node^.up<>nil and then current_node^.up^.left=current_node loop
+              current_node:=current_node^.up;
+              end loop;
+
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+          end case;
+
+      end find_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get =
+    -- Vr t¡ jeden uzel z koresponduj¡c¡ho stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uzel, kter˜ m  iter tor vr tit, je v current_node
+      item:=current_node;
+
+      -- v˜sledn  hodnota - F, pokud je v [item] nil
+      result:=item<>nil;
+
+      -- pokud nen¡ co proch zet, konec
+      if not result then return end if;
+
+      -- naj¡t dal¨¡ uzel
+      find_next;
+      end get;
+    
+    end c_binary_tree_iterator;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_tree_node =
+-- Uzel stromu.
+----------------------------------------------------------------------------------------------------
+    var
+      item_type    : t_tag;                      -- (root) type of its items
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializovat seznam potomk–.
+    ------------------------------------------------------------------------------------------------
+    begin
+      down.init(item_type,true,false);
+      end entry;
+
+    end c_tree_node;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_tree =
+-- N-n rn¡ vyhled vac¡ strom.
+----------------------------------------------------------------------------------------------------
+
+    with
+      supervised c_tree_node;
+
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializace stromu.
+    --   Pokud je [homogenous] nastaven na true, ve stromˆ mohou b˜t jen uzly typu [item_type].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud je ji‘ strom definov n
+      if this.root<>nil then
+        -- inicializace neprobˆhne
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- set up basic parameters
+      this.item_type:=item_type;
+      this.homogenous:=homogenous;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_node_count (
+        node       : in p_tree_node)             -- podstrom
+        return t_unsigned =
+    -- Spo‡¡t  po‡et uzl– v podstromˆ ur‡en‚m [node]
+    ------------------------------------------------------------------------------------------------
+    var
+      child        : p_tree_node;                -- uzel
+
+    begin
+      -- zapo‡¡tat node
+      result:=1;
+
+      -- proj¡t dˆtsk‚ uzly
+      child:=node^.down.get_first;
+      while child<>nil loop
+        -- zapo‡¡tat podstromy [child]
+        result+get_node_count(child);
+
+        -- dal¨¡ d¡te
+        child:=node^.down.get_next(child);
+        end loop;
+      end get_node_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_node_rec (
+        current_node : in p_tree_node;           -- aktu ln¡ uzel
+        node         : in p_tree_node)           -- hledan˜ uzel
+        return t_logical =                       -- T-uzel nalezen
+    -- Vrac¡ logickou hodnotu, zda je uzel nalezen ve stromu.
+    ------------------------------------------------------------------------------------------------
+    var 
+      down_node   : p_tree_node;                 -- potomek
+
+    begin
+      -- aktu ln¡ uzel mus¡ b˜t definovan˜
+      if current_node=nil then
+        result:=false;
+        return;
+        end if;
+
+      -- pokud se uzly shoduj¡, vr tit true
+      if current_node=node then
+        result:=true;
+        return;
+        end if;
+
+      -- zjistit prvn¡ho potomka
+      down_node:=p_tree_node(current_node^.down.get_first);
+
+      -- proch zet potomky
+      while down_node<>nil loop
+        -- proch zet podstrom
+        result:=has_node_rec(down_node,node);
+
+        -- pokud je uzel nalezen, konec
+        if result then
+          break;
+          end if;
+        
+        -- jdi na dal¨¡ho potomka
+        down_node:=current_node^.down.get_next(down_node);
+        end loop;
+      end has_node_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_node =
+    -- Vrac¡ logickou hodnotu, zda je uzel nalezen ve stromu.
+    --   Pokud [node]=NIL, hl s¡ chybu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud [node] nen¡ definovan˜, hl s¡ chybu
+      if node=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- hledat uzel
+      result:=has_node_rec(root,node);
+      end has_node;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_root =
+    -- Vrac¡ ko©enov˜ uzel.
+    --   Pokud ko©en nen¡ definov n, vrac¡ NIL.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vr t¡ root node
+      result:=root;
+      end get_root;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert =
+    -- Vlo‘¡ se do stromu ko©en.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokusit se do stromu vlo‘it uzel na m¡sto ko©enu
+      insert_node(p_tree_node(item),nil,id_add);
+      end insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static do_insert (
+        node         : in p_tree_node;           -- vkl dan˜ uzel
+        current_node : in p_tree_node;           -- aktu ln¡ uzel
+        direction    : in t_insert_direction)    -- pozice vlo‘en¡
+        return t_logical =
+    -- Vlo‘¡ uzel do stromu.
+    -- Intern¡ metoda, neprov d¡ kontroly.
+    -- Vr t¡, zda vlo‘en¡ bylo £spˆ¨n‚
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- na za‡ tku p©edpokl d me chybu
+      result:=false;
+
+      -- dle smˆru vlo‘en¡:
+      case direction
+        -- vlo‘¡ jako posledn¡ho souseda
+        when id_add do
+            -- pokud se m  uzel vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+            if current_node=root 
+              -- chyba
+              then
+                execute(event_error);
+                raise tree_error;
+              
+              -- vlo‘it uzel
+              else
+                current_node^.up^.down.insert_last(node);
+                node^.up:=current_node^.up;
+                end if;
+
+        -- vlo‘¡ jako prvn¡ho souseda
+        when id_add_first do
+            -- pokud se m  uzel vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+            if current_node=root 
+              -- chyba
+              then
+                execute(event_error);
+                raise tree_error;
+              
+              -- vlo‘it uzel
+              else
+                current_node^.up^.down.insert_first(node);
+                node^.up:=current_node^.up;
+                end if;
+
+        -- vlo‘¡ jako posledn¡ho potomka
+        when id_add_child do
+            current_node^.down.insert_last(node);
+            node^.up:=current_node;
+
+        -- vlo‘¡ jako prvn¡ho potomka
+        when id_first_child do
+            current_node^.down.insert_first(node);
+            node^.up:=current_node;
+
+        -- vlo‘¡ hned p©ed referen‡n¡ uzel
+        when id_insert_before do
+            -- pokud se m  uzel vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+            if current_node=root 
+              -- chyba
+              then
+                execute(event_error);
+                raise tree_error;
+              
+              -- vlo‘it uzel
+              else
+                current_node^.up^.down.insert_before(current_node,node);
+                node^.up:=current_node^.up;
+                end if;
+
+        -- vlo‘¡ hned za referen‡n¡ uzel
+        when id_insert_after do
+            -- pokud se m  uzel vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+            if current_node=root 
+              -- chyba
+              then
+                execute(event_error);
+                raise tree_error;
+              
+              -- vlo‘it uzel
+              else
+                current_node^.up^.down.insert_after(current_node,node);
+                node^.up:=current_node^.up;
+                end if;
+        end case;
+
+      -- v¨e probˆhlo OK
+      result:=true;
+      end do_insert;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_node =
+    -- Vlo‘¡ uzel do stromu.
+    --   Pokud [node]=NIL, hl s¡ chybu.
+    --   Pokud [current_node] nen¡ ve stromu nalezen, hl s¡ chybu.
+    --   Pokud [node] je ve stromu nalezen, hl s¡ chybu.
+    --   Pokud se m  uzel vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud [node]=NIL, hl s¡ chybu
+      if node=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- m  se nov˜ uzel vlo‘it na m¡sto ko©enu?
+      if current_node=nil then
+        -- ano, nastavit p©edky
+        node^.up:=nil;
+
+        -- pokud existuje [root], nastavit p©edka a vlo‘it b˜val˜ ko©en
+        if root<>nil then
+          root^.up:=node;
+          node^.down.insert_last(root);
+          end if;
+
+        -- nastavit nov˜ ko©en
+        root:=node;
+
+        -- zv˜¨it po‡et uzl– ve stromu
+        count+get_node_count(node);
+        return;
+        end if;
+
+      -- pokud [current_node] nen¡ ve stromu nalezen, hl s¡ chybu
+      if not has_node(current_node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud [node] je ve stromu nalezen, hl s¡ chybu.
+      if has_node(node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+    -- vlastn¡ vlo‘en¡, pokud p©i nˆm nastala chyba, konec
+    if not do_insert(node,current_node,direction) then return end if;
+
+    -- zv˜¨it po‡et uzl– ve stromu
+    count+get_node_count(node);
+    end insert_node;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static merge_subtree =
+    -- Spoj¡ dva stromy do jednoho. Stom [tree] reprezentuje strom p©id van˜ch uzl– do stromu
+    -- reprezentovanou instanc¡ t‚to t©¡dy.
+    --   Pokud p©ipojovan˜ strom je pr zdn˜, hl s¡ chybu.
+    --   Pokud [current_node]=NIL, zkus¡ se vlo‘it ko©en, pokud je ko©en definov n, hl s¡ chybu.
+    --   Pokud [current_node] nen¡ ve stromu nalezen, hl s¡ chybu.
+    --   Pokud libovon˜ uzel v [tree] je ve stromu nalezen, hl s¡ chybu.
+    --   Pokud se m  nov˜ strom vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu
+    ------------------------------------------------------------------------------------------------
+    var 
+      node_found   : t_logical:=false;           -- T-uzel nalezen
+
+    begin
+      -- pokud [tree.root]=NIL, hl s¡ chybu
+      if tree.root=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud libovon˜ uzel v [tree] je ve stromu nalezen, hl s¡ chybu
+      if has_node(tree.root) or has_node_rec(tree.root,root) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud [current_node]=NIL, zkus¡ se vlo‘it ko©en, pokud je ko©en definov n, hl s¡ chybu
+      if current_node=nil then
+        -- pokud je ko©en definov n, hl s¡ chybu
+        if root<>nil then
+          execute(event_error);
+          raise tree_error;
+          end if;
+
+        -- vlo‘it ko©en
+        root:=tree.root;
+
+        -- vypr zdnit p–vodn¡ strom
+        tree.root:=nil;
+        tree.count:=0;
+        return;
+        end if;
+
+      -- pokud [current_node] nen¡ ve stromu nalezen, hl s¡ chybu
+      if not has_node(current_node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- vlastn¡ vlo‘en¡, pokud p©i nˆm nastala chyba, konec
+      if not do_insert(tree.root,current_node,direction) then return end if;
+
+      -- vypr zdnit p–vodn¡ strom
+      tree.root:=nil;
+      tree.count:=0;
+
+      -- zv˜¨it po‡et uzl– ve stromu o tree^.count
+      count+tree.count;
+      end merge_subtree;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_count_node (
+        current_node : in p_tree_node)           -- aktu ln¡ uzel
+        return t_unsigned =
+    -- Vr t¡ po‡et poduzl– v‡etnˆ [current_node] ve stromu.
+    ------------------------------------------------------------------------------------------------
+    var
+      down_node    : p_tree_node;                -- potomek
+
+    begin
+      -- uzel mus¡ b˜t definovan˜
+      if current_node=nil then
+        result:=0;
+        return;
+        end if;
+      
+      -- uzel m  v hu 1
+      result:=1;
+
+      -- zjistit prvn¡ho potomka
+      down_node:=p_tree_node(current_node^.down.get_first);
+
+      -- proch zet potomky
+      while down_node<>nil loop
+        -- proch zet podstrom
+        result+get_count_node(down_node);
+
+        -- jdi na dal¨¡ho potomka
+        down_node:=current_node^.down.get_next(down_node);
+        end loop;
+      end get_count_node;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    override remove =
+    -- Vyjme uzel ze stromu, pokud m  uzlem n sledn¡ky, vyjme se cel˜ podstrom.
+    --   Pokud [item]=nil, hl s¡ se chyba.
+    --   Pokud [item] nen¡ ve stromu nalezen, hl s¡ se chyba.
+    ------------------------------------------------------------------------------------------------
+    var 
+      node         : p_tree_node;                -- uzel pro vyjmut¡ ze stromu
+
+    begin
+      -- p©etypovat [item]
+      node:=p_tree_node(item);
+
+      -- ru¨en˜ uzel mus¡ b˜t definovan˜
+      if node=nil then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud [node] nen¡ ve stromu nalezen, hl s¡ se chyba
+      if not has_node(node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- pokud [node]=[root], smazat strom
+      if node=root then
+        root:=nil;
+        count:=0;
+        return;
+        end if;
+
+      -- korigovat po‡et uzl– ve stromu
+      count-get_count_node(node);
+      
+      -- vyjmout uzel
+      node^.up^.down.remove(node);
+      end remove;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static split_subtree =
+    -- Vyjme ze stromu podstrom v‡etnˆ uzlu [node] a vytvo©¡ a inicializuje novou instance 
+    -- tr¡dy [c_tree]. 
+    --   Pokud uzel nen¡ nalezen, hl s¡ chybu.
+    ------------------------------------------------------------------------------------------------
+    var
+      lnode        : p_tree_node;                -- ko©en nov‚ho stromu
+
+    begin
+      -- ko©en podstromu/stromu
+      lnode:=node;
+
+      -- pokud nen¡ [lnode] ve stromu nalezen, hl s¡ chybu
+      if not has_node(lnode) then
+        execute(event_error);
+        return;
+        end if;
+
+      -- m  se vyjmout ko©en?
+      if lnode^.up=nil 
+        -- ano, zru¨it [root]
+        then
+          root:=nil;
+
+        -- ne, vyjmout podstrom
+        else
+          lnode^.up^.down.remove(node);
+          end if;
+
+      -- nastavit p©edka odpojen‚ho podstromu
+      lnode^.up:=nil;
+
+      -- nastavit po‡et uzl– ve stromu
+      subtree.count:=get_count_node(lnode);
+      count-subtree.count;
+
+      -- nastavit ko©en nov‚ho stromu
+      subtree.root:=lnode;
+      end split_subtree;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete =
+    -- Sma‘e uzel ze stromu v‡etnˆ potomk– a uvoln¡ pamˆt.
+    ------------------------------------------------------------------------------------------------
+    var
+      lnode        : p_tree_node;                -- [node]
+      down_node    : p_tree_node;                -- potomek
+
+    begin
+      -- lok ln¡ node
+      lnode:=item;
+
+      -- pokud [node] nen¡ definov n, ukon‡i rekurzi
+      if lnode=nil then 
+        return;
+        end if;
+
+      -- zjistit prvn¡ho potomka
+      down_node:=p_tree_node(lnode^.down.get_first);
+
+      -- proch zet potomky
+      while down_node<>nil loop
+        -- proch zet podstrom
+        delete(down_node);
+
+        -- jdi na dal¨¡ho potomka
+        down_node:=lnode^.down.get_next(down_node);
+        end loop;
+
+      -- vyjmout uzel
+      remove(lnode);
+
+      -- uvolnit uzel z pamˆti
+      discard lnode;
+
+      -- vynulov n¡ uvolnˆn‚ho ukazatele
+      item:=nil;
+      end delete;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override delete_all =
+    -- Sma‘e v¨echny uzly ze stromu a uvoln¡ pamˆt.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smazat cel˜ strom
+      delete(root);
+      end delete_all;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static move_subtree =
+    -- P©esune podstrom z jednoho m¡sta na jin‚ m¡sto v tom sam‚m stromu.
+    --   Pokud [node]=NIL, hl s¡ chybu.
+    --   Pokud [node] nen¡ ve stromu nalezen, hl s¡ chybu.
+    --   Pokud [current_node] nen¡ ve stromu nalezen, hl s¡ chybu.
+    --   Pokud se m  uzel vlo‘it vedle ko©enov‚ho uzlu a m  potomky, hl s¡ chybu.
+    --   Pokud [current_node] je poduzlem [node], hl s¡ chybu.
+    --   Pokud se m  uzel podstromu vlo‘it jako sousedn¡ uzel, ale [current_node]=[root], hl s¡ chybu.
+    ------------------------------------------------------------------------------------------------
+    var
+      sub          : p_tree;                     -- podstrom, pomocn  instance
+        
+    begin
+      -- vytvo©it pomocnou instanci
+      new sub;
+
+      -- [current_node] je obsa‘eno v p©esouvan‚m podstromˆ [node] => chyba
+      if has_node_rec(node,current_node) then
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- rozdˆlit na dva podstromy
+      split_subtree(node,sub^);
+
+      -- do‡asn˜ podstrom vlo‘it na po‘adovan‚ m¡sto
+      merge_subtree(sub^,current_node,direction);
+
+    leave
+      -- uvolnit do‡asn˜ podstrom
+      discard sub;
+      end move_subtree;
+
+    end c_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_tree_iterator = 
+-- Iterator.
+----------------------------------------------------------------------------------------------------
+
+    with
+      supervised c_tree_node;
+
+    var 
+      direction    : t_tree_walking_direction;   -- ©¡zen¡ iterace
+      tree         : p_tree;                     -- subjekt iterace
+      current_node : p_tree_node;                -- aktu ln¡ uzel
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje iterator pou‘¡van˜ pro pr–chod stromem.
+    ------------------------------------------------------------------------------------------------   
+    begin
+      -- inicializece ©¡d¡c¡ch promˆnn˜ch
+      this.direction:=direction;
+      this.tree:=^tree;
+
+      -- chybn˜ smˆr proch zen¡
+      if direction not in t_tree_walking_direction_set:[ttwd_prefix,ttwd_inv_prefix,ttwd_postfix,ttwd_inv_postfix] then
+        raise tree_error;
+        end if;
+
+      -- resetov n¡
+      reset;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override reset =
+    -- Resetuje iterator do stavu po inicializaci.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- do‡asn‚ nastaven¡ [current_node]
+      current_node:=tree^.get_root;
+
+      -- strom je pr zdn˜
+      if current_node=nil then return end if;
+
+      case direction
+        -- prefix
+        when ttwd_prefix do 
+          -- nic nedˆlat - ko©en je prvn¡
+
+        -- inverzn¡ prefix
+        when ttwd_inv_prefix do 
+          -- nic nedˆlat - ko©en je prvn¡
+
+        -- postfix
+        when ttwd_postfix do 
+          -- naj¡t potomka
+          loop
+            -- sej¡t dol–, p©i rozhodov n¡ se vydat v‘dy nejlevˆj¨¡ cestou
+            if current_node^.down.get_first<>nil then 
+              current_node:=current_node^.down.get_first;
+            else
+              break;
+              end if;
+            end loop;
+
+        -- inverzn¡ postfix
+        when ttwd_inv_postfix do 
+          -- naj¡t potomka
+          loop
+            -- sej¡t dol–, p©i rozhodov n¡ se vydat v‘dy nejpravˆj¨¡ cestou
+            if current_node^.down.get_last<>nil then 
+              current_node:=current_node^.down.get_last;
+            else
+              break;
+              end if;
+            end loop;
+        end case;
+      end reset;
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_next =
+    -- Do [current_node] ulo‘¡ dal¨¡ proch zen˜ uzel
+    -- P©edpokl d  [current_node]<>nil
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- ur‡it smˆr proch zen¡
+      case direction
+        -- prefix
+        when ttwd_prefix do
+          -- pokud to jde, jdeme dol– co nejv¡ce doleva
+          if current_node^.down.get_first<>nil then
+            current_node:=current_node^.down.get_first;
+
+          -- nejde to do podstromu, mus¡me se vr tit nahoru
+          else
+            -- j¡t nahoru tak dlouho, dokud se ned  odbo‡it doprava dol–
+            while current_node<>nil loop
+              -- ¨plh me po lev‚ vˆtvi a prav  vˆtev m  n sledn¡ky?
+              if current_node^.up<>nil and then current_node^.up^.down.get_next(current_node)<>nil then
+                current_node:=current_node^.up^.down.get_next(current_node);
+                return;
+                end if;
+
+              -- j¡t nahoru
+              current_node:=current_node^.up;
+              end loop;
+            end if;
+
+        -- inverzn¡ prefix
+        when ttwd_inv_prefix do
+          -- pokud to jde, jdeme dol– co nejv¡ce doprava
+          if current_node^.down.get_last<>nil then
+            current_node:=current_node^.down.get_last;
+
+          -- nejde to do podstromu, mus¡me se vr tit nahoru
+          else
+            -- j¡t nahoru tak dlouho, dokud se ned  odbo‡it doleva dol–
+            while current_node<>nil loop
+              -- ¨plh me po lev‚ vˆtvi a prav  vˆtev m  p©edch–dce?
+              if current_node^.up<>nil and then current_node^.up^.down.get_prev(current_node)<>nil then
+                current_node:=current_node^.up^.down.get_prev(current_node);
+                return;
+                end if;
+
+              -- j¡t nahoru
+              current_node:=current_node^.up;
+              end loop;
+            end if;
+
+        -- postfix
+        when ttwd_postfix do
+          -- pokud to jde, j¡t doprava na stejnou £rove¤ a pak co nejv¡ce dol–
+          if current_node^.up<>nil and then current_node^.up^.down.get_next(current_node)<>nil then
+            current_node:=current_node^.up^.down.get_next(current_node);
+
+            -- co nejv¡ce dol–
+            loop
+              -- sej¡t dol–, p©i rozhodov n¡ se vydat v‘dy nejlevˆj¨¡ cestou
+              if current_node^.down.get_first<>nil then 
+                current_node:=current_node^.down.get_first;
+              else break;
+                end if;
+              end loop;
+
+          else 
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+
+        -- inverzn¡ postfix
+        when ttwd_inv_postfix do
+          -- pokud to jde, j¡t dolevana stejnou £rove¤ a pak co nejv¡ce dol–
+          if current_node^.up<>nil and then current_node^.up^.down.get_prev(current_node)<>nil then
+            current_node:=current_node^.up^.down.get_prev(current_node);
+
+            -- co nejv¡ce dol–
+            loop
+              -- sej¡t dol–, p©i rozhodov n¡ se vydat v‘dy nejpravˆj¨¡ cestou
+              if current_node^.down.get_last<>nil then 
+                current_node:=current_node^.down.get_last;
+              else break;
+                end if;
+              end loop;
+
+          else 
+            -- nahoru
+            current_node:=current_node^.up;
+            end if;
+          end case;
+      end find_next;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get =
+    -- Vr t¡ jeden uzel z koresponduj¡c¡ho stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uzel, kter˜ m  iter tor vr tit, je v current_node
+      item:=current_node;
+
+      -- v˜sledn  hodnota - F, pokud je v [item] nil
+      result:=item<>nil;
+
+      -- pokud nen¡ co proch zet, konec
+      if not result then return end if;
+
+      -- naj¡t dal¨¡ uzel
+      find_next;
+      end get;
+ 
+    end c_tree_iterator;
+
+end trees;
+

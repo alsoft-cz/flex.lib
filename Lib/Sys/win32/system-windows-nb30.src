@@ -1,0 +1,466 @@
+----------------------------------------------------------------------------------------------------
+module nb30 =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt;
+
+-- *++
+-- 
+--  Copyright (c) 1991-1999 Microsoft Corporation
+-- 
+--  Module Name:
+-- 
+--  nb30.h
+-- 
+--  Abstract:
+-- 
+--  This module contains the definitions for portable NetBIOS 3.0
+--  support.
+-- 
+-- --*/
+-- #pragma  once
+-- /****************************************************************
+--  *                                                              *
+--  *              Data structure templates                        *
+--  *                                                              *
+--  ****************************************************************/
+const
+  NCBNAMSZ          = 16;
+
+const
+  MAX_LANA          = 254;
+
+-- /*
+--  * Network Control Block
+--  */
+type  _NCB;t_001=^_NCB for machine_pointer use true;
+
+
+type
+  _NCB              = record
+ncb_command     : UCHAR;
+ncb_retcode     : UCHAR;
+ncb_lsn         : UCHAR;
+ncb_num         : UCHAR;
+ncb_buffer      : PUCHAR;
+ncb_length      : WORD;
+ncb_callname    : array 0..NCBNAMSZ-1 of UCHAR;
+ncb_name        : array 0..NCBNAMSZ-1 of UCHAR;
+ncb_rto         : UCHAR;
+ncb_sto         : UCHAR;
+ncb_post        : ^procedure (
+    _001            : t_001);
+ncb_lana_num    : UCHAR;
+ncb_cmd_cplt    : UCHAR;
+ncb_reserve     : array 0..9 of UCHAR;
+ncb_event       : t_HANDLE;
+  end record;
+  NCB               = _NCB;
+  PNCB              = ^_NCB;
+
+-- /*
+--  *  Structure returned to the NCB command NCBASTAT is ADAPTER_STATUS followed
+--  *  by an array of NAME_BUFFER structures.
+--  */
+type
+  _ADAPTER_STATUS   = record
+adapter_address : array 0..5 of UCHAR;
+rev_major       : UCHAR;
+reserved0       : UCHAR;
+adapter_type    : UCHAR;
+rev_minor       : UCHAR;
+duration        : WORD;
+frmr_recv       : WORD;
+frmr_xmit       : WORD;
+iframe_recv_err : WORD;
+xmit_aborts     : WORD;
+xmit_success    : DWORD;
+recv_success    : DWORD;
+iframe_xmit_err : WORD;
+recv_buff_unavail : WORD;
+t1_timeouts     : WORD;
+ti_timeouts     : WORD;
+reserved1       : DWORD;
+free_ncbs       : WORD;
+max_cfg_ncbs    : WORD;
+max_ncbs        : WORD;
+xmit_buf_unavail : WORD;
+max_dgram_size  : WORD;
+pending_sess    : WORD;
+max_cfg_sess    : WORD;
+max_sess        : WORD;
+max_sess_pkt_size : WORD;
+name_count      : WORD;
+  end record;
+  ADAPTER_STATUS    = _ADAPTER_STATUS;
+  PADAPTER_STATUS   = ^_ADAPTER_STATUS;
+
+type
+  _NAME_BUFFER      = record
+name            : array 0..NCBNAMSZ-1 of UCHAR;
+name_num        : UCHAR;
+name_flags      : UCHAR;
+  end record;
+  NAME_BUFFER       = _NAME_BUFFER;
+  PNAME_BUFFER      = ^_NAME_BUFFER;
+
+--  values for name_flags bits.
+const
+  NAME_FLAGS_MASK   = $87;
+
+const
+  GROUP_NAME        = $80;
+
+const
+  UNIQUE_NAME       = $00;
+
+const
+  REGISTERING       = $00;
+
+const
+  REGISTERED        = $04;
+
+const
+  DEREGISTERED      = $05;
+
+const
+  DUPLICATE         = $06;
+
+const
+  DUPLICATE_DEREG   = $07;
+
+-- /*
+--  *  Structure returned to the NCB command NCBSSTAT is SESSION_HEADER followed
+--  *  by an array of SESSION_BUFFER structures. If the NCB_NAME starts with an
+--  *  asterisk then an array of these structures is returned containing the
+--  *  status for all names.
+--  */
+type
+  _SESSION_HEADER   = record
+sess_name       : UCHAR;
+num_sess        : UCHAR;
+rcv_dg_outstanding : UCHAR;
+rcv_any_outstanding : UCHAR;
+  end record;
+  SESSION_HEADER    = _SESSION_HEADER;
+  PSESSION_HEADER   = ^_SESSION_HEADER;
+
+type
+  _SESSION_BUFFER   = record
+lsn             : UCHAR;
+state           : UCHAR;
+local_name      : array 0..NCBNAMSZ-1 of UCHAR;
+remote_name     : array 0..NCBNAMSZ-1 of UCHAR;
+rcvs_outstanding : UCHAR;
+sends_outstanding : UCHAR;
+  end record;
+  SESSION_BUFFER    = _SESSION_BUFFER;
+  PSESSION_BUFFER   = ^_SESSION_BUFFER;
+
+--  Values for state
+const
+  LISTEN_OUTSTANDING= $01;
+
+const
+  CALL_PENDING      = $02;
+
+const
+  SESSION_ESTABLISHED= $03;
+
+const
+  HANGUP_PENDING    = $04;
+
+const
+  HANGUP_COMPLETE   = $05;
+
+const
+  SESSION_ABORTED   = $06;
+
+-- /*
+--  *  Structure returned to the NCB command NCBENUM.
+--  *
+--  *  On a system containing lana's 0, 2 and 3, a structure with
+--  *  length =3, lana[0]=0, lana[1]=2 and lana[2]=3 will be returned.
+--  */
+type
+  _LANA_ENUM        = record
+length          : UCHAR;
+lana            : array 0..0 of UCHAR;
+  end record;
+  LANA_ENUM         = _LANA_ENUM;
+  PLANA_ENUM        = ^_LANA_ENUM;
+
+-- /*
+--  *  Structure returned to the NCB command NCBFINDNAME is FIND_NAME_HEADER followed
+--  *  by an array of FIND_NAME_BUFFER structures.
+--  */
+type
+  _FIND_NAME_HEADER = record
+node_count      : WORD;
+reserved        : UCHAR;
+unique_group    : UCHAR;
+  end record;
+  FIND_NAME_HEADER  = _FIND_NAME_HEADER;
+  PFIND_NAME_HEADER = ^_FIND_NAME_HEADER;
+
+type
+  _FIND_NAME_BUFFER = record
+length          : UCHAR;
+access_control  : UCHAR;
+frame_control   : UCHAR;
+destination_addr : array 0..5 of UCHAR;
+source_addr     : array 0..5 of UCHAR;
+routing_info    : array 0..17 of UCHAR;
+  end record;
+  FIND_NAME_BUFFER  = _FIND_NAME_BUFFER;
+  PFIND_NAME_BUFFER = ^_FIND_NAME_BUFFER;
+
+-- /*
+--  *  Structure provided with NCBACTION. The purpose of NCBACTION is to provide
+--  *  transport specific extensions to netbios.
+--  */
+type
+  _ACTION_HEADER    = record
+transport_id    : ULONG;
+action_code     : USHORT;
+reserved        : USHORT;
+  end record;
+  ACTION_HEADER     = _ACTION_HEADER;
+  PACTION_HEADER    = ^_ACTION_HEADER;
+
+--  Values for transport_id
+-- /****************************************************************
+--  *                                                              *
+--  *              Special values and constants                    *
+--  *                                                              *
+--  ****************************************************************/
+-- /*
+--  *      NCB Command codes
+--  */
+const
+  NCBCALL           = $10;
+
+const
+  NCBLISTEN         = $11;
+
+const
+  NCBHANGUP         = $12;
+
+const
+  NCBSEND           = $14;
+
+const
+  NCBRECV           = $15;
+
+const
+  NCBRECVANY        = $16;
+
+const
+  NCBCHAINSEND      = $17;
+
+const
+  NCBDGSEND         = $20;
+
+const
+  NCBDGRECV         = $21;
+
+const
+  NCBDGSENDBC       = $22;
+
+const
+  NCBDGRECVBC       = $23;
+
+const
+  NCBADDNAME        = $30;
+
+const
+  NCBDELNAME        = $31;
+
+const
+  NCBRESET          = $32;
+
+const
+  NCBASTAT          = $33;
+
+const
+  NCBSSTAT          = $34;
+
+const
+  NCBCANCEL         = $35;
+
+const
+  NCBADDGRNAME      = $36;
+
+const
+  NCBENUM           = $37;
+
+const
+  NCBUNLINK         = $70;
+
+const
+  NCBSENDNA         = $71;
+
+const
+  NCBCHAINSENDNA    = $72;
+
+const
+  NCBLANSTALERT     = $73;
+
+const
+  NCBACTION         = $77;
+
+const
+  NCBFINDNAME       = $78;
+
+const
+  NCBTRACE          = $79;
+
+const
+  ASYNCH            = $80;
+
+-- /*
+--  *      NCB Return codes
+--  */
+const
+  NRC_GOODRET       = $00;
+
+-- /* also returned when ASYNCH request accepted 
+const
+  NRC_BUFLEN        = $01;
+
+const
+  NRC_ILLCMD        = $03;
+
+const
+  NRC_CMDTMO        = $05;
+
+const
+  NRC_INCOMP        = $06;
+
+const
+  NRC_BADDR         = $07;
+
+const
+  NRC_SNUMOUT       = $08;
+
+const
+  NRC_NORES         = $09;
+
+const
+  NRC_SCLOSED       = $0A;
+
+const
+  NRC_CMDCAN        = $0B;
+
+const
+  NRC_DUPNAME       = $0D;
+
+const
+  NRC_NAMTFUL       = $0E;
+
+const
+  NRC_ACTSES        = $0F;
+
+const
+  NRC_LOCTFUL       = $11;
+
+const
+  NRC_REMTFUL       = $12;
+
+const
+  NRC_ILLNN         = $13;
+
+const
+  NRC_NOCALL        = $14;
+
+const
+  NRC_NOWILD        = $15;
+
+const
+  NRC_INUSE         = $16;
+
+const
+  NRC_NAMERR        = $17;
+
+const
+  NRC_SABORT        = $18;
+
+const
+  NRC_NAMCONF       = $19;
+
+const
+  NRC_IFBUSY        = $21;
+
+const
+  NRC_TOOMANY       = $22;
+
+const
+  NRC_BRIDGE        = $23;
+
+const
+  NRC_CANOCCR       = $24;
+
+const
+  NRC_CANCEL        = $26;
+
+const
+  NRC_DUPENV        = $30;
+
+const
+  NRC_ENVNOTDEF     = $34;
+
+const
+  NRC_OSRESNOTAV    = $35;
+
+const
+  NRC_MAXAPPS       = $36;
+
+const
+  NRC_NOSAPS        = $37;
+
+const
+  NRC_NORESOURCES   = $38;
+
+const
+  NRC_INVADDRESS    = $39;
+
+const
+  NRC_INVDDID       = $3B;
+
+const
+  NRC_LOCKFAIL      = $3C;
+
+const
+  NRC_OPENERR       = $3F;
+
+const
+  NRC_SYSTEM        = $40;
+
+const
+  NRC_PENDING       = $FF;
+
+-- /****************************************************************
+--  *                                                              *
+--  *              main user entry point for NetBIOS 3.0           *
+--  *                                                              *
+--  * Usage: result = Netbios( pncb );                             *
+--  ****************************************************************/
+procedure Netbios(
+    pncb_x          : PNCB)
+                      return UCHAR;
+#pragma convention(Netbios,system);
+#pragma import(Netbios,'Netbios','netapi32.dll');
+
+-- /****************************************************************
+--  *                                                              *
+--  *              Prefix for callback routines                    *
+--  *                                                              *
+--  * Usage in a declaration: NCB_POST MyPostRoutine( PNCB pncb ); *
+--  ****************************************************************/
+
+end nb30;

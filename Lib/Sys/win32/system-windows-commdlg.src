@@ -1,0 +1,1359 @@
+----------------------------------------------------------------------------------------------------
+module commdlg =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,winuser,wingdi;
+
+-- /************************************************************************
+-- *                                                                       *
+-- *   commdlg.h -- This module defines the 32-Bit Common Dialog APIs      *
+-- *                                                                       *
+-- *   Copyright (c) Microsoft Corporation. All rights reserved.           *
+-- *                                                                       *
+-- ************************************************************************/
+-- 
+--  IPrintDialogCallback interface id used by PrintDlgEx.
+-- 
+--  {5852A2C3-6530-11D1-B6A3-0000F8757BF9}
+-- 
+-- 
+--  IPrintDialogServices interface id used by PrintDlgEx.
+-- 
+--  {509AAEDA-5639-11D1-B6A1-0000F8757BF9}
+-- 
+-- skip #include <prsht.h> not found
+-- ignored #include <pshpack1.h>
+-- /* Assume byte packing throughout 
+-- 
+--  Define API decoration for direct importing of DLL references.
+-- 
+type
+LPOFNHOOKPROC     = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+-- 
+--  For compilers that don't support nameless unions
+-- 
+type
+  tagOFN_NT4A       = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+lpstrFilter     : LPCSTR;
+lpstrCustomFilter : LPSTR;
+nMaxCustFilter  : DWORD;
+nFilterIndex    : DWORD;
+lpstrFile       : LPSTR;
+nMaxFile        : DWORD;
+lpstrFileTitle  : LPSTR;
+nMaxFileTitle   : DWORD;
+lpstrInitialDir : LPCSTR;
+lpstrTitle      : LPCSTR;
+Flags           : DWORD;
+nFileOffset     : WORD;
+nFileExtension  : WORD;
+lpstrDefExt     : LPCSTR;
+lCustData       : t_LPARAM;
+lpfnHook        : LPOFNHOOKPROC;
+lpTemplateName  : LPCSTR;
+  end record;
+  OPENFILENAME_NT4A = tagOFN_NT4A;
+  LPOPENFILENAME_NT4A = ^tagOFN_NT4A;
+
+type
+  tagOFN_NT4W       = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+lpstrFilter     : LPCWSTR;
+lpstrCustomFilter : LPWSTR;
+nMaxCustFilter  : DWORD;
+nFilterIndex    : DWORD;
+lpstrFile       : LPWSTR;
+nMaxFile        : DWORD;
+lpstrFileTitle  : LPWSTR;
+nMaxFileTitle   : DWORD;
+lpstrInitialDir : LPCWSTR;
+lpstrTitle      : LPCWSTR;
+Flags           : DWORD;
+nFileOffset     : WORD;
+nFileExtension  : WORD;
+lpstrDefExt     : LPCWSTR;
+lCustData       : t_LPARAM;
+lpfnHook        : LPOFNHOOKPROC;
+lpTemplateName  : LPCWSTR;
+  end record;
+  OPENFILENAME_NT4W = tagOFN_NT4W;
+  LPOPENFILENAME_NT4W = ^tagOFN_NT4W;
+
+#if #declared UNICODE; then;
+type
+OPENFILENAME_NT4  = OPENFILENAME_NT4W;
+type
+LPOPENFILENAME_NT4 = LPOPENFILENAME_NT4W;
+#else;
+type
+OPENFILENAME_NT4  = OPENFILENAME_NT4A;
+type
+LPOPENFILENAME_NT4 = LPOPENFILENAME_NT4A;
+#end if;
+
+type
+  tagOFNA           = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+lpstrFilter     : LPCSTR;
+lpstrCustomFilter : LPSTR;
+nMaxCustFilter  : DWORD;
+nFilterIndex    : DWORD;
+lpstrFile       : LPSTR;
+nMaxFile        : DWORD;
+lpstrFileTitle  : LPSTR;
+nMaxFileTitle   : DWORD;
+lpstrInitialDir : LPCSTR;
+lpstrTitle      : LPCSTR;
+Flags           : DWORD;
+nFileOffset     : WORD;
+nFileExtension  : WORD;
+lpstrDefExt     : LPCSTR;
+lCustData       : t_LPARAM;
+lpfnHook        : LPOFNHOOKPROC;
+lpTemplateName  : LPCSTR;
+pvReserved      : ^unchecked;
+dwReserved      : DWORD;
+FlagsEx         : DWORD;
+  end record;
+  OPENFILENAMEA     = tagOFNA;
+  LPOPENFILENAMEA   = ^tagOFNA;
+
+type
+  tagOFNW           = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+lpstrFilter     : LPCWSTR;
+lpstrCustomFilter : LPWSTR;
+nMaxCustFilter  : DWORD;
+nFilterIndex    : DWORD;
+lpstrFile       : LPWSTR;
+nMaxFile        : DWORD;
+lpstrFileTitle  : LPWSTR;
+nMaxFileTitle   : DWORD;
+lpstrInitialDir : LPCWSTR;
+lpstrTitle      : LPCWSTR;
+Flags           : DWORD;
+nFileOffset     : WORD;
+nFileExtension  : WORD;
+lpstrDefExt     : LPCWSTR;
+lCustData       : t_LPARAM;
+lpfnHook        : LPOFNHOOKPROC;
+lpTemplateName  : LPCWSTR;
+pvReserved      : ^unchecked;
+dwReserved      : DWORD;
+FlagsEx         : DWORD;
+  end record;
+  OPENFILENAMEW     = tagOFNW;
+  LPOPENFILENAMEW   = ^tagOFNW;
+
+#if #declared UNICODE; then;
+type
+OPENFILENAME      = OPENFILENAMEW;
+type
+LPOPENFILENAME    = LPOPENFILENAMEW;
+#else;
+type
+OPENFILENAME      = OPENFILENAMEA;
+type
+LPOPENFILENAME    = LPOPENFILENAMEA;
+#end if;
+
+#if #declared UNICODE; then;
+#template OPENFILENAME_SIZE_VERSION_400;
+  {CDSIZEOF_STRUCT(structname,member)} (((int)((LPBYTE)(&((structname*)0 )->member)-((LPBYTE)((structname*)0 ))))+sizeof(((structname*)0 )->member)) ( OPENFILENAMEW,lpTemplateName ) 
+#end OPENFILENAME_SIZE_VERSION_400;
+#else;
+#template OPENFILENAME_SIZE_VERSION_400;
+  {CDSIZEOF_STRUCT(structname,member)} (((int)((LPBYTE)(&((structname*)0 )->member)-((LPBYTE)((structname*)0 ))))+sizeof(((structname*)0 )->member)) ( OPENFILENAMEA,lpTemplateName ) 
+#end OPENFILENAME_SIZE_VERSION_400;
+#end if;
+
+procedure GetOpenFileNameA(
+    _001            : LPOPENFILENAMEA)
+                      return BOOL;
+#pragma convention(GetOpenFileNameA,system);
+#pragma import(GetOpenFileNameA,'GetOpenFileNameA','comdlg32.dll');
+
+procedure GetOpenFileNameW(
+    _001            : LPOPENFILENAMEW)
+                      return BOOL;
+#pragma convention(GetOpenFileNameW,system);
+#pragma import(GetOpenFileNameW,'GetOpenFileNameW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template GetOpenFileName;
+  GetOpenFileNameW 
+#end GetOpenFileName;
+#else;
+#template GetOpenFileName;
+  GetOpenFileNameA 
+#end GetOpenFileName;
+#end if;
+
+procedure GetSaveFileNameA(
+    _001            : LPOPENFILENAMEA)
+                      return BOOL;
+#pragma convention(GetSaveFileNameA,system);
+#pragma import(GetSaveFileNameA,'GetSaveFileNameA','comdlg32.dll');
+
+procedure GetSaveFileNameW(
+    _001            : LPOPENFILENAMEW)
+                      return BOOL;
+#pragma convention(GetSaveFileNameW,system);
+#pragma import(GetSaveFileNameW,'GetSaveFileNameW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template GetSaveFileName;
+  GetSaveFileNameW 
+#end GetSaveFileName;
+#else;
+#template GetSaveFileName;
+  GetSaveFileNameA 
+#end GetSaveFileName;
+#end if;
+
+type
+  t_001 = signed 16;
+
+procedure GetFileTitleA(
+    _001            : LPCSTR; 
+    _002            : LPSTR; 
+    _003            : WORD)
+                      return t_001;
+#pragma convention(GetFileTitleA,system);
+#pragma import(GetFileTitleA,'GetFileTitleA','comdlg32.dll');
+
+type
+  t_002 = signed 16;
+
+procedure GetFileTitleW(
+    _001            : LPCWSTR; 
+    _002            : LPWSTR; 
+    _003            : WORD)
+                      return t_002;
+#pragma convention(GetFileTitleW,system);
+#pragma import(GetFileTitleW,'GetFileTitleW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template GetFileTitle;
+  GetFileTitleW 
+#end GetFileTitle;
+#else;
+#template GetFileTitle;
+  GetFileTitleA 
+#end GetFileTitle;
+#end if;
+
+const
+  OFN_READONLY      = $01;
+
+const
+  OFN_OVERWRITEPROMPT= $02;
+
+const
+  OFN_HIDEREADONLY  = $04;
+
+const
+  OFN_NOCHANGEDIR   = $08;
+
+const
+  OFN_SHOWHELP      = $10;
+
+const
+  OFN_ENABLEHOOK    = $20;
+
+const
+  OFN_ENABLETEMPLATE= $40;
+
+const
+  OFN_ENABLETEMPLATEHANDLE= $80;
+
+const
+  OFN_NOVALIDATE    = $0100;
+
+const
+  OFN_ALLOWMULTISELECT= $0200;
+
+const
+  OFN_EXTENSIONDIFFERENT= $0400;
+
+const
+  OFN_PATHMUSTEXIST = $0800;
+
+const
+  OFN_FILEMUSTEXIST = $1000;
+
+const
+  OFN_CREATEPROMPT  = $2000;
+
+const
+  OFN_SHAREAWARE    = $4000;
+
+const
+  OFN_NOREADONLYRETURN= $8000;
+
+const
+  OFN_NOTESTFILECREATE= $10000;
+
+const
+  OFN_NONETWORKBUTTON= $20000;
+
+const
+  OFN_NOLONGNAMES   = $40000;
+
+const
+  OFN_EXPLORER      = $80000;
+
+const
+  OFN_NODEREFERENCELINKS= $100000;
+
+const
+  OFN_LONGNAMES     = $200000;
+
+const
+  OFN_ENABLEINCLUDENOTIFY= $400000;
+
+const
+  OFN_ENABLESIZING  = $800000;
+
+const
+  OFN_DONTADDTORECENT= $2000000;
+
+const
+  OFN_FORCESHOWHIDDEN= $10000000;
+
+-- FlagsEx Values
+const
+  OFN_EX_NOPLACESBAR= $01;
+
+--  Return values for the registered message sent to the hook function
+--  when a sharing violation occurs. OFN_SHAREFALLTHROUGH allows the
+--  filename to be accepted, OFN_SHARENOWARN rejects the name but puts
+--  up no warning (returned when the app has already put up a warning
+--  message), and OFN_SHAREWARN puts up the default warning message
+--  for sharing violations.
+-- 
+--  Note: Undefined return values map to OFN_SHAREWARN, but are
+--  reserved for future use.
+const
+  OFN_SHAREFALLTHROUGH= 2;
+
+const
+  OFN_SHARENOWARN   = 1;
+
+const
+  OFN_SHAREWARN     = 0;
+
+type
+LPCCHOOKPROC      = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+--  Structure used for all file based OpenFileName notifications
+type
+  _OFNOTIFYA        = record
+hdr             : NMHDR;
+lpOFN           : LPOPENFILENAMEA;
+pszFile         : LPSTR;
+  end record;
+  OFNOTIFYA         = _OFNOTIFYA;
+  LPOFNOTIFYA       = ^_OFNOTIFYA;
+
+--  Structure used for all file based OpenFileName notifications
+type
+  _OFNOTIFYW        = record
+hdr             : NMHDR;
+lpOFN           : LPOPENFILENAMEW;
+pszFile         : LPWSTR;
+  end record;
+  OFNOTIFYW         = _OFNOTIFYW;
+  LPOFNOTIFYW       = ^_OFNOTIFYW;
+
+#if #declared UNICODE; then;
+type
+OFNOTIFY          = OFNOTIFYW;
+type
+LPOFNOTIFY        = LPOFNOTIFYW;
+#else;
+type
+OFNOTIFY          = OFNOTIFYA;
+type
+LPOFNOTIFY        = LPOFNOTIFYA;
+#end if;
+
+--  Structure used for all object based OpenFileName notifications
+type
+  _OFNOTIFYEXA      = record
+hdr             : NMHDR;
+lpOFN           : LPOPENFILENAMEA;
+psf             : LPVOID;
+pidl            : LPVOID;
+  end record;
+  OFNOTIFYEXA       = _OFNOTIFYEXA;
+  LPOFNOTIFYEXA     = ^_OFNOTIFYEXA;
+
+--  Structure used for all object based OpenFileName notifications
+type
+  _OFNOTIFYEXW      = record
+hdr             : NMHDR;
+lpOFN           : LPOPENFILENAMEW;
+psf             : LPVOID;
+pidl            : LPVOID;
+  end record;
+  OFNOTIFYEXW       = _OFNOTIFYEXW;
+  LPOFNOTIFYEXW     = ^_OFNOTIFYEXW;
+
+#if #declared UNICODE; then;
+type
+OFNOTIFYEX        = OFNOTIFYEXW;
+type
+LPOFNOTIFYEX      = LPOFNOTIFYEXW;
+#else;
+type
+OFNOTIFYEX        = OFNOTIFYEXA;
+type
+LPOFNOTIFYEX      = LPOFNOTIFYEXA;
+#end if;
+
+--  Notifications from Open or Save dialog
+--  Messages to query information from the Open or Save dialogs
+--  lParam = pointer to text buffer that gets filled in
+--  wParam = max number of characters of the text buffer (including NULL)
+--  return = < 0 if error; number of characters needed (including NULL)
+#if #declared UNICODE; then;
+#template CommDlg_OpenSave_GetSpec;
+  {CommDlg_OpenSave_GetSpecW(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETSPEC,(WPARAM)_cbmax,(LPARAM)(LPWSTR)_psz) 
+#end CommDlg_OpenSave_GetSpec;
+#else;
+#template CommDlg_OpenSave_GetSpec;
+  {CommDlg_OpenSave_GetSpecA(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETSPEC,(WPARAM)_cbmax,(LPARAM)(LPSTR)_psz) 
+#end CommDlg_OpenSave_GetSpec;
+#end if;
+
+--  lParam = pointer to text buffer that gets filled in
+--  wParam = max number of characters of the text buffer (including NULL)
+--  return = < 0 if error; number of characters needed (including NULL)
+#if #declared UNICODE; then;
+#template CommDlg_OpenSave_GetFilePath;
+  {CommDlg_OpenSave_GetFilePathW(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETFILEPATH,(WPARAM)_cbmax,(LPARAM)(LPWSTR)_psz) 
+#end CommDlg_OpenSave_GetFilePath;
+#else;
+#template CommDlg_OpenSave_GetFilePath;
+  {CommDlg_OpenSave_GetFilePathA(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETFILEPATH,(WPARAM)_cbmax,(LPARAM)(LPSTR)_psz) 
+#end CommDlg_OpenSave_GetFilePath;
+#end if;
+
+--  lParam = pointer to text buffer that gets filled in
+--  wParam = max number of characters of the text buffer (including NULL)
+--  return = < 0 if error; number of characters needed (including NULL)
+#if #declared UNICODE; then;
+#template CommDlg_OpenSave_GetFolderPath;
+  {CommDlg_OpenSave_GetFolderPathW(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETFOLDERPATH,(WPARAM)_cbmax,(LPARAM)(LPWSTR)_psz) 
+#end CommDlg_OpenSave_GetFolderPath;
+#else;
+#template CommDlg_OpenSave_GetFolderPath;
+  {CommDlg_OpenSave_GetFolderPathA(_hdlg,_psz,_cbmax)} (int)SNDMSG(_hdlg,CDM_GETFOLDERPATH,(WPARAM)_cbmax,(LPARAM)(LPSTR)_psz) 
+#end CommDlg_OpenSave_GetFolderPath;
+#end if;
+
+--  lParam = pointer to ITEMIDLIST buffer that gets filled in
+--  wParam = size of the ITEMIDLIST buffer
+--  return = < 0 if error; length of buffer needed
+--  lParam = pointer to a string
+--  wParam = ID of control to change
+--  return = not used
+--  lParam = not used
+--  wParam = ID of control to change
+--  return = not used
+--  lParam = pointer to default extension (no dot)
+--  wParam = not used
+--  return = not used
+type
+  tagCHOOSECOLORA   = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HWND;
+rgbResult       : COLORREF;
+lpCustColors    : ^COLORREF;
+Flags           : DWORD;
+lCustData       : t_LPARAM;
+lpfnHook        : LPCCHOOKPROC;
+lpTemplateName  : LPCSTR;
+  end record;
+  t_CHOOSECOLORA    = tagCHOOSECOLORA;
+  LPCHOOSECOLORA    = ^tagCHOOSECOLORA;
+
+type
+  tagCHOOSECOLORW   = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HWND;
+rgbResult       : COLORREF;
+lpCustColors    : ^COLORREF;
+Flags           : DWORD;
+lCustData       : t_LPARAM;
+lpfnHook        : LPCCHOOKPROC;
+lpTemplateName  : LPCWSTR;
+  end record;
+  t_CHOOSECOLORW    = tagCHOOSECOLORW;
+  LPCHOOSECOLORW    = ^tagCHOOSECOLORW;
+
+#if #declared UNICODE; then;
+type
+t_CHOOSECOLOR     = t_CHOOSECOLORW;
+type
+LPCHOOSECOLOR     = LPCHOOSECOLORW;
+#else;
+type
+t_CHOOSECOLOR     = t_CHOOSECOLORA;
+type
+LPCHOOSECOLOR     = LPCHOOSECOLORA;
+#end if;
+
+procedure ChooseColorA(
+    _001            : LPCHOOSECOLORA)
+                      return BOOL;
+#pragma convention(ChooseColorA,system);
+#pragma import(ChooseColorA,'ChooseColorA','comdlg32.dll');
+
+procedure ChooseColorW(
+    _001            : LPCHOOSECOLORW)
+                      return BOOL;
+#pragma convention(ChooseColorW,system);
+#pragma import(ChooseColorW,'ChooseColorW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template ChooseColor;
+  ChooseColorW 
+#end ChooseColor;
+#else;
+#template ChooseColor;
+  ChooseColorA 
+#end ChooseColor;
+#end if;
+
+const
+  CC_RGBINIT        = $01;
+
+const
+  CC_FULLOPEN       = $02;
+
+const
+  CC_PREVENTFULLOPEN= $04;
+
+const
+  CC_SHOWHELP       = $08;
+
+const
+  CC_ENABLEHOOK     = $10;
+
+const
+  CC_ENABLETEMPLATE = $20;
+
+const
+  CC_ENABLETEMPLATEHANDLE= $40;
+
+const
+  CC_SOLIDCOLOR     = $80;
+
+const
+  CC_ANYCOLOR       = $0100;
+
+type
+LPFRHOOKPROC      = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+  tagFINDREPLACEA   = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+Flags           : DWORD;
+lpstrFindWhat   : LPSTR;
+lpstrReplaceWith : LPSTR;
+wFindWhatLen    : WORD;
+wReplaceWithLen : WORD;
+lCustData       : t_LPARAM;
+lpfnHook        : LPFRHOOKPROC;
+lpTemplateName  : LPCSTR;
+  end record;
+  FINDREPLACEA      = tagFINDREPLACEA;
+  LPFINDREPLACEA    = ^tagFINDREPLACEA;
+
+type
+  tagFINDREPLACEW   = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hInstance       : t_HINSTANCE;
+Flags           : DWORD;
+lpstrFindWhat   : LPWSTR;
+lpstrReplaceWith : LPWSTR;
+wFindWhatLen    : WORD;
+wReplaceWithLen : WORD;
+lCustData       : t_LPARAM;
+lpfnHook        : LPFRHOOKPROC;
+lpTemplateName  : LPCWSTR;
+  end record;
+  FINDREPLACEW      = tagFINDREPLACEW;
+  LPFINDREPLACEW    = ^tagFINDREPLACEW;
+
+#if #declared UNICODE; then;
+type
+FINDREPLACE       = FINDREPLACEW;
+type
+LPFINDREPLACE     = LPFINDREPLACEW;
+#else;
+type
+FINDREPLACE       = FINDREPLACEA;
+type
+LPFINDREPLACE     = LPFINDREPLACEA;
+#end if;
+
+const
+  FR_DOWN           = $01;
+
+const
+  FR_WHOLEWORD      = $02;
+
+const
+  FR_MATCHCASE      = $04;
+
+const
+  FR_FINDNEXT       = $08;
+
+const
+  FR_REPLACE        = $10;
+
+const
+  FR_REPLACEALL     = $20;
+
+const
+  FR_DIALOGTERM     = $40;
+
+const
+  FR_SHOWHELP       = $80;
+
+const
+  FR_ENABLEHOOK     = $0100;
+
+const
+  FR_ENABLETEMPLATE = $0200;
+
+const
+  FR_NOUPDOWN       = $0400;
+
+const
+  FR_NOMATCHCASE    = $0800;
+
+const
+  FR_NOWHOLEWORD    = $1000;
+
+const
+  FR_ENABLETEMPLATEHANDLE= $2000;
+
+const
+  FR_HIDEUPDOWN     = $4000;
+
+const
+  FR_HIDEMATCHCASE  = $8000;
+
+const
+  FR_HIDEWHOLEWORD  = $10000;
+
+const
+  FR_RAW            = $20000;
+
+const
+  FR_MATCHDIAC      = $20000000;
+
+const
+  FR_MATCHKASHIDA   = $40000000;
+
+const
+  FR_MATCHALEFHAMZA = $80000000;
+
+procedure FindTextA(
+    _001            : LPFINDREPLACEA)
+                      return t_HWND;
+#pragma convention(FindTextA,system);
+#pragma import(FindTextA,'FindTextA','comdlg32.dll');
+
+procedure FindTextW(
+    _001            : LPFINDREPLACEW)
+                      return t_HWND;
+#pragma convention(FindTextW,system);
+#pragma import(FindTextW,'FindTextW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template FindText;
+  FindTextW 
+#end FindText;
+#else;
+#template FindText;
+  FindTextA 
+#end FindText;
+#end if;
+
+procedure ReplaceTextA(
+    _001            : LPFINDREPLACEA)
+                      return t_HWND;
+#pragma convention(ReplaceTextA,system);
+#pragma import(ReplaceTextA,'ReplaceTextA','comdlg32.dll');
+
+procedure ReplaceTextW(
+    _001            : LPFINDREPLACEW)
+                      return t_HWND;
+#pragma convention(ReplaceTextW,system);
+#pragma import(ReplaceTextW,'ReplaceTextW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template ReplaceText;
+  ReplaceTextW 
+#end ReplaceText;
+#else;
+#template ReplaceText;
+  ReplaceTextA 
+#end ReplaceText;
+#end if;
+
+type
+LPCFHOOKPROC      = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+  tagCHOOSEFONTA    = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDC             : t_HDC;
+lpLogFont       : LPLOGFONTA;
+iPointSize      : INT;
+Flags           : DWORD;
+rgbColors       : COLORREF;
+lCustData       : t_LPARAM;
+lpfnHook        : LPCFHOOKPROC;
+lpTemplateName  : LPCSTR;
+hInstance       : t_HINSTANCE;
+lpszStyle       : LPSTR;
+nFontType       : WORD;
+___MISSING_ALIGNMENT__ : WORD;
+nSizeMin        : INT;
+nSizeMax        : INT;
+  end record;
+  t_CHOOSEFONTA     = tagCHOOSEFONTA;
+  LPCHOOSEFONTA     = ^tagCHOOSEFONTA;
+
+type
+  tagCHOOSEFONTW    = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDC             : t_HDC;
+lpLogFont       : LPLOGFONTW;
+iPointSize      : INT;
+Flags           : DWORD;
+rgbColors       : COLORREF;
+lCustData       : t_LPARAM;
+lpfnHook        : LPCFHOOKPROC;
+lpTemplateName  : LPCWSTR;
+hInstance       : t_HINSTANCE;
+lpszStyle       : LPWSTR;
+nFontType       : WORD;
+___MISSING_ALIGNMENT__ : WORD;
+nSizeMin        : INT;
+nSizeMax        : INT;
+  end record;
+  t_CHOOSEFONTW     = tagCHOOSEFONTW;
+  LPCHOOSEFONTW     = ^tagCHOOSEFONTW;
+
+#if #declared UNICODE; then;
+type
+t_CHOOSEFONT      = t_CHOOSEFONTW;
+type
+LPCHOOSEFONT      = LPCHOOSEFONTW;
+#else;
+type
+t_CHOOSEFONT      = t_CHOOSEFONTA;
+type
+LPCHOOSEFONT      = LPCHOOSEFONTA;
+#end if;
+
+procedure ChooseFontA(
+    _001            : LPCHOOSEFONTA)
+                      return BOOL;
+#pragma convention(ChooseFontA,system);
+#pragma import(ChooseFontA,'ChooseFontA','comdlg32.dll');
+
+procedure ChooseFontW(
+    _001            : LPCHOOSEFONTW)
+                      return BOOL;
+#pragma convention(ChooseFontW,system);
+#pragma import(ChooseFontW,'ChooseFontW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template ChooseFont;
+  ChooseFontW 
+#end ChooseFont;
+#else;
+#template ChooseFont;
+  ChooseFontA 
+#end ChooseFont;
+#end if;
+
+const
+  CF_SCREENFONTS    = $01;
+
+const
+  CF_PRINTERFONTS   = $02;
+
+const
+  CF_SHOWHELP       = $04;
+
+const
+  CF_ENABLEHOOK     = $08;
+
+const
+  CF_ENABLETEMPLATE = $10;
+
+const
+  CF_ENABLETEMPLATEHANDLE= $20;
+
+const
+  CF_INITTOLOGFONTSTRUCT= $40;
+
+const
+  CF_USESTYLE       = $80;
+
+const
+  CF_EFFECTS        = $0100;
+
+const
+  CF_APPLY          = $0200;
+
+const
+  CF_ANSIONLY       = $0400;
+
+const
+  CF_NOVECTORFONTS  = $0800;
+
+const
+  CF_NOSIMULATIONS  = $1000;
+
+const
+  CF_LIMITSIZE      = $2000;
+
+const
+  CF_FIXEDPITCHONLY = $4000;
+
+const
+  CF_WYSIWYG        = $8000;
+
+const
+  CF_FORCEFONTEXIST = $10000;
+
+const
+  CF_SCALABLEONLY   = $20000;
+
+const
+  CF_TTONLY         = $40000;
+
+const
+  CF_NOFACESEL      = $80000;
+
+const
+  CF_NOSTYLESEL     = $100000;
+
+const
+  CF_NOSIZESEL      = $200000;
+
+const
+  CF_SELECTSCRIPT   = $400000;
+
+const
+  CF_NOSCRIPTSEL    = $800000;
+
+const
+  CF_NOVERTFONTS    = $1000000;
+
+--  these are extra nFontType bits that are added to what is returned to the
+--  EnumFonts callback routine
+const
+  SIMULATED_FONTTYPE= $8000;
+
+const
+  PRINTER_FONTTYPE  = $4000;
+
+const
+  SCREEN_FONTTYPE   = $2000;
+
+const
+  BOLD_FONTTYPE     = $0100;
+
+const
+  ITALIC_FONTTYPE   = $0200;
+
+const
+  REGULAR_FONTTYPE  = $0400;
+
+--  EnumFonts callback routine only uses these bits, so we can use the rest
+--  #define RASTER_FONTTYPE 0x001
+--  #define DEVICE_FONTTYPE 0x002
+--  #define TRUETYPE_FONTTYPE 0x004
+--  strings used to obtain unique window message for communication
+--  between dialog and caller
+#if #declared UNICODE; then;
+#template LBSELCHSTRING;
+  L 'commdlg_LBSelChangedNotify'
+#end LBSELCHSTRING;
+#template SHAREVISTRING;
+  L 'commdlg_ShareViolation'
+#end SHAREVISTRING;
+#template FILEOKSTRING;
+  L 'commdlg_FileNameOK'
+#end FILEOKSTRING;
+#template COLOROKSTRING;
+  L 'commdlg_ColorOK'
+#end COLOROKSTRING;
+#template SETRGBSTRING;
+  L 'commdlg_SetRGBColor'
+#end SETRGBSTRING;
+#template HELPMSGSTRING;
+  L 'commdlg_help'
+#end HELPMSGSTRING;
+#template FINDMSGSTRING;
+  L 'commdlg_FindReplace'
+#end FINDMSGSTRING;
+#else;
+#template LBSELCHSTRING;
+  'commdlg_LBSelChangedNotify'
+#end LBSELCHSTRING;
+#template SHAREVISTRING;
+  'commdlg_ShareViolation'
+#end SHAREVISTRING;
+#template FILEOKSTRING;
+  'commdlg_FileNameOK'
+#end FILEOKSTRING;
+#template COLOROKSTRING;
+  'commdlg_ColorOK'
+#end COLOROKSTRING;
+#template SETRGBSTRING;
+  'commdlg_SetRGBColor'
+#end SETRGBSTRING;
+#template HELPMSGSTRING;
+  'commdlg_help'
+#end HELPMSGSTRING;
+#template FINDMSGSTRING;
+  'commdlg_FindReplace'
+#end FINDMSGSTRING;
+#end if;
+
+--  HIWORD values for lParam of commdlg_LBSelChangeNotify message
+const
+  CD_LBSELCHANGE    = 0;
+
+const
+  CD_LBSELSUB       = 1;
+
+const
+  CD_LBSELADD       = 2;
+
+type
+LPPRINTHOOKPROC   = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+LPSETUPHOOKPROC   = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+  tagPDA            = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDevMode        : t_HGLOBAL;
+hDevNames       : t_HGLOBAL;
+hDC             : t_HDC;
+Flags           : DWORD;
+nFromPage       : WORD;
+nToPage         : WORD;
+nMinPage        : WORD;
+nMaxPage        : WORD;
+nCopies         : WORD;
+hInstance       : t_HINSTANCE;
+lCustData       : t_LPARAM;
+lpfnPrintHook   : LPPRINTHOOKPROC;
+lpfnSetupHook   : LPSETUPHOOKPROC;
+lpPrintTemplateName : LPCSTR;
+lpSetupTemplateName : LPCSTR;
+hPrintTemplate  : t_HGLOBAL;
+hSetupTemplate  : t_HGLOBAL;
+  end record;
+  t_PRINTDLGA       = tagPDA;
+  LPPRINTDLGA       = ^tagPDA;
+
+type
+  tagPDW            = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDevMode        : t_HGLOBAL;
+hDevNames       : t_HGLOBAL;
+hDC             : t_HDC;
+Flags           : DWORD;
+nFromPage       : WORD;
+nToPage         : WORD;
+nMinPage        : WORD;
+nMaxPage        : WORD;
+nCopies         : WORD;
+hInstance       : t_HINSTANCE;
+lCustData       : t_LPARAM;
+lpfnPrintHook   : LPPRINTHOOKPROC;
+lpfnSetupHook   : LPSETUPHOOKPROC;
+lpPrintTemplateName : LPCWSTR;
+lpSetupTemplateName : LPCWSTR;
+hPrintTemplate  : t_HGLOBAL;
+hSetupTemplate  : t_HGLOBAL;
+  end record;
+  t_PRINTDLGW       = tagPDW;
+  LPPRINTDLGW       = ^tagPDW;
+
+#if #declared UNICODE; then;
+type
+t_PRINTDLG        = t_PRINTDLGW;
+type
+LPPRINTDLG        = LPPRINTDLGW;
+#else;
+type
+t_PRINTDLG        = t_PRINTDLGA;
+type
+LPPRINTDLG        = LPPRINTDLGA;
+#end if;
+
+procedure PrintDlgA(
+    _001            : LPPRINTDLGA)
+                      return BOOL;
+#pragma convention(PrintDlgA,system);
+#pragma import(PrintDlgA,'PrintDlgA','comdlg32.dll');
+
+procedure PrintDlgW(
+    _001            : LPPRINTDLGW)
+                      return BOOL;
+#pragma convention(PrintDlgW,system);
+#pragma import(PrintDlgW,'PrintDlgW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template PrintDlg;
+  PrintDlgW 
+#end PrintDlg;
+#else;
+#template PrintDlg;
+  PrintDlgA 
+#end PrintDlg;
+#end if;
+
+-- 
+--  Flags for PrintDlg and PrintDlgEx.
+-- 
+const
+  PD_ALLPAGES       = $00;
+
+const
+  PD_SELECTION      = $01;
+
+const
+  PD_PAGENUMS       = $02;
+
+const
+  PD_NOSELECTION    = $04;
+
+const
+  PD_NOPAGENUMS     = $08;
+
+const
+  PD_COLLATE        = $10;
+
+const
+  PD_PRINTTOFILE    = $20;
+
+const
+  PD_PRINTSETUP     = $40;
+
+const
+  PD_NOWARNING      = $80;
+
+const
+  PD_RETURNDC       = $0100;
+
+const
+  PD_RETURNIC       = $0200;
+
+const
+  PD_RETURNDEFAULT  = $0400;
+
+const
+  PD_SHOWHELP       = $0800;
+
+const
+  PD_ENABLEPRINTHOOK= $1000;
+
+const
+  PD_ENABLESETUPHOOK= $2000;
+
+const
+  PD_ENABLEPRINTTEMPLATE= $4000;
+
+const
+  PD_ENABLESETUPTEMPLATE= $8000;
+
+const
+  PD_ENABLEPRINTTEMPLATEHANDLE= $10000;
+
+const
+  PD_ENABLESETUPTEMPLATEHANDLE= $20000;
+
+const
+  PD_USEDEVMODECOPIES= $40000;
+
+const
+  PD_USEDEVMODECOPIESANDCOLLATE= $40000;
+
+const
+  PD_DISABLEPRINTTOFILE= $80000;
+
+const
+  PD_HIDEPRINTTOFILE= $100000;
+
+const
+  PD_NONETWORKBUTTON= $200000;
+
+const
+  PD_CURRENTPAGE    = $400000;
+
+const
+  PD_NOCURRENTPAGE  = $800000;
+
+const
+  PD_EXCLUSIONFLAGS = $1000000;
+
+const
+  PD_USELARGETEMPLATE= $10000000;
+
+-- 
+--  Exclusion flags for PrintDlgEx.
+-- 
+-- 
+--  Define the start page for the print dialog when using PrintDlgEx.
+-- 
+const
+  START_PAGE_GENERAL= $FFFFFFFF;
+
+-- 
+--  Result action ids for PrintDlgEx.
+-- 
+const
+  PD_RESULT_CANCEL  = 0;
+
+const
+  PD_RESULT_PRINT   = 1;
+
+const
+  PD_RESULT_APPLY   = 2;
+
+-- 
+--  Device Names structure for PrintDlg and PrintDlgEx.
+-- 
+type
+  tagDEVNAMES       = record
+wDriverOffset   : WORD;
+wDeviceOffset   : WORD;
+wOutputOffset   : WORD;
+wDefault        : WORD;
+  end record;
+  DEVNAMES          = tagDEVNAMES;
+  LPDEVNAMES        = ^tagDEVNAMES;
+
+const
+  DN_DEFAULTPRN     = $01;
+
+procedure CommDlgExtendedError
+                      return DWORD;
+#pragma convention(CommDlgExtendedError,system);
+#pragma import(CommDlgExtendedError,'CommDlgExtendedError','comdlg32.dll');
+
+type
+LPPAGEPAINTHOOK   = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+LPPAGESETUPHOOK   = ^procedure (
+    _001            : t_HWND;
+    _002            : UINT;
+    _003            : t_WPARAM;
+    _004            : t_LPARAM)
+                      return UINT_PTR for machine_pointer use true;
+type
+  tagPSDA           = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDevMode        : t_HGLOBAL;
+hDevNames       : t_HGLOBAL;
+Flags           : DWORD;
+ptPaperSize     : t_POINT;
+rtMinMargin     : RECT;
+rtMargin        : RECT;
+hInstance       : t_HINSTANCE;
+lCustData       : t_LPARAM;
+lpfnPageSetupHook : LPPAGESETUPHOOK;
+lpfnPagePaintHook : LPPAGEPAINTHOOK;
+lpPageSetupTemplateName : LPCSTR;
+hPageSetupTemplate : t_HGLOBAL;
+  end record;
+  t_PAGESETUPDLGA   = tagPSDA;
+  LPPAGESETUPDLGA   = ^tagPSDA;
+
+type
+  tagPSDW           = record
+lStructSize     : DWORD;
+hwndOwner       : t_HWND;
+hDevMode        : t_HGLOBAL;
+hDevNames       : t_HGLOBAL;
+Flags           : DWORD;
+ptPaperSize     : t_POINT;
+rtMinMargin     : RECT;
+rtMargin        : RECT;
+hInstance       : t_HINSTANCE;
+lCustData       : t_LPARAM;
+lpfnPageSetupHook : LPPAGESETUPHOOK;
+lpfnPagePaintHook : LPPAGEPAINTHOOK;
+lpPageSetupTemplateName : LPCWSTR;
+hPageSetupTemplate : t_HGLOBAL;
+  end record;
+  t_PAGESETUPDLGW   = tagPSDW;
+  LPPAGESETUPDLGW   = ^tagPSDW;
+
+#if #declared UNICODE; then;
+type
+t_PAGESETUPDLG    = t_PAGESETUPDLGW;
+type
+LPPAGESETUPDLG    = LPPAGESETUPDLGW;
+#else;
+type
+t_PAGESETUPDLG    = t_PAGESETUPDLGA;
+type
+LPPAGESETUPDLG    = LPPAGESETUPDLGA;
+#end if;
+
+procedure PageSetupDlgA(
+    _001            : LPPAGESETUPDLGA)
+                      return BOOL;
+#pragma convention(PageSetupDlgA,system);
+#pragma import(PageSetupDlgA,'PageSetupDlgA','comdlg32.dll');
+
+procedure PageSetupDlgW(
+    _001            : LPPAGESETUPDLGW)
+                      return BOOL;
+#pragma convention(PageSetupDlgW,system);
+#pragma import(PageSetupDlgW,'PageSetupDlgW','comdlg32.dll');
+
+#if #declared UNICODE; then;
+#template PageSetupDlg;
+  PageSetupDlgW 
+#end PageSetupDlg;
+#else;
+#template PageSetupDlg;
+  PageSetupDlgA 
+#end PageSetupDlg;
+#end if;
+
+const
+  PSD_DEFAULTMINMARGINS= $00;
+
+const
+  PSD_INWININIINTLMEASURE= $00;
+
+const
+  PSD_MINMARGINS    = $01;
+
+const
+  PSD_MARGINS       = $02;
+
+const
+  PSD_INTHOUSANDTHSOFINCHES= $04;
+
+const
+  PSD_INHUNDREDTHSOFMILLIMETERS= $08;
+
+const
+  PSD_DISABLEMARGINS= $10;
+
+const
+  PSD_DISABLEPRINTER= $20;
+
+const
+  PSD_NOWARNING     = $80;
+
+const
+  PSD_DISABLEORIENTATION= $0100;
+
+const
+  PSD_RETURNDEFAULT = $0400;
+
+const
+  PSD_DISABLEPAPER  = $0200;
+
+const
+  PSD_SHOWHELP      = $0800;
+
+const
+  PSD_ENABLEPAGESETUPHOOK= $2000;
+
+const
+  PSD_ENABLEPAGESETUPTEMPLATE= $8000;
+
+const
+  PSD_ENABLEPAGESETUPTEMPLATEHANDLE= $20000;
+
+const
+  PSD_ENABLEPAGEPAINTHOOK= $40000;
+
+const
+  PSD_DISABLEPAGEPAINTING= $80000;
+
+const
+  PSD_NONETWORKBUTTON= $200000;
+
+-- /* RC complains about long symbols in #ifs 
+-- ignored #include <poppack.h>
+-- ** must be same as PD_*
+end commdlg;

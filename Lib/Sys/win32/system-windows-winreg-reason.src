@@ -1,0 +1,220 @@
+----------------------------------------------------------------------------------------------------
+module reason =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- +-------------------------------------------------------------------
+-- 
+--  Microsoft Windows
+--  Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+--  File: reason.h
+-- 
+--  Contents: Shutdown reason code values.
+-- 
+--  History: 8-00 Created Hughleat
+-- 
+-- --------------------------------------------------------------------
+--  Reason flags
+--  Flags used by the various UIs.
+const
+  SHTDN_REASON_FLAG_COMMENT_REQUIRED= $1000000;
+
+const
+  SHTDN_REASON_FLAG_DIRTY_PROBLEM_ID_REQUIRED= $2000000;
+
+const
+  SHTDN_REASON_FLAG_CLEAN_UI= $4000000;
+
+const
+  SHTDN_REASON_FLAG_DIRTY_UI= $8000000;
+
+--  Flags that end up in the event log code.
+const
+  SHTDN_REASON_FLAG_USER_DEFINED= $40000000;
+
+const
+  SHTDN_REASON_FLAG_PLANNED= $80000000;
+
+--  Microsoft major reasons.
+const
+  SHTDN_REASON_MAJOR_OTHER= $00;
+
+const
+  SHTDN_REASON_MAJOR_NONE= $00;
+
+const
+  SHTDN_REASON_MAJOR_HARDWARE= $10000;
+
+const
+  SHTDN_REASON_MAJOR_OPERATINGSYSTEM= $20000;
+
+const
+  SHTDN_REASON_MAJOR_SOFTWARE= $30000;
+
+const
+  SHTDN_REASON_MAJOR_APPLICATION= $40000;
+
+const
+  SHTDN_REASON_MAJOR_SYSTEM= $50000;
+
+const
+  SHTDN_REASON_MAJOR_POWER= $60000;
+
+const
+  SHTDN_REASON_MAJOR_LEGACY_API= $70000;
+
+--  Microsoft minor reasons.
+const
+  SHTDN_REASON_MINOR_OTHER= $00;
+
+const
+  SHTDN_REASON_MINOR_NONE= $FF;
+
+const
+  SHTDN_REASON_MINOR_MAINTENANCE= $01;
+
+const
+  SHTDN_REASON_MINOR_INSTALLATION= $02;
+
+const
+  SHTDN_REASON_MINOR_UPGRADE= $03;
+
+const
+  SHTDN_REASON_MINOR_RECONFIG= $04;
+
+const
+  SHTDN_REASON_MINOR_HUNG= $05;
+
+const
+  SHTDN_REASON_MINOR_UNSTABLE= $06;
+
+const
+  SHTDN_REASON_MINOR_DISK= $07;
+
+const
+  SHTDN_REASON_MINOR_PROCESSOR= $08;
+
+const
+  SHTDN_REASON_MINOR_NETWORKCARD= $09;
+
+const
+  SHTDN_REASON_MINOR_POWER_SUPPLY= $0A;
+
+const
+  SHTDN_REASON_MINOR_CORDUNPLUGGED= $0B;
+
+const
+  SHTDN_REASON_MINOR_ENVIRONMENT= $0C;
+
+const
+  SHTDN_REASON_MINOR_HARDWARE_DRIVER= $0D;
+
+const
+  SHTDN_REASON_MINOR_OTHERDRIVER= $0E;
+
+const
+  SHTDN_REASON_MINOR_BLUESCREEN= $0F;
+
+const
+  SHTDN_REASON_MINOR_SERVICEPACK= $10;
+
+const
+  SHTDN_REASON_MINOR_HOTFIX= $11;
+
+const
+  SHTDN_REASON_MINOR_SECURITYFIX= $12;
+
+const
+  SHTDN_REASON_MINOR_SECURITY= $13;
+
+const
+  SHTDN_REASON_MINOR_NETWORK_CONNECTIVITY= $14;
+
+const
+  SHTDN_REASON_MINOR_WMI= $15;
+
+const
+  SHTDN_REASON_MINOR_SERVICEPACK_UNINSTALL= $16;
+
+const
+  SHTDN_REASON_MINOR_HOTFIX_UNINSTALL= $17;
+
+const
+  SHTDN_REASON_MINOR_SECURITYFIX_UNINSTALL= $18;
+
+const
+  SHTDN_REASON_MINOR_MMC= $19;
+
+const
+  SHTDN_REASON_MINOR_TERMSRV= $20;
+
+const
+  SHTDN_REASON_MINOR_DC_PROMOTION= $21;
+
+const
+  SHTDN_REASON_MINOR_DC_DEMOTION= $22;
+
+--  This mask cuts out UI flags.
+const
+  SHTDN_REASON_VALID_BIT_MASK= $C0FFFFFF;
+
+--  Convenience flags.
+-- /*
+--  * Maximum character lengths for reason name, description, problem id, and
+--  * comment respectively.
+--  */
+const
+  MAX_REASON_NAME_LEN= 64;
+
+const
+  MAX_REASON_DESC_LEN= 256;
+
+const
+  MAX_REASON_BUGID_LEN= 32;
+
+const
+  MAX_REASON_COMMENT_LEN= 512;
+
+const
+  SHUTDOWN_TYPE_LEN = 32;
+
+-- /*
+--  *	S.E.T. policy value
+--  *
+--  */
+const
+  POLICY_SHOWREASONUI_NEVER= 0;
+
+const
+  POLICY_SHOWREASONUI_ALWAYS= 1;
+
+const
+  POLICY_SHOWREASONUI_WORKSTATIONONLY= 2;
+
+const
+  POLICY_SHOWREASONUI_SERVERONLY= 3;
+
+-- /*
+--  * Snapshot policy values
+--  */
+const
+  SNAPSHOT_POLICY_NEVER= 0;
+
+const
+  SNAPSHOT_POLICY_ALWAYS= 1;
+
+const
+  SNAPSHOT_POLICY_UNPLANNED= 2;
+
+-- /*
+--  * Maximue user defined reasons
+--  */
+const
+  MAX_NUM_REASONS   = 256;
+
+
+end reason;

@@ -1,0 +1,105 @@
+----------------------------------------------------------------------------------------------------
+module public protogui =
+-- ProtoGUI Library
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes;
+
+class c_window;
+class c_device_context;
+class c_graphic_resource;
+  class c_gr_font;
+  class c_gr_color;
+  class c_gr_brush;
+  class c_gr_icon;
+  class c_gr_bitmap;
+  class c_gr_cursor;
+
+class c_style_item
+  class c_si_dimension
+  class c_si_color
+  class c_si_brush
+  class c_si_font
+
+  class c_margin_left = extend c_si_dimension;
+
+var
+  property_registry = static c_property_registry;
+  
+property_registry.register('margin-left',c_si_dimension:tag,property_margin_left);
+
+var
+  style : c_style;
+  prop  : ^c_si_dimension;
+
+begin
+  style.init(property_registry,parent_style);
+  prop:=style.get_property(property_margin_left);
+  prop^.get_value
+  prop^.set_value
+
+class c_style
+
+  class c_style_box
+     margin = record
+        left : c_si_dimension;
+        right : c_si_dimension;
+        end record;
+     padding = ....
+
+  class c_style_font
+  class c_style_background
+
+----------------------------------------------------------------------------------------------------
+class public c_window = extend c_class;
+----------------------------------------------------------------------------------------------------
+
+    -- ud losti od my¨i
+    procedure on_mouse_button_down
+    procedure on_mouse_button_up
+    procedure on_mouse_move
+    procedure on_mouse_hover
+    procedure on_mouse_leave
+
+    -- ud losti od kl vesnice
+    procedure on_key_down
+    procedure on_key_up
+
+    -- ud lost s oknem
+    procedure on_create
+    procedure on_close
+    procedure on_size_changed
+    procedure on_position_changed
+    procedure on_activate (mouse/kbd)
+    procedure on_set_focus
+    procedure on_kill_focus
+    
+    end c_class;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_graphic_resource = extend c_class;
+----------------------------------------------------------------------------------------------------
+
+    end c_graphic_resource;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_device_context = extend c_class;
+----------------------------------------------------------------------------------------------------
+
+    -- kreslen¡
+    procedure draw_line
+    procedure draw_frame
+    procedure draw_text
+    procedure draw_icon
+    procedure draw_bitmap
+    procedure fill_frame
+
+    end c_class;
+
+end protogui;

@@ -1,0 +1,31 @@
+----------------------------------------------------------------------------------------------------
+module cruntime =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /***
+-- *cruntime.h - definitions specific to the target operating system and hardware
+-- *
+-- *       Copyright (c) 1990-2001, Microsoft Corporation. All rights reserved.
+-- *
+-- *Purpose:
+-- *       This header file contains widely used definitions specific to the
+-- *       host operating system and hardware. It is included by every C source
+-- *       and most every other header file.
+-- *
+-- *       [Internal]
+-- *
+-- ****/
+-- #pragma  once
+-- /*
+--  * 386/486
+--  */
+-- #pragma  message ("Machine register set not defined")
+-- /*
+--  * Are the macro definitions below still needed in this file?
+--  */
+
+end cruntime;

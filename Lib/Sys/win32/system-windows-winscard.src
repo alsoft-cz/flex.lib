@@ -1,0 +1,1255 @@
+----------------------------------------------------------------------------------------------------
+module winscard =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,guiddef;
+
+-- /*++
+-- 
+-- Copyright (c) 1996  Microsoft Corporation
+-- 
+-- Module Name:
+-- 
+--     WinSCard
+-- 
+-- Abstract:
+-- 
+--     This header file provides the definitions and symbols necessary for an
+--     Application or Smart Card Service Provider to access the Smartcard
+--     Subsystem.
+-- 
+-- Environment:
+-- 
+--     Win32
+-- 
+-- Notes:
+-- 
+-- --*/
+-- #pragma  once
+-- skip #include <wtypes.h> not found
+#separate winioctl;
+#separate winsmcrd;
+type
+LPCBYTE           = ^BYTE for machine_pointer use true;
+type
+LPCVOID           = ^unchecked for machine_pointer use true;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Service Manager Access Services
+-- 
+--  The following services are used to manage user and terminal contexts for
+--  Smart Cards.
+-- 
+type
+SCARDCONTEXT      = ULONG_PTR;
+type
+PSCARDCONTEXT     = ^SCARDCONTEXT for machine_pointer use true;
+LPSCARDCONTEXT    = ^^SCARDCONTEXT for machine_pointer use true;
+type
+SCARDHANDLE       = ULONG_PTR;
+type
+PSCARDHANDLE      = ^SCARDHANDLE for machine_pointer use true;
+LPSCARDHANDLE     = ^^SCARDHANDLE for machine_pointer use true;
+const
+  SCARD_SCOPE_USER  = 0;
+
+--  database operations are performed within the
+--  domain of the user.
+const
+  SCARD_SCOPE_TERMINAL= 1;
+
+--  and any database operations are performed
+--  within the domain of that terminal. (The
+--  calling application must have appropriate
+--  access permissions for any database actions.)
+const
+  SCARD_SCOPE_SYSTEM= 2;
+
+--  database operations are performed within the
+--  domain of the system. (The calling
+--  application must have appropriate access
+--  permissions for any database actions.)
+type
+t_001=^SCARDCONTEXT ;
+
+SCardEstablishContext = procedure (
+    dwScope         : in DWORD;
+    pvReserved1     : in LPCVOID;
+    pvReserved2     : in LPCVOID;
+    phContext       : out t_001)
+                      return LONG;
+type
+SCardReleaseContext = procedure (
+    hContext        : in SCARDCONTEXT)
+                      return LONG;
+type
+SCardIsValidContext = procedure (
+    hContext        : in SCARDCONTEXT)
+                      return LONG;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Smart Card Database Management Services
+-- 
+--  The following services provide for managing the Smart Card Database.
+-- 
+const
+  SCARD_PROVIDER_PRIMARY= 1;
+
+const
+  SCARD_PROVIDER_CSP= 2;
+
+-- 
+--  Database Reader routines
+-- 
+type
+SCardListReaderGroupsA = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszGroups       : out CHARSTR ;
+    pcchGroups      : in out DWORD )
+                      return LONG;
+type
+SCardListReaderGroupsW = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszGroups       : out WCHARSTR ;
+    pcchGroups      : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardListReaderGroups;
+  SCardListReaderGroupsW 
+#end SCardListReaderGroups;
+#else;
+#template SCardListReaderGroups;
+  SCardListReaderGroupsA 
+#end SCardListReaderGroups;
+#end if;
+
+type
+SCardListReadersA = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszGroups       : in LPCSTR;
+    mszReaders      : out CHARSTR ;
+    pcchReaders     : in out DWORD )
+                      return LONG;
+type
+SCardListReadersW = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszGroups       : in LPCWSTR;
+    mszReaders      : out WCHARSTR ;
+    pcchReaders     : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardListReaders;
+  SCardListReadersW 
+#end SCardListReaders;
+#else;
+#template SCardListReaders;
+  SCardListReadersA 
+#end SCardListReaders;
+#end if;
+
+type
+SCardListCardsA   = procedure (
+    hContext        : in SCARDCONTEXT;
+    pbAtr           : in LPCBYTE;
+    rgquidInterfaces : in LPCGUID;
+    cguidInterfaceCount : in DWORD;
+    mszCards        : out CHARSTR ;
+    pcchCards       : in out DWORD )
+                      return LONG;
+type
+SCardListCardsW   = procedure (
+    hContext        : in SCARDCONTEXT;
+    pbAtr           : in LPCBYTE;
+    rgquidInterfaces : in LPCGUID;
+    cguidInterfaceCount : in DWORD;
+    mszCards        : out WCHARSTR ;
+    pcchCards       : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardListCards;
+  SCardListCardsW 
+#end SCardListCards;
+#else;
+#template SCardListCards;
+  SCardListCardsA 
+#end SCardListCards;
+#end if;
+
+-- 
+--  NOTE: The routine SCardListCards name differs from the PC/SC definition.
+--  It should be:
+-- 
+--  extern WINSCARDAPI LONG WINAPI
+--  SCardListCardTypes(
+--  IN SCARDCONTEXT hContext,
+--  IN LPCBYTE pbAtr,
+--  IN LPCGUID rgquidInterfaces,
+--  IN DWORD cguidInterfaceCount,
+--  OUT LPTSTR mszCards,
+--  IN OUT LPDWORD pcchCards);
+-- 
+--  Here's a work-around MACRO:
+type
+SCardListInterfacesA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCard          : in LPCSTR;
+    pguidInterfaces : out t_GUID ;
+    pcguidInterfaces : in out DWORD )
+                      return LONG;
+type
+SCardListInterfacesW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCard          : in LPCWSTR;
+    pguidInterfaces : out t_GUID ;
+    pcguidInterfaces : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardListInterfaces;
+  SCardListInterfacesW 
+#end SCardListInterfaces;
+#else;
+#template SCardListInterfaces;
+  SCardListInterfacesA 
+#end SCardListInterfaces;
+#end if;
+
+type
+SCardGetProviderIdA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCard          : in LPCSTR;
+    pguidProviderId : out t_GUID )
+                      return LONG;
+type
+SCardGetProviderIdW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCard          : in LPCWSTR;
+    pguidProviderId : out t_GUID )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardGetProviderId;
+  SCardGetProviderIdW 
+#end SCardGetProviderId;
+#else;
+#template SCardGetProviderId;
+  SCardGetProviderIdA 
+#end SCardGetProviderId;
+#end if;
+
+-- 
+--  NOTE: The routine SCardGetProviderId in this implementation uses GUIDs.
+--  The PC/SC definition uses BYTEs.
+-- 
+type
+SCardGetCardTypeProviderNameA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCSTR;
+    dwProviderId    : in DWORD;
+    szProvider      : out CHARSTR ;
+    pcchProvider    : in out DWORD )
+                      return LONG;
+type
+SCardGetCardTypeProviderNameW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCWSTR;
+    dwProviderId    : in DWORD;
+    szProvider      : out WCHARSTR ;
+    pcchProvider    : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardGetCardTypeProviderName;
+  SCardGetCardTypeProviderNameW 
+#end SCardGetCardTypeProviderName;
+#else;
+#template SCardGetCardTypeProviderName;
+  SCardGetCardTypeProviderNameA 
+#end SCardGetCardTypeProviderName;
+#end if;
+
+-- 
+--  NOTE: This routine is an extension to the PC/SC definitions.
+-- 
+-- 
+--  Database Writer routines
+-- 
+type
+SCardIntroduceReaderGroupA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szGroupName     : in LPCSTR)
+                      return LONG;
+type
+SCardIntroduceReaderGroupW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szGroupName     : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardIntroduceReaderGroup;
+  SCardIntroduceReaderGroupW 
+#end SCardIntroduceReaderGroup;
+#else;
+#template SCardIntroduceReaderGroup;
+  SCardIntroduceReaderGroupA 
+#end SCardIntroduceReaderGroup;
+#end if;
+
+type
+SCardForgetReaderGroupA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szGroupName     : in LPCSTR)
+                      return LONG;
+type
+SCardForgetReaderGroupW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szGroupName     : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardForgetReaderGroup;
+  SCardForgetReaderGroupW 
+#end SCardForgetReaderGroup;
+#else;
+#template SCardForgetReaderGroup;
+  SCardForgetReaderGroupA 
+#end SCardForgetReaderGroup;
+#end if;
+
+type
+SCardIntroduceReaderA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCSTR;
+    szDeviceName    : in LPCSTR)
+                      return LONG;
+type
+SCardIntroduceReaderW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCWSTR;
+    szDeviceName    : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardIntroduceReader;
+  SCardIntroduceReaderW 
+#end SCardIntroduceReader;
+#else;
+#template SCardIntroduceReader;
+  SCardIntroduceReaderA 
+#end SCardIntroduceReader;
+#end if;
+
+type
+SCardForgetReaderA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCSTR)
+                      return LONG;
+type
+SCardForgetReaderW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardForgetReader;
+  SCardForgetReaderW 
+#end SCardForgetReader;
+#else;
+#template SCardForgetReader;
+  SCardForgetReaderA 
+#end SCardForgetReader;
+#end if;
+
+type
+SCardAddReaderToGroupA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCSTR;
+    szGroupName     : in LPCSTR)
+                      return LONG;
+type
+SCardAddReaderToGroupW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCWSTR;
+    szGroupName     : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardAddReaderToGroup;
+  SCardAddReaderToGroupW 
+#end SCardAddReaderToGroup;
+#else;
+#template SCardAddReaderToGroup;
+  SCardAddReaderToGroupA 
+#end SCardAddReaderToGroup;
+#end if;
+
+type
+SCardRemoveReaderFromGroupA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCSTR;
+    szGroupName     : in LPCSTR)
+                      return LONG;
+type
+SCardRemoveReaderFromGroupW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReaderName    : in LPCWSTR;
+    szGroupName     : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardRemoveReaderFromGroup;
+  SCardRemoveReaderFromGroupW 
+#end SCardRemoveReaderFromGroup;
+#else;
+#template SCardRemoveReaderFromGroup;
+  SCardRemoveReaderFromGroupA 
+#end SCardRemoveReaderFromGroup;
+#end if;
+
+type
+SCardIntroduceCardTypeA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCSTR;
+    pguidPrimaryProvider : in LPCGUID;
+    rgguidInterfaces : in LPCGUID;
+    dwInterfaceCount : in DWORD;
+    pbAtr           : in LPCBYTE;
+    pbAtrMask       : in LPCBYTE;
+    cbAtrLen        : in DWORD)
+                      return LONG;
+type
+SCardIntroduceCardTypeW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCWSTR;
+    pguidPrimaryProvider : in LPCGUID;
+    rgguidInterfaces : in LPCGUID;
+    dwInterfaceCount : in DWORD;
+    pbAtr           : in LPCBYTE;
+    pbAtrMask       : in LPCBYTE;
+    cbAtrLen        : in DWORD)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardIntroduceCardType;
+  SCardIntroduceCardTypeW 
+#end SCardIntroduceCardType;
+#else;
+#template SCardIntroduceCardType;
+  SCardIntroduceCardTypeA 
+#end SCardIntroduceCardType;
+#end if;
+
+-- 
+--  NOTE: The routine SCardIntroduceCardType's parameters' order differs from
+--  the PC/SC definition. It should be:
+-- 
+--  extern WINSCARDAPI LONG WINAPI
+--  SCardIntroduceCardType(
+--  IN SCARDCONTEXT hContext,
+--  IN LPCTSTR szCardName,
+--  IN LPCBYTE pbAtr,
+--  IN LPCBYTE pbAtrMask,
+--  IN DWORD cbAtrLen,
+--  IN LPCGUID pguidPrimaryProvider,
+--  IN LPCGUID rgguidInterfaces,
+--  IN DWORD dwInterfaceCount);
+-- 
+--  Here's a work-around MACRO:
+type
+SCardSetCardTypeProviderNameA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCSTR;
+    dwProviderId    : in DWORD;
+    szProvider      : in LPCSTR)
+                      return LONG;
+type
+SCardSetCardTypeProviderNameW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCWSTR;
+    dwProviderId    : in DWORD;
+    szProvider      : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardSetCardTypeProviderName;
+  SCardSetCardTypeProviderNameW 
+#end SCardSetCardTypeProviderName;
+#else;
+#template SCardSetCardTypeProviderName;
+  SCardSetCardTypeProviderNameA 
+#end SCardSetCardTypeProviderName;
+#end if;
+
+-- 
+--  NOTE: This routine is an extention to the PC/SC specifications.
+-- 
+type
+SCardForgetCardTypeA = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCSTR)
+                      return LONG;
+type
+SCardForgetCardTypeW = procedure (
+    hContext        : in SCARDCONTEXT;
+    szCardName      : in LPCWSTR)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardForgetCardType;
+  SCardForgetCardTypeW 
+#end SCardForgetCardType;
+#else;
+#template SCardForgetCardType;
+  SCardForgetCardTypeA 
+#end SCardForgetCardType;
+#end if;
+
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Service Manager Support Routines
+-- 
+--  The following services are supplied to simplify the use of the Service
+--  Manager API.
+-- 
+type
+SCardFreeMemory   = procedure (
+    hContext        : in SCARDCONTEXT;
+    pvMem           : in LPCVOID)
+                      return LONG;
+type
+SCardAccessStartedEvent = procedure 
+                      return t_HANDLE;
+type
+SCardReleaseStartedEvent = procedure ;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Reader Services
+-- 
+--  The following services supply means for tracking cards within readers.
+-- 
+type
+  SCARD_READERSTATEA = record
+szReader        : LPCSTR;
+pvUserData      : LPVOID;
+dwCurrentState  : DWORD;
+dwEventState    : DWORD;
+cbAtr           : DWORD;
+rgbAtr          : array 0..35 of BYTE;
+  end record;
+  PSCARD_READERSTATEA = ^SCARD_READERSTATEA;
+  LPSCARD_READERSTATEA = ^SCARD_READERSTATEA;
+
+type
+  SCARD_READERSTATEW = record
+szReader        : LPCWSTR;
+pvUserData      : LPVOID;
+dwCurrentState  : DWORD;
+dwEventState    : DWORD;
+cbAtr           : DWORD;
+rgbAtr          : array 0..35 of BYTE;
+  end record;
+  PSCARD_READERSTATEW = ^SCARD_READERSTATEW;
+  LPSCARD_READERSTATEW = ^SCARD_READERSTATEW;
+
+#if #declared UNICODE; then;
+type
+SCARD_READERSTATE = SCARD_READERSTATEW;
+type
+PSCARD_READERSTATE = PSCARD_READERSTATEW;
+type
+LPSCARD_READERSTATE = LPSCARD_READERSTATEW;
+#else;
+type
+SCARD_READERSTATE = SCARD_READERSTATEA;
+type
+PSCARD_READERSTATE = PSCARD_READERSTATEA;
+type
+LPSCARD_READERSTATE = LPSCARD_READERSTATEA;
+#end if;
+
+--  Backwards compatibility macros
+const
+  SCARD_STATE_UNAWARE= $00;
+
+--  current state, and would like to
+--  know. The use of this value
+--  results in an immediate return
+--  from state transition monitoring
+--  services. This is represented by
+--  all bits set to zero.
+const
+  SCARD_STATE_IGNORE= $01;
+
+--  this reader be ignored. No other
+--  bits will be set.
+const
+  SCARD_STATE_CHANGED= $02;
+
+--  difference between the state
+--  believed by the application, and
+--  the state known by the Service
+--  Manager. When this bit is set,
+--  the application may assume a
+--  significant state change has
+--  occurred on this reader.
+const
+  SCARD_STATE_UNKNOWN= $04;
+
+--  reader name is not recognized by
+--  the Service Manager. If this bit
+--  is set, then SCARD_STATE_CHANGED
+--  and SCARD_STATE_IGNORE will also
+--  be set.
+const
+  SCARD_STATE_UNAVAILABLE= $08;
+
+--  state of this reader is not
+--  available. If this bit is set,
+--  then all the following bits are
+--  clear.
+const
+  SCARD_STATE_EMPTY = $10;
+
+--  card in the reader. If this bit
+--  is set, all the following bits
+--  will be clear.
+const
+  SCARD_STATE_PRESENT= $20;
+
+--  in the reader.
+const
+  SCARD_STATE_ATRMATCH= $40;
+
+--  in the reader with an ATR
+--  matching one of the target cards.
+--  If this bit is set,
+--  SCARD_STATE_PRESENT will also be
+--  set. This bit is only returned
+--  on the SCardLocateCard() service.
+const
+  SCARD_STATE_EXCLUSIVE= $80;
+
+--  reader is allocated for exclusive
+--  use by another application. If
+--  this bit is set,
+--  SCARD_STATE_PRESENT will also be
+--  set.
+const
+  SCARD_STATE_INUSE = $0100;
+
+--  reader is in use by one or more
+--  other applications, but may be
+--  connected to in shared mode. If
+--  this bit is set,
+--  SCARD_STATE_PRESENT will also be
+--  set.
+const
+  SCARD_STATE_MUTE  = $0200;
+
+--  reader is unresponsive or not
+--  supported by the reader or
+--  software.
+const
+  SCARD_STATE_UNPOWERED= $0400;
+
+--  reader has not been powered up.
+type
+SCardLocateCardsA = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszCards        : in LPCSTR;
+    rgReaderStates  : in out SCARD_READERSTATEA;
+    cReaders        : in DWORD)
+                      return LONG;
+type
+SCardLocateCardsW = procedure (
+    hContext        : in SCARDCONTEXT;
+    mszCards        : in LPCWSTR;
+    rgReaderStates  : in out SCARD_READERSTATEW;
+    cReaders        : in DWORD)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardLocateCards;
+  SCardLocateCardsW 
+#end SCardLocateCards;
+#else;
+#template SCardLocateCards;
+  SCardLocateCardsA 
+#end SCardLocateCards;
+#end if;
+
+type
+  _SCARD_ATRMASK    = record
+cbAtr           : DWORD;
+rgbAtr          : array 0..35 of BYTE;
+rgbMask         : array 0..35 of BYTE;
+  end record;
+  SCARD_ATRMASK     = _SCARD_ATRMASK;
+  PSCARD_ATRMASK    = ^_SCARD_ATRMASK;
+  LPSCARD_ATRMASK   = ^_SCARD_ATRMASK;
+
+type
+SCardLocateCardsByATRA = procedure (
+    hContext        : in SCARDCONTEXT;
+    rgAtrMasks      : in LPSCARD_ATRMASK;
+    cAtrs           : in DWORD;
+    rgReaderStates  : in out SCARD_READERSTATEA;
+    cReaders        : in DWORD)
+                      return LONG;
+type
+SCardLocateCardsByATRW = procedure (
+    hContext        : in SCARDCONTEXT;
+    rgAtrMasks      : in LPSCARD_ATRMASK;
+    cAtrs           : in DWORD;
+    rgReaderStates  : in out SCARD_READERSTATEW;
+    cReaders        : in DWORD)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardLocateCardsByATR;
+  SCardLocateCardsByATRW 
+#end SCardLocateCardsByATR;
+#else;
+#template SCardLocateCardsByATR;
+  SCardLocateCardsByATRA 
+#end SCardLocateCardsByATR;
+#end if;
+
+type
+SCardGetStatusChangeA = procedure (
+    hContext        : in SCARDCONTEXT;
+    dwTimeout       : in DWORD;
+    rgReaderStates  : in out SCARD_READERSTATEA;
+    cReaders        : in DWORD)
+                      return LONG;
+type
+SCardGetStatusChangeW = procedure (
+    hContext        : in SCARDCONTEXT;
+    dwTimeout       : in DWORD;
+    rgReaderStates  : in out SCARD_READERSTATEW;
+    cReaders        : in DWORD)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardGetStatusChange;
+  SCardGetStatusChangeW 
+#end SCardGetStatusChange;
+#else;
+#template SCardGetStatusChange;
+  SCardGetStatusChangeA 
+#end SCardGetStatusChange;
+#end if;
+
+type
+SCardCancel       = procedure (
+    hContext        : in SCARDCONTEXT)
+                      return LONG;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Card/Reader Communication Services
+-- 
+--  The following services provide means for communication with the card.
+-- 
+const
+  SCARD_SHARE_EXCLUSIVE= 1;
+
+--  card with other applications.
+const
+  SCARD_SHARE_SHARED= 2;
+
+--  card with other applications.
+const
+  SCARD_SHARE_DIRECT= 3;
+
+--  the reader, so it is not available to other
+--  applications.
+const
+  SCARD_LEAVE_CARD  = 0;
+
+const
+  SCARD_RESET_CARD  = 1;
+
+const
+  SCARD_UNPOWER_CARD= 2;
+
+const
+  SCARD_EJECT_CARD  = 3;
+
+type
+t_002=^SCARDHANDLE ;
+
+SCardConnectA     = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReader        : in LPCSTR;
+    dwShareMode     : in DWORD;
+    dwPreferredProtocols : in DWORD;
+    phCard          : out t_002;
+    pdwActiveProtocol : out DWORD )
+                      return LONG;
+type
+t_003=^SCARDHANDLE ;
+
+SCardConnectW     = procedure (
+    hContext        : in SCARDCONTEXT;
+    szReader        : in LPCWSTR;
+    dwShareMode     : in DWORD;
+    dwPreferredProtocols : in DWORD;
+    phCard          : out t_003;
+    pdwActiveProtocol : out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardConnect;
+  SCardConnectW 
+#end SCardConnect;
+#else;
+#template SCardConnect;
+  SCardConnectA 
+#end SCardConnect;
+#end if;
+
+type
+SCardReconnect    = procedure (
+    hCard           : in SCARDHANDLE;
+    dwShareMode     : in DWORD;
+    dwPreferredProtocols : in DWORD;
+    dwInitialization : in DWORD;
+    pdwActiveProtocol : out DWORD )
+                      return LONG;
+type
+SCardDisconnect   = procedure (
+    hCard           : in SCARDHANDLE;
+    dwDisposition   : in DWORD)
+                      return LONG;
+type
+SCardBeginTransaction = procedure (
+    hCard           : in SCARDHANDLE)
+                      return LONG;
+type
+SCardEndTransaction = procedure (
+    hCard           : in SCARDHANDLE;
+    dwDisposition   : in DWORD)
+                      return LONG;
+type
+SCardCancelTransaction = procedure (
+    hCard           : in SCARDHANDLE)
+                      return LONG;
+-- 
+--  NOTE: This call corresponds to the PC/SC SCARDCOMM::Cancel routine,
+--  terminating a blocked SCardBeginTransaction service.
+-- 
+type
+SCardState        = procedure (
+    hCard           : in SCARDHANDLE;
+    pdwState        : out DWORD ;
+    pdwProtocol     : out DWORD ;
+    pbAtr           : out BYTE ;
+    pcbAtrLen       : in out DWORD )
+                      return LONG;
+-- 
+--  NOTE: SCardState is an obsolete routine. PC/SC has replaced it with
+--  SCardStatus.
+-- 
+type
+SCardStatusA      = procedure (
+    hCard           : in SCARDHANDLE;
+    szReaderName    : out CHARSTR ;
+    pcchReaderLen   : in out DWORD ;
+    pdwState        : out DWORD ;
+    pdwProtocol     : out DWORD ;
+    pbAtr           : out BYTE ;
+    pcbAtrLen       : in out DWORD )
+                      return LONG;
+type
+SCardStatusW      = procedure (
+    hCard           : in SCARDHANDLE;
+    szReaderName    : out WCHARSTR ;
+    pcchReaderLen   : in out DWORD ;
+    pdwState        : out DWORD ;
+    pdwProtocol     : out DWORD ;
+    pbAtr           : out BYTE ;
+    pcbAtrLen       : in out DWORD )
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardStatus;
+  SCardStatusW 
+#end SCardStatus;
+#else;
+#template SCardStatus;
+  SCardStatusA 
+#end SCardStatus;
+#end if;
+
+type
+SCardTransmit     = procedure (
+    hCard           : in SCARDHANDLE;
+    pioSendPci      : in winsmcrd.LPCSCARD_IO_REQUEST;
+    pbSendBuffer    : in LPCBYTE;
+    cbSendLength    : in DWORD;
+    pioRecvPci      : in out {!}winsmcrd.LPSCARD_IO_REQUEST;
+    pbRecvBuffer    : out BYTE ;
+    pcbRecvLength   : in out DWORD )
+                      return LONG;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Reader Control Routines
+-- 
+--  The following services provide for direct, low-level manipulation of the
+--  reader by the calling application allowing it control over the
+--  attributes of the communications with the card.
+-- 
+type
+SCardControl      = procedure (
+    hCard           : in SCARDHANDLE;
+    dwControlCode   : in DWORD;
+    lpInBuffer      : in LPCVOID;
+    nInBufferSize   : in DWORD;
+    lpOutBuffer     : out unchecked ;
+    nOutBufferSize  : in DWORD;
+    lpBytesReturned : out DWORD )
+                      return LONG;
+type
+SCardGetAttrib    = procedure (
+    hCard           : in SCARDHANDLE;
+    dwAttrId        : in DWORD;
+    pbAttr          : out BYTE ;
+    pcbAttrLen      : in out DWORD )
+                      return LONG;
+-- 
+--  NOTE: The routine SCardGetAttrib's name differs from the PC/SC definition.
+--  It should be:
+-- 
+--  extern WINSCARDAPI LONG WINAPI
+--  SCardGetReaderCapabilities(
+--  IN SCARDHANDLE hCard,
+--  IN DWORD dwTag,
+--  OUT LPBYTE pbAttr,
+--  IN OUT LPDWORD pcbAttrLen);
+-- 
+--  Here's a work-around MACRO:
+type
+SCardSetAttrib    = procedure (
+    hCard           : in SCARDHANDLE;
+    dwAttrId        : in DWORD;
+    pbAttr          : in LPCBYTE;
+    cbAttrLen       : in DWORD)
+                      return LONG;
+-- 
+--  NOTE: The routine SCardSetAttrib's name differs from the PC/SC definition.
+--  It should be:
+-- 
+--  extern WINSCARDAPI LONG WINAPI
+--  SCardSetReaderCapabilities(
+--  IN SCARDHANDLE hCard,
+--  IN DWORD dwTag,
+--  OUT LPBYTE pbAttr,
+--  IN OUT LPDWORD pcbAttrLen);
+-- 
+--  Here's a work-around MACRO:
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Smart Card Dialog definitions
+-- 
+--  The following section contains structures and exported function
+--  declarations for the Smart Card Common Dialog dialog.
+-- 
+--  Defined constants
+--  Flags
+const
+  SC_DLG_MINIMAL_UI = $01;
+
+const
+  SC_DLG_NO_UI      = $02;
+
+const
+  SC_DLG_FORCE_UI   = $04;
+
+const
+  SCERR_NOCARDNAME  = $4000;
+
+const
+  SCERR_NOGUIDS     = $8000;
+
+type
+LPOCNCONNPROCA    = ^procedure (
+    _001            : in SCARDCONTEXT;
+    _002            : in LPSTR;
+    _003            : in LPSTR;
+    _004            : in PVOID)
+                      return SCARDHANDLE for machine_pointer use true;
+type
+LPOCNCONNPROCW    = ^procedure (
+    _001            : in SCARDCONTEXT;
+    _002            : in LPWSTR;
+    _003            : in LPWSTR;
+    _004            : in PVOID)
+                      return SCARDHANDLE for machine_pointer use true;
+#if #declared UNICODE; then;
+#template LPOCNCONNPROC;
+  LPOCNCONNPROCW 
+#end LPOCNCONNPROC;
+#else;
+#template LPOCNCONNPROC;
+  LPOCNCONNPROCA 
+#end LPOCNCONNPROC;
+#end if;
+
+type
+LPOCNCHKPROC      = ^procedure (
+    _001            : in SCARDCONTEXT;
+    _002            : in SCARDHANDLE;
+    _003            : in PVOID)
+                      return BOOL for machine_pointer use true;
+type
+LPOCNDSCPROC      = ^procedure (
+    _001            : in SCARDCONTEXT;
+    _002            : in SCARDHANDLE;
+    _003            : in PVOID) for machine_pointer use true;
+-- 
+--  OPENCARD_SEARCH_CRITERIA: In order to specify a user-extended search,
+--  lpfnCheck must not be NULL. Moreover, the connection to be made to the
+--  card before performing the callback must be indicated by either providing
+--  lpfnConnect and lpfnDisconnect OR by setting dwShareMode.
+--  If both the connection callbacks and dwShareMode are non-NULL, the callbacks
+--  will be used.
+-- 
+type
+  OPENCARD_SEARCH_CRITERIAA = record
+dwStructSize    : DWORD;
+lpstrGroupNames : LPSTR;
+nMaxGroupNames  : DWORD;
+rgguidInterfaces : LPCGUID;
+cguidInterfaces : DWORD;
+lpstrCardNames  : LPSTR;
+nMaxCardNames   : DWORD;
+lpfnCheck       : LPOCNCHKPROC;
+lpfnConnect     : LPOCNCONNPROCA;
+lpfnDisconnect  : LPOCNDSCPROC;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+  end record;
+  POPENCARD_SEARCH_CRITERIAA = ^OPENCARD_SEARCH_CRITERIAA;
+  LPOPENCARD_SEARCH_CRITERIAA = ^OPENCARD_SEARCH_CRITERIAA;
+
+type
+  OPENCARD_SEARCH_CRITERIAW = record
+dwStructSize    : DWORD;
+lpstrGroupNames : LPWSTR;
+nMaxGroupNames  : DWORD;
+rgguidInterfaces : LPCGUID;
+cguidInterfaces : DWORD;
+lpstrCardNames  : LPWSTR;
+nMaxCardNames   : DWORD;
+lpfnCheck       : LPOCNCHKPROC;
+lpfnConnect     : LPOCNCONNPROCW;
+lpfnDisconnect  : LPOCNDSCPROC;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+  end record;
+  POPENCARD_SEARCH_CRITERIAW = ^OPENCARD_SEARCH_CRITERIAW;
+  LPOPENCARD_SEARCH_CRITERIAW = ^OPENCARD_SEARCH_CRITERIAW;
+
+#if #declared UNICODE; then;
+type
+OPENCARD_SEARCH_CRITERIA = OPENCARD_SEARCH_CRITERIAW;
+type
+POPENCARD_SEARCH_CRITERIA = POPENCARD_SEARCH_CRITERIAW;
+type
+LPOPENCARD_SEARCH_CRITERIA = LPOPENCARD_SEARCH_CRITERIAW;
+#else;
+type
+OPENCARD_SEARCH_CRITERIA = OPENCARD_SEARCH_CRITERIAA;
+type
+POPENCARD_SEARCH_CRITERIA = POPENCARD_SEARCH_CRITERIAA;
+type
+LPOPENCARD_SEARCH_CRITERIA = LPOPENCARD_SEARCH_CRITERIAA;
+#end if;
+
+-- 
+--  OPENCARDNAME_EX: used by SCardUIDlgSelectCard; replaces obsolete OPENCARDNAME
+-- 
+type
+  OPENCARDNAME_EXA  = record
+dwStructSize    : DWORD;
+hSCardContext   : SCARDCONTEXT;
+hwndOwner       : t_HWND;
+dwFlags         : DWORD;
+lpstrTitle      : LPCSTR;
+lpstrSearchDesc : LPCSTR;
+hIcon           : t_HICON;
+pOpenCardSearchCriteria : POPENCARD_SEARCH_CRITERIAA;
+lpfnConnect     : LPOCNCONNPROCA;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+lpstrRdr        : LPSTR;
+nMaxRdr         : DWORD;
+lpstrCard       : LPSTR;
+nMaxCard        : DWORD;
+dwActiveProtocol : DWORD;
+hCardHandle     : SCARDHANDLE;
+  end record;
+  POPENCARDNAME_EXA = ^OPENCARDNAME_EXA;
+  LPOPENCARDNAME_EXA = ^OPENCARDNAME_EXA;
+
+type
+  OPENCARDNAME_EXW  = record
+dwStructSize    : DWORD;
+hSCardContext   : SCARDCONTEXT;
+hwndOwner       : t_HWND;
+dwFlags         : DWORD;
+lpstrTitle      : LPCWSTR;
+lpstrSearchDesc : LPCWSTR;
+hIcon           : t_HICON;
+pOpenCardSearchCriteria : POPENCARD_SEARCH_CRITERIAW;
+lpfnConnect     : LPOCNCONNPROCW;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+lpstrRdr        : LPWSTR;
+nMaxRdr         : DWORD;
+lpstrCard       : LPWSTR;
+nMaxCard        : DWORD;
+dwActiveProtocol : DWORD;
+hCardHandle     : SCARDHANDLE;
+  end record;
+  POPENCARDNAME_EXW = ^OPENCARDNAME_EXW;
+  LPOPENCARDNAME_EXW = ^OPENCARDNAME_EXW;
+
+#if #declared UNICODE; then;
+type
+OPENCARDNAME_EX   = OPENCARDNAME_EXW;
+type
+POPENCARDNAME_EX  = POPENCARDNAME_EXW;
+type
+LPOPENCARDNAME_EX = LPOPENCARDNAME_EXW;
+#else;
+type
+OPENCARDNAME_EX   = OPENCARDNAME_EXA;
+type
+POPENCARDNAME_EX  = POPENCARDNAME_EXA;
+type
+LPOPENCARDNAME_EX = LPOPENCARDNAME_EXA;
+#end if;
+
+-- 
+--  SCardUIDlgSelectCard replaces GetOpenCardName
+-- 
+type
+SCardUIDlgSelectCardA = procedure (
+    _001            : LPOPENCARDNAME_EXA)
+                      return LONG;
+type
+SCardUIDlgSelectCardW = procedure (
+    _001            : LPOPENCARDNAME_EXW)
+                      return LONG;
+#if #declared UNICODE; then;
+#template SCardUIDlgSelectCard;
+  SCardUIDlgSelectCardW 
+#end SCardUIDlgSelectCard;
+#else;
+#template SCardUIDlgSelectCard;
+  SCardUIDlgSelectCardA 
+#end SCardUIDlgSelectCard;
+#end if;
+
+-- 
+--  "Smart Card Common Dialog" definitions for backwards compatibility
+--  with the Smart Card Base Services SDK version 1.0
+-- 
+type
+  OPENCARDNAMEA     = record
+dwStructSize    : DWORD;
+hwndOwner       : t_HWND;
+hSCardContext   : SCARDCONTEXT;
+lpstrGroupNames : LPSTR;
+nMaxGroupNames  : DWORD;
+lpstrCardNames  : LPSTR;
+nMaxCardNames   : DWORD;
+rgguidInterfaces : LPCGUID;
+cguidInterfaces : DWORD;
+lpstrRdr        : LPSTR;
+nMaxRdr         : DWORD;
+lpstrCard       : LPSTR;
+nMaxCard        : DWORD;
+lpstrTitle      : LPCSTR;
+dwFlags         : DWORD;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+dwActiveProtocol : DWORD;
+lpfnConnect     : LPOCNCONNPROCA;
+lpfnCheck       : LPOCNCHKPROC;
+lpfnDisconnect  : LPOCNDSCPROC;
+hCardHandle     : SCARDHANDLE;
+  end record;
+  POPENCARDNAMEA    = ^OPENCARDNAMEA;
+  LPOPENCARDNAMEA   = ^OPENCARDNAMEA;
+
+type
+  OPENCARDNAMEW     = record
+dwStructSize    : DWORD;
+hwndOwner       : t_HWND;
+hSCardContext   : SCARDCONTEXT;
+lpstrGroupNames : LPWSTR;
+nMaxGroupNames  : DWORD;
+lpstrCardNames  : LPWSTR;
+nMaxCardNames   : DWORD;
+rgguidInterfaces : LPCGUID;
+cguidInterfaces : DWORD;
+lpstrRdr        : LPWSTR;
+nMaxRdr         : DWORD;
+lpstrCard       : LPWSTR;
+nMaxCard        : DWORD;
+lpstrTitle      : LPCWSTR;
+dwFlags         : DWORD;
+pvUserData      : LPVOID;
+dwShareMode     : DWORD;
+dwPreferredProtocols : DWORD;
+dwActiveProtocol : DWORD;
+lpfnConnect     : LPOCNCONNPROCW;
+lpfnCheck       : LPOCNCHKPROC;
+lpfnDisconnect  : LPOCNDSCPROC;
+hCardHandle     : SCARDHANDLE;
+  end record;
+  POPENCARDNAMEW    = ^OPENCARDNAMEW;
+  LPOPENCARDNAMEW   = ^OPENCARDNAMEW;
+
+#if #declared UNICODE; then;
+type
+OPENCARDNAME      = OPENCARDNAMEW;
+type
+POPENCARDNAME     = POPENCARDNAMEW;
+type
+LPOPENCARDNAME    = LPOPENCARDNAMEW;
+#else;
+type
+OPENCARDNAME      = OPENCARDNAMEA;
+type
+POPENCARDNAME     = POPENCARDNAMEA;
+type
+LPOPENCARDNAME    = LPOPENCARDNAMEA;
+#end if;
+
+--  Backwards compatibility macros
+type
+GetOpenCardNameA  = procedure (
+    _001            : LPOPENCARDNAMEA)
+                      return LONG;
+type
+GetOpenCardNameW  = procedure (
+    _001            : LPOPENCARDNAMEW)
+                      return LONG;
+#if #declared UNICODE; then;
+#template GetOpenCardName;
+  GetOpenCardNameW 
+#end GetOpenCardName;
+#else;
+#template GetOpenCardName;
+  GetOpenCardNameA 
+#end GetOpenCardName;
+#end if;
+
+type
+SCardDlgExtendedError = procedure 
+                      return LONG;
+
+end winscard;

@@ -1,0 +1,40 @@
+#option warning(all,false);
+#option hint(all,false);
+
+program test_reader =
+
+with
+  standard,
+  standard.files,
+  standard.streams,
+  standard.characters,
+  standard.console;
+
+
+var
+  decoder          : aliased c_character_decoder_ascii;  -- dekoder - ur‡uje k¢dovou str nku vstupn¡ho souboru
+  reader           : aliased c_stream_text_reader;       -- ‡ten ©
+  stream           : aliased c_file_input_stream;        -- vstupn¡ stream
+  line             : t_char32str;                        -- buffer na © dku
+  treader          : p_text_reader;                      -- ‡ten ©
+  res              : t_logical;                          -- p©¡znak, T-u‘ nejsou ‘ dn  dal¨¡ data
+
+begin
+  -- otev©¡t soubor pro ‡ten¡
+  stream.open('test_reader.txt');
+
+  -- propojit
+  reader.init_text_reader(^stream,^decoder);
+
+  -- z¡skat interface [c_text_reader]
+  treader:=^c_text_reader:(reader);
+
+  -- dokud je co ‡¡st
+  loop
+    -- p©e‡¡st © dku
+    res:=treader^.read_line(line);
+
+    -- vypsat © dkyu na konzoli
+    write_line(line);
+    until res;
+  end test_reader;

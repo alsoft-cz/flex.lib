@@ -1,0 +1,453 @@
+{%OFF}
+
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+--
+-- h2flex = pro prevod headeru z C[++] do Flexu 4.0
+--
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+--
+-- Postup:
+--
+-- 1. umistit hlavickove soubory .h do adresare config:header_path
+--
+-- 2. umistit knihovny .lib do adresare config:library_path
+--
+-- 3. umistit dumpbin.exe, link.exe a mspdb60.dll do adresare config:program_files
+--
+----------------------------------------------------------------------------------------------------
+--
+-- Zname problemy:
+-- 1. Vzhledem k narocnosti projektu (a zpracovavani vnorenych headeru) je potreba mit OfficeLine
+--    prelozen s nasledujicimi upravami:
+--    t_def.pas:235 stkmaxsize   = 1024*1024;
+--    ,kter‚ jsou na direktivu MEGASTACK.
+--
+-- 2. Az to bude Flex umet je potreba v h2flex2:p_struct zverejnit 'for instance_alignment use true'
+--    dtto s #pragma convention(:base,system); pro typ procedure
+--
+----------------------------------------------------------------------------------------------------
+--
+-- Mozne problemy:
+--
+-- 1. Mejme nasledujici kod
+--
+--    #ifdef IA32
+--    #define MAXBITS 32
+--    #include <poppack.h>
+--
+--    ...
+--
+--    #ifdef IA64
+--    #define MAXBITS 64
+--    #include <poppack.h>
+--
+--    pak pokud se MAXBITS pouziva v <poppack.h> dojde k chybnemu zpracovani souboru nebot kazdy
+--    header se zpracovava jen jednou
+--
+----------------------------------------------------------------------------------------------------
+
+#include 'warning.src';
+
+define logmode : enum log_single; log_multi; end enum:=log_single;
+
+define pavel : boolean := true;
+-- define lstr_debug : boolean := true;
+
+program h2flex =
+
+with
+  system,dir,str,log,filedef,files,datetime,num,txtfiles,lstr,
+  debug,h2debug,
+  h2def,h2config,h2flex1,h2util,h2flex2,h2stream,h2parser;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure make_lib_export (
+            inname : str255;                     -- knihovni soubor .LIB
+           outname : str255;                     -- exportni soubor procedur .EXP
+            bchyba : ref boolean)=
+-- Vytvori seznam procedur v exportnim souboru
+----------------------------------------------------------------------------------------------------
+var
+  exitcode         : integer;
+  command          : str255;
+  parameter        : str255;
+
+begin
+  -- inicializace
+  bchyba:=true;
+  wr({MSG=}000028,lc_debug,formats('Analyza procedur v knihovne %1',outname));
+
+  command:=pathfile(program_files,'dumpbin.exe');
+  parameter:='/exports /out:' & outname & ' "' & inname & '"';
+
+  -- spustit externi dumpbin.exe /exports /out:library_file.exp library_file.lib
+  exec(command,parameter,true,exitcode,bchyba);
+  if bchyba or exitcode<>0 then
+    return;
+    end if;
+
+  bchyba:=false;
+  end make_lib_export;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure read_lib_export (
+          filename : str255;                     -- exportni soubor procedur
+          proclist : ref tproclist;
+            bchyba : ref boolean) =
+-- Nacte seznam procedur z exportniho souboru
+----------------------------------------------------------------------------------------------------
+var
+  infile           : file;
+  inline           : str255;
+  libname          : str255; 
+  procname         : str255; 
+  bchyba2          : boolean;
+
+begin
+  -- inicializace
+  bchyba:=true;
+  wr({MSG=}000029,lc_debug,formats('Nacteni procedur knihovny %1',filename));
+
+  -- zjistit nazev DLL knihovny
+  libname:=filename;
+  while pos('\',libname)>0 loop
+    libname:=copy(libname,pos('\',libname)+1,255);
+    end loop;
+  if pos('.',libname)>0 then
+    libname:=copy(libname,1,pos('.',libname)-1);
+    end if;
+  libname & '.dll';
+
+  -- otevrit soubor
+  finit(infile,filename);
+  fopen(infile,fmoder);
+  if fgetres(infile)<>f_ok then
+    return;
+    end if;
+  txtopen(infile,4096,bchyba2);
+  if bchyba2 then
+    return;
+    end if;
+
+  -- a ted cist az do konce souboru
+  while not txteof(infile) loop
+    -- nacist radek
+    txtread(infile,inline);
+
+    -- odstranit mezery
+    inline:=trimstr(inline);
+    -- odstranit cislo (ordinalni cislo funkce v knihovne)
+    while inline[1] in ['0','1','2','3','4','5','6','7','8','9'] loop
+      inline:=copy(inline,2,255);
+      end loop;
+    -- odstranit mezery
+    inline:=trimstr(inline);
+
+    -- jednoduche rozeznavani zajimavych radku
+    if inline:length>0 and then inline[1]='_' then
+      -- odstranit nepotrebne symboly
+      procname:=copy(inline,2,pos('@',inline)-2);
+
+      -- a zaradit do seznamu
+      proc_add(proclist,procname,libname);
+      end if;
+    end loop;
+
+  -- uzavrit soubor
+  txtclose(infile);
+  fclose(infile);
+
+  -- takze vse dopadlo v poradku
+  bchyba:=false;
+  end read_lib_export;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure dofile ( filename : str255 ) =
+-- zpracovani jednoho nalezeneho souboru
+----------------------------------------------------------------------------------------------------
+var
+  bchyba           : boolean;
+  tempfile         : file;
+  modulename       : str255;
+  istream          : tstream;                    -- zpracovavany stream vstupni
+  ostream          : tstream;                    -- vytvareny stream vystupni
+  dirinfo          : searchrec;
+  dirfound         : longint;
+  listfile         : file;
+  filename2        : str255;                     -- skutecne jmeno vystupniho modulu
+  optcounter       : longint;                    -- pocet provedenych optimalizaci
+  temp_name        : str255;
+  filename3        : str255;
+
+begin
+  -- zjistit nazev modulu
+  filename:=lowcasestr(filename);
+  modulename:=getfilename(filename);
+  module_path:=modulename;
+
+  --------------------------------------------------------------------------------------------------
+  -- phase 1
+  --------------------------------------------------------------------------------------------------
+  if phase_1 in phase then
+    if verbose_mode then
+      wr({MSG=}000030,lc_debug,'---===------===------===--- phase 1 ---===------===------===---');
+      end if;
+
+    -- zaradit do seznamu soubor z konfigurace
+    proc_add(header_list,modulename,modulename);
+
+    -- zpracovani preprocesorem
+    -- vytvori seznam zpracovanych souboru filelist z nich kazdy obsahuje vlastni stream
+    h2flex1.dofile(filename,bchyba);
+    if bchyba then
+      wr({MSG=}000031,lc_error,formats('Chyba pri zpracovava souboru %1',filename));
+      return;
+      end if;
+    end if;
+
+  if phase_1 in phase and phase_2 in phase then
+    wr({MSG=}000032,lc_debug,fillstr('-',60));
+
+    write2('------------------------- -------------------------');
+    write2('                                                   ');
+    write2('                   F  A  Z  E  2                   ');
+    write2('                                                   ');
+    write2('------------------------- -------------------------');
+    end if;
+
+  --------------------------------------------------------------------------------------------------
+  -- ulozeni zpracovani phase 1
+  --------------------------------------------------------------------------------------------------
+  if phase_1 in phase then
+    -- vytvorit soubor se seznamem
+    finit(listfile,pathfile(work_path,getfilename(header_file) & list_ext));
+    fcreate(listfile,fmodew);
+    if fgetres(listfile)<>f_ok then
+      wr({MSG=}000033,lc_error,formats('Chyba pri vytvareni souboru %1',getfilename(header_file) & list_ext));
+      raise internal_error;
+      end if;
+    txtopen(listfile,4096,bchyba);
+
+    filename:='';
+    while flist_next(dofiles,filename,istream) loop
+      -- zjistit skutecne jmeno
+      filename3:length:=0;
+      if not proc_find(header_list,getfilename(filename),filename3) then
+        wr({MSG=}000034,lc_error,formats('Nepodarilo se urcit jmeno pro soubor %1',filename));
+        raise internal_error;
+        end if;
+
+      -- poznamenani do seznamu
+      txtwrite(listfile,filename3);
+      if fgetres(listfile)<>f_ok then
+        wr({MSG=}000035,lc_error,formats('Chyba pri vytvareni souboru %1',getfilename(header_file) & list_ext));
+        raise internal_error;
+        end if;
+      end loop;
+
+    -- zavrit soubor se seznamem
+    txtflush(listfile);
+    txtclose(listfile);
+    fclose(listfile);
+    if fgetres(listfile)<>f_ok then
+      wr({MSG=}000036,lc_error,formats('Chyba pri vytvareni souboru %1',getfilename(header_file) & list_ext));
+      raise internal_error;
+      end if;
+    wr({MSG=}000037,lc_debug,formats('Ulozen seznam do souboru %1',getfilename(header_file) & list_ext));
+    end if;
+
+  --------------------------------------------------------------------------------------------------
+  -- phase 2
+  --------------------------------------------------------------------------------------------------
+  if phase_2 in phase then
+    if verbose_mode then
+      wr({MSG=}000038,lc_debug,'---===------===------===--- phase 2 ---===------===------===---');
+      end if;
+    end if;
+
+  --------------------------------------------------------------------------------------------------
+  -- nacteni zpracovani phase 2
+  --------------------------------------------------------------------------------------------------
+  if phase=tphases:[phase_2] then
+    -- otevrit seznam souboru
+    finit(listfile,pathfile(work_path,getfilename(header_file) & list_ext));
+    fopen(listfile,fmoder);
+    if fgetres(listfile)<>f_ok then
+      wr({MSG=}000039,lc_error,formats('Chyba pri otevirani souboru %1',getfilename(header_file) & list_ext));
+      raise internal_error;
+      end if;
+    txtopen(listfile,4096,bchyba);
+
+    while not txteof(listfile) loop
+      txtread(listfile,filename2);
+      if fgetres(listfile)<>f_ok then
+        wr({MSG=}000040,lc_error,formats('Chyba pri cteni souboru %1',getfilename(header_file) & list_ext));
+        raise internal_error;
+        end if;
+
+      if filename2:length>0 then
+        -- zaradit soubor do seznamu
+        flist_add(dofiles,getsimplename(filename2));
+
+        -- urcit jmeno modulu (za posledni pomlckou)
+        temp_name:=getsimplename(filename2);
+        proc_add(header_list,temp_name,filename2);
+
+        -- nacist soubor
+        load_stream(makefilename(filename2,work_path,phase_ext),istream);
+        flist_change(dofiles,getsimplename(filename2),istream);
+        end if;
+      end loop;
+
+    -- zavrit seznam souboru
+    txtclose(listfile);
+    fclose(listfile);
+    if fgetres(listfile)<>f_ok then
+      wr({MSG=}000041,lc_error,formats('Chyba pri vytvareni souboru %1',getfilename(header_file) & list_ext));
+      raise internal_error;
+      end if;
+
+    wr({MSG=}000042,lc_debug,'Dokonceno nacteni phase 1');
+    end if;
+
+  --------------------------------------------------------------------------------------------------
+  -- vlastni zpracovani phase 2
+  --------------------------------------------------------------------------------------------------
+  if phase_2 in phase then
+    -- pro vsechny streamy v seznamu
+    filename:='';
+    while flist_next(dofiles,filename,istream) loop
+      -- vlastni zpracovani phase 2
+      h2flex2.dofile(istream,ostream,bchyba);
+      if bchyba then
+        wr({MSG=}000043,lc_error,formats('Chyba pri zpracovava souboru %1',filename));
+        return;
+        end if;
+      free_stream(istream);
+
+      -- optimalizace #if #endif
+      loop
+        optimalize_stream(ostream,optcounter);
+        break when optcounter=0;
+        end loop;
+
+      -- zjisteni skutecneho nazvu
+      filename3:length:=0;
+      if not proc_find(header_list,getfilename(filename),filename3) then
+        wr({MSG=}000044,lc_error,formats('Nepodarilo se urcit jmeno pro soubor %1',getfilename(filename)));
+        raise internal_error;
+        end if;
+      filename3:=flex_prefix & filename3;
+
+      -- vlastni zapis do souboru
+      write_stream(ostream,makefilename(filename3,output_path,flex_ext));
+      free_stream(ostream);
+      end loop;
+    end if;
+  end dofile;
+
+
+
+var
+  dirinfo          : searchrec;
+  dirres           : longint;
+  i                : library_file:range;
+  bchyba           : boolean;
+
+
+begin
+
+  -- inicializace
+  wr({MSG=}000045,lc_debug,'---===------===------===--- h2flex ---===------===------===---');
+  wr({MSG=}000046,lc_norm,'Spusten modul H2FLEX');
+
+  write2('------------------------- -------------------------');
+  write2('                                                   ');
+  write2('                   S  T  A  R  T                   ');
+  write2('                                                   ');
+  write2('------------------------- -------------------------');
+
+  -- nacit konfiguraci
+  cfg_load;
+
+  -- phase 0 - pripravna faze, zpracovani knihoven
+  if phase_0 in phase then
+    if verbose_mode then
+      wr({MSG=}000047,lc_debug,'---===------===------===--- phase 0 ---===------===------===---');
+      end if;
+
+    -- zjisteni obsahu DLL knihoven
+    for i in library_file:range loop
+      if library_file[i]:length>0 then
+        make_lib_export(makefilename(library_file[i],library_path,'.lib'),
+                        makefilename(library_file[i],work_path,'.exp'),bchyba);
+        if bchyba then
+          wr({MSG=}000048,lc_error,formats('Chyba pri zpracovani externiho programu dumpbin (%1)',library_file[i]));
+          return;
+          end if;
+        end if;
+      end loop;
+    end if;
+
+  -- nacteni procedur a jejich umisteni
+  if phase_2 in phase and not ignore_libraries then
+    for i in library_file:range loop
+      if library_file[i]:length>0 then
+        -- pokud jeste neexistuje, tak ho vytvor
+        if not is_file(makefilename(library_file[i],work_path,'.exp')) then
+          make_lib_export(makefilename(library_file[i],library_path,'.lib'),
+                          makefilename(library_file[i],work_path,'.exp'),bchyba);
+          if bchyba then
+            wr({MSG=}000049,lc_error,formats('Chyba pri zpracovani externiho programu dumpbin (%1)',library_file[i]));
+            return;
+            end if;
+          end if;
+        read_lib_export(makefilename(library_file[i],work_path,'.exp'),proclist,bchyba);
+        if bchyba then
+          wr({MSG=}000050,lc_error,formats('Chyba pri zpracovava souboru %1',library_file[i]));
+          return;
+          end if;
+        end if;
+      end loop;
+    end if;
+
+  -- najit prvni soubor
+  dirres:=findfirst(pathfile(header_path[0],header_file),dirinfo);
+
+  -- pokud jsem nenasel ani jeden soubor
+  if dirres<>0 then
+    wr({MSG=}000051,lc_error,formats('Nenalezen zadny soubor odpovidajici %1',pathfile(header_path[0],header_file)));
+    end if;
+
+  while dirres=0 loop
+    -- zpracovat nalezeny soubor
+    dofile(pathfile(header_path[0],findgetname(dirinfo)));
+
+    -- najit dalsi soubor
+    dirres:=findnext(dirinfo);
+    end loop;
+  findclose(dirinfo);
+
+  write2('------------------------- -------------------------');
+  write2('                                                   ');
+  write2('                   K  O  N  E  C                   ');
+  write2('                                                   ');
+  write2('------------------------- -------------------------');
+
+leave
+  -- finalizace
+  proc_free(proclist);
+  proc_free(with_list);
+  wr({MSG=}000052,lc_norm,'Ukoncen modul H2FLEX');
+end h2flex;
+
+{%ON}
+

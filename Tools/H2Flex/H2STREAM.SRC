@@ -1,0 +1,685 @@
+----------------------------------------------------------------------------------------------------
+-- h2stream
+----------------------------------------------------------------------------------------------------
+--
+-- Prace primo s lexikalnimi elementy (seznam)
+--
+----------------------------------------------------------------------------------------------------
+
+module h2stream =
+
+with
+  system,filedef,files,txtfiles,log,num,str,lstr,
+  debug,
+  h2def,h2parser,h2util,h2text;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure init_stream (
+            stream : ref tstream;
+              name : str255:='');
+-- Inicializace.
+----------------------------------------------------------------------------------------------------
+procedure rewind_stream (
+            stream : ref tstream);
+-- Stream lze zacit zpracovavat zase od zacatku.
+----------------------------------------------------------------------------------------------------
+procedure save_stream (
+            stream : tstream;
+          filename : str255);
+-- Zapise stream do souboru.
+----------------------------------------------------------------------------------------------------
+procedure write_stream (
+            stream : tstream;
+          filename : str255);
+-- Zapise stream do souboru.
+----------------------------------------------------------------------------------------------------
+procedure load_stream (
+          filename : str255;
+            stream : ref tstream);
+-- Zapise stream do souboru.
+----------------------------------------------------------------------------------------------------
+procedure free_stream (
+            stream : ref tstream);
+-- Znici stream.
+----------------------------------------------------------------------------------------------------
+procedure load_lex (
+            stream : ref tstream;
+               lex : ref tlexelement;
+             value : ref tlexvalue;
+              skip : tlexelements := []);
+-- Nacte jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+procedure save_lex (
+            stream : ref tstream;
+               lex : tlexelement:=lex_flex;
+             value : tlexvalue);
+-- Ulozi jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+procedure save_str (
+            stream : ref tstream;
+               str : str255);
+-- Zanalyzuje retezec a ulozi jako lexikalni elementy.
+----------------------------------------------------------------------------------------------------
+procedure prev_lex (
+            stream : ref tstream;
+              skip : tlexelements := []);
+-- Vrati se o jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+procedure stream_empty (
+            stream : tstream)
+                     return boolean;
+-- Vraci True pokud je stream zcela prazdny.
+----------------------------------------------------------------------------------------------------
+procedure copy_stream (
+           istream : ref tstream;
+           ostream : ref tstream);
+-- Kopiruje obsah prvniho streamu do druheho.
+----------------------------------------------------------------------------------------------------
+procedure stream_to_str (
+            stream : ref tstream;
+              lstr : ref lstring);
+-- Ulozi stream jako retezec.
+----------------------------------------------------------------------------------------------------
+
+
+
+private
+
+
+
+type
+  tlexrecord       = record
+    header         : array 1..16 of char;
+    lex            : tlexelement;
+    id             : str255;
+    endspace       : boolean;
+    endlpar        : boolean;
+    longer         : boolean;
+    n              : tunsigned32;
+    n2             : tuint64;
+    radix          : tradix;
+    _unsigned      : boolean;
+    _longint       : boolean;
+    s              : str255;
+    ch             : char;
+    ch2            : tunsigned32;
+    separator1     : array 1..2 of char;
+    xlength        : longint;                    -- delka nasledujicicho dlouheho retezce
+    separator2     : array 1..2 of char;
+    end record;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure load_lex =
+--          stream : ref tstream;
+--             lex : ref tlexelement;
+--           value : ref tlexvalue;
+--            skip : tlexelements := []);
+-- Nacte jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+var
+  deleted          : plex:=nil;
+  counter          : longint:=0;
+
+begin
+  loop
+    -- detekce konce streamu
+    if stream.current=nil then
+      lex:=lex_eof;
+      break;
+      end if;
+
+    -- nacteni aktualniho elementu
+    counter+1;
+    lex:=stream.current^.lex;
+    copylexvalue(stream.current^.value,value);
+
+    -- preskoceni na dalsi element
+    stream.current:=stream.current^.next;
+
+    -- je-li to element, ktery nas zajima pak uz dal nenacitat
+    if lex not in skip then
+      break;
+      end if;
+    end loop;
+  end load_lex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure save_lex =
+--          stream : ref tstream;
+--             lex : tlexelement;
+--           value : tlexvalue);
+-- Ulozi jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+var
+  inserted         : plex:=nil;
+
+begin
+  -- zalozit novy element
+  new inserted;
+  inserted^.lex:=lex;
+  copylexvalue(value,inserted^.value);
+  inserted^.next:=nil;
+  inserted^.prev:=stream.current;
+
+  -- aktualizace zacatku seznamu
+  if stream.first=nil then
+    stream.first:=inserted;
+    end if;
+
+  -- aktualizace seznamu
+  if stream.current=nil
+    then
+      stream.current:=inserted;
+    else
+      stream.current^.next:=inserted;
+      stream.current:=inserted;
+    end if;
+  stream.counter+1;  
+  end save_lex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure prev_lex =
+--          stream : ref tstream;
+--            skip : tlexelements := []);
+-- Vrati se o jeden lexikalni element.
+----------------------------------------------------------------------------------------------------
+var
+  counter          : longint:=0;
+
+begin
+  loop
+    -- lze se jeste vratit
+    break when stream.current^.prev=nil;
+
+    -- vratit se o 1 zpet
+    stream.current:=stream.current^.prev;
+    counter+1;
+
+    -- je-li to element, ktery nas zajima pak uz dal nenacitat
+    if stream.current^.lex not in skip then
+      break;
+      end if;
+    end loop;
+  end prev_lex;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure save_str =
+--          stream : ref tstream;
+--             str : str255);
+-- Zanalyzuje retezec a ulozi jako lexikalni elementy.
+----------------------------------------------------------------------------------------------------
+var
+  s                : textfile;
+  bchyba           : boolean;
+  lex              : tlexelement;
+  value            : tlexvalue;
+  temp             : lstring;
+
+begin
+  -- inicializace
+  temp.empty;
+  temp.addstr(str);
+  s.open(tit_string,temp,bchyba);
+
+  loop
+    get_lex(s,lex,value);
+    if lex=lex_eof then
+        break;
+
+      else
+        save_lex(stream,lex,value);
+      end if;  
+    end loop;
+
+  -- ukonceni  
+  s.close;
+  end save_str;
+
+
+  
+----------------------------------------------------------------------------------------------------
+procedure init_stream =
+--          stream : ref tstream;
+--            name : str255);
+-- Inicializace.
+----------------------------------------------------------------------------------------------------
+begin
+  stream.name:=name;
+  stream.counter:=0;
+  stream.first:=nil;
+  stream.current:=nil;
+  end init_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure rewind_stream =
+--          stream : ref tstream);
+-- Stream lze zacit zpracovavat zase od zacatku.
+----------------------------------------------------------------------------------------------------
+begin
+  stream.current:=stream.first;
+  end rewind_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure txtwritelstr (
+           outfile : ref file;
+              lstr : ref lstring) =
+-- Zapise dlouhy retezec do souboru.
+----------------------------------------------------------------------------------------------------
+var
+  i                : longint;
+  temp             : str255;
+
+begin
+  for i in 1..lstr.getstrcount loop
+    temp:=lstr.getstr(i,false);
+--if temp:length>0 then write2('1: ' & copy(temp,1,64)); end if;
+--if temp:length>64 then write2('2: ' & copy(temp,65,64)); end if;
+--if temp:length>128 then write2('3: ' & copy(temp,129,64)); end if;
+--if temp:length>192 then write2('4: ' & copy(temp,193,64)); end if;
+    txtwritestr(outfile,lstr.getstr(i,false));
+    end loop;
+  end txtwritelstr;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure stream_to_str =
+--          stream : ref tstream;
+--            lstr : ref lstring);
+-- Ulozi stream jako retezec.
+----------------------------------------------------------------------------------------------------
+var
+  current          : plex;
+
+begin
+  -- inicializace
+  lstr.empty;
+
+  -- nacteni prvniho elementu
+  current:=stream.first;
+  while current<>nil loop
+    -- vlastni zpracovani (zapis do souboru) elementu
+    if current^.lex=lex_eof then
+        wr({MSG=}000195,lc_warning,'write_stream error : lex = ' & lex_to_text(current^.lex,current^.value));
+        raise internal_error;
+
+      elsif current^.lex=lex_eol then
+        lstr.addstr(crlf);
+
+      elsif current^.lex in [lex_flex,lex_metaflex] then
+        linsert(current^.value.x,lstr,lstr.getsize+1);
+
+      elsif current^.lex=lex_num then
+        lstr.addstr(itoa(current^.value.n));
+
+      elsif current^.lex=lex_str then
+        lstr.addstr(current^.value.s);
+
+      elsif current^.lex=lex_metaid then ;
+
+      elsif current^.lex=lex_metaid2 then ;
+
+      elsif current^.lex=lex_id then
+        lstr.addstr(current^.value.id);
+        if current^.value.endspace then
+          lstr.addchar(' ');
+          end if;
+
+      elsif current^.lex in [keywords:range] then
+        lstr.addstr(keywords[current^.lex] & ' ');
+
+      elsif current^.lex in [operators:range] then
+        lstr.addstr(operators[current^.lex]);
+
+      elsif current^.lex=lex_unknown then
+        linsert(current^.value.x,lstr,lstr.getsize+1);
+
+      else
+        wr({MSG=}000196,lc_warning,'write_stream error : lex = ' & lex_to_text(current^.lex,current^.value));
+        raise internal_error;
+      end if;
+
+    -- nacteni dalsiho elementu
+    current:=current^.next;
+    end loop;
+  end stream_to_str;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_stream =
+--          stream : tstream;
+--        filename : str255);
+-- Zapise stream do souboru.
+----------------------------------------------------------------------------------------------------
+var
+  outfile          : file;
+  chyba            : boolean;
+  current          : plex;
+
+begin
+  -- vytvorit soubor
+  finit(outfile,filename);
+  fcreate(outfile,fmodew);
+  txtopen(outfile,4096,chyba);
+
+  -- nacteni prvniho elementu
+  current:=stream.first;
+  while current<>nil loop
+    -- vlastni zpracovani (zapis do souboru) elementu
+    if current^.lex=lex_eof then
+        wr({MSG=}000197,lc_warning,'write_stream error : lex = ' & lex_to_text(current^.lex,current^.value));
+        raise internal_error;
+
+      elsif current^.lex=lex_eol then
+        txtwrite(outfile,'');
+
+      elsif current^.lex in [lex_flex,lex_metaflex] then
+        txtwritelstr(outfile,current^.value.x);
+
+      elsif current^.lex=lex_num then
+        txtwritestr(outfile,itoa(current^.value.n));
+
+      elsif current^.lex=lex_str then
+        txtwritestr(outfile,current^.value.s);
+
+      elsif current^.lex=lex_metaid then
+        txtwritestr(outfile,current^.value.id & ' ');
+
+      elsif current^.lex=lex_metaid2 then ;
+
+      elsif current^.lex=lex_id then
+        txtwritestr(outfile,current^.value.id);
+        if current^.value.endspace then
+          txtwritestr(outfile,' ');
+          end if;
+
+      elsif current^.lex in [keywords:range] then
+        txtwritestr(outfile,keywords[current^.lex] & ' ');
+
+      elsif current^.lex in [operators:range] then
+        txtwritestr(outfile,operators[current^.lex]);
+
+      elsif current^.lex=lex_unknown then
+        txtwritelstr(outfile,current^.value.x);
+
+      else
+        wr({MSG=}000198,lc_warning,'write_stream error : lex = ' & lex_to_text(current^.lex,current^.value));
+        raise internal_error;
+      end if;
+
+    -- nacteni dalsiho elementu
+    current:=current^.next;
+    end loop;
+
+  -- uzavrit soubor
+  txtflush(outfile);
+  txtclose(outfile);
+  fclose(outfile);
+  if verbose_mode then
+    wr({MSG=}000199,lc_debug,'write_stream: ' & filename);
+    end if;
+  end write_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure save_stream =
+--          stream : tstream;
+--        filename : str255);
+-- Zapise stream do souboru.
+----------------------------------------------------------------------------------------------------
+var
+  outfile          : file;
+  chyba            : boolean;
+  current          : plex:=nil;
+  lex              : tlexrecord;
+  lexx             : pchararray:=nil;
+  counter          : longint:=1;
+  cheader          : str16;
+
+begin
+  -- vytvorit soubor
+  finit(outfile,filename);
+  fcreate(outfile,fmodew);
+
+  -- nacteni prvniho elementu
+  current:=stream.first;
+  while current<>nil loop
+    -- ulozeni lexikalniho elementu
+    if current^.lex not in [tlexelement:first..tlexelement:last] then
+      wr({MSG=}000200,lc_warning,'invalid lex = ' & lex_to_text(current^.lex,current^.value));
+      raise internal_error;
+      end if;
+
+    -- header
+    cheader:=itoa(counter);
+    if cheader:length>12 then
+        cheader:=copy(cheader,cheader:length-11,12);
+      elsif cheader:length<12 then
+        cheader:=fillstr('0',12-cheader:length) & cheader;
+      end if;
+    cheader:='HEAD' & cheader;
+    if cheader:length<>16 then
+      wr({MSG=}000201,lc_warning,'invalid cheader = ' & cheader);
+      raise internal_error;
+      end if;
+
+    -- ulozeni hodnot tohoto elementu
+    fillz(lex,lex:size);
+    strtochar(cheader,lex.header);
+    lex.lex        :=current^.lex;
+    lex.id         :=current^.value.id;
+    lex.endspace   :=current^.value.endspace;
+    lex.endlpar    :=current^.value.endlpar;
+    lex.longer     :=current^.value.longer;
+    lex.n          :=current^.value.n;
+    lex.n2         :=current^.value.n2;
+    lex.radix      :=current^.value.radix;
+    lex._unsigned  :=current^.value._unsigned;
+    lex._longint   :=current^.value._longint;
+    lex.s          :=current^.value.s;
+    lex.ch         :=current^.value.ch;
+    lex.ch2        :=current^.value.ch2;
+
+    -- pomocna informace o delce dlouheho retezce
+    lex.xlength    :=current^.value.x.getsize;
+    lex.separator1:=[for others use '>'];
+    lex.separator2:=[for others use '<'];
+    fwrite(outfile,lex,lex:size);
+
+    -- zapsat dlouhy retezec (lstring)
+    if lex.xlength>0 then
+      -- alokovat pamet
+      new lexx range lex.xlength;
+      current^.value.x.getarray(lexx^,lex.xlength);
+      fwrite(outfile,lexx^,lex.xlength);
+      -- znicit pamet
+      discard lexx;
+      end if;
+
+    -- koncova znacka
+    lex.separator1:=[for others use '='];
+    fwrite(outfile,lex.separator1,lex.separator1:size);
+
+    -- nacteni dalsiho elementu
+    current:=current^.next;
+    counter+1;
+    end loop;
+
+  -- uzavrit soubor
+  fclose(outfile);
+  if verbose_mode then
+    wr({MSG=}000202,lc_debug,'save_stream: ' & filename);
+    end if;
+  end save_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure load_stream =
+--        filename : str255;
+--          stream : ref tstream);
+-- Precte stream do souboru.
+----------------------------------------------------------------------------------------------------
+var
+  infile           : file;
+  value            : tlexvalue;
+  lex              : tlexrecord;
+  lexx             : pchararray:=nil;
+  lexe             : tlexelement;
+
+begin
+  -- inicializace
+  init_stream(stream);
+
+  -- otevrit soubor
+  finit(infile,filename);
+  fopen(infile,fmoder);
+  if fgetres(infile)<>f_ok then
+    wr({MSG=}000203,lc_error,formats('soubor %1 nelze otevrit',filename));
+    raise internal_error;
+    end if;
+
+  while not feof(infile) loop
+    -- nacteni zaznamu
+    fread(infile,lex,lex:size);
+    if fgetres(infile)<>f_ok then
+      wr({MSG=}000204,lc_error,formats('soubor %1 nelze cist',filename));
+      raise internal_error;
+      end if;
+
+    -- kontrola hlavicky
+    if lex.header[1]<>'H' or lex.header[2]<>'E' or lex.header[3]<>'A' or lex.header[4]<>'D' then
+      wr({MSG=}000205,lc_warning,'invalid lex : header = ' & arraytostr(lex.header,16));
+      raise internal_error;
+      end if;
+
+    -- nacteni polozek
+    lexe             :=lex.lex;
+    value.id         :=lex.id;
+    value.endspace   :=lex.endspace;
+    value.endlpar    :=lex.endlpar;
+    value.longer     :=lex.longer;
+    value.n          :=lex.n;
+    value.n2         :=lex.n2;
+    value.radix      :=lex.radix;
+    value._unsigned  :=lex._unsigned;
+    value._longint   :=lex._longint;
+    value.s          :=lex.s;
+    value.ch         :=lex.ch;
+    value.ch2        :=lex.ch2;
+
+    -- nacist lstring
+    if lex.xlength>0 then
+      -- alokovat pamet
+      new lexx range lex.xlength;
+      fread(infile,lexx^,lex.xlength);
+      value.x.empty;
+      value.x.addarray(lexx^,lex.xlength);
+      discard lexx;
+      end if;
+
+    -- koncova znacka
+    fread(infile,lex.separator1,lex.separator1:size);
+    if fgetres(infile)<>f_ok then
+      wr({MSG=}000206,lc_error,formats('soubor %1 nelze cist',filename));
+      raise internal_error;
+      end if;
+
+    if lex.separator1[1]<>'=' or lex.separator1[2]<>'=' then
+      wr({MSG=}000207,lc_warning,'invalid lex : footer = ' & lex.separator1[1] & lex.separator1[2]);
+      raise internal_error;
+      end if;
+
+    -- zaradit do seznamu
+    save_lex(stream,lexe,value);
+    if lex.xlength>0 then
+      value.x.free;
+      end if;
+    end loop;
+
+  -- uzavrit soubor
+  fclose(infile);
+  if fgetres(infile)<>f_ok then
+    wr({MSG=}000208,lc_error,formats('soubor %1 nelze uzavrit',filename));
+    raise internal_error;
+    end if;
+
+  if verbose_mode then
+    wr({MSG=}000209,lc_debug,'load_stream: ' & filename);
+    end if;
+  end load_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure free_stream =
+--          stream : ref tstream);
+-- Znici stream.
+----------------------------------------------------------------------------------------------------
+var
+  deleted          : plex:=nil;
+
+begin
+  while stream.first<>nil loop
+    deleted:=stream.first;
+    stream.first:=stream.first^.next;
+    discard deleted;
+    end loop;
+  stream.current:=nil;
+  end free_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure stream_empty =
+--          stream : tstream;
+--                   return boolean;
+-- Vraci True pokud je stream zcela prazdny.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=stream.first=nil;
+  end stream_empty;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_stream =
+--         istream : ref tstream;
+--         ostream : ref tstream)
+-- Kopiruje obsah prvniho streamu do druheho.
+----------------------------------------------------------------------------------------------------
+var
+  lex              : tlexelement;
+  value            : tlexvalue;
+
+begin
+  -- inicializace
+  rewind_stream(istream);
+
+  loop
+    load_lex(istream,lex,value);
+    break when lex=lex_eof;
+    save_lex(ostream,lex,value);
+    end loop;
+  end copy_stream;
+
+
+
+end h2stream;
+

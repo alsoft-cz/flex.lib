@@ -1,0 +1,35 @@
+----------------------------------------------------------------------------------------------------
+module stdarg =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /***
+-- *stdarg.h - defines ANSI-style macros for variable argument functions
+-- *
+-- *       Copyright (c) 1985-2001, Microsoft Corporation. All rights reserved.
+-- *
+-- *Purpose:
+-- *       This file defines ANSI-style macros for accessing arguments
+-- *       of functions which take a variable number of arguments.
+-- *       [ANSI]
+-- *
+-- *       [Public]
+-- *
+-- ****/
+-- #pragma  once
+-- /*
+--  * Currently, all MS C compilers for Win32 platforms default to 8 byte
+--  * alignment.
+--  */
+-- #pragma  pack(push,8)
+#separate cruntime;
+type
+uintptr_t         = unsigned 32;
+type
+va_list           = ^character 8 for machine_pointer use true;
+-- #pragma  pack(pop)
+
+end stdarg;

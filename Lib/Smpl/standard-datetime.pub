@@ -1,0 +1,246 @@
+----------------------------------------------------------------------------------------------------
+module public datetime =
+-- Date/time.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+#if #declared ondra; #and then; ondra then;
+  -- date
+  t_date;
+
+  -- time
+  t_time;
+#end if;
+
+  -- date and time
+  t_datim;
+
+#if #declared ondra; #and then; ondra then;
+type
+  -- components of a date
+  t_date_year      = protected t_signed;
+  t_date_month     = protected t_signed;
+  t_date_day       = protected t_signed;
+
+  -- components of a time
+  t_time_hour      = protected t_signed;
+  t_time_minute    = protected t_signed;
+  t_time_second    = protected t_signed;
+{
+----------------------------------------------------------------------------------------------------
+class abstract public c_datim_provider =
+-- Date and time information provider.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} get_time return t_time;
+    -- Returns the actual time.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} get_date return t_date;
+    -- Returns the actual date.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} get_datim return t_datim;
+    -- Returns the actual date and time.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} compose_time
+        hour       : in t_time_hour;             -- hour
+        minute     : in t_time_minute;           -- minute
+        second     : in t_time_second;           -- second
+        time       : out t_time);                -- resulting time
+    -- Composes a [time] information from [hour], [minute] and [second] components.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} compose_date
+        year       : in t_date_year;             -- year
+        month      : in t_date_month;            -- month
+        day        : in t_date_day;              -- day
+        date       : out t_date);                -- resulting date
+    -- Composes a [datim] information from [year], [month] and [day] components.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} compose_datim
+        year       : in t_date_year;             -- year
+        month      : in t_date_month;            -- month
+        day        : in t_date_day;              -- day
+        hour       : in t_time_hour;             -- hour
+        minute     : in t_time_minute;           -- minute
+        second     : in t_time_second;           -- second
+        datim      : out t_datim);               -- resulting date and time
+    -- Composes a [datim] information from [year], [month], [day], [hour], [minute] and [second] 
+    -- components.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} shift_time (
+        time       : in out t_time;
+        seconds    : in t_time_second;
+        minutes    : in t_time_minute;
+        hours      : in t_time_hour);
+    -- Shifts the given [time] by [seconds] seconds. When [seconds] is positive, the [time] is 
+    -- shifted forward, when [seconds] is negative, it is shifted backwards.
+    ------------------------------------------------------------------------------------------------
+    virtual {abstract} shift_date (
+        date       : in out t_date;
+        days       : in t_date_day);
+    -- Shifts the given [date] by [days] days. When [days] is positive, the [date] is shifted 
+    -- forward, when [days] is negative, it is shifted backwards.        
+    ------------------------------------------------------------------------------------------------
+
+    end c_datim_provider;
+}
+#end if;
+
+{
+type
+  -- components of a date
+  tdate_year       = protected tsigned;
+  tdate_month      = protected tunsigned range 1..12;
+  tdate_day        = protected tunsigned range 1..31;
+
+  -- components of a time
+  ttime_hour       = protected tunsigned range 0..23;
+  ttime_minute     = protected tunsigned range 0..59;
+  ttime_second     = protected tunsigned range 0..59;
+
+  -- UTC time
+  tutctime;                                      -- time
+  tutcdate;                                      -- date
+  tutcdatim;                                     -- date & time
+
+  -- local time
+  tlocaltime;                                    -- time
+  tlocaldate;                                    -- date
+  tlocaldatim;                                   -- date & time
+
+
+
+----------------------------------------------------------------------------------------------------
+-- UTC date & time subprograms
+----------------------------------------------------------------------------------------------------
+procedure get_utc_time return tutctime;
+----------------------------------------------------------------------------------------------------
+procedure get_utc_date return tutcdate;
+----------------------------------------------------------------------------------------------------
+procedure get_utc_datim return tutcdatim;
+----------------------------------------------------------------------------------------------------
+procedure combine_utc_datim (
+    date           : in tutcdate;
+    time           : in tutctime)
+    return tutcdatim;
+----------------------------------------------------------------------------------------------------
+procedure compose_utc_date (
+    year           : in tdate_year;
+    month          : in tdate_month;
+    day            : in tdate_day;
+    date           : out tutcdate);
+----------------------------------------------------------------------------------------------------
+procedure compose_utc_time (
+    hour           : in ttime_hour;
+    minute         : in ttime_minute;
+    second         : in ttime_second;
+    time           : out tutctime);
+----------------------------------------------------------------------------------------------------
+procedure compose_utc_datim (
+    year           : in tdate_year;
+    month          : in tdate_month;
+    day            : in tdate_day;
+    hour           : in ttime_hour;
+    minute         : in ttime_minute;
+    second         : in ttime_second;
+    datim          : out tutcdatim);
+----------------------------------------------------------------------------------------------------
+procedure utc_datim_to_date_time (
+    datim          : in tutctime;
+    date           : out tutcdate;
+    time           : out tutctime);
+----------------------------------------------------------------------------------------------------
+procedure utc_datim_to_date (
+    datim          : in tlocaltime)
+    return tutcdate;
+----------------------------------------------------------------------------------------------------
+procedure utc_datim_to_time (
+    datim          : in tlocaltime)
+    return tutctime;
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Local date & time subprograms
+----------------------------------------------------------------------------------------------------
+procedure get_local_time return tlocaltime;
+----------------------------------------------------------------------------------------------------
+procedure get_local_date return tlocaldate;
+----------------------------------------------------------------------------------------------------
+procedure get_local_datim return tlocaldatim;
+----------------------------------------------------------------------------------------------------
+procedure combine_local_datim (
+    date           : in tlocaldate;
+    time           : in tlocaltime)
+    return tlocaldatim;
+----------------------------------------------------------------------------------------------------
+procedure compose_local_date (
+    year           : in tdate_year;
+    month          : in tdate_month;
+    day            : in tdate_day;
+    date           : out tlocaldate);
+----------------------------------------------------------------------------------------------------
+procedure compose_local_time (
+    hour           : in ttime_hour;
+    minute         : in ttime_minute;
+    second         : in ttime_second;
+    time           : out tlocaltime);
+----------------------------------------------------------------------------------------------------
+procedure compose_local_datim (
+    year           : in tdate_year;
+    month          : in tdate_month;
+    day            : in tdate_day;
+    hour           : in ttime_hour;
+    minute         : in ttime_minute;
+    second         : in ttime_second;
+    datim          : out tlocaldatim);
+----------------------------------------------------------------------------------------------------
+procedure local_datim_to_date_time (
+    datim          : in tlocaltime;
+    date           : out tlocaldate;
+    time           : out tlocaltime);
+----------------------------------------------------------------------------------------------------
+procedure local_datim_to_date (
+    datim          : in tlocaltime)
+    return tlocaldate;
+----------------------------------------------------------------------------------------------------
+procedure local_datim_to_time (
+    datim          : in tlocaltime)
+    return tlocaltime;
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+-- Conversions between UTC and local time & date
+----------------------------------------------------------------------------------------------------
+procedure utc_date_to_local_date (
+    date           : in tutcdate)
+    return tlocaldate;
+----------------------------------------------------------------------------------------------------
+procedure utc_time_to_local_time (
+    time           : in tutctime)
+    return tlocaltime;
+----------------------------------------------------------------------------------------------------
+procedure utc_datim_to_local_datim (
+    datim          : in tutcdatim)
+    return tlocaldatim;
+----------------------------------------------------------------------------------------------------
+procedure local_date_to_utc_date (
+    date           : in tlocaldate)
+    return tutcdate;
+----------------------------------------------------------------------------------------------------
+procedure local_time_to_utc_time (
+    time           : in tlocaltime)
+    return tutctime;
+----------------------------------------------------------------------------------------------------
+procedure local_datim_to_utc_datim (
+    datim          : in tlocaldatim)
+    return tutcdatim;
+----------------------------------------------------------------------------------------------------
+}
+
+end datetime;

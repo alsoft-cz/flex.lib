@@ -1,0 +1,231 @@
+----------------------------------------------------------------------------------------------------
+class private c_passive_buffered_stream_connector =
+----------------------------------------------------------------------------------------------------
+var
+    que            : c_queue;
+    eod            : t_logical;
+    isreading      : t_logical;
+    in_closed      : t_logical;
+    out_closed     : t_logical;
+
+  --------------------------------------------------------------------------------------------------
+  static drop_packets =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    while que.try_accept_any_msg(packet,t_wait_immediate) loop
+      data:=p_data_packet(packet)^;
+      discard packet;
+      discard_packet(data);
+      end loop;
+    end drop_packets;
+
+  
+  
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.close =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    in_closed:=true;
+    -- cteci strana prestala cist
+    isreading:=false;
+    drop_packets;
+    end close; 
+
+
+  
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet       : t_pointer;
+
+  begin
+    -- testuju opravnenost pozadavku
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+
+    -- cekam na data v bufferu
+    que.accept_any_msg(packet);
+    data:=p_data_packet(packet)^;
+
+    --napocitam prutok
+    c_input_stream:(this).add_flow(data);
+
+    -- zjitim jetli to nahodou nebyl posledni packet
+    if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+      eod:=true;
+      end if;
+    -- uvolnim pamet handle na packet
+    discard packet;
+    end read_packet; 
+
+  
+
+  --------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    -- vratim jetli uz byl precten posledni packet
+    result:=eod;
+    end is_eod; 
+
+  
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    if isreading then
+      -- vyprazdnim buffery
+      c_output_stream:(this).flush;
+      end if;
+    if isreading then
+      -- poslu end of data
+      c_output_stream:(this).write_eod;
+      end if;
+    out_closed:=true;
+    end close; 
+
+
+  
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet       : p_data_packet;
+
+  begin
+    -- tetuju legalnost operace
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    if not isreading then
+      raise stream_other_side;
+      end if;
+    -- vytvorim handle na packet
+    new packet;
+
+    -- zkopiruju handle nebo i data packetu
+    if data.style=t_dps_temporary then
+      copy_to_packet(packet^,data.data,data.size);
+    else
+      packet^:=data;
+      end if;
+    --%%TODO join short packets
+
+    -- pripojim packet na konec fronty
+    que.append_msg(packet);
+
+    -- pokud je to flush packet, cekam az ve fronte nebude zadny packet
+    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+      que.wait_empty;
+      end if;
+    
+    -- zapocitam prutok
+    c_output_stream:(this).add_flow(data);
+    discard_packet(data);
+    end write_packet; 
+
+
+
+  --------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  --------------------------------------------------------------------------------------------------
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    -- vratim jestli druha strana jeste cte data
+    result:=isreading;
+    end is_reading; 
+
+
+
+  ------------------------------------------------------------------------------------------------
+  entry = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    isreading:=true;
+    end entry;
+  end c_passive_buffered_stream_connector;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_active_stream_connector =
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  override c_task.run =
+  -- cerpadlo
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_data_packet;
+
+  begin
+    loop
+      -- cekam na packet
+      c_stream_reader:(this)._source^.read_packet(packet);
+      begin
+        -- zapisu packet
+        c_stream_writer:(this)._target^.write_packet(packet);
+        if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+          -- jestli to byl end of data, koncim
+          c_stream_reader:(this)._source^.close;
+          c_stream_writer:(this)._target^.close;
+          break;
+          end if;
+      catch
+        when stream_other_side do
+          -- jestli druha strana prestala cist data zavru a koncim
+          c_stream_reader:(this)._source^.close;
+          c_stream_writer:(this)._target^.close;
+          break;
+        end;
+      end loop;
+    catch
+      when others do
+        -- neco se rozbilo, zkusim po sobe uklidit
+        c_stream_reader:(this)._source^.close;
+        c_stream_writer:(this)._target^.close;
+        raise;
+    end run;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_connector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- inicializace obou stran spojeni
+    c_stream_writer:(this).init_writer(target);
+    c_stream_reader:(this).init_reader(source);
+    c_task:(this).start;
+    end init_connector;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  exit = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- ukoncim cerpadlo
+    c_task:(this).kill;
+    end exit;
+  end c_active_stream_connector;

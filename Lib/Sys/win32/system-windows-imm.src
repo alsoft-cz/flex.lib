@@ -1,0 +1,1645 @@
+----------------------------------------------------------------------------------------------------
+module imm =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,wingdi;
+
+-- /*********************************************************************
+-- /*      imm.h - Input Method Manager definitions                      
+-- /*                                                                    
+-- /*      Copyright (c) Microsoft Corporation. All rights reserved.     
+-- /*********************************************************************
+type
+HIMC              = t_HANDLE;
+type
+HIMCC             = t_HANDLE;
+type
+LPHKL             = ^t_HKL for machine_pointer use true;
+type
+LPUINT            = ^UINT for machine_pointer use true;
+type
+  tagCOMPOSITIONFORM = record
+dwStyle         : DWORD;
+ptCurrentPos    : t_POINT;
+rcArea          : RECT;
+  end record;
+  COMPOSITIONFORM   = tagCOMPOSITIONFORM;
+  PCOMPOSITIONFORM  = ^tagCOMPOSITIONFORM;
+  NPCOMPOSITIONFORM = ^tagCOMPOSITIONFORM;
+  LPCOMPOSITIONFORM = ^tagCOMPOSITIONFORM;
+
+type
+  tagCANDIDATEFORM  = record
+dwIndex         : DWORD;
+dwStyle         : DWORD;
+ptCurrentPos    : t_POINT;
+rcArea          : RECT;
+  end record;
+  CANDIDATEFORM     = tagCANDIDATEFORM;
+  PCANDIDATEFORM    = ^tagCANDIDATEFORM;
+  NPCANDIDATEFORM   = ^tagCANDIDATEFORM;
+  LPCANDIDATEFORM   = ^tagCANDIDATEFORM;
+
+type
+  tagCANDIDATELIST  = record
+dwSize          : DWORD;
+dwStyle         : DWORD;
+dwCount         : DWORD;
+dwSelection     : DWORD;
+dwPageStart     : DWORD;
+dwPageSize      : DWORD;
+dwOffset        : array 0..0 of DWORD;
+  end record;
+  CANDIDATELIST     = tagCANDIDATELIST;
+  PCANDIDATELIST    = ^tagCANDIDATELIST;
+  NPCANDIDATELIST   = ^tagCANDIDATELIST;
+  LPCANDIDATELIST   = ^tagCANDIDATELIST;
+
+type
+  tagREGISTERWORDA  = record
+lpReading       : LPSTR;
+lpWord          : LPSTR;
+  end record;
+  REGISTERWORDA     = tagREGISTERWORDA;
+  PREGISTERWORDA    = ^tagREGISTERWORDA;
+  NPREGISTERWORDA   = ^tagREGISTERWORDA;
+  LPREGISTERWORDA   = ^tagREGISTERWORDA;
+
+type
+  tagREGISTERWORDW  = record
+lpReading       : LPWSTR;
+lpWord          : LPWSTR;
+  end record;
+  REGISTERWORDW     = tagREGISTERWORDW;
+  PREGISTERWORDW    = ^tagREGISTERWORDW;
+  NPREGISTERWORDW   = ^tagREGISTERWORDW;
+  LPREGISTERWORDW   = ^tagREGISTERWORDW;
+
+#if #declared UNICODE; then;
+type
+REGISTERWORD      = REGISTERWORDW;
+type
+PREGISTERWORD     = PREGISTERWORDW;
+type
+NPREGISTERWORD    = NPREGISTERWORDW;
+type
+LPREGISTERWORD    = LPREGISTERWORDW;
+#else;
+type
+REGISTERWORD      = REGISTERWORDA;
+type
+PREGISTERWORD     = PREGISTERWORDA;
+type
+NPREGISTERWORD    = NPREGISTERWORDA;
+type
+LPREGISTERWORD    = LPREGISTERWORDA;
+#end if;
+
+type
+  tagRECONVERTSTRING = record
+dwSize          : DWORD;
+dwVersion       : DWORD;
+dwStrLen        : DWORD;
+dwStrOffset     : DWORD;
+dwCompStrLen    : DWORD;
+dwCompStrOffset : DWORD;
+dwTargetStrLen  : DWORD;
+dwTargetStrOffset : DWORD;
+  end record;
+  RECONVERTSTRING   = tagRECONVERTSTRING;
+  PRECONVERTSTRING  = ^tagRECONVERTSTRING;
+  NPRECONVERTSTRING = ^tagRECONVERTSTRING;
+  LPRECONVERTSTRING = ^tagRECONVERTSTRING;
+
+const
+  STYLE_DESCRIPTION_SIZE= 32;
+
+type
+  tagSTYLEBUFA      = record
+dwStyle         : DWORD;
+szDescription   : array 0..STYLE_DESCRIPTION_SIZE-1 of CHAR;
+  end record;
+  STYLEBUFA         = tagSTYLEBUFA;
+  PSTYLEBUFA        = ^tagSTYLEBUFA;
+  NPSTYLEBUFA       = ^tagSTYLEBUFA;
+  LPSTYLEBUFA       = ^tagSTYLEBUFA;
+
+type
+  tagSTYLEBUFW      = record
+dwStyle         : DWORD;
+szDescription   : array 0..STYLE_DESCRIPTION_SIZE-1 of WCHAR;
+  end record;
+  STYLEBUFW         = tagSTYLEBUFW;
+  PSTYLEBUFW        = ^tagSTYLEBUFW;
+  NPSTYLEBUFW       = ^tagSTYLEBUFW;
+  LPSTYLEBUFW       = ^tagSTYLEBUFW;
+
+#if #declared UNICODE; then;
+type
+STYLEBUF          = STYLEBUFW;
+type
+PSTYLEBUF         = PSTYLEBUFW;
+type
+NPSTYLEBUF        = NPSTYLEBUFW;
+type
+LPSTYLEBUF        = LPSTYLEBUFW;
+#else;
+type
+STYLEBUF          = STYLEBUFA;
+type
+PSTYLEBUF         = PSTYLEBUFA;
+type
+NPSTYLEBUF        = NPSTYLEBUFA;
+type
+LPSTYLEBUF        = LPSTYLEBUFA;
+#end if;
+
+const
+  IMEMENUITEM_STRING_SIZE= 80;
+
+type
+  tagIMEMENUITEMINFOA = record
+cbSize          : UINT;
+fType           : UINT;
+fState          : UINT;
+wID             : UINT;
+hbmpChecked     : t_HBITMAP;
+hbmpUnchecked   : t_HBITMAP;
+dwItemData      : DWORD;
+szString        : array 0..IMEMENUITEM_STRING_SIZE-1 of CHAR;
+hbmpItem        : t_HBITMAP;
+  end record;
+  IMEMENUITEMINFOA  = tagIMEMENUITEMINFOA;
+  PIMEMENUITEMINFOA = ^tagIMEMENUITEMINFOA;
+  NPIMEMENUITEMINFOA = ^tagIMEMENUITEMINFOA;
+  LPIMEMENUITEMINFOA = ^tagIMEMENUITEMINFOA;
+
+type
+  tagIMEMENUITEMINFOW = record
+cbSize          : UINT;
+fType           : UINT;
+fState          : UINT;
+wID             : UINT;
+hbmpChecked     : t_HBITMAP;
+hbmpUnchecked   : t_HBITMAP;
+dwItemData      : DWORD;
+szString        : array 0..IMEMENUITEM_STRING_SIZE-1 of WCHAR;
+hbmpItem        : t_HBITMAP;
+  end record;
+  IMEMENUITEMINFOW  = tagIMEMENUITEMINFOW;
+  PIMEMENUITEMINFOW = ^tagIMEMENUITEMINFOW;
+  NPIMEMENUITEMINFOW = ^tagIMEMENUITEMINFOW;
+  LPIMEMENUITEMINFOW = ^tagIMEMENUITEMINFOW;
+
+#if #declared UNICODE; then;
+type
+IMEMENUITEMINFO   = IMEMENUITEMINFOW;
+type
+PIMEMENUITEMINFO  = PIMEMENUITEMINFOW;
+type
+NPIMEMENUITEMINFO = NPIMEMENUITEMINFOW;
+type
+LPIMEMENUITEMINFO = LPIMEMENUITEMINFOW;
+#else;
+type
+IMEMENUITEMINFO   = IMEMENUITEMINFOA;
+type
+PIMEMENUITEMINFO  = PIMEMENUITEMINFOA;
+type
+NPIMEMENUITEMINFO = NPIMEMENUITEMINFOA;
+type
+LPIMEMENUITEMINFO = LPIMEMENUITEMINFOA;
+#end if;
+
+type
+  tagIMECHARPOSITION = record
+dwSize          : DWORD;
+dwCharPos       : DWORD;
+pt              : t_POINT;
+cLineHeight     : UINT;
+rcDocument      : RECT;
+  end record;
+  IMECHARPOSITION   = tagIMECHARPOSITION;
+  PIMECHARPOSITION  = ^tagIMECHARPOSITION;
+  NPIMECHARPOSITION = ^tagIMECHARPOSITION;
+  LPIMECHARPOSITION = ^tagIMECHARPOSITION;
+
+type
+IMCENUMPROC       = ^procedure (
+    _001            : HIMC;
+    _002            : t_LPARAM)
+                      return BOOL for machine_pointer use true;
+--  prototype of IMM API
+procedure ImmInstallIMEA(
+    lpszIMEFileName : in LPCSTR; 
+    lpszLayoutText  : in LPCSTR)
+                      return t_HKL;
+#pragma convention(ImmInstallIMEA,system);
+#pragma import(ImmInstallIMEA,'ImmInstallIMEA','imm32.dll');
+
+procedure ImmInstallIMEW(
+    lpszIMEFileName : in LPCWSTR; 
+    lpszLayoutText  : in LPCWSTR)
+                      return t_HKL;
+#pragma convention(ImmInstallIMEW,system);
+#pragma import(ImmInstallIMEW,'ImmInstallIMEW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmInstallIME;
+  ImmInstallIMEW 
+#end ImmInstallIME;
+#else;
+#template ImmInstallIME;
+  ImmInstallIMEA 
+#end ImmInstallIME;
+#end if;
+
+procedure ImmGetDefaultIMEWnd(
+    _001            : in t_HWND)
+                      return t_HWND;
+#pragma convention(ImmGetDefaultIMEWnd,system);
+#pragma import(ImmGetDefaultIMEWnd,'ImmGetDefaultIMEWnd','imm32.dll');
+
+procedure ImmGetDescriptionA(
+    _001            : in t_HKL; 
+    _002            : out CHARSTR ; 
+    uBufLen         : in UINT)
+                      return UINT;
+#pragma convention(ImmGetDescriptionA,system);
+#pragma import(ImmGetDescriptionA,'ImmGetDescriptionA','imm32.dll');
+
+procedure ImmGetDescriptionW(
+    _001            : in t_HKL; 
+    _002            : out WCHARSTR ; 
+    uBufLen         : in UINT)
+                      return UINT;
+#pragma convention(ImmGetDescriptionW,system);
+#pragma import(ImmGetDescriptionW,'ImmGetDescriptionW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetDescription;
+  ImmGetDescriptionW 
+#end ImmGetDescription;
+#else;
+#template ImmGetDescription;
+  ImmGetDescriptionA 
+#end ImmGetDescription;
+#end if;
+
+procedure ImmGetIMEFileNameA(
+    _001            : in t_HKL; 
+    _002            : out CHARSTR ; 
+    uBufLen         : in UINT)
+                      return UINT;
+#pragma convention(ImmGetIMEFileNameA,system);
+#pragma import(ImmGetIMEFileNameA,'ImmGetIMEFileNameA','imm32.dll');
+
+procedure ImmGetIMEFileNameW(
+    _001            : in t_HKL; 
+    _002            : out WCHARSTR ; 
+    uBufLen         : in UINT)
+                      return UINT;
+#pragma convention(ImmGetIMEFileNameW,system);
+#pragma import(ImmGetIMEFileNameW,'ImmGetIMEFileNameW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetIMEFileName;
+  ImmGetIMEFileNameW 
+#end ImmGetIMEFileName;
+#else;
+#template ImmGetIMEFileName;
+  ImmGetIMEFileNameA 
+#end ImmGetIMEFileName;
+#end if;
+
+procedure ImmGetProperty(
+    _001            : in t_HKL; 
+    _002            : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetProperty,system);
+#pragma import(ImmGetProperty,'ImmGetProperty','imm32.dll');
+
+procedure ImmIsIME(
+    _001            : in t_HKL)
+                      return BOOL;
+#pragma convention(ImmIsIME,system);
+#pragma import(ImmIsIME,'ImmIsIME','imm32.dll');
+
+procedure ImmSimulateHotKey(
+    _001            : in t_HWND; 
+    _002            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmSimulateHotKey,system);
+#pragma import(ImmSimulateHotKey,'ImmSimulateHotKey','imm32.dll');
+
+procedure ImmCreateContext
+                      return HIMC;
+#pragma convention(ImmCreateContext,system);
+#pragma import(ImmCreateContext,'ImmCreateContext','imm32.dll');
+
+procedure ImmDestroyContext(
+    _001            : in HIMC)
+                      return BOOL;
+#pragma convention(ImmDestroyContext,system);
+#pragma import(ImmDestroyContext,'ImmDestroyContext','imm32.dll');
+
+procedure ImmGetContext(
+    _001            : in t_HWND)
+                      return HIMC;
+#pragma convention(ImmGetContext,system);
+#pragma import(ImmGetContext,'ImmGetContext','imm32.dll');
+
+procedure ImmReleaseContext(
+    _001            : in t_HWND; 
+    _002            : in HIMC)
+                      return BOOL;
+#pragma convention(ImmReleaseContext,system);
+#pragma import(ImmReleaseContext,'ImmReleaseContext','imm32.dll');
+
+procedure ImmAssociateContext(
+    _001            : in t_HWND; 
+    _002            : in HIMC)
+                      return HIMC;
+#pragma convention(ImmAssociateContext,system);
+#pragma import(ImmAssociateContext,'ImmAssociateContext','imm32.dll');
+
+procedure ImmAssociateContextEx(
+    _001            : in t_HWND; 
+    _002            : in HIMC; 
+    _003            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmAssociateContextEx,system);
+#pragma import(ImmAssociateContextEx,'ImmAssociateContextEx','imm32.dll');
+
+procedure ImmGetCompositionStringA(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : out unchecked ; 
+    _004            : in DWORD)
+                      return LONG;
+#pragma convention(ImmGetCompositionStringA,system);
+#pragma import(ImmGetCompositionStringA,'ImmGetCompositionStringA','imm32.dll');
+
+procedure ImmGetCompositionStringW(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : out unchecked ; 
+    _004            : in DWORD)
+                      return LONG;
+#pragma convention(ImmGetCompositionStringW,system);
+#pragma import(ImmGetCompositionStringW,'ImmGetCompositionStringW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetCompositionString;
+  ImmGetCompositionStringW 
+#end ImmGetCompositionString;
+#else;
+#template ImmGetCompositionString;
+  ImmGetCompositionStringA 
+#end ImmGetCompositionString;
+#end if;
+
+procedure ImmSetCompositionStringA(
+    _001            : in HIMC; 
+    dwIndex         : in DWORD; 
+    lpComp          : in LPVOID; 
+    _004            : in DWORD; 
+    lpRead          : in LPVOID; 
+    _006            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmSetCompositionStringA,system);
+#pragma import(ImmSetCompositionStringA,'ImmSetCompositionStringA','imm32.dll');
+
+procedure ImmSetCompositionStringW(
+    _001            : in HIMC; 
+    dwIndex         : in DWORD; 
+    lpComp          : in LPVOID; 
+    _004            : in DWORD; 
+    lpRead          : in LPVOID; 
+    _006            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmSetCompositionStringW,system);
+#pragma import(ImmSetCompositionStringW,'ImmSetCompositionStringW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmSetCompositionString;
+  ImmSetCompositionStringW 
+#end ImmSetCompositionString;
+#else;
+#template ImmSetCompositionString;
+  ImmSetCompositionStringA 
+#end ImmSetCompositionString;
+#end if;
+
+procedure ImmGetCandidateListCountA(
+    _001            : in HIMC; 
+    lpdwListCount   : out DWORD )
+                      return DWORD;
+#pragma convention(ImmGetCandidateListCountA,system);
+#pragma import(ImmGetCandidateListCountA,'ImmGetCandidateListCountA','imm32.dll');
+
+procedure ImmGetCandidateListCountW(
+    _001            : in HIMC; 
+    lpdwListCount   : out DWORD )
+                      return DWORD;
+#pragma convention(ImmGetCandidateListCountW,system);
+#pragma import(ImmGetCandidateListCountW,'ImmGetCandidateListCountW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetCandidateListCount;
+  ImmGetCandidateListCountW 
+#end ImmGetCandidateListCount;
+#else;
+#template ImmGetCandidateListCount;
+  ImmGetCandidateListCountA 
+#end ImmGetCandidateListCount;
+#end if;
+
+procedure ImmGetCandidateListA(
+    _001            : in HIMC; 
+    deIndex         : in DWORD; 
+    _003            : out tagCANDIDATELIST; 
+    dwBufLen        : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetCandidateListA,system);
+#pragma import(ImmGetCandidateListA,'ImmGetCandidateListA','imm32.dll');
+
+procedure ImmGetCandidateListW(
+    _001            : in HIMC; 
+    deIndex         : in DWORD; 
+    _003            : out tagCANDIDATELIST; 
+    dwBufLen        : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetCandidateListW,system);
+#pragma import(ImmGetCandidateListW,'ImmGetCandidateListW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetCandidateList;
+  ImmGetCandidateListW 
+#end ImmGetCandidateList;
+#else;
+#template ImmGetCandidateList;
+  ImmGetCandidateListA 
+#end ImmGetCandidateList;
+#end if;
+
+procedure ImmGetGuideLineA(
+    _001            : in HIMC; 
+    dwIndex         : in DWORD; 
+    _003            : out CHARSTR ; 
+    dwBufLen        : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetGuideLineA,system);
+#pragma import(ImmGetGuideLineA,'ImmGetGuideLineA','imm32.dll');
+
+procedure ImmGetGuideLineW(
+    _001            : in HIMC; 
+    dwIndex         : in DWORD; 
+    _003            : out WCHARSTR ; 
+    dwBufLen        : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetGuideLineW,system);
+#pragma import(ImmGetGuideLineW,'ImmGetGuideLineW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetGuideLine;
+  ImmGetGuideLineW 
+#end ImmGetGuideLine;
+#else;
+#template ImmGetGuideLine;
+  ImmGetGuideLineA 
+#end ImmGetGuideLine;
+#end if;
+
+procedure ImmGetConversionStatus(
+    _001            : in HIMC; 
+    _002            : out DWORD ; 
+    _003            : out DWORD )
+                      return BOOL;
+#pragma convention(ImmGetConversionStatus,system);
+#pragma import(ImmGetConversionStatus,'ImmGetConversionStatus','imm32.dll');
+
+procedure ImmSetConversionStatus(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmSetConversionStatus,system);
+#pragma import(ImmSetConversionStatus,'ImmSetConversionStatus','imm32.dll');
+
+procedure ImmGetOpenStatus(
+    _001            : in HIMC)
+                      return BOOL;
+#pragma convention(ImmGetOpenStatus,system);
+#pragma import(ImmGetOpenStatus,'ImmGetOpenStatus','imm32.dll');
+
+procedure ImmSetOpenStatus(
+    _001            : in HIMC; 
+    _002            : in BOOL)
+                      return BOOL;
+#pragma convention(ImmSetOpenStatus,system);
+#pragma import(ImmSetOpenStatus,'ImmSetOpenStatus','imm32.dll');
+
+procedure ImmGetCompositionFontA(
+    _001            : in HIMC; 
+    _002            : out tagLOGFONTA)
+                      return BOOL;
+#pragma convention(ImmGetCompositionFontA,system);
+#pragma import(ImmGetCompositionFontA,'ImmGetCompositionFontA','imm32.dll');
+
+procedure ImmGetCompositionFontW(
+    _001            : in HIMC; 
+    _002            : out tagLOGFONTW)
+                      return BOOL;
+#pragma convention(ImmGetCompositionFontW,system);
+#pragma import(ImmGetCompositionFontW,'ImmGetCompositionFontW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetCompositionFont;
+  ImmGetCompositionFontW 
+#end ImmGetCompositionFont;
+#else;
+#template ImmGetCompositionFont;
+  ImmGetCompositionFontA 
+#end ImmGetCompositionFont;
+#end if;
+
+procedure ImmSetCompositionFontA(
+    _001            : in HIMC; 
+    _002            : in LPLOGFONTA)
+                      return BOOL;
+#pragma convention(ImmSetCompositionFontA,system);
+#pragma import(ImmSetCompositionFontA,'ImmSetCompositionFontA','imm32.dll');
+
+procedure ImmSetCompositionFontW(
+    _001            : in HIMC; 
+    _002            : in LPLOGFONTW)
+                      return BOOL;
+#pragma convention(ImmSetCompositionFontW,system);
+#pragma import(ImmSetCompositionFontW,'ImmSetCompositionFontW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmSetCompositionFont;
+  ImmSetCompositionFontW 
+#end ImmSetCompositionFont;
+#else;
+#template ImmSetCompositionFont;
+  ImmSetCompositionFontA 
+#end ImmSetCompositionFont;
+#end if;
+
+procedure ImmConfigureIMEA(
+    _001            : in t_HKL; 
+    _002            : in t_HWND; 
+    _003            : in DWORD; 
+    _004            : in LPVOID)
+                      return BOOL;
+#pragma convention(ImmConfigureIMEA,system);
+#pragma import(ImmConfigureIMEA,'ImmConfigureIMEA','imm32.dll');
+
+procedure ImmConfigureIMEW(
+    _001            : in t_HKL; 
+    _002            : in t_HWND; 
+    _003            : in DWORD; 
+    _004            : in LPVOID)
+                      return BOOL;
+#pragma convention(ImmConfigureIMEW,system);
+#pragma import(ImmConfigureIMEW,'ImmConfigureIMEW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmConfigureIME;
+  ImmConfigureIMEW 
+#end ImmConfigureIME;
+#else;
+#template ImmConfigureIME;
+  ImmConfigureIMEA 
+#end ImmConfigureIME;
+#end if;
+
+procedure ImmEscapeA(
+    _001            : in t_HKL; 
+    _002            : in HIMC; 
+    _003            : in UINT; 
+    _004            : in LPVOID)
+                      return t_LRESULT;
+#pragma convention(ImmEscapeA,system);
+#pragma import(ImmEscapeA,'ImmEscapeA','imm32.dll');
+
+procedure ImmEscapeW(
+    _001            : in t_HKL; 
+    _002            : in HIMC; 
+    _003            : in UINT; 
+    _004            : in LPVOID)
+                      return t_LRESULT;
+#pragma convention(ImmEscapeW,system);
+#pragma import(ImmEscapeW,'ImmEscapeW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmEscape;
+  ImmEscapeW 
+#end ImmEscape;
+#else;
+#template ImmEscape;
+  ImmEscapeA 
+#end ImmEscape;
+#end if;
+
+procedure ImmGetConversionListA(
+    _001            : in t_HKL; 
+    _002            : in HIMC; 
+    _003            : in LPCSTR; 
+    _004            : out tagCANDIDATELIST; 
+    dwBufLen        : in DWORD; 
+    uFlag           : in UINT)
+                      return DWORD;
+#pragma convention(ImmGetConversionListA,system);
+#pragma import(ImmGetConversionListA,'ImmGetConversionListA','imm32.dll');
+
+procedure ImmGetConversionListW(
+    _001            : in t_HKL; 
+    _002            : in HIMC; 
+    _003            : in LPCWSTR; 
+    _004            : out tagCANDIDATELIST; 
+    dwBufLen        : in DWORD; 
+    uFlag           : in UINT)
+                      return DWORD;
+#pragma convention(ImmGetConversionListW,system);
+#pragma import(ImmGetConversionListW,'ImmGetConversionListW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetConversionList;
+  ImmGetConversionListW 
+#end ImmGetConversionList;
+#else;
+#template ImmGetConversionList;
+  ImmGetConversionListA 
+#end ImmGetConversionList;
+#end if;
+
+procedure ImmNotifyIME(
+    _001            : in HIMC; 
+    dwAction        : in DWORD; 
+    dwIndex         : in DWORD; 
+    dwValue         : in DWORD)
+                      return BOOL;
+#pragma convention(ImmNotifyIME,system);
+#pragma import(ImmNotifyIME,'ImmNotifyIME','imm32.dll');
+
+procedure ImmGetStatusWindowPos(
+    _001            : in HIMC; 
+    _002            : out tagPOINT)
+                      return BOOL;
+#pragma convention(ImmGetStatusWindowPos,system);
+#pragma import(ImmGetStatusWindowPos,'ImmGetStatusWindowPos','imm32.dll');
+
+procedure ImmSetStatusWindowPos(
+    _001            : in HIMC; 
+    _002            : in p_POINT)
+                      return BOOL;
+#pragma convention(ImmSetStatusWindowPos,system);
+#pragma import(ImmSetStatusWindowPos,'ImmSetStatusWindowPos','imm32.dll');
+
+procedure ImmGetCompositionWindow(
+    _001            : in HIMC; 
+    _002            : out tagCOMPOSITIONFORM)
+                      return BOOL;
+#pragma convention(ImmGetCompositionWindow,system);
+#pragma import(ImmGetCompositionWindow,'ImmGetCompositionWindow','imm32.dll');
+
+procedure ImmSetCompositionWindow(
+    _001            : in HIMC; 
+    _002            : in LPCOMPOSITIONFORM)
+                      return BOOL;
+#pragma convention(ImmSetCompositionWindow,system);
+#pragma import(ImmSetCompositionWindow,'ImmSetCompositionWindow','imm32.dll');
+
+procedure ImmGetCandidateWindow(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : out tagCANDIDATEFORM)
+                      return BOOL;
+#pragma convention(ImmGetCandidateWindow,system);
+#pragma import(ImmGetCandidateWindow,'ImmGetCandidateWindow','imm32.dll');
+
+procedure ImmSetCandidateWindow(
+    _001            : in HIMC; 
+    _002            : in LPCANDIDATEFORM)
+                      return BOOL;
+#pragma convention(ImmSetCandidateWindow,system);
+#pragma import(ImmSetCandidateWindow,'ImmSetCandidateWindow','imm32.dll');
+
+procedure ImmIsUIMessageA(
+    _001            : in t_HWND; 
+    _002            : in UINT; 
+    _003            : in t_WPARAM; 
+    _004            : in t_LPARAM)
+                      return BOOL;
+#pragma convention(ImmIsUIMessageA,system);
+#pragma import(ImmIsUIMessageA,'ImmIsUIMessageA','imm32.dll');
+
+procedure ImmIsUIMessageW(
+    _001            : in t_HWND; 
+    _002            : in UINT; 
+    _003            : in t_WPARAM; 
+    _004            : in t_LPARAM)
+                      return BOOL;
+#pragma convention(ImmIsUIMessageW,system);
+#pragma import(ImmIsUIMessageW,'ImmIsUIMessageW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmIsUIMessage;
+  ImmIsUIMessageW 
+#end ImmIsUIMessage;
+#else;
+#template ImmIsUIMessage;
+  ImmIsUIMessageA 
+#end ImmIsUIMessage;
+#end if;
+
+procedure ImmGetVirtualKey(
+    _001            : in t_HWND)
+                      return UINT;
+#pragma convention(ImmGetVirtualKey,system);
+#pragma import(ImmGetVirtualKey,'ImmGetVirtualKey','imm32.dll');
+
+type
+  t_001 = signed 32;
+
+REGISTERWORDENUMPROCA = ^procedure (
+    _001            : LPCSTR;
+    _002            : DWORD;
+    _003            : LPCSTR;
+    _004            : LPVOID)
+                      return t_001 for machine_pointer use true;
+type
+  t_002 = signed 32;
+
+REGISTERWORDENUMPROCW = ^procedure (
+    _001            : LPCWSTR;
+    _002            : DWORD;
+    _003            : LPCWSTR;
+    _004            : LPVOID)
+                      return t_002 for machine_pointer use true;
+#if #declared UNICODE; then;
+#template REGISTERWORDENUMPROC;
+  REGISTERWORDENUMPROCW 
+#end REGISTERWORDENUMPROC;
+#else;
+#template REGISTERWORDENUMPROC;
+  REGISTERWORDENUMPROCA 
+#end REGISTERWORDENUMPROC;
+#end if;
+
+procedure ImmRegisterWordA(
+    _001            : in t_HKL; 
+    lpszReading     : in LPCSTR; 
+    _003            : in DWORD; 
+    lpszRegister    : in LPCSTR)
+                      return BOOL;
+#pragma convention(ImmRegisterWordA,system);
+#pragma import(ImmRegisterWordA,'ImmRegisterWordA','imm32.dll');
+
+procedure ImmRegisterWordW(
+    _001            : in t_HKL; 
+    lpszReading     : in LPCWSTR; 
+    _003            : in DWORD; 
+    lpszRegister    : in LPCWSTR)
+                      return BOOL;
+#pragma convention(ImmRegisterWordW,system);
+#pragma import(ImmRegisterWordW,'ImmRegisterWordW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmRegisterWord;
+  ImmRegisterWordW 
+#end ImmRegisterWord;
+#else;
+#template ImmRegisterWord;
+  ImmRegisterWordA 
+#end ImmRegisterWord;
+#end if;
+
+procedure ImmUnregisterWordA(
+    _001            : in t_HKL; 
+    lpszReading     : in LPCSTR; 
+    _003            : in DWORD; 
+    lpszUnregister  : in LPCSTR)
+                      return BOOL;
+#pragma convention(ImmUnregisterWordA,system);
+#pragma import(ImmUnregisterWordA,'ImmUnregisterWordA','imm32.dll');
+
+procedure ImmUnregisterWordW(
+    _001            : in t_HKL; 
+    lpszReading     : in LPCWSTR; 
+    _003            : in DWORD; 
+    lpszUnregister  : in LPCWSTR)
+                      return BOOL;
+#pragma convention(ImmUnregisterWordW,system);
+#pragma import(ImmUnregisterWordW,'ImmUnregisterWordW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmUnregisterWord;
+  ImmUnregisterWordW 
+#end ImmUnregisterWord;
+#else;
+#template ImmUnregisterWord;
+  ImmUnregisterWordA 
+#end ImmUnregisterWord;
+#end if;
+
+procedure ImmGetRegisterWordStyleA(
+    _001            : in t_HKL; 
+    nItem           : in UINT; 
+    _003            : out tagSTYLEBUFA)
+                      return UINT;
+#pragma convention(ImmGetRegisterWordStyleA,system);
+#pragma import(ImmGetRegisterWordStyleA,'ImmGetRegisterWordStyleA','imm32.dll');
+
+procedure ImmGetRegisterWordStyleW(
+    _001            : in t_HKL; 
+    nItem           : in UINT; 
+    _003            : out tagSTYLEBUFW)
+                      return UINT;
+#pragma convention(ImmGetRegisterWordStyleW,system);
+#pragma import(ImmGetRegisterWordStyleW,'ImmGetRegisterWordStyleW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetRegisterWordStyle;
+  ImmGetRegisterWordStyleW 
+#end ImmGetRegisterWordStyle;
+#else;
+#template ImmGetRegisterWordStyle;
+  ImmGetRegisterWordStyleA 
+#end ImmGetRegisterWordStyle;
+#end if;
+
+procedure ImmEnumRegisterWordA(
+    _001            : in t_HKL; 
+    _002            : in REGISTERWORDENUMPROCA; 
+    lpszReading     : in LPCSTR; 
+    _004            : in DWORD; 
+    lpszRegister    : in LPCSTR; 
+    _006            : in LPVOID)
+                      return UINT;
+#pragma convention(ImmEnumRegisterWordA,system);
+#pragma import(ImmEnumRegisterWordA,'ImmEnumRegisterWordA','imm32.dll');
+
+procedure ImmEnumRegisterWordW(
+    _001            : in t_HKL; 
+    _002            : in REGISTERWORDENUMPROCW; 
+    lpszReading     : in LPCWSTR; 
+    _004            : in DWORD; 
+    lpszRegister    : in LPCWSTR; 
+    _006            : in LPVOID)
+                      return UINT;
+#pragma convention(ImmEnumRegisterWordW,system);
+#pragma import(ImmEnumRegisterWordW,'ImmEnumRegisterWordW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmEnumRegisterWord;
+  ImmEnumRegisterWordW 
+#end ImmEnumRegisterWord;
+#else;
+#template ImmEnumRegisterWord;
+  ImmEnumRegisterWordA 
+#end ImmEnumRegisterWord;
+#end if;
+
+procedure ImmDisableIME(
+    _001            : in DWORD)
+                      return BOOL;
+#pragma convention(ImmDisableIME,system);
+#pragma import(ImmDisableIME,'ImmDisableIME','imm32.dll');
+
+procedure ImmEnumInputContext(
+    idThread        : DWORD; 
+    lpfn            : IMCENUMPROC; 
+    lParam          : t_LPARAM)
+                      return BOOL;
+#pragma convention(ImmEnumInputContext,system);
+#pragma import(ImmEnumInputContext,'ImmEnumInputContext','imm32.dll');
+
+procedure ImmGetImeMenuItemsA(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : in DWORD; 
+    _004            : out tagIMEMENUITEMINFOA; 
+    _005            : out tagIMEMENUITEMINFOA; 
+    _006            : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetImeMenuItemsA,system);
+#pragma import(ImmGetImeMenuItemsA,'ImmGetImeMenuItemsA','imm32.dll');
+
+procedure ImmGetImeMenuItemsW(
+    _001            : in HIMC; 
+    _002            : in DWORD; 
+    _003            : in DWORD; 
+    _004            : out tagIMEMENUITEMINFOW; 
+    _005            : out tagIMEMENUITEMINFOW; 
+    _006            : in DWORD)
+                      return DWORD;
+#pragma convention(ImmGetImeMenuItemsW,system);
+#pragma import(ImmGetImeMenuItemsW,'ImmGetImeMenuItemsW','imm32.dll');
+
+#if #declared UNICODE; then;
+#template ImmGetImeMenuItems;
+  ImmGetImeMenuItemsW 
+#end ImmGetImeMenuItems;
+#else;
+#template ImmGetImeMenuItems;
+  ImmGetImeMenuItemsA 
+#end ImmGetImeMenuItems;
+#end if;
+
+procedure ImmDisableTextFrameService(
+    idThread        : DWORD)
+                      return BOOL;
+#pragma convention(ImmDisableTextFrameService,system);
+#pragma import(ImmDisableTextFrameService,'ImmDisableTextFrameService','imm32.dll');
+
+--  wParam for WM_IME_CONTROL
+const
+  IMC_GETCANDIDATEPOS= $07;
+
+const
+  IMC_SETCANDIDATEPOS= $08;
+
+const
+  IMC_GETCOMPOSITIONFONT= $09;
+
+const
+  IMC_SETCOMPOSITIONFONT= $0A;
+
+const
+  IMC_GETCOMPOSITIONWINDOW= $0B;
+
+const
+  IMC_SETCOMPOSITIONWINDOW= $0C;
+
+const
+  IMC_GETSTATUSWINDOWPOS= $0F;
+
+const
+  IMC_SETSTATUSWINDOWPOS= $10;
+
+const
+  IMC_CLOSESTATUSWINDOW= $21;
+
+const
+  IMC_OPENSTATUSWINDOW= $22;
+
+--  dwAction for ImmNotifyIME
+const
+  NI_OPENCANDIDATE  = $10;
+
+const
+  NI_CLOSECANDIDATE = $11;
+
+const
+  NI_SELECTCANDIDATESTR= $12;
+
+const
+  NI_CHANGECANDIDATELIST= $13;
+
+const
+  NI_FINALIZECONVERSIONRESULT= $14;
+
+const
+  NI_COMPOSITIONSTR = $15;
+
+const
+  NI_SETCANDIDATE_PAGESTART= $16;
+
+const
+  NI_SETCANDIDATE_PAGESIZE= $17;
+
+const
+  NI_IMEMENUSELECTED= $18;
+
+--  lParam for WM_IME_SETCONTEXT
+const
+  ISC_SHOWUICANDIDATEWINDOW= $01;
+
+const
+  ISC_SHOWUICOMPOSITIONWINDOW= $80000000;
+
+const
+  ISC_SHOWUIGUIDELINE= $40000000;
+
+const
+  ISC_SHOWUIALLCANDIDATEWINDOW= $0F;
+
+const
+  ISC_SHOWUIALL     = $C000000F;
+
+--  dwIndex for ImmNotifyIME/NI_COMPOSITIONSTR
+const
+  CPS_COMPLETE      = $01;
+
+const
+  CPS_CONVERT       = $02;
+
+const
+  CPS_REVERT        = $03;
+
+const
+  CPS_CANCEL        = $04;
+
+--  the modifiers of hot key
+const
+  MOD_LEFT          = $8000;
+
+const
+  MOD_RIGHT         = $4000;
+
+const
+  MOD_ON_KEYUP      = $0800;
+
+const
+  MOD_IGNORE_ALL_MODIFIER= $0400;
+
+--  Windows for Simplified Chinese Edition hot key ID from 0x10 - 0x2F
+const
+  IME_CHOTKEY_IME_NONIME_TOGGLE= $10;
+
+const
+  IME_CHOTKEY_SHAPE_TOGGLE= $11;
+
+const
+  IME_CHOTKEY_SYMBOL_TOGGLE= $12;
+
+--  Windows for Japanese Edition hot key ID from 0x30 - 0x4F
+const
+  IME_JHOTKEY_CLOSE_OPEN= $30;
+
+--  Windows for Korean Edition hot key ID from 0x50 - 0x6F
+const
+  IME_KHOTKEY_SHAPE_TOGGLE= $50;
+
+const
+  IME_KHOTKEY_HANJACONVERT= $51;
+
+const
+  IME_KHOTKEY_ENGLISH= $52;
+
+--  Windows for Traditional Chinese Edition hot key ID from 0x70 - 0x8F
+const
+  IME_THOTKEY_IME_NONIME_TOGGLE= $70;
+
+const
+  IME_THOTKEY_SHAPE_TOGGLE= $71;
+
+const
+  IME_THOTKEY_SYMBOL_TOGGLE= $72;
+
+--  direct switch hot key ID from 0x100 - 0x11F
+const
+  IME_HOTKEY_DSWITCH_FIRST= $0100;
+
+const
+  IME_HOTKEY_DSWITCH_LAST= $011F;
+
+--  IME private hot key from 0x200 - 0x21F
+const
+  IME_HOTKEY_PRIVATE_FIRST= $0200;
+
+const
+  IME_ITHOTKEY_RESEND_RESULTSTR= $0200;
+
+const
+  IME_ITHOTKEY_PREVIOUS_COMPOSITION= $0201;
+
+const
+  IME_ITHOTKEY_UISTYLE_TOGGLE= $0202;
+
+const
+  IME_ITHOTKEY_RECONVERTSTRING= $0203;
+
+const
+  IME_HOTKEY_PRIVATE_LAST= $021F;
+
+--  parameter of ImmGetCompositionString
+const
+  GCS_COMPREADSTR   = $01;
+
+const
+  GCS_COMPREADATTR  = $02;
+
+const
+  GCS_COMPREADCLAUSE= $04;
+
+const
+  GCS_COMPSTR       = $08;
+
+const
+  GCS_COMPATTR      = $10;
+
+const
+  GCS_COMPCLAUSE    = $20;
+
+const
+  GCS_CURSORPOS     = $80;
+
+const
+  GCS_DELTASTART    = $0100;
+
+const
+  GCS_RESULTREADSTR = $0200;
+
+const
+  GCS_RESULTREADCLAUSE= $0400;
+
+const
+  GCS_RESULTSTR     = $0800;
+
+const
+  GCS_RESULTCLAUSE  = $1000;
+
+--  style bit flags for WM_IME_COMPOSITION
+const
+  CS_INSERTCHAR     = $2000;
+
+const
+  CS_NOMOVECARET    = $4000;
+
+--  IME version constants
+const
+  IMEVER_0310       = $3000A;
+
+const
+  IMEVER_0400       = $40000;
+
+--  IME property bits
+const
+  IME_PROP_AT_CARET = $10000;
+
+const
+  IME_PROP_SPECIAL_UI= $20000;
+
+const
+  IME_PROP_CANDLIST_START_FROM_1= $40000;
+
+const
+  IME_PROP_UNICODE  = $80000;
+
+const
+  IME_PROP_COMPLETE_ON_UNSELECT= $100000;
+
+--  IME UICapability bits
+const
+  UI_CAP_2700       = $01;
+
+const
+  UI_CAP_ROT90      = $02;
+
+const
+  UI_CAP_ROTANY     = $04;
+
+--  ImmSetCompositionString Capability bits
+const
+  SCS_CAP_COMPSTR   = $01;
+
+const
+  SCS_CAP_MAKEREAD  = $02;
+
+const
+  SCS_CAP_SETRECONVERTSTRING= $04;
+
+--  IME WM_IME_SELECT inheritance Capability bits
+const
+  SELECT_CAP_CONVERSION= $01;
+
+const
+  SELECT_CAP_SENTENCE= $02;
+
+--  ID for deIndex of ImmGetGuideLine
+const
+  GGL_LEVEL         = $01;
+
+const
+  GGL_INDEX         = $02;
+
+const
+  GGL_STRING        = $03;
+
+const
+  GGL_PRIVATE       = $04;
+
+--  ID for dwLevel of GUIDELINE Structure
+const
+  GL_LEVEL_NOGUIDELINE= $00;
+
+const
+  GL_LEVEL_FATAL    = $01;
+
+const
+  GL_LEVEL_ERROR    = $02;
+
+const
+  GL_LEVEL_WARNING  = $03;
+
+const
+  GL_LEVEL_INFORMATION= $04;
+
+--  ID for dwIndex of GUIDELINE Structure
+const
+  GL_ID_UNKNOWN     = $00;
+
+const
+  GL_ID_NOMODULE    = $01;
+
+const
+  GL_ID_NODICTIONARY= $10;
+
+const
+  GL_ID_CANNOTSAVE  = $11;
+
+const
+  GL_ID_NOCONVERT   = $20;
+
+const
+  GL_ID_TYPINGERROR = $21;
+
+const
+  GL_ID_TOOMANYSTROKE= $22;
+
+const
+  GL_ID_READINGCONFLICT= $23;
+
+const
+  GL_ID_INPUTREADING= $24;
+
+const
+  GL_ID_INPUTRADICAL= $25;
+
+const
+  GL_ID_INPUTCODE   = $26;
+
+const
+  GL_ID_INPUTSYMBOL = $27;
+
+const
+  GL_ID_CHOOSECANDIDATE= $28;
+
+const
+  GL_ID_REVERSECONVERSION= $29;
+
+const
+  GL_ID_PRIVATE_FIRST= $8000;
+
+const
+  GL_ID_PRIVATE_LAST= $FFFF;
+
+--  ID for dwIndex of ImmGetProperty
+const
+  IGP_PROPERTY      = $04;
+
+const
+  IGP_CONVERSION    = $08;
+
+const
+  IGP_SENTENCE      = $0C;
+
+const
+  IGP_UI            = $10;
+
+const
+  IGP_SETCOMPSTR    = $14;
+
+const
+  IGP_SELECT        = $18;
+
+--  dwIndex for ImmSetCompositionString API
+const
+  SCS_SETRECONVERTSTRING= $10000;
+
+const
+  SCS_QUERYRECONVERTSTRING= $20000;
+
+--  attribute for COMPOSITIONSTRING Structure
+const
+  ATTR_INPUT        = $00;
+
+const
+  ATTR_TARGET_CONVERTED= $01;
+
+const
+  ATTR_CONVERTED    = $02;
+
+const
+  ATTR_TARGET_NOTCONVERTED= $03;
+
+const
+  ATTR_INPUT_ERROR  = $04;
+
+const
+  ATTR_FIXEDCONVERTED= $05;
+
+--  bit field for IMC_SETCOMPOSITIONWINDOW, IMC_SETCANDIDATEWINDOW
+const
+  CFS_DEFAULT       = $00;
+
+const
+  CFS_RECT          = $01;
+
+const
+  CFS_POINT         = $02;
+
+const
+  CFS_FORCE_POSITION= $20;
+
+const
+  CFS_CANDIDATEPOS  = $40;
+
+const
+  CFS_EXCLUDE       = $80;
+
+--  conversion direction for ImmGetConversionList
+const
+  GCL_CONVERSION    = $01;
+
+const
+  GCL_REVERSECONVERSION= $02;
+
+const
+  GCL_REVERSE_LENGTH= $03;
+
+--  bit field for conversion mode
+const
+  IME_CMODE_ALPHANUMERIC= $00;
+
+const
+  IME_CMODE_NATIVE  = $01;
+
+--  IME_CMODE_HANGEUL is old name of IME_CMODE_HANGUL. It will be gone eventually.
+const
+  IME_CMODE_KATAKANA= $02;
+
+const
+  IME_CMODE_LANGUAGE= $03;
+
+const
+  IME_CMODE_FULLSHAPE= $08;
+
+const
+  IME_CMODE_ROMAN   = $10;
+
+const
+  IME_CMODE_CHARCODE= $20;
+
+const
+  IME_CMODE_HANJACONVERT= $40;
+
+const
+  IME_CMODE_SOFTKBD = $80;
+
+const
+  IME_CMODE_NOCONVERSION= $0100;
+
+const
+  IME_CMODE_EUDC    = $0200;
+
+const
+  IME_CMODE_SYMBOL  = $0400;
+
+const
+  IME_CMODE_FIXED   = $0800;
+
+const
+  IME_CMODE_RESERVED= $F0000000;
+
+--  bit field for sentence mode
+const
+  IME_SMODE_NONE    = $00;
+
+const
+  IME_SMODE_PLAURALCLAUSE= $01;
+
+const
+  IME_SMODE_SINGLECONVERT= $02;
+
+const
+  IME_SMODE_AUTOMATIC= $04;
+
+const
+  IME_SMODE_PHRASEPREDICT= $08;
+
+const
+  IME_SMODE_CONVERSATION= $10;
+
+const
+  IME_SMODE_RESERVED= $F000;
+
+--  style of candidate
+const
+  IME_CAND_UNKNOWN  = $00;
+
+const
+  IME_CAND_READ     = $01;
+
+const
+  IME_CAND_CODE     = $02;
+
+const
+  IME_CAND_MEANING  = $03;
+
+const
+  IME_CAND_RADICAL  = $04;
+
+const
+  IME_CAND_STROKE   = $05;
+
+--  wParam of report message WM_IME_NOTIFY
+const
+  IMN_CLOSESTATUSWINDOW= $01;
+
+const
+  IMN_OPENSTATUSWINDOW= $02;
+
+const
+  IMN_CHANGECANDIDATE= $03;
+
+const
+  IMN_CLOSECANDIDATE= $04;
+
+const
+  IMN_OPENCANDIDATE = $05;
+
+const
+  IMN_SETCONVERSIONMODE= $06;
+
+const
+  IMN_SETSENTENCEMODE= $07;
+
+const
+  IMN_SETOPENSTATUS = $08;
+
+const
+  IMN_SETCANDIDATEPOS= $09;
+
+const
+  IMN_SETCOMPOSITIONFONT= $0A;
+
+const
+  IMN_SETCOMPOSITIONWINDOW= $0B;
+
+const
+  IMN_SETSTATUSWINDOWPOS= $0C;
+
+const
+  IMN_GUIDELINE     = $0D;
+
+const
+  IMN_PRIVATE       = $0E;
+
+--  wParam of report message WM_IME_REQUEST
+const
+  IMR_COMPOSITIONWINDOW= $01;
+
+const
+  IMR_CANDIDATEWINDOW= $02;
+
+const
+  IMR_COMPOSITIONFONT= $03;
+
+const
+  IMR_RECONVERTSTRING= $04;
+
+const
+  IMR_CONFIRMRECONVERTSTRING= $05;
+
+const
+  IMR_QUERYCHARPOSITION= $06;
+
+const
+  IMR_DOCUMENTFEED  = $07;
+
+--  error code of ImmGetCompositionString
+--  dialog mode of ImmConfigureIME
+const
+  IME_CONFIG_GENERAL= 1;
+
+const
+  IME_CONFIG_REGISTERWORD= 2;
+
+const
+  IME_CONFIG_SELECTDICTIONARY= 3;
+
+--  flags for ImmEscape
+const
+  IME_ESC_QUERY_SUPPORT= $03;
+
+const
+  IME_ESC_RESERVED_FIRST= $04;
+
+const
+  IME_ESC_RESERVED_LAST= $07FF;
+
+const
+  IME_ESC_PRIVATE_FIRST= $0800;
+
+const
+  IME_ESC_PRIVATE_LAST= $0FFF;
+
+const
+  IME_ESC_SEQUENCE_TO_INTERNAL= $1001;
+
+const
+  IME_ESC_GET_EUDC_DICTIONARY= $1003;
+
+const
+  IME_ESC_SET_EUDC_DICTIONARY= $1004;
+
+const
+  IME_ESC_MAX_KEY   = $1005;
+
+const
+  IME_ESC_IME_NAME  = $1006;
+
+const
+  IME_ESC_SYNC_HOTKEY= $1007;
+
+const
+  IME_ESC_HANJA_MODE= $1008;
+
+const
+  IME_ESC_AUTOMATA  = $1009;
+
+const
+  IME_ESC_PRIVATE_HOTKEY= $100A;
+
+const
+  IME_ESC_GETHELPFILENAME= $100B;
+
+--  style of word registration
+const
+  IME_REGWORD_STYLE_EUDC= $01;
+
+const
+  IME_REGWORD_STYLE_USER_FIRST= $80000000;
+
+const
+  IME_REGWORD_STYLE_USER_LAST= $FFFFFFFF;
+
+--  dwFlags for ImmAssociateContextEx
+const
+  IACE_CHILDREN     = $01;
+
+const
+  IACE_DEFAULT      = $10;
+
+const
+  IACE_IGNORENOCONTEXT= $20;
+
+--  dwFlags for ImmGetImeMenuItems
+const
+  IGIMIF_RIGHTMENU  = $01;
+
+--  dwType for ImmGetImeMenuItems
+const
+  IGIMII_CMODE      = $01;
+
+const
+  IGIMII_SMODE      = $02;
+
+const
+  IGIMII_CONFIGURE  = $04;
+
+const
+  IGIMII_TOOLS      = $08;
+
+const
+  IGIMII_HELP       = $10;
+
+const
+  IGIMII_OTHER      = $20;
+
+const
+  IGIMII_INPUTTOOLS = $40;
+
+--  fType of IMEMENUITEMINFO structure
+const
+  IMFT_RADIOCHECK   = $01;
+
+const
+  IMFT_SEPARATOR    = $02;
+
+const
+  IMFT_SUBMENU      = $04;
+
+--  fState of IMEMENUITEMINFO structure
+--  type of soft keyboard
+--  for Windows Tranditional Chinese Edition
+const
+  SOFTKEYBOARD_TYPE_T1= $01;
+
+--  for Windows Simplified Chinese Edition
+const
+  SOFTKEYBOARD_TYPE_C1= $02;
+
+
+end imm;

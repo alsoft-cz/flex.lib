@@ -1,0 +1,64 @@
+----------------------------------------------------------------------------------------------------
+module public testlib =
+-- Flex Tests Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+with
+    standard;
+
+type
+    t_testlib_session = record
+      order        : t_signed;
+      errorcount   : t_unsigned;
+      verbose      : t_logical;
+      name         : t_char32str;
+      shortname    : t_char32str;
+      end record;
+
+const
+    t_testlib_order_never : t_signed = -1;
+
+----------------------------------------------------------------------------------------------------
+procedure testlib_create_session(
+    session        : in out ref t_testlib_session;
+    shortname      : in ref t_char32ustr;
+    name           : in ref t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_discard_session(
+    session        : in out ref t_testlib_session);
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert(
+    session        : in out ref t_testlib_session;
+    expression     : in t_logical;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_order(
+    session        : in out ref t_testlib_session;
+    order          : in t_signed;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_reset_order(
+    session        : in out ref t_testlib_session;
+    order          : in t_signed;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_assert_strict_order(
+    session        : in out ref t_testlib_session;
+    order          : in t_signed;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_report_ok(
+    session        : in out ref t_testlib_session;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+procedure testlib_report_err(
+    session        : in out ref t_testlib_session;
+    num            : in t_unsigned;
+    str            : in t_char32ustr);
+----------------------------------------------------------------------------------------------------
+  end testlib;

@@ -1,0 +1,5786 @@
+----------------------------------------------------------------------------------------------------
+module mmsystem =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,guiddef;
+
+-- /*==========================================================================
+--  *
+--  *  mmsystem.h -- Include file for Multimedia API's
+--  *
+--  *  Version 4.00
+--  *
+--  *  Copyright (C) 1992-1998 Microsoft Corporation.  All Rights Reserved.
+--  *
+--  *--------------------------------------------------------------------------
+--  *
+--  *  Define:         Prevent inclusion of:
+--  *  --------------  --------------------------------------------------------
+--  *  MMNODRV         Installable driver support
+--  *  MMNOSOUND       Sound support
+--  *  MMNOWAVE        Waveform support
+--  *  MMNOMIDI        MIDI support
+--  *  MMNOAUX         Auxiliary audio support
+--  *  MMNOMIXER       Mixer support
+--  *  MMNOTIMER       Timer support
+--  *  MMNOJOY         Joystick support
+--  *  MMNOMCI         MCI support
+--  *  MMNOMMIO        Multimedia file I/O support
+--  *  MMNOMMSYSTEM    General MMSYSTEM functions
+--  *
+--  *==========================================================================
+--  */
+-- ignored #include <pshpack1.h>
+-- #pragma  pack(1)
+-- /****************************************************************************
+-- 
+--                     General constants and data types
+-- 
+-- ****************************************************************************/
+-- /* general constants 
+const
+  MAXPNAMELEN       = 32;
+
+const
+  MAXERRORLENGTH    = 256;
+
+const
+  MAX_JOYSTICKOEMVXDNAME= 260;
+
+-- /*
+--  *  Microsoft Manufacturer and Product ID's (these have been moved to
+--  *  MMREG.H for Windows 4.00 and above).
+--  */
+-- /* general data types 
+type
+MMVERSION         = UINT;
+-- /* major (high byte), minor (low byte) 
+type
+MMRESULT          = UINT;
+-- /* error return code, 0 means no error 
+-- /* call as if(err=xxxx(...)) Error(err); else 
+type
+LPUINT            = ^UINT for machine_pointer use true;
+-- /* MMTIME data structure 
+type
+  mmtime_tag        = record
+wType           : UINT;
+u                : record
+      ms            : DWORD for position use 0;
+      sample        : DWORD for position use 0;
+      cb            : DWORD for position use 0;
+      ticks         : DWORD for position use 0;
+  smpte             : record
+hour            : BYTE;
+min             : BYTE;
+sec             : BYTE;
+frame           : BYTE;
+fps             : BYTE;
+dummy           : BYTE;
+pad             : array 0..1 of BYTE;
+  end record for position use 0;
+  midi              : record
+songptrpos      : DWORD;
+  end record for position use 0;
+    end record;
+  end record;
+  MMTIME            = mmtime_tag;
+  PMMTIME           = ^mmtime_tag;
+  NPMMTIME          = ^mmtime_tag;
+  LPMMTIME          = ^mmtime_tag;
+
+-- /* types for wType field in MMTIME struct 
+const
+  TIME_MS           = $01;
+
+const
+  TIME_SAMPLES      = $02;
+
+const
+  TIME_BYTES        = $04;
+
+const
+  TIME_SMPTE        = $08;
+
+const
+  TIME_MIDI         = $10;
+
+const
+  TIME_TICKS        = $20;
+
+-- /*
+--  *
+--  *
+--  */
+-- /****************************************************************************
+-- 
+--                     Multimedia Extensions Window Messages
+-- 
+-- ****************************************************************************/
+const
+  MM_JOY1MOVE       = $03A0;
+
+const
+  MM_JOY2MOVE       = $03A1;
+
+const
+  MM_JOY1ZMOVE      = $03A2;
+
+const
+  MM_JOY2ZMOVE      = $03A3;
+
+const
+  MM_JOY1BUTTONDOWN = $03B5;
+
+const
+  MM_JOY2BUTTONDOWN = $03B6;
+
+const
+  MM_JOY1BUTTONUP   = $03B7;
+
+const
+  MM_JOY2BUTTONUP   = $03B8;
+
+const
+  MM_MCINOTIFY      = $03B9;
+
+const
+  MM_WOM_OPEN       = $03BB;
+
+const
+  MM_WOM_CLOSE      = $03BC;
+
+const
+  MM_WOM_DONE       = $03BD;
+
+const
+  MM_WIM_OPEN       = $03BE;
+
+const
+  MM_WIM_CLOSE      = $03BF;
+
+const
+  MM_WIM_DATA       = $03C0;
+
+const
+  MM_MIM_OPEN       = $03C1;
+
+const
+  MM_MIM_CLOSE      = $03C2;
+
+const
+  MM_MIM_DATA       = $03C3;
+
+const
+  MM_MIM_LONGDATA   = $03C4;
+
+const
+  MM_MIM_ERROR      = $03C5;
+
+const
+  MM_MIM_LONGERROR  = $03C6;
+
+const
+  MM_MOM_OPEN       = $03C7;
+
+const
+  MM_MOM_CLOSE      = $03C8;
+
+const
+  MM_MOM_DONE       = $03C9;
+
+-- /* these are also in msvideo.h 
+const
+  MM_DRVM_OPEN      = $03D0;
+
+const
+  MM_DRVM_CLOSE     = $03D1;
+
+const
+  MM_DRVM_DATA      = $03D2;
+
+const
+  MM_DRVM_ERROR     = $03D3;
+
+-- /* these are used by msacm.h 
+const
+  MM_STREAM_OPEN    = $03D4;
+
+const
+  MM_STREAM_CLOSE   = $03D5;
+
+const
+  MM_STREAM_DONE    = $03D6;
+
+const
+  MM_STREAM_ERROR   = $03D7;
+
+const
+  MM_MOM_POSITIONCB = $03CA;
+
+const
+  MM_MCISIGNAL      = $03CB;
+
+const
+  MM_MIM_MOREDATA   = $03CC;
+
+const
+  MM_MIXM_LINE_CHANGE= $03D0;
+
+const
+  MM_MIXM_CONTROL_CHANGE= $03D1;
+
+-- /****************************************************************************
+-- 
+--                 String resource number bases (internal use)
+-- 
+-- ****************************************************************************/
+const
+  MMSYSERR_BASE     = 0;
+
+const
+  WAVERR_BASE       = 32;
+
+const
+  MIDIERR_BASE      = 64;
+
+const
+  TIMERR_BASE       = 96;
+
+const
+  JOYERR_BASE       = 160;
+
+const
+  MCIERR_BASE       = 256;
+
+const
+  MIXERR_BASE       = 1024;
+
+const
+  MCI_STRING_OFFSET = 512;
+
+const
+  MCI_VD_OFFSET     = 1024;
+
+const
+  MCI_CD_OFFSET     = 1088;
+
+const
+  MCI_WAVE_OFFSET   = 1152;
+
+const
+  MCI_SEQ_OFFSET    = 1216;
+
+-- /****************************************************************************
+-- 
+--                         General error return values
+-- 
+-- ****************************************************************************/
+-- /* general error return values 
+const
+  MMSYSERR_NOERROR  = 0;
+
+-- /* simultaneously on another 
+-- /* thread (eg callback) 
+type
+t_HDRVR           = t_HANDLE;
+-- /****************************************************************************
+-- 
+--                         Installable driver support
+-- 
+-- ****************************************************************************/
+type
+  DRVCONFIGINFOEX   = record
+dwDCISize       : DWORD;
+lpszDCISectionName : LPCWSTR;
+lpszDCIAliasName : LPCWSTR;
+dnDevNode       : DWORD;
+  end record;
+  PDRVCONFIGINFOEX  = ^DRVCONFIGINFOEX;
+  NPDRVCONFIGINFOEX = ^DRVCONFIGINFOEX;
+  LPDRVCONFIGINFOEX = ^DRVCONFIGINFOEX;
+
+-- /* Driver messages 
+const
+  DRV_LOAD          = $01;
+
+const
+  DRV_ENABLE        = $02;
+
+const
+  DRV_OPEN          = $03;
+
+const
+  DRV_CLOSE         = $04;
+
+const
+  DRV_DISABLE       = $05;
+
+const
+  DRV_FREE          = $06;
+
+const
+  DRV_CONFIGURE     = $07;
+
+const
+  DRV_QUERYCONFIGURE= $08;
+
+const
+  DRV_INSTALL       = $09;
+
+const
+  DRV_REMOVE        = $0A;
+
+const
+  DRV_EXITSESSION   = $0B;
+
+const
+  DRV_POWER         = $0F;
+
+const
+  DRV_RESERVED      = $0800;
+
+const
+  DRV_USER          = $4000;
+
+-- /* LPARAM of DRV_CONFIGURE message 
+type
+  tagDRVCONFIGINFO  = record
+dwDCISize       : DWORD;
+lpszDCISectionName : LPCWSTR;
+lpszDCIAliasName : LPCWSTR;
+  end record;
+  DRVCONFIGINFO     = tagDRVCONFIGINFO;
+  PDRVCONFIGINFO    = ^tagDRVCONFIGINFO;
+  NPDRVCONFIGINFO   = ^tagDRVCONFIGINFO;
+  LPDRVCONFIGINFO   = ^tagDRVCONFIGINFO;
+
+-- /* Supported return values for DRV_CONFIGURE message 
+const
+  DRVCNF_CANCEL     = $00;
+
+const
+  DRVCNF_OK         = $01;
+
+const
+  DRVCNF_RESTART    = $02;
+
+-- /* installable driver function prototypes 
+type
+DRIVERPROC        = ^procedure (
+    _001            : DWORD_PTR;
+    _002            : t_HDRVR;
+    _003            : UINT;
+    _004            : t_LPARAM;
+    _005            : t_LPARAM)
+                      return t_LRESULT for machine_pointer use true;
+procedure CloseDriver(
+    hDriver         : in t_HDRVR; 
+    lParam1         : in t_LPARAM; 
+    lParam2         : in t_LPARAM)
+                      return t_LRESULT;
+#pragma convention(CloseDriver,system);
+#pragma import(CloseDriver,'CloseDriver','winmm.dll');
+
+procedure OpenDriver(
+    szDriverName    : in LPCWSTR; 
+    szSectionName   : in LPCWSTR; 
+    lParam2         : in t_LPARAM)
+                      return t_HDRVR;
+#pragma convention(OpenDriver,system);
+#pragma import(OpenDriver,'OpenDriver','winmm.dll');
+
+procedure SendDriverMessage(
+    hDriver         : in t_HDRVR; 
+    _message        : in UINT; 
+    lParam1         : in t_LPARAM; 
+    lParam2         : in t_LPARAM)
+                      return t_LRESULT;
+#pragma convention(SendDriverMessage,system);
+#pragma import(SendDriverMessage,'SendDriverMessage','winmm.dll');
+
+procedure DrvGetModuleHandle(
+    hDriver         : in t_HDRVR)
+                      return t_HMODULE;
+#pragma convention(DrvGetModuleHandle,system);
+#pragma import(DrvGetModuleHandle,'DrvGetModuleHandle','winmm.dll');
+
+procedure GetDriverModuleHandle(
+    hDriver         : in t_HDRVR)
+                      return t_HMODULE;
+#pragma convention(GetDriverModuleHandle,system);
+#pragma import(GetDriverModuleHandle,'GetDriverModuleHandle','winmm.dll');
+
+procedure DefDriverProc(
+    dwDriverIdentifier : in DWORD_PTR; 
+    hdrvr           : in t_HDRVR; 
+    uMsg            : in UINT; 
+    lParam1         : in t_LPARAM; 
+    lParam2         : in t_LPARAM)
+                      return t_LRESULT;
+#pragma convention(DefDriverProc,system);
+#pragma import(DefDriverProc,'DefDriverProc','winmm.dll');
+
+-- /* return values from DriverProc() function 
+-- /****************************************************************************
+-- 
+--                           Driver callback support
+-- 
+-- ****************************************************************************/
+-- /* flags used with waveOutOpen(), waveInOpen(), midiInOpen(), and 
+-- /* midiOutOpen() to specify the type of the dwCallback parameter. 
+const
+  CALLBACK_TYPEMASK = $70000;
+
+const
+  CALLBACK_NULL     = $00;
+
+const
+  CALLBACK_WINDOW   = $10000;
+
+const
+  CALLBACK_TASK     = $20000;
+
+const
+  CALLBACK_FUNCTION = $30000;
+
+const
+  CALLBACK_EVENT    = $50000;
+
+type
+DRVCALLBACK       = procedure (
+    hdrvr           : t_HDRVR;
+    uMsg            : UINT;
+    dwUser          : DWORD_PTR;
+    dw1             : DWORD_PTR;
+    dw2             : DWORD_PTR);
+type
+LPDRVCALLBACK     = ^DRVCALLBACK for machine_pointer use true;
+type
+PDRVCALLBACK      = ^DRVCALLBACK for machine_pointer use true;
+-- /****************************************************************************
+-- 
+--                     General MMSYSTEM support
+-- 
+-- ****************************************************************************/
+-- /****************************************************************************
+-- 
+--                             Sound support
+-- 
+-- ****************************************************************************/
+procedure sndPlaySoundA(
+    pszSound        : in LPCSTR; 
+    fuSound         : in UINT)
+                      return BOOL;
+#pragma convention(sndPlaySoundA,system);
+#pragma import(sndPlaySoundA,'sndPlaySoundA','winmm.dll');
+
+procedure sndPlaySoundW(
+    pszSound        : in LPCWSTR; 
+    fuSound         : in UINT)
+                      return BOOL;
+#pragma convention(sndPlaySoundW,system);
+#pragma import(sndPlaySoundW,'sndPlaySoundW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template sndPlaySound;
+  sndPlaySoundW 
+#end sndPlaySound;
+#else;
+#template sndPlaySound;
+  sndPlaySoundA 
+#end sndPlaySound;
+#end if;
+
+-- /*
+--  *  flag values for fuSound and fdwSound arguments on [snd]PlaySound
+--  */
+const
+  SND_SYNC          = $00;
+
+const
+  SND_ASYNC         = $01;
+
+const
+  SND_NODEFAULT     = $02;
+
+const
+  SND_MEMORY        = $04;
+
+const
+  SND_LOOP          = $08;
+
+const
+  SND_NOSTOP        = $10;
+
+const
+  SND_NOWAIT        = $2000;
+
+const
+  SND_ALIAS         = $10000;
+
+const
+  SND_ALIAS_ID      = $110000;
+
+const
+  SND_FILENAME      = $20000;
+
+const
+  SND_RESOURCE      = $40004;
+
+const
+  SND_PURGE         = $40;
+
+const
+  SND_APPLICATION   = $80;
+
+const
+  SND_ALIAS_START   = 0;
+
+procedure PlaySoundA(
+    pszSound        : in LPCSTR; 
+    hmod            : in t_HMODULE; 
+    fdwSound        : in DWORD)
+                      return BOOL;
+#pragma convention(PlaySoundA,system);
+#pragma import(PlaySoundA,'PlaySoundA','winmm.dll');
+
+procedure PlaySoundW(
+    pszSound        : in LPCWSTR; 
+    hmod            : in t_HMODULE; 
+    fdwSound        : in DWORD)
+                      return BOOL;
+#pragma convention(PlaySoundW,system);
+#pragma import(PlaySoundW,'PlaySoundW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template PlaySound;
+  PlaySoundW 
+#end PlaySound;
+#else;
+#template PlaySound;
+  PlaySoundA 
+#end PlaySound;
+#end if;
+
+-- /****************************************************************************
+-- 
+--                         Waveform audio support
+-- 
+-- ****************************************************************************/
+-- /* waveform audio error return values 
+-- /* waveform audio data types 
+type
+HWAVE             = t_HANDLE;
+type
+HWAVEIN           = t_HANDLE;
+type
+HWAVEOUT          = t_HANDLE;
+type
+LPHWAVEIN         = ^HWAVEIN for machine_pointer use true;
+type
+LPHWAVEOUT        = ^HWAVEOUT for machine_pointer use true;
+type
+WAVECALLBACK      = DRVCALLBACK;
+type
+LPWAVECALLBACK    = ^WAVECALLBACK for machine_pointer use true;
+-- /* wave callback messages 
+-- /* device ID for wave device mapper 
+-- /* flags for dwFlags parameter in waveOutOpen() and waveInOpen() 
+const
+  WAVE_FORMAT_QUERY = $01;
+
+const
+  WAVE_ALLOWSYNC    = $02;
+
+const
+  WAVE_MAPPED       = $04;
+
+const
+  WAVE_FORMAT_DIRECT= $08;
+
+-- /* wave data block header 
+type
+  wavehdr_tag       = record
+lpData          : LPSTR;
+dwBufferLength  : DWORD;
+dwBytesRecorded : DWORD;
+dwUser          : DWORD_PTR;
+dwFlags         : DWORD;
+dwLoops         : DWORD;
+  lpNext            : ^wavehdr_tag;
+reserved        : DWORD_PTR;
+  end record;
+  WAVEHDR           = wavehdr_tag;
+  PWAVEHDR          = ^wavehdr_tag;
+  NPWAVEHDR         = ^wavehdr_tag;
+  LPWAVEHDR         = ^wavehdr_tag;
+
+-- /* flags for dwFlags field of WAVEHDR 
+const
+  WHDR_DONE         = $01;
+
+const
+  WHDR_PREPARED     = $02;
+
+const
+  WHDR_BEGINLOOP    = $04;
+
+const
+  WHDR_ENDLOOP      = $08;
+
+const
+  WHDR_INQUEUE      = $10;
+
+-- /* waveform output device capabilities structure 
+type
+  tagWAVEOUTCAPSA   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+  end record;
+  WAVEOUTCAPSA      = tagWAVEOUTCAPSA;
+  PWAVEOUTCAPSA     = ^tagWAVEOUTCAPSA;
+  NPWAVEOUTCAPSA    = ^tagWAVEOUTCAPSA;
+  LPWAVEOUTCAPSA    = ^tagWAVEOUTCAPSA;
+
+type
+  tagWAVEOUTCAPSW   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+  end record;
+  WAVEOUTCAPSW      = tagWAVEOUTCAPSW;
+  PWAVEOUTCAPSW     = ^tagWAVEOUTCAPSW;
+  NPWAVEOUTCAPSW    = ^tagWAVEOUTCAPSW;
+  LPWAVEOUTCAPSW    = ^tagWAVEOUTCAPSW;
+
+#if #declared UNICODE; then;
+type
+WAVEOUTCAPS       = WAVEOUTCAPSW;
+type
+PWAVEOUTCAPS      = PWAVEOUTCAPSW;
+type
+NPWAVEOUTCAPS     = NPWAVEOUTCAPSW;
+type
+LPWAVEOUTCAPS     = LPWAVEOUTCAPSW;
+#else;
+type
+WAVEOUTCAPS       = WAVEOUTCAPSA;
+type
+PWAVEOUTCAPS      = PWAVEOUTCAPSA;
+type
+NPWAVEOUTCAPS     = NPWAVEOUTCAPSA;
+type
+LPWAVEOUTCAPS     = LPWAVEOUTCAPSA;
+#end if;
+
+type
+  tagWAVEOUTCAPS2A  = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  WAVEOUTCAPS2A     = tagWAVEOUTCAPS2A;
+  PWAVEOUTCAPS2A    = ^tagWAVEOUTCAPS2A;
+  NPWAVEOUTCAPS2A   = ^tagWAVEOUTCAPS2A;
+  LPWAVEOUTCAPS2A   = ^tagWAVEOUTCAPS2A;
+
+type
+  tagWAVEOUTCAPS2W  = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  WAVEOUTCAPS2W     = tagWAVEOUTCAPS2W;
+  PWAVEOUTCAPS2W    = ^tagWAVEOUTCAPS2W;
+  NPWAVEOUTCAPS2W   = ^tagWAVEOUTCAPS2W;
+  LPWAVEOUTCAPS2W   = ^tagWAVEOUTCAPS2W;
+
+#if #declared UNICODE; then;
+type
+WAVEOUTCAPS2      = WAVEOUTCAPS2W;
+type
+PWAVEOUTCAPS2     = PWAVEOUTCAPS2W;
+type
+NPWAVEOUTCAPS2    = NPWAVEOUTCAPS2W;
+type
+LPWAVEOUTCAPS2    = LPWAVEOUTCAPS2W;
+#else;
+type
+WAVEOUTCAPS2      = WAVEOUTCAPS2A;
+type
+PWAVEOUTCAPS2     = PWAVEOUTCAPS2A;
+type
+NPWAVEOUTCAPS2    = NPWAVEOUTCAPS2A;
+type
+LPWAVEOUTCAPS2    = LPWAVEOUTCAPS2A;
+#end if;
+
+-- /* flags for dwSupport field of WAVEOUTCAPS 
+const
+  WAVECAPS_PITCH    = $01;
+
+const
+  WAVECAPS_PLAYBACKRATE= $02;
+
+const
+  WAVECAPS_VOLUME   = $04;
+
+const
+  WAVECAPS_LRVOLUME = $08;
+
+const
+  WAVECAPS_SYNC     = $10;
+
+const
+  WAVECAPS_SAMPLEACCURATE= $20;
+
+-- /* waveform input device capabilities structure 
+type
+  tagWAVEINCAPSA    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+  end record;
+  WAVEINCAPSA       = tagWAVEINCAPSA;
+  PWAVEINCAPSA      = ^tagWAVEINCAPSA;
+  NPWAVEINCAPSA     = ^tagWAVEINCAPSA;
+  LPWAVEINCAPSA     = ^tagWAVEINCAPSA;
+
+type
+  tagWAVEINCAPSW    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+  end record;
+  WAVEINCAPSW       = tagWAVEINCAPSW;
+  PWAVEINCAPSW      = ^tagWAVEINCAPSW;
+  NPWAVEINCAPSW     = ^tagWAVEINCAPSW;
+  LPWAVEINCAPSW     = ^tagWAVEINCAPSW;
+
+#if #declared UNICODE; then;
+type
+WAVEINCAPS        = WAVEINCAPSW;
+type
+PWAVEINCAPS       = PWAVEINCAPSW;
+type
+NPWAVEINCAPS      = NPWAVEINCAPSW;
+type
+LPWAVEINCAPS      = LPWAVEINCAPSW;
+#else;
+type
+WAVEINCAPS        = WAVEINCAPSA;
+type
+PWAVEINCAPS       = PWAVEINCAPSA;
+type
+NPWAVEINCAPS      = NPWAVEINCAPSA;
+type
+LPWAVEINCAPS      = LPWAVEINCAPSA;
+#end if;
+
+type
+  tagWAVEINCAPS2A   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  WAVEINCAPS2A      = tagWAVEINCAPS2A;
+  PWAVEINCAPS2A     = ^tagWAVEINCAPS2A;
+  NPWAVEINCAPS2A    = ^tagWAVEINCAPS2A;
+  LPWAVEINCAPS2A    = ^tagWAVEINCAPS2A;
+
+type
+  tagWAVEINCAPS2W   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwFormats       : DWORD;
+wChannels       : WORD;
+wReserved1      : WORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  WAVEINCAPS2W      = tagWAVEINCAPS2W;
+  PWAVEINCAPS2W     = ^tagWAVEINCAPS2W;
+  NPWAVEINCAPS2W    = ^tagWAVEINCAPS2W;
+  LPWAVEINCAPS2W    = ^tagWAVEINCAPS2W;
+
+#if #declared UNICODE; then;
+type
+WAVEINCAPS2       = WAVEINCAPS2W;
+type
+PWAVEINCAPS2      = PWAVEINCAPS2W;
+type
+NPWAVEINCAPS2     = NPWAVEINCAPS2W;
+type
+LPWAVEINCAPS2     = LPWAVEINCAPS2W;
+#else;
+type
+WAVEINCAPS2       = WAVEINCAPS2A;
+type
+PWAVEINCAPS2      = PWAVEINCAPS2A;
+type
+NPWAVEINCAPS2     = NPWAVEINCAPS2A;
+type
+LPWAVEINCAPS2     = LPWAVEINCAPS2A;
+#end if;
+
+-- /* defines for dwFormat field of WAVEINCAPS and WAVEOUTCAPS 
+const
+  WAVE_INVALIDFORMAT= $00;
+
+const
+  WAVE_FORMAT_1M08  = $01;
+
+const
+  WAVE_FORMAT_1S08  = $02;
+
+const
+  WAVE_FORMAT_1M16  = $04;
+
+const
+  WAVE_FORMAT_1S16  = $08;
+
+const
+  WAVE_FORMAT_2M08  = $10;
+
+const
+  WAVE_FORMAT_2S08  = $20;
+
+const
+  WAVE_FORMAT_2M16  = $40;
+
+const
+  WAVE_FORMAT_2S16  = $80;
+
+const
+  WAVE_FORMAT_4M08  = $0100;
+
+const
+  WAVE_FORMAT_4S08  = $0200;
+
+const
+  WAVE_FORMAT_4M16  = $0400;
+
+const
+  WAVE_FORMAT_4S16  = $0800;
+
+const
+  WAVE_FORMAT_44M08 = $0100;
+
+const
+  WAVE_FORMAT_44S08 = $0200;
+
+const
+  WAVE_FORMAT_44M16 = $0400;
+
+const
+  WAVE_FORMAT_44S16 = $0800;
+
+const
+  WAVE_FORMAT_48M08 = $1000;
+
+const
+  WAVE_FORMAT_48S08 = $2000;
+
+const
+  WAVE_FORMAT_48M16 = $4000;
+
+const
+  WAVE_FORMAT_48S16 = $8000;
+
+const
+  WAVE_FORMAT_96M08 = $10000;
+
+const
+  WAVE_FORMAT_96S08 = $20000;
+
+const
+  WAVE_FORMAT_96M16 = $40000;
+
+const
+  WAVE_FORMAT_96S16 = $80000;
+
+-- /* OLD general waveform format structure (information common to all formats) 
+type
+  waveformat_tag    = record
+wFormatTag      : WORD;
+nChannels       : WORD;
+nSamplesPerSec  : DWORD;
+nAvgBytesPerSec : DWORD;
+nBlockAlign     : WORD;
+  end record;
+  WAVEFORMAT        = waveformat_tag;
+  PWAVEFORMAT       = ^waveformat_tag;
+  NPWAVEFORMAT      = ^waveformat_tag;
+  LPWAVEFORMAT      = ^waveformat_tag;
+
+-- /* flags for wFormatTag field of WAVEFORMAT 
+const
+  WAVE_FORMAT_PCM   = 1;
+
+-- /* specific waveform format structure for PCM data 
+type
+  pcmwaveformat_tag = record
+wf              : WAVEFORMAT;
+wBitsPerSample  : WORD;
+  end record;
+  PCMWAVEFORMAT     = pcmwaveformat_tag;
+  PPCMWAVEFORMAT    = ^pcmwaveformat_tag;
+  NPPCMWAVEFORMAT   = ^pcmwaveformat_tag;
+  LPPCMWAVEFORMAT   = ^pcmwaveformat_tag;
+
+-- /*
+--  *  extended waveform format structure used for all non-PCM formats. this
+--  *  structure is common to all non-PCM formats.
+--  */
+type
+  tWAVEFORMATEX     = record
+wFormatTag      : WORD;
+nChannels       : WORD;
+nSamplesPerSec  : DWORD;
+nAvgBytesPerSec : DWORD;
+nBlockAlign     : WORD;
+wBitsPerSample  : WORD;
+cbSize          : WORD;
+  end record;
+  WAVEFORMATEX      = tWAVEFORMATEX;
+  PWAVEFORMATEX     = ^tWAVEFORMATEX;
+  NPWAVEFORMATEX    = ^tWAVEFORMATEX;
+  LPWAVEFORMATEX    = ^tWAVEFORMATEX;
+
+type
+LPCWAVEFORMATEX   = ^WAVEFORMATEX for machine_pointer use true;
+-- /* waveform audio function prototypes 
+procedure waveOutGetNumDevs
+                      return UINT;
+#pragma convention(waveOutGetNumDevs,system);
+#pragma import(waveOutGetNumDevs,'waveOutGetNumDevs','winmm.dll');
+
+procedure waveOutGetDevCapsA(
+    uDeviceID       : in UINT_PTR; 
+    pwoc            : out tagWAVEOUTCAPSA; 
+    cbwoc           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutGetDevCapsA,system);
+#pragma import(waveOutGetDevCapsA,'waveOutGetDevCapsA','winmm.dll');
+
+procedure waveOutGetDevCapsW(
+    uDeviceID       : in UINT_PTR; 
+    pwoc            : out tagWAVEOUTCAPSW; 
+    cbwoc           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutGetDevCapsW,system);
+#pragma import(waveOutGetDevCapsW,'waveOutGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template waveOutGetDevCaps;
+  waveOutGetDevCapsW 
+#end waveOutGetDevCaps;
+#else;
+#template waveOutGetDevCaps;
+  waveOutGetDevCapsA 
+#end waveOutGetDevCaps;
+#end if;
+
+procedure waveOutGetVolume(
+    hwo             : in HWAVEOUT; 
+    pdwVolume       : out DWORD )
+                      return MMRESULT;
+#pragma convention(waveOutGetVolume,system);
+#pragma import(waveOutGetVolume,'waveOutGetVolume','winmm.dll');
+
+procedure waveOutSetVolume(
+    hwo             : in HWAVEOUT; 
+    dwVolume        : in DWORD)
+                      return MMRESULT;
+#pragma convention(waveOutSetVolume,system);
+#pragma import(waveOutSetVolume,'waveOutSetVolume','winmm.dll');
+
+procedure waveOutGetErrorTextA(
+    mmrError        : in MMRESULT; 
+    pszText         : out CHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutGetErrorTextA,system);
+#pragma import(waveOutGetErrorTextA,'waveOutGetErrorTextA','winmm.dll');
+
+procedure waveOutGetErrorTextW(
+    mmrError        : in MMRESULT; 
+    pszText         : out WCHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutGetErrorTextW,system);
+#pragma import(waveOutGetErrorTextW,'waveOutGetErrorTextW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template waveOutGetErrorText;
+  waveOutGetErrorTextW 
+#end waveOutGetErrorText;
+#else;
+#template waveOutGetErrorText;
+  waveOutGetErrorTextA 
+#end waveOutGetErrorText;
+#end if;
+
+procedure waveOutOpen(
+    phwo            : out HWAVEOUT ; 
+    uDeviceID       : in UINT; 
+    pwfx            : in LPCWAVEFORMATEX; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(waveOutOpen,system);
+#pragma import(waveOutOpen,'waveOutOpen','winmm.dll');
+
+procedure waveOutClose(
+    hwo             : in out {!}HWAVEOUT)
+                      return MMRESULT;
+#pragma convention(waveOutClose,system);
+#pragma import(waveOutClose,'waveOutClose','winmm.dll');
+
+procedure waveOutPrepareHeader(
+    hwo             : in HWAVEOUT; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutPrepareHeader,system);
+#pragma import(waveOutPrepareHeader,'waveOutPrepareHeader','winmm.dll');
+
+procedure waveOutUnprepareHeader(
+    hwo             : in HWAVEOUT; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutUnprepareHeader,system);
+#pragma import(waveOutUnprepareHeader,'waveOutUnprepareHeader','winmm.dll');
+
+procedure waveOutWrite(
+    hwo             : in HWAVEOUT; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutWrite,system);
+#pragma import(waveOutWrite,'waveOutWrite','winmm.dll');
+
+procedure waveOutPause(
+    hwo             : in HWAVEOUT)
+                      return MMRESULT;
+#pragma convention(waveOutPause,system);
+#pragma import(waveOutPause,'waveOutPause','winmm.dll');
+
+procedure waveOutRestart(
+    hwo             : in HWAVEOUT)
+                      return MMRESULT;
+#pragma convention(waveOutRestart,system);
+#pragma import(waveOutRestart,'waveOutRestart','winmm.dll');
+
+procedure waveOutReset(
+    hwo             : in HWAVEOUT)
+                      return MMRESULT;
+#pragma convention(waveOutReset,system);
+#pragma import(waveOutReset,'waveOutReset','winmm.dll');
+
+procedure waveOutBreakLoop(
+    hwo             : in HWAVEOUT)
+                      return MMRESULT;
+#pragma convention(waveOutBreakLoop,system);
+#pragma import(waveOutBreakLoop,'waveOutBreakLoop','winmm.dll');
+
+procedure waveOutGetPosition(
+    hwo             : in HWAVEOUT; 
+    pmmt            : in out mmtime_tag; 
+    cbmmt           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveOutGetPosition,system);
+#pragma import(waveOutGetPosition,'waveOutGetPosition','winmm.dll');
+
+procedure waveOutGetPitch(
+    hwo             : in HWAVEOUT; 
+    pdwPitch        : out DWORD )
+                      return MMRESULT;
+#pragma convention(waveOutGetPitch,system);
+#pragma import(waveOutGetPitch,'waveOutGetPitch','winmm.dll');
+
+procedure waveOutSetPitch(
+    hwo             : in HWAVEOUT; 
+    dwPitch         : in DWORD)
+                      return MMRESULT;
+#pragma convention(waveOutSetPitch,system);
+#pragma import(waveOutSetPitch,'waveOutSetPitch','winmm.dll');
+
+procedure waveOutGetPlaybackRate(
+    hwo             : in HWAVEOUT; 
+    pdwRate         : out DWORD )
+                      return MMRESULT;
+#pragma convention(waveOutGetPlaybackRate,system);
+#pragma import(waveOutGetPlaybackRate,'waveOutGetPlaybackRate','winmm.dll');
+
+procedure waveOutSetPlaybackRate(
+    hwo             : in HWAVEOUT; 
+    dwRate          : in DWORD)
+                      return MMRESULT;
+#pragma convention(waveOutSetPlaybackRate,system);
+#pragma import(waveOutSetPlaybackRate,'waveOutSetPlaybackRate','winmm.dll');
+
+procedure waveOutGetID(
+    hwo             : in HWAVEOUT; 
+    puDeviceID      : out UINT )
+                      return MMRESULT;
+#pragma convention(waveOutGetID,system);
+#pragma import(waveOutGetID,'waveOutGetID','winmm.dll');
+
+procedure waveOutMessage(
+    hwo             : in HWAVEOUT; 
+    uMsg            : in UINT; 
+    dw1             : in DWORD_PTR; 
+    dw2             : in DWORD_PTR)
+                      return MMRESULT;
+#pragma convention(waveOutMessage,system);
+#pragma import(waveOutMessage,'waveOutMessage','winmm.dll');
+
+procedure waveInGetNumDevs
+                      return UINT;
+#pragma convention(waveInGetNumDevs,system);
+#pragma import(waveInGetNumDevs,'waveInGetNumDevs','winmm.dll');
+
+procedure waveInGetDevCapsA(
+    uDeviceID       : in UINT_PTR; 
+    pwic            : out tagWAVEINCAPSA; 
+    cbwic           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInGetDevCapsA,system);
+#pragma import(waveInGetDevCapsA,'waveInGetDevCapsA','winmm.dll');
+
+procedure waveInGetDevCapsW(
+    uDeviceID       : in UINT_PTR; 
+    pwic            : out tagWAVEINCAPSW; 
+    cbwic           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInGetDevCapsW,system);
+#pragma import(waveInGetDevCapsW,'waveInGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template waveInGetDevCaps;
+  waveInGetDevCapsW 
+#end waveInGetDevCaps;
+#else;
+#template waveInGetDevCaps;
+  waveInGetDevCapsA 
+#end waveInGetDevCaps;
+#end if;
+
+procedure waveInGetErrorTextA(
+    mmrError        : in MMRESULT; 
+    pszText         : out CHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInGetErrorTextA,system);
+#pragma import(waveInGetErrorTextA,'waveInGetErrorTextA','winmm.dll');
+
+procedure waveInGetErrorTextW(
+    mmrError        : in MMRESULT; 
+    pszText         : out WCHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInGetErrorTextW,system);
+#pragma import(waveInGetErrorTextW,'waveInGetErrorTextW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template waveInGetErrorText;
+  waveInGetErrorTextW 
+#end waveInGetErrorText;
+#else;
+#template waveInGetErrorText;
+  waveInGetErrorTextA 
+#end waveInGetErrorText;
+#end if;
+
+procedure waveInOpen(
+    phwi            : out HWAVEIN ; 
+    uDeviceID       : in UINT; 
+    pwfx            : in LPCWAVEFORMATEX; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(waveInOpen,system);
+#pragma import(waveInOpen,'waveInOpen','winmm.dll');
+
+procedure waveInClose(
+    hwi             : in out {!}HWAVEIN)
+                      return MMRESULT;
+#pragma convention(waveInClose,system);
+#pragma import(waveInClose,'waveInClose','winmm.dll');
+
+procedure waveInPrepareHeader(
+    hwi             : in HWAVEIN; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInPrepareHeader,system);
+#pragma import(waveInPrepareHeader,'waveInPrepareHeader','winmm.dll');
+
+procedure waveInUnprepareHeader(
+    hwi             : in HWAVEIN; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : UINT)
+                      return MMRESULT;
+#pragma convention(waveInUnprepareHeader,system);
+#pragma import(waveInUnprepareHeader,'waveInUnprepareHeader','winmm.dll');
+
+procedure waveInAddBuffer(
+    hwi             : in HWAVEIN; 
+    pwh             : in out wavehdr_tag; 
+    cbwh            : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInAddBuffer,system);
+#pragma import(waveInAddBuffer,'waveInAddBuffer','winmm.dll');
+
+procedure waveInStart(
+    hwi             : in HWAVEIN)
+                      return MMRESULT;
+#pragma convention(waveInStart,system);
+#pragma import(waveInStart,'waveInStart','winmm.dll');
+
+procedure waveInStop(
+    hwi             : in HWAVEIN)
+                      return MMRESULT;
+#pragma convention(waveInStop,system);
+#pragma import(waveInStop,'waveInStop','winmm.dll');
+
+procedure waveInReset(
+    hwi             : in HWAVEIN)
+                      return MMRESULT;
+#pragma convention(waveInReset,system);
+#pragma import(waveInReset,'waveInReset','winmm.dll');
+
+procedure waveInGetPosition(
+    hwi             : in HWAVEIN; 
+    pmmt            : in out mmtime_tag; 
+    cbmmt           : in UINT)
+                      return MMRESULT;
+#pragma convention(waveInGetPosition,system);
+#pragma import(waveInGetPosition,'waveInGetPosition','winmm.dll');
+
+procedure waveInGetID(
+    hwi             : in HWAVEIN; 
+    puDeviceID      : out UINT )
+                      return MMRESULT;
+#pragma convention(waveInGetID,system);
+#pragma import(waveInGetID,'waveInGetID','winmm.dll');
+
+procedure waveInMessage(
+    hwi             : in HWAVEIN; 
+    uMsg            : in UINT; 
+    dw1             : in DWORD_PTR; 
+    dw2             : in DWORD_PTR)
+                      return MMRESULT;
+#pragma convention(waveInMessage,system);
+#pragma import(waveInMessage,'waveInMessage','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                             MIDI audio support
+-- 
+-- ****************************************************************************/
+-- /* MIDI error return values 
+-- /* MIDI audio data types 
+type
+HMIDI             = t_HANDLE;
+type
+HMIDIIN           = t_HANDLE;
+type
+HMIDIOUT          = t_HANDLE;
+type
+HMIDISTRM         = t_HANDLE;
+type
+LPHMIDI           = ^HMIDI for machine_pointer use true;
+type
+LPHMIDIIN         = ^HMIDIIN for machine_pointer use true;
+type
+LPHMIDIOUT        = ^HMIDIOUT for machine_pointer use true;
+type
+LPHMIDISTRM       = ^HMIDISTRM for machine_pointer use true;
+type
+MIDICALLBACK      = DRVCALLBACK;
+type
+LPMIDICALLBACK    = ^MIDICALLBACK for machine_pointer use true;
+const
+  MIDIPATCHSIZE     = 128;
+
+type
+PATCHARRAY        = array 0..MIDIPATCHSIZE-1 of WORD;
+type
+LPPATCHARRAY      = ^WORD for machine_pointer use true;
+type
+KEYARRAY          = array 0..MIDIPATCHSIZE-1 of WORD;
+type
+LPKEYARRAY        = ^WORD for machine_pointer use true;
+-- /* MIDI callback messages 
+-- /* device ID for MIDI mapper 
+-- /* flags for dwFlags parm of midiInOpen() 
+const
+  MIDI_IO_STATUS    = $20;
+
+-- /* flags for wFlags parm of midiOutCachePatches(), midiOutCacheDrumPatches() 
+const
+  MIDI_CACHE_ALL    = 1;
+
+const
+  MIDI_CACHE_BESTFIT= 2;
+
+const
+  MIDI_CACHE_QUERY  = 3;
+
+const
+  MIDI_UNCACHE      = 4;
+
+-- /* MIDI output device capabilities structure 
+type
+  tagMIDIOUTCAPSA   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wTechnology     : WORD;
+wVoices         : WORD;
+wNotes          : WORD;
+wChannelMask    : WORD;
+dwSupport       : DWORD;
+  end record;
+  MIDIOUTCAPSA      = tagMIDIOUTCAPSA;
+  PMIDIOUTCAPSA     = ^tagMIDIOUTCAPSA;
+  NPMIDIOUTCAPSA    = ^tagMIDIOUTCAPSA;
+  LPMIDIOUTCAPSA    = ^tagMIDIOUTCAPSA;
+
+type
+  tagMIDIOUTCAPSW   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wTechnology     : WORD;
+wVoices         : WORD;
+wNotes          : WORD;
+wChannelMask    : WORD;
+dwSupport       : DWORD;
+  end record;
+  MIDIOUTCAPSW      = tagMIDIOUTCAPSW;
+  PMIDIOUTCAPSW     = ^tagMIDIOUTCAPSW;
+  NPMIDIOUTCAPSW    = ^tagMIDIOUTCAPSW;
+  LPMIDIOUTCAPSW    = ^tagMIDIOUTCAPSW;
+
+#if #declared UNICODE; then;
+type
+MIDIOUTCAPS       = MIDIOUTCAPSW;
+type
+PMIDIOUTCAPS      = PMIDIOUTCAPSW;
+type
+NPMIDIOUTCAPS     = NPMIDIOUTCAPSW;
+type
+LPMIDIOUTCAPS     = LPMIDIOUTCAPSW;
+#else;
+type
+MIDIOUTCAPS       = MIDIOUTCAPSA;
+type
+PMIDIOUTCAPS      = PMIDIOUTCAPSA;
+type
+NPMIDIOUTCAPS     = NPMIDIOUTCAPSA;
+type
+LPMIDIOUTCAPS     = LPMIDIOUTCAPSA;
+#end if;
+
+type
+  tagMIDIOUTCAPS2A  = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wTechnology     : WORD;
+wVoices         : WORD;
+wNotes          : WORD;
+wChannelMask    : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIDIOUTCAPS2A     = tagMIDIOUTCAPS2A;
+  PMIDIOUTCAPS2A    = ^tagMIDIOUTCAPS2A;
+  NPMIDIOUTCAPS2A   = ^tagMIDIOUTCAPS2A;
+  LPMIDIOUTCAPS2A   = ^tagMIDIOUTCAPS2A;
+
+type
+  tagMIDIOUTCAPS2W  = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wTechnology     : WORD;
+wVoices         : WORD;
+wNotes          : WORD;
+wChannelMask    : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIDIOUTCAPS2W     = tagMIDIOUTCAPS2W;
+  PMIDIOUTCAPS2W    = ^tagMIDIOUTCAPS2W;
+  NPMIDIOUTCAPS2W   = ^tagMIDIOUTCAPS2W;
+  LPMIDIOUTCAPS2W   = ^tagMIDIOUTCAPS2W;
+
+#if #declared UNICODE; then;
+type
+MIDIOUTCAPS2      = MIDIOUTCAPS2W;
+type
+PMIDIOUTCAPS2     = PMIDIOUTCAPS2W;
+type
+NPMIDIOUTCAPS2    = NPMIDIOUTCAPS2W;
+type
+LPMIDIOUTCAPS2    = LPMIDIOUTCAPS2W;
+#else;
+type
+MIDIOUTCAPS2      = MIDIOUTCAPS2A;
+type
+PMIDIOUTCAPS2     = PMIDIOUTCAPS2A;
+type
+NPMIDIOUTCAPS2    = NPMIDIOUTCAPS2A;
+type
+LPMIDIOUTCAPS2    = LPMIDIOUTCAPS2A;
+#end if;
+
+-- /* flags for wTechnology field of MIDIOUTCAPS structure 
+const
+  MOD_MIDIPORT      = 1;
+
+const
+  MOD_SYNTH         = 2;
+
+const
+  MOD_SQSYNTH       = 3;
+
+const
+  MOD_FMSYNTH       = 4;
+
+const
+  MOD_MAPPER        = 5;
+
+const
+  MOD_WAVETABLE     = 6;
+
+const
+  MOD_SWSYNTH       = 7;
+
+-- /* flags for dwSupport field of MIDIOUTCAPS structure 
+const
+  MIDICAPS_VOLUME   = $01;
+
+const
+  MIDICAPS_LRVOLUME = $02;
+
+const
+  MIDICAPS_CACHE    = $04;
+
+const
+  MIDICAPS_STREAM   = $08;
+
+-- /* MIDI input device capabilities structure 
+type
+  tagMIDIINCAPSA    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwSupport       : DWORD;
+  end record;
+  MIDIINCAPSA       = tagMIDIINCAPSA;
+  PMIDIINCAPSA      = ^tagMIDIINCAPSA;
+  NPMIDIINCAPSA     = ^tagMIDIINCAPSA;
+  LPMIDIINCAPSA     = ^tagMIDIINCAPSA;
+
+type
+  tagMIDIINCAPSW    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwSupport       : DWORD;
+  end record;
+  MIDIINCAPSW       = tagMIDIINCAPSW;
+  PMIDIINCAPSW      = ^tagMIDIINCAPSW;
+  NPMIDIINCAPSW     = ^tagMIDIINCAPSW;
+  LPMIDIINCAPSW     = ^tagMIDIINCAPSW;
+
+#if #declared UNICODE; then;
+type
+MIDIINCAPS        = MIDIINCAPSW;
+type
+PMIDIINCAPS       = PMIDIINCAPSW;
+type
+NPMIDIINCAPS      = NPMIDIINCAPSW;
+type
+LPMIDIINCAPS      = LPMIDIINCAPSW;
+#else;
+type
+MIDIINCAPS        = MIDIINCAPSA;
+type
+PMIDIINCAPS       = PMIDIINCAPSA;
+type
+NPMIDIINCAPS      = NPMIDIINCAPSA;
+type
+LPMIDIINCAPS      = LPMIDIINCAPSA;
+#end if;
+
+type
+  tagMIDIINCAPS2A   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIDIINCAPS2A      = tagMIDIINCAPS2A;
+  PMIDIINCAPS2A     = ^tagMIDIINCAPS2A;
+  NPMIDIINCAPS2A    = ^tagMIDIINCAPS2A;
+  LPMIDIINCAPS2A    = ^tagMIDIINCAPS2A;
+
+type
+  tagMIDIINCAPS2W   = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIDIINCAPS2W      = tagMIDIINCAPS2W;
+  PMIDIINCAPS2W     = ^tagMIDIINCAPS2W;
+  NPMIDIINCAPS2W    = ^tagMIDIINCAPS2W;
+  LPMIDIINCAPS2W    = ^tagMIDIINCAPS2W;
+
+#if #declared UNICODE; then;
+type
+MIDIINCAPS2       = MIDIINCAPS2W;
+type
+PMIDIINCAPS2      = PMIDIINCAPS2W;
+type
+NPMIDIINCAPS2     = NPMIDIINCAPS2W;
+type
+LPMIDIINCAPS2     = LPMIDIINCAPS2W;
+#else;
+type
+MIDIINCAPS2       = MIDIINCAPS2A;
+type
+PMIDIINCAPS2      = PMIDIINCAPS2A;
+type
+NPMIDIINCAPS2     = NPMIDIINCAPS2A;
+type
+LPMIDIINCAPS2     = LPMIDIINCAPS2A;
+#end if;
+
+-- /* MIDI data block header 
+type
+  midihdr_tag       = record
+lpData          : LPSTR;
+dwBufferLength  : DWORD;
+dwBytesRecorded : DWORD;
+dwUser          : DWORD_PTR;
+dwFlags         : DWORD;
+  lpNext            : ^midihdr_tag;
+reserved        : DWORD_PTR;
+dwOffset        : DWORD;
+dwReserved      : array 0..7 of DWORD_PTR;
+  end record;
+  MIDIHDR           = midihdr_tag;
+  PMIDIHDR          = ^midihdr_tag;
+  NPMIDIHDR         = ^midihdr_tag;
+  LPMIDIHDR         = ^midihdr_tag;
+
+type
+  midievent_tag     = record
+dwDeltaTime     : DWORD;
+dwStreamID      : DWORD;
+dwEvent         : DWORD;
+dwParms         : array 0..0 of DWORD;
+  end record;
+  MIDIEVENT         = midievent_tag;
+
+type
+  midistrmbuffver_tag = record
+dwVersion       : DWORD;
+dwMid           : DWORD;
+dwOEMVersion    : DWORD;
+  end record;
+  MIDISTRMBUFFVER   = midistrmbuffver_tag;
+
+-- /* flags for dwFlags field of MIDIHDR structure 
+const
+  MHDR_DONE         = $01;
+
+const
+  MHDR_PREPARED     = $02;
+
+const
+  MHDR_INQUEUE      = $04;
+
+const
+  MHDR_ISSTRM       = $08;
+
+-- /* 
+-- /* Type codes which go in the high byte of the event DWORD of a stream buffer 
+-- /* 
+-- /* Type codes 00-7F contain parameters within the low 24 bits 
+-- /* Type codes 80-FF contain a length of their parameter in the low 24 
+-- /* bits, followed by their parameter data in the buffer. The event 
+-- /* DWORD contains the exact byte length; the parm data itself must be 
+-- /* padded to be an even multiple of 4 bytes long. 
+-- /* 
+const
+  MEVT_F_SHORT      = $00;
+
+const
+  MEVT_F_LONG       = $80000000;
+
+const
+  MEVT_F_CALLBACK   = $40000000;
+
+-- /* 0x04-0x7F reserved 
+-- /* 0x81-0xFF reserved 
+-- /* 
+-- /* Structures and defines for midiStreamProperty 
+-- /* 
+const
+  MIDIPROP_SET      = $80000000;
+
+const
+  MIDIPROP_GET      = $40000000;
+
+-- /* These are intentionally both non-zero so the app cannot accidentally 
+-- /* leave the operation off and happen to appear to work due to default 
+-- /* action. 
+const
+  MIDIPROP_TIMEDIV  = $01;
+
+const
+  MIDIPROP_TEMPO    = $02;
+
+type
+  midiproptimediv_tag = record
+cbStruct        : DWORD;
+dwTimeDiv       : DWORD;
+  end record;
+  MIDIPROPTIMEDIV   = midiproptimediv_tag;
+  LPMIDIPROPTIMEDIV = ^midiproptimediv_tag;
+
+type
+  midiproptempo_tag = record
+cbStruct        : DWORD;
+dwTempo         : DWORD;
+  end record;
+  MIDIPROPTEMPO     = midiproptempo_tag;
+  LPMIDIPROPTEMPO   = ^midiproptempo_tag;
+
+-- /* MIDI function prototypes 
+procedure midiOutGetNumDevs
+                      return UINT;
+#pragma convention(midiOutGetNumDevs,system);
+#pragma import(midiOutGetNumDevs,'midiOutGetNumDevs','winmm.dll');
+
+procedure midiStreamOpen(
+    phms            : out HMIDISTRM ; 
+    puDeviceID      : in LPUINT; 
+    cMidi           : in DWORD; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiStreamOpen,system);
+#pragma import(midiStreamOpen,'midiStreamOpen','winmm.dll');
+
+procedure midiStreamClose(
+    hms             : in HMIDISTRM)
+                      return MMRESULT;
+#pragma convention(midiStreamClose,system);
+#pragma import(midiStreamClose,'midiStreamClose','winmm.dll');
+
+procedure midiStreamProperty(
+    hms             : in HMIDISTRM; 
+    lppropdata      : out BYTE ; 
+    dwProperty      : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiStreamProperty,system);
+#pragma import(midiStreamProperty,'midiStreamProperty','winmm.dll');
+
+procedure midiStreamPosition(
+    hms             : in HMIDISTRM; 
+    lpmmt           : out mmtime_tag; 
+    cbmmt           : in UINT)
+                      return MMRESULT;
+#pragma convention(midiStreamPosition,system);
+#pragma import(midiStreamPosition,'midiStreamPosition','winmm.dll');
+
+procedure midiStreamOut(
+    hms             : in HMIDISTRM; 
+    pmh             : in LPMIDIHDR; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiStreamOut,system);
+#pragma import(midiStreamOut,'midiStreamOut','winmm.dll');
+
+procedure midiStreamPause(
+    hms             : in HMIDISTRM)
+                      return MMRESULT;
+#pragma convention(midiStreamPause,system);
+#pragma import(midiStreamPause,'midiStreamPause','winmm.dll');
+
+procedure midiStreamRestart(
+    hms             : in HMIDISTRM)
+                      return MMRESULT;
+#pragma convention(midiStreamRestart,system);
+#pragma import(midiStreamRestart,'midiStreamRestart','winmm.dll');
+
+procedure midiStreamStop(
+    hms             : in HMIDISTRM)
+                      return MMRESULT;
+#pragma convention(midiStreamStop,system);
+#pragma import(midiStreamStop,'midiStreamStop','winmm.dll');
+
+procedure midiConnect(
+    hmi             : in HMIDI; 
+    hmo             : in HMIDIOUT; 
+    pReserved       : in LPVOID)
+                      return MMRESULT;
+#pragma convention(midiConnect,system);
+#pragma import(midiConnect,'midiConnect','winmm.dll');
+
+procedure midiDisconnect(
+    hmi             : in HMIDI; 
+    hmo             : in HMIDIOUT; 
+    pReserved       : in LPVOID)
+                      return MMRESULT;
+#pragma convention(midiDisconnect,system);
+#pragma import(midiDisconnect,'midiDisconnect','winmm.dll');
+
+procedure midiOutGetDevCapsA(
+    uDeviceID       : in UINT_PTR; 
+    pmoc            : out tagMIDIOUTCAPSA; 
+    cbmoc           : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutGetDevCapsA,system);
+#pragma import(midiOutGetDevCapsA,'midiOutGetDevCapsA','winmm.dll');
+
+procedure midiOutGetDevCapsW(
+    uDeviceID       : in UINT_PTR; 
+    pmoc            : out tagMIDIOUTCAPSW; 
+    cbmoc           : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutGetDevCapsW,system);
+#pragma import(midiOutGetDevCapsW,'midiOutGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template midiOutGetDevCaps;
+  midiOutGetDevCapsW 
+#end midiOutGetDevCaps;
+#else;
+#template midiOutGetDevCaps;
+  midiOutGetDevCapsA 
+#end midiOutGetDevCaps;
+#end if;
+
+procedure midiOutGetVolume(
+    hmo             : in HMIDIOUT; 
+    pdwVolume       : out DWORD )
+                      return MMRESULT;
+#pragma convention(midiOutGetVolume,system);
+#pragma import(midiOutGetVolume,'midiOutGetVolume','winmm.dll');
+
+procedure midiOutSetVolume(
+    hmo             : in HMIDIOUT; 
+    dwVolume        : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiOutSetVolume,system);
+#pragma import(midiOutSetVolume,'midiOutSetVolume','winmm.dll');
+
+procedure midiOutGetErrorTextA(
+    mmrError        : in MMRESULT; 
+    pszText         : out CHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutGetErrorTextA,system);
+#pragma import(midiOutGetErrorTextA,'midiOutGetErrorTextA','winmm.dll');
+
+procedure midiOutGetErrorTextW(
+    mmrError        : in MMRESULT; 
+    pszText         : out WCHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutGetErrorTextW,system);
+#pragma import(midiOutGetErrorTextW,'midiOutGetErrorTextW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template midiOutGetErrorText;
+  midiOutGetErrorTextW 
+#end midiOutGetErrorText;
+#else;
+#template midiOutGetErrorText;
+  midiOutGetErrorTextA 
+#end midiOutGetErrorText;
+#end if;
+
+procedure midiOutOpen(
+    phmo            : out HMIDIOUT ; 
+    uDeviceID       : in UINT; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiOutOpen,system);
+#pragma import(midiOutOpen,'midiOutOpen','winmm.dll');
+
+procedure midiOutClose(
+    hmo             : in out {!}HMIDIOUT)
+                      return MMRESULT;
+#pragma convention(midiOutClose,system);
+#pragma import(midiOutClose,'midiOutClose','winmm.dll');
+
+procedure midiOutPrepareHeader(
+    hmo             : in HMIDIOUT; 
+    pmh             : in out midihdr_tag; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutPrepareHeader,system);
+#pragma import(midiOutPrepareHeader,'midiOutPrepareHeader','winmm.dll');
+
+procedure midiOutUnprepareHeader(
+    hmo             : in HMIDIOUT; 
+    pmh             : in out midihdr_tag; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutUnprepareHeader,system);
+#pragma import(midiOutUnprepareHeader,'midiOutUnprepareHeader','winmm.dll');
+
+procedure midiOutShortMsg(
+    hmo             : in HMIDIOUT; 
+    dwMsg           : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiOutShortMsg,system);
+#pragma import(midiOutShortMsg,'midiOutShortMsg','winmm.dll');
+
+procedure midiOutLongMsg(
+    hmo             : in HMIDIOUT; 
+    pmh             : in LPMIDIHDR; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutLongMsg,system);
+#pragma import(midiOutLongMsg,'midiOutLongMsg','winmm.dll');
+
+procedure midiOutReset(
+    hmo             : in HMIDIOUT)
+                      return MMRESULT;
+#pragma convention(midiOutReset,system);
+#pragma import(midiOutReset,'midiOutReset','winmm.dll');
+
+procedure midiOutCachePatches(
+    hmo             : in HMIDIOUT; 
+    uBank           : in UINT; 
+    pwpa            : out WORD ; 
+    fuCache         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutCachePatches,system);
+#pragma import(midiOutCachePatches,'midiOutCachePatches','winmm.dll');
+
+procedure midiOutCacheDrumPatches(
+    hmo             : in HMIDIOUT; 
+    uPatch          : in UINT; 
+    pwkya           : out WORD ; 
+    fuCache         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiOutCacheDrumPatches,system);
+#pragma import(midiOutCacheDrumPatches,'midiOutCacheDrumPatches','winmm.dll');
+
+procedure midiOutGetID(
+    hmo             : in HMIDIOUT; 
+    puDeviceID      : out UINT )
+                      return MMRESULT;
+#pragma convention(midiOutGetID,system);
+#pragma import(midiOutGetID,'midiOutGetID','winmm.dll');
+
+procedure midiOutMessage(
+    hmo             : in HMIDIOUT; 
+    uMsg            : in UINT; 
+    dw1             : in DWORD_PTR; 
+    dw2             : in DWORD_PTR)
+                      return MMRESULT;
+#pragma convention(midiOutMessage,system);
+#pragma import(midiOutMessage,'midiOutMessage','winmm.dll');
+
+procedure midiInGetNumDevs
+                      return UINT;
+#pragma convention(midiInGetNumDevs,system);
+#pragma import(midiInGetNumDevs,'midiInGetNumDevs','winmm.dll');
+
+procedure midiInGetDevCapsA(
+    uDeviceID       : in UINT_PTR; 
+    pmic            : out tagMIDIINCAPSA; 
+    cbmic           : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInGetDevCapsA,system);
+#pragma import(midiInGetDevCapsA,'midiInGetDevCapsA','winmm.dll');
+
+procedure midiInGetDevCapsW(
+    uDeviceID       : in UINT_PTR; 
+    pmic            : out tagMIDIINCAPSW; 
+    cbmic           : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInGetDevCapsW,system);
+#pragma import(midiInGetDevCapsW,'midiInGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template midiInGetDevCaps;
+  midiInGetDevCapsW 
+#end midiInGetDevCaps;
+#else;
+#template midiInGetDevCaps;
+  midiInGetDevCapsA 
+#end midiInGetDevCaps;
+#end if;
+
+procedure midiInGetErrorTextA(
+    mmrError        : in MMRESULT; 
+    pszText         : out CHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInGetErrorTextA,system);
+#pragma import(midiInGetErrorTextA,'midiInGetErrorTextA','winmm.dll');
+
+procedure midiInGetErrorTextW(
+    mmrError        : in MMRESULT; 
+    pszText         : out WCHARSTR ; 
+    cchText         : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInGetErrorTextW,system);
+#pragma import(midiInGetErrorTextW,'midiInGetErrorTextW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template midiInGetErrorText;
+  midiInGetErrorTextW 
+#end midiInGetErrorText;
+#else;
+#template midiInGetErrorText;
+  midiInGetErrorTextA 
+#end midiInGetErrorText;
+#end if;
+
+procedure midiInOpen(
+    phmi            : out HMIDIIN ; 
+    uDeviceID       : in UINT; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(midiInOpen,system);
+#pragma import(midiInOpen,'midiInOpen','winmm.dll');
+
+procedure midiInClose(
+    hmi             : in out {!}HMIDIIN)
+                      return MMRESULT;
+#pragma convention(midiInClose,system);
+#pragma import(midiInClose,'midiInClose','winmm.dll');
+
+procedure midiInPrepareHeader(
+    hmi             : in HMIDIIN; 
+    pmh             : in out midihdr_tag; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInPrepareHeader,system);
+#pragma import(midiInPrepareHeader,'midiInPrepareHeader','winmm.dll');
+
+procedure midiInUnprepareHeader(
+    hmi             : in HMIDIIN; 
+    pmh             : in out midihdr_tag; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInUnprepareHeader,system);
+#pragma import(midiInUnprepareHeader,'midiInUnprepareHeader','winmm.dll');
+
+procedure midiInAddBuffer(
+    hmi             : in HMIDIIN; 
+    pmh             : in LPMIDIHDR; 
+    cbmh            : in UINT)
+                      return MMRESULT;
+#pragma convention(midiInAddBuffer,system);
+#pragma import(midiInAddBuffer,'midiInAddBuffer','winmm.dll');
+
+procedure midiInStart(
+    hmi             : in HMIDIIN)
+                      return MMRESULT;
+#pragma convention(midiInStart,system);
+#pragma import(midiInStart,'midiInStart','winmm.dll');
+
+procedure midiInStop(
+    hmi             : in HMIDIIN)
+                      return MMRESULT;
+#pragma convention(midiInStop,system);
+#pragma import(midiInStop,'midiInStop','winmm.dll');
+
+procedure midiInReset(
+    hmi             : in HMIDIIN)
+                      return MMRESULT;
+#pragma convention(midiInReset,system);
+#pragma import(midiInReset,'midiInReset','winmm.dll');
+
+procedure midiInGetID(
+    hmi             : in HMIDIIN; 
+    puDeviceID      : out UINT )
+                      return MMRESULT;
+#pragma convention(midiInGetID,system);
+#pragma import(midiInGetID,'midiInGetID','winmm.dll');
+
+procedure midiInMessage(
+    hmi             : in HMIDIIN; 
+    uMsg            : in UINT; 
+    dw1             : in DWORD_PTR; 
+    dw2             : in DWORD_PTR)
+                      return MMRESULT;
+#pragma convention(midiInMessage,system);
+#pragma import(midiInMessage,'midiInMessage','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                         Auxiliary audio support
+-- 
+-- ****************************************************************************/
+-- /* device ID for aux device mapper 
+-- /* Auxiliary audio device capabilities structure 
+type
+  tagAUXCAPSA       = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wTechnology     : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+  end record;
+  AUXCAPSA          = tagAUXCAPSA;
+  PAUXCAPSA         = ^tagAUXCAPSA;
+  NPAUXCAPSA        = ^tagAUXCAPSA;
+  LPAUXCAPSA        = ^tagAUXCAPSA;
+
+type
+  tagAUXCAPSW       = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wTechnology     : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+  end record;
+  AUXCAPSW          = tagAUXCAPSW;
+  PAUXCAPSW         = ^tagAUXCAPSW;
+  NPAUXCAPSW        = ^tagAUXCAPSW;
+  LPAUXCAPSW        = ^tagAUXCAPSW;
+
+#if #declared UNICODE; then;
+type
+AUXCAPS           = AUXCAPSW;
+type
+PAUXCAPS          = PAUXCAPSW;
+type
+NPAUXCAPS         = NPAUXCAPSW;
+type
+LPAUXCAPS         = LPAUXCAPSW;
+#else;
+type
+AUXCAPS           = AUXCAPSA;
+type
+PAUXCAPS          = PAUXCAPSA;
+type
+NPAUXCAPS         = NPAUXCAPSA;
+type
+LPAUXCAPS         = LPAUXCAPSA;
+#end if;
+
+type
+  tagAUXCAPS2A      = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wTechnology     : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  AUXCAPS2A         = tagAUXCAPS2A;
+  PAUXCAPS2A        = ^tagAUXCAPS2A;
+  NPAUXCAPS2A       = ^tagAUXCAPS2A;
+  LPAUXCAPS2A       = ^tagAUXCAPS2A;
+
+type
+  tagAUXCAPS2W      = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wTechnology     : WORD;
+wReserved1      : WORD;
+dwSupport       : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  AUXCAPS2W         = tagAUXCAPS2W;
+  PAUXCAPS2W        = ^tagAUXCAPS2W;
+  NPAUXCAPS2W       = ^tagAUXCAPS2W;
+  LPAUXCAPS2W       = ^tagAUXCAPS2W;
+
+#if #declared UNICODE; then;
+type
+AUXCAPS2          = AUXCAPS2W;
+type
+PAUXCAPS2         = PAUXCAPS2W;
+type
+NPAUXCAPS2        = NPAUXCAPS2W;
+type
+LPAUXCAPS2        = LPAUXCAPS2W;
+#else;
+type
+AUXCAPS2          = AUXCAPS2A;
+type
+PAUXCAPS2         = PAUXCAPS2A;
+type
+NPAUXCAPS2        = NPAUXCAPS2A;
+type
+LPAUXCAPS2        = LPAUXCAPS2A;
+#end if;
+
+-- /* flags for wTechnology field in AUXCAPS structure 
+const
+  AUXCAPS_CDAUDIO   = 1;
+
+const
+  AUXCAPS_AUXIN     = 2;
+
+-- /* flags for dwSupport field in AUXCAPS structure 
+const
+  AUXCAPS_VOLUME    = $01;
+
+const
+  AUXCAPS_LRVOLUME  = $02;
+
+-- /* auxiliary audio function prototypes 
+procedure auxGetNumDevs
+                      return UINT;
+#pragma convention(auxGetNumDevs,system);
+#pragma import(auxGetNumDevs,'auxGetNumDevs','winmm.dll');
+
+procedure auxGetDevCapsA(
+    uDeviceID       : in UINT_PTR; 
+    pac             : out tagAUXCAPSA; 
+    cbac            : in UINT)
+                      return MMRESULT;
+#pragma convention(auxGetDevCapsA,system);
+#pragma import(auxGetDevCapsA,'auxGetDevCapsA','winmm.dll');
+
+procedure auxGetDevCapsW(
+    uDeviceID       : in UINT_PTR; 
+    pac             : out tagAUXCAPSW; 
+    cbac            : in UINT)
+                      return MMRESULT;
+#pragma convention(auxGetDevCapsW,system);
+#pragma import(auxGetDevCapsW,'auxGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template auxGetDevCaps;
+  auxGetDevCapsW 
+#end auxGetDevCaps;
+#else;
+#template auxGetDevCaps;
+  auxGetDevCapsA 
+#end auxGetDevCaps;
+#end if;
+
+procedure auxSetVolume(
+    uDeviceID       : in UINT; 
+    dwVolume        : in DWORD)
+                      return MMRESULT;
+#pragma convention(auxSetVolume,system);
+#pragma import(auxSetVolume,'auxSetVolume','winmm.dll');
+
+procedure auxGetVolume(
+    uDeviceID       : in UINT; 
+    pdwVolume       : out DWORD )
+                      return MMRESULT;
+#pragma convention(auxGetVolume,system);
+#pragma import(auxGetVolume,'auxGetVolume','winmm.dll');
+
+procedure auxOutMessage(
+    uDeviceID       : in UINT; 
+    uMsg            : in UINT; 
+    dw1             : in DWORD_PTR; 
+    dw2             : in DWORD_PTR)
+                      return MMRESULT;
+#pragma convention(auxOutMessage,system);
+#pragma import(auxOutMessage,'auxOutMessage','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                             Mixer Support
+-- 
+-- ****************************************************************************/
+type
+HMIXEROBJ         = t_HANDLE;
+type
+LPHMIXEROBJ       = ^HMIXEROBJ for machine_pointer use true;
+type
+HMIXER            = t_HANDLE;
+type
+LPHMIXER          = ^HMIXER for machine_pointer use true;
+const
+  MIXER_SHORT_NAME_CHARS= 16;
+
+const
+  MIXER_LONG_NAME_CHARS= 64;
+
+-- /* 
+-- /*  MMRESULT error return values specific to the mixer API 
+-- /* 
+-- /* 
+const
+  MIXER_OBJECTF_HANDLE= $80000000;
+
+const
+  MIXER_OBJECTF_MIXER= $00;
+
+const
+  MIXER_OBJECTF_WAVEOUT= $10000000;
+
+const
+  MIXER_OBJECTF_WAVEIN= $20000000;
+
+const
+  MIXER_OBJECTF_MIDIOUT= $30000000;
+
+const
+  MIXER_OBJECTF_MIDIIN= $40000000;
+
+const
+  MIXER_OBJECTF_AUX = $50000000;
+
+procedure mixerGetNumDevs
+                      return UINT;
+#pragma convention(mixerGetNumDevs,system);
+#pragma import(mixerGetNumDevs,'mixerGetNumDevs','winmm.dll');
+
+type
+  tagMIXERCAPSA     = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+fdwSupport      : DWORD;
+cDestinations   : DWORD;
+  end record;
+  MIXERCAPSA        = tagMIXERCAPSA;
+  PMIXERCAPSA       = ^tagMIXERCAPSA;
+  LPMIXERCAPSA      = ^tagMIXERCAPSA;
+
+type
+  tagMIXERCAPSW     = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+fdwSupport      : DWORD;
+cDestinations   : DWORD;
+  end record;
+  MIXERCAPSW        = tagMIXERCAPSW;
+  PMIXERCAPSW       = ^tagMIXERCAPSW;
+  LPMIXERCAPSW      = ^tagMIXERCAPSW;
+
+#if #declared UNICODE; then;
+type
+MIXERCAPS         = MIXERCAPSW;
+type
+PMIXERCAPS        = PMIXERCAPSW;
+type
+LPMIXERCAPS       = LPMIXERCAPSW;
+#else;
+type
+MIXERCAPS         = MIXERCAPSA;
+type
+PMIXERCAPS        = PMIXERCAPSA;
+type
+LPMIXERCAPS       = LPMIXERCAPSA;
+#end if;
+
+type
+  tagMIXERCAPS2A    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+fdwSupport      : DWORD;
+cDestinations   : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIXERCAPS2A       = tagMIXERCAPS2A;
+  PMIXERCAPS2A      = ^tagMIXERCAPS2A;
+  LPMIXERCAPS2A     = ^tagMIXERCAPS2A;
+
+type
+  tagMIXERCAPS2W    = record
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+fdwSupport      : DWORD;
+cDestinations   : DWORD;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  MIXERCAPS2W       = tagMIXERCAPS2W;
+  PMIXERCAPS2W      = ^tagMIXERCAPS2W;
+  LPMIXERCAPS2W     = ^tagMIXERCAPS2W;
+
+#if #declared UNICODE; then;
+type
+MIXERCAPS2        = MIXERCAPS2W;
+type
+PMIXERCAPS2       = PMIXERCAPS2W;
+type
+LPMIXERCAPS2      = LPMIXERCAPS2W;
+#else;
+type
+MIXERCAPS2        = MIXERCAPS2A;
+type
+PMIXERCAPS2       = PMIXERCAPS2A;
+type
+LPMIXERCAPS2      = LPMIXERCAPS2A;
+#end if;
+
+procedure mixerGetDevCapsA(
+    uMxId           : in UINT_PTR; 
+    pmxcaps         : out tagMIXERCAPSA; 
+    cbmxcaps        : in UINT)
+                      return MMRESULT;
+#pragma convention(mixerGetDevCapsA,system);
+#pragma import(mixerGetDevCapsA,'mixerGetDevCapsA','winmm.dll');
+
+procedure mixerGetDevCapsW(
+    uMxId           : in UINT_PTR; 
+    pmxcaps         : out tagMIXERCAPSW; 
+    cbmxcaps        : in UINT)
+                      return MMRESULT;
+#pragma convention(mixerGetDevCapsW,system);
+#pragma import(mixerGetDevCapsW,'mixerGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mixerGetDevCaps;
+  mixerGetDevCapsW 
+#end mixerGetDevCaps;
+#else;
+#template mixerGetDevCaps;
+  mixerGetDevCapsA 
+#end mixerGetDevCaps;
+#end if;
+
+procedure mixerOpen(
+    phmx            : out HMIXER ; 
+    uMxId           : in UINT; 
+    dwCallback      : in DWORD_PTR; 
+    dwInstance      : in DWORD_PTR; 
+    fdwOpen         : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerOpen,system);
+#pragma import(mixerOpen,'mixerOpen','winmm.dll');
+
+procedure mixerClose(
+    hmx             : in out {!}HMIXER)
+                      return MMRESULT;
+#pragma convention(mixerClose,system);
+#pragma import(mixerClose,'mixerClose','winmm.dll');
+
+procedure mixerMessage(
+    hmx             : in HMIXER; 
+    uMsg            : in UINT; 
+    dwParam1        : in DWORD_PTR; 
+    dwParam2        : in DWORD_PTR)
+                      return DWORD;
+#pragma convention(mixerMessage,system);
+#pragma import(mixerMessage,'mixerMessage','winmm.dll');
+
+type
+  tagMIXERLINEA     = record
+cbStruct        : DWORD;
+dwDestination   : DWORD;
+dwSource        : DWORD;
+dwLineID        : DWORD;
+fdwLine         : DWORD;
+dwUser          : DWORD_PTR;
+dwComponentType : DWORD;
+cChannels       : DWORD;
+cConnections    : DWORD;
+cControls       : DWORD;
+szShortName     : array 0..MIXER_SHORT_NAME_CHARS-1 of CHAR;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of CHAR;
+  Target            : record
+dwType          : DWORD;
+dwDeviceID      : DWORD;
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+  end record;
+  end record;
+  MIXERLINEA        = tagMIXERLINEA;
+  PMIXERLINEA       = ^tagMIXERLINEA;
+  LPMIXERLINEA      = ^tagMIXERLINEA;
+
+type
+  tagMIXERLINEW     = record
+cbStruct        : DWORD;
+dwDestination   : DWORD;
+dwSource        : DWORD;
+dwLineID        : DWORD;
+fdwLine         : DWORD;
+dwUser          : DWORD_PTR;
+dwComponentType : DWORD;
+cChannels       : DWORD;
+cConnections    : DWORD;
+cControls       : DWORD;
+szShortName     : array 0..MIXER_SHORT_NAME_CHARS-1 of WCHAR;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of WCHAR;
+  Target            : record
+dwType          : DWORD;
+dwDeviceID      : DWORD;
+wMid            : WORD;
+wPid            : WORD;
+vDriverVersion  : MMVERSION;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+  end record;
+  end record;
+  MIXERLINEW        = tagMIXERLINEW;
+  PMIXERLINEW       = ^tagMIXERLINEW;
+  LPMIXERLINEW      = ^tagMIXERLINEW;
+
+#if #declared UNICODE; then;
+type
+MIXERLINE         = MIXERLINEW;
+type
+PMIXERLINE        = PMIXERLINEW;
+type
+LPMIXERLINE       = LPMIXERLINEW;
+#else;
+type
+MIXERLINE         = MIXERLINEA;
+type
+PMIXERLINE        = PMIXERLINEA;
+type
+LPMIXERLINE       = LPMIXERLINEA;
+#end if;
+
+-- /* 
+-- /*  MIXERLINE.fdwLine 
+-- /* 
+-- /* 
+const
+  MIXERLINE_LINEF_ACTIVE= $01;
+
+const
+  MIXERLINE_LINEF_DISCONNECTED= $8000;
+
+const
+  MIXERLINE_LINEF_SOURCE= $80000000;
+
+-- /* 
+-- /*  MIXERLINE.dwComponentType 
+-- /* 
+-- /*  component types for destinations and sources 
+-- /* 
+-- /* 
+const
+  MIXERLINE_COMPONENTTYPE_DST_FIRST= $00;
+
+const
+  MIXERLINE_COMPONENTTYPE_SRC_FIRST= $1000;
+
+-- /* 
+-- /*  MIXERLINE.Target.dwType 
+-- /* 
+-- /* 
+const
+  MIXERLINE_TARGETTYPE_UNDEFINED= 0;
+
+const
+  MIXERLINE_TARGETTYPE_WAVEOUT= 1;
+
+const
+  MIXERLINE_TARGETTYPE_WAVEIN= 2;
+
+const
+  MIXERLINE_TARGETTYPE_MIDIOUT= 3;
+
+const
+  MIXERLINE_TARGETTYPE_MIDIIN= 4;
+
+const
+  MIXERLINE_TARGETTYPE_AUX= 5;
+
+procedure mixerGetLineInfoA(
+    hmxobj          : in HMIXEROBJ; 
+    pmxl            : out tagMIXERLINEA; 
+    fdwInfo         : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetLineInfoA,system);
+#pragma import(mixerGetLineInfoA,'mixerGetLineInfoA','winmm.dll');
+
+procedure mixerGetLineInfoW(
+    hmxobj          : in HMIXEROBJ; 
+    pmxl            : out tagMIXERLINEW; 
+    fdwInfo         : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetLineInfoW,system);
+#pragma import(mixerGetLineInfoW,'mixerGetLineInfoW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mixerGetLineInfo;
+  mixerGetLineInfoW 
+#end mixerGetLineInfo;
+#else;
+#template mixerGetLineInfo;
+  mixerGetLineInfoA 
+#end mixerGetLineInfo;
+#end if;
+
+const
+  MIXER_GETLINEINFOF_DESTINATION= $00;
+
+const
+  MIXER_GETLINEINFOF_SOURCE= $01;
+
+const
+  MIXER_GETLINEINFOF_LINEID= $02;
+
+const
+  MIXER_GETLINEINFOF_COMPONENTTYPE= $03;
+
+const
+  MIXER_GETLINEINFOF_TARGETTYPE= $04;
+
+const
+  MIXER_GETLINEINFOF_QUERYMASK= $0F;
+
+procedure mixerGetID(
+    hmxobj          : in HMIXEROBJ; 
+    puMxId          : out UINT; 
+    fdwId           : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetID,system);
+#pragma import(mixerGetID,'mixerGetID','winmm.dll');
+
+-- /* 
+-- /*  MIXERCONTROL 
+-- /* 
+-- /* 
+type
+  tagMIXERCONTROLA  = record
+cbStruct        : DWORD;
+dwControlID     : DWORD;
+dwControlType   : DWORD;
+fdwControl      : DWORD;
+cMultipleItems  : DWORD;
+szShortName     : array 0..MIXER_SHORT_NAME_CHARS-1 of CHAR;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of CHAR;
+Bounds           : record
+lMinimum        : LONG;
+lMaximum        : LONG;
+dwMinimum       : DWORD;
+dwMaximum       : DWORD;
+      dwReserved    : array 0..5 of DWORD for position use 0;
+    end record;
+Metrics          : record
+      cSteps        : DWORD for position use 0;
+      cbCustomData  : DWORD for position use 0;
+      dwReserved    : array 0..5 of DWORD for position use 0;
+    end record;
+  end record;
+  MIXERCONTROLA     = tagMIXERCONTROLA;
+  PMIXERCONTROLA    = ^tagMIXERCONTROLA;
+  LPMIXERCONTROLA   = ^tagMIXERCONTROLA;
+
+type
+  tagMIXERCONTROLW  = record
+cbStruct        : DWORD;
+dwControlID     : DWORD;
+dwControlType   : DWORD;
+fdwControl      : DWORD;
+cMultipleItems  : DWORD;
+szShortName     : array 0..MIXER_SHORT_NAME_CHARS-1 of WCHAR;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of WCHAR;
+Bounds           : record
+lMinimum        : LONG;
+lMaximum        : LONG;
+dwMinimum       : DWORD;
+dwMaximum       : DWORD;
+      dwReserved    : array 0..5 of DWORD for position use 0;
+    end record;
+Metrics          : record
+      cSteps        : DWORD for position use 0;
+      cbCustomData  : DWORD for position use 0;
+      dwReserved    : array 0..5 of DWORD for position use 0;
+    end record;
+  end record;
+  MIXERCONTROLW     = tagMIXERCONTROLW;
+  PMIXERCONTROLW    = ^tagMIXERCONTROLW;
+  LPMIXERCONTROLW   = ^tagMIXERCONTROLW;
+
+#if #declared UNICODE; then;
+type
+MIXERCONTROL      = MIXERCONTROLW;
+type
+PMIXERCONTROL     = PMIXERCONTROLW;
+type
+LPMIXERCONTROL    = LPMIXERCONTROLW;
+#else;
+type
+MIXERCONTROL      = MIXERCONTROLA;
+type
+PMIXERCONTROL     = PMIXERCONTROLA;
+type
+LPMIXERCONTROL    = LPMIXERCONTROLA;
+#end if;
+
+-- /* 
+-- /*  MIXERCONTROL.fdwControl 
+-- /* 
+-- /* 
+const
+  MIXERCONTROL_CONTROLF_UNIFORM= $01;
+
+const
+  MIXERCONTROL_CONTROLF_MULTIPLE= $02;
+
+const
+  MIXERCONTROL_CONTROLF_DISABLED= $80000000;
+
+-- /* 
+-- /*  MIXERCONTROL_CONTROLTYPE_xxx building block defines 
+-- /* 
+-- /* 
+const
+  MIXERCONTROL_CT_CLASS_MASK= $F0000000;
+
+const
+  MIXERCONTROL_CT_CLASS_CUSTOM= $00;
+
+const
+  MIXERCONTROL_CT_CLASS_METER= $10000000;
+
+const
+  MIXERCONTROL_CT_CLASS_SWITCH= $20000000;
+
+const
+  MIXERCONTROL_CT_CLASS_NUMBER= $30000000;
+
+const
+  MIXERCONTROL_CT_CLASS_SLIDER= $40000000;
+
+const
+  MIXERCONTROL_CT_CLASS_FADER= $50000000;
+
+const
+  MIXERCONTROL_CT_CLASS_TIME= $60000000;
+
+const
+  MIXERCONTROL_CT_CLASS_LIST= $70000000;
+
+const
+  MIXERCONTROL_CT_SUBCLASS_MASK= $F000000;
+
+const
+  MIXERCONTROL_CT_SC_SWITCH_BOOLEAN= $00;
+
+const
+  MIXERCONTROL_CT_SC_SWITCH_BUTTON= $1000000;
+
+const
+  MIXERCONTROL_CT_SC_METER_POLLED= $00;
+
+const
+  MIXERCONTROL_CT_SC_TIME_MICROSECS= $00;
+
+const
+  MIXERCONTROL_CT_SC_TIME_MILLISECS= $1000000;
+
+const
+  MIXERCONTROL_CT_SC_LIST_SINGLE= $00;
+
+const
+  MIXERCONTROL_CT_SC_LIST_MULTIPLE= $1000000;
+
+const
+  MIXERCONTROL_CT_UNITS_MASK= $FF0000;
+
+const
+  MIXERCONTROL_CT_UNITS_CUSTOM= $00;
+
+const
+  MIXERCONTROL_CT_UNITS_BOOLEAN= $10000;
+
+const
+  MIXERCONTROL_CT_UNITS_SIGNED= $20000;
+
+const
+  MIXERCONTROL_CT_UNITS_UNSIGNED= $30000;
+
+const
+  MIXERCONTROL_CT_UNITS_DECIBELS= $40000;
+
+const
+  MIXERCONTROL_CT_UNITS_PERCENT= $50000;
+
+-- /* 
+-- /*  Commonly used control types for specifying MIXERCONTROL.dwControlType 
+-- /* 
+-- /* 
+-- /*  MIXERLINECONTROLS 
+-- /* 
+type
+  tagMIXERLINECONTROLSA = record
+cbStruct        : DWORD;
+dwLineID        : DWORD;
+t_001            : record
+      dwControlID   : DWORD for position use 0;
+      dwControlType : DWORD for position use 0;
+    end record;
+cControls       : DWORD;
+cbmxctrl        : DWORD;
+pamxctrl        : LPMIXERCONTROLA;
+  end record;
+  MIXERLINECONTROLSA = tagMIXERLINECONTROLSA;
+  PMIXERLINECONTROLSA = ^tagMIXERLINECONTROLSA;
+  LPMIXERLINECONTROLSA = ^tagMIXERLINECONTROLSA;
+
+type
+  tagMIXERLINECONTROLSW = record
+cbStruct        : DWORD;
+dwLineID        : DWORD;
+t_002            : record
+      dwControlID   : DWORD for position use 0;
+      dwControlType : DWORD for position use 0;
+    end record;
+cControls       : DWORD;
+cbmxctrl        : DWORD;
+pamxctrl        : LPMIXERCONTROLW;
+  end record;
+  MIXERLINECONTROLSW = tagMIXERLINECONTROLSW;
+  PMIXERLINECONTROLSW = ^tagMIXERLINECONTROLSW;
+  LPMIXERLINECONTROLSW = ^tagMIXERLINECONTROLSW;
+
+#if #declared UNICODE; then;
+type
+MIXERLINECONTROLS = MIXERLINECONTROLSW;
+type
+PMIXERLINECONTROLS = PMIXERLINECONTROLSW;
+type
+LPMIXERLINECONTROLS = LPMIXERLINECONTROLSW;
+#else;
+type
+MIXERLINECONTROLS = MIXERLINECONTROLSA;
+type
+PMIXERLINECONTROLS = PMIXERLINECONTROLSA;
+type
+LPMIXERLINECONTROLS = LPMIXERLINECONTROLSA;
+#end if;
+
+-- /* 
+-- /* 
+-- /* 
+procedure mixerGetLineControlsA(
+    hmxobj          : in HMIXEROBJ; 
+    pmxlc           : in out tagMIXERLINECONTROLSA; 
+    fdwControls     : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetLineControlsA,system);
+#pragma import(mixerGetLineControlsA,'mixerGetLineControlsA','winmm.dll');
+
+procedure mixerGetLineControlsW(
+    hmxobj          : in HMIXEROBJ; 
+    pmxlc           : in out tagMIXERLINECONTROLSW; 
+    fdwControls     : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetLineControlsW,system);
+#pragma import(mixerGetLineControlsW,'mixerGetLineControlsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mixerGetLineControls;
+  mixerGetLineControlsW 
+#end mixerGetLineControls;
+#else;
+#template mixerGetLineControls;
+  mixerGetLineControlsA 
+#end mixerGetLineControls;
+#end if;
+
+const
+  MIXER_GETLINECONTROLSF_ALL= $00;
+
+const
+  MIXER_GETLINECONTROLSF_ONEBYID= $01;
+
+const
+  MIXER_GETLINECONTROLSF_ONEBYTYPE= $02;
+
+const
+  MIXER_GETLINECONTROLSF_QUERYMASK= $0F;
+
+type
+  tMIXERCONTROLDETAILS = record
+cbStruct        : DWORD;
+dwControlID     : DWORD;
+cChannels       : DWORD;
+t_003            : record
+      hwndOwner     : t_HWND for position use 0;
+      cMultipleItems : DWORD for position use 0;
+    end record;
+cbDetails       : DWORD;
+paDetails       : LPVOID;
+  end record;
+  MIXERCONTROLDETAILS = tMIXERCONTROLDETAILS;
+  PMIXERCONTROLDETAILS = ^tMIXERCONTROLDETAILS;
+  LPMIXERCONTROLDETAILS = ^tMIXERCONTROLDETAILS;
+
+-- /* 
+-- /*  MIXER_GETCONTROLDETAILSF_LISTTEXT 
+-- /* 
+-- /* 
+type
+  tagMIXERCONTROLDETAILS_LISTTEXTA = record
+dwParam1        : DWORD;
+dwParam2        : DWORD;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of CHAR;
+  end record;
+  MIXERCONTROLDETAILS_LISTTEXTA = tagMIXERCONTROLDETAILS_LISTTEXTA;
+  PMIXERCONTROLDETAILS_LISTTEXTA = ^tagMIXERCONTROLDETAILS_LISTTEXTA;
+  LPMIXERCONTROLDETAILS_LISTTEXTA = ^tagMIXERCONTROLDETAILS_LISTTEXTA;
+
+type
+  tagMIXERCONTROLDETAILS_LISTTEXTW = record
+dwParam1        : DWORD;
+dwParam2        : DWORD;
+szName          : array 0..MIXER_LONG_NAME_CHARS-1 of WCHAR;
+  end record;
+  MIXERCONTROLDETAILS_LISTTEXTW = tagMIXERCONTROLDETAILS_LISTTEXTW;
+  PMIXERCONTROLDETAILS_LISTTEXTW = ^tagMIXERCONTROLDETAILS_LISTTEXTW;
+  LPMIXERCONTROLDETAILS_LISTTEXTW = ^tagMIXERCONTROLDETAILS_LISTTEXTW;
+
+#if #declared UNICODE; then;
+type
+MIXERCONTROLDETAILS_LISTTEXT = MIXERCONTROLDETAILS_LISTTEXTW;
+type
+PMIXERCONTROLDETAILS_LISTTEXT = PMIXERCONTROLDETAILS_LISTTEXTW;
+type
+LPMIXERCONTROLDETAILS_LISTTEXT = LPMIXERCONTROLDETAILS_LISTTEXTW;
+#else;
+type
+MIXERCONTROLDETAILS_LISTTEXT = MIXERCONTROLDETAILS_LISTTEXTA;
+type
+PMIXERCONTROLDETAILS_LISTTEXT = PMIXERCONTROLDETAILS_LISTTEXTA;
+type
+LPMIXERCONTROLDETAILS_LISTTEXT = LPMIXERCONTROLDETAILS_LISTTEXTA;
+#end if;
+
+-- /* 
+-- /*  MIXER_GETCONTROLDETAILSF_VALUE 
+-- /* 
+-- /* 
+type
+  tMIXERCONTROLDETAILS_BOOLEAN = record
+fValue          : LONG;
+  end record;
+  MIXERCONTROLDETAILS_BOOLEAN = tMIXERCONTROLDETAILS_BOOLEAN;
+  PMIXERCONTROLDETAILS_BOOLEAN = ^tMIXERCONTROLDETAILS_BOOLEAN;
+  LPMIXERCONTROLDETAILS_BOOLEAN = ^tMIXERCONTROLDETAILS_BOOLEAN;
+
+type
+  tMIXERCONTROLDETAILS_SIGNED = record
+lValue          : LONG;
+  end record;
+  MIXERCONTROLDETAILS_SIGNED = tMIXERCONTROLDETAILS_SIGNED;
+  PMIXERCONTROLDETAILS_SIGNED = ^tMIXERCONTROLDETAILS_SIGNED;
+  LPMIXERCONTROLDETAILS_SIGNED = ^tMIXERCONTROLDETAILS_SIGNED;
+
+type
+  tMIXERCONTROLDETAILS_UNSIGNED = record
+dwValue         : DWORD;
+  end record;
+  MIXERCONTROLDETAILS_UNSIGNED = tMIXERCONTROLDETAILS_UNSIGNED;
+  PMIXERCONTROLDETAILS_UNSIGNED = ^tMIXERCONTROLDETAILS_UNSIGNED;
+  LPMIXERCONTROLDETAILS_UNSIGNED = ^tMIXERCONTROLDETAILS_UNSIGNED;
+
+procedure mixerGetControlDetailsA(
+    hmxobj          : in HMIXEROBJ; 
+    pmxcd           : in out tMIXERCONTROLDETAILS; 
+    fdwDetails      : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetControlDetailsA,system);
+#pragma import(mixerGetControlDetailsA,'mixerGetControlDetailsA','winmm.dll');
+
+procedure mixerGetControlDetailsW(
+    hmxobj          : in HMIXEROBJ; 
+    pmxcd           : in out tMIXERCONTROLDETAILS; 
+    fdwDetails      : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerGetControlDetailsW,system);
+#pragma import(mixerGetControlDetailsW,'mixerGetControlDetailsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mixerGetControlDetails;
+  mixerGetControlDetailsW 
+#end mixerGetControlDetails;
+#else;
+#template mixerGetControlDetails;
+  mixerGetControlDetailsA 
+#end mixerGetControlDetails;
+#end if;
+
+const
+  MIXER_GETCONTROLDETAILSF_VALUE= $00;
+
+const
+  MIXER_GETCONTROLDETAILSF_LISTTEXT= $01;
+
+const
+  MIXER_GETCONTROLDETAILSF_QUERYMASK= $0F;
+
+procedure mixerSetControlDetails(
+    hmxobj          : in HMIXEROBJ; 
+    pmxcd           : in LPMIXERCONTROLDETAILS; 
+    fdwDetails      : in DWORD)
+                      return MMRESULT;
+#pragma convention(mixerSetControlDetails,system);
+#pragma import(mixerSetControlDetails,'mixerSetControlDetails','winmm.dll');
+
+const
+  MIXER_SETCONTROLDETAILSF_VALUE= $00;
+
+const
+  MIXER_SETCONTROLDETAILSF_CUSTOM= $01;
+
+const
+  MIXER_SETCONTROLDETAILSF_QUERYMASK= $0F;
+
+-- /****************************************************************************
+-- 
+--                             Timer support
+-- 
+-- ****************************************************************************/
+-- /* timer error return values 
+-- /* timer data types 
+type
+TIMECALLBACK      = procedure (
+    uTimerID        : UINT;
+    uMsg            : UINT;
+    dwUser          : DWORD_PTR;
+    dw1             : DWORD_PTR;
+    dw2             : DWORD_PTR);
+type
+LPTIMECALLBACK    = ^TIMECALLBACK for machine_pointer use true;
+-- /* flags for fuEvent parameter of timeSetEvent() function 
+const
+  TIME_ONESHOT      = $00;
+
+const
+  TIME_PERIODIC     = $01;
+
+const
+  TIME_CALLBACK_FUNCTION= $00;
+
+const
+  TIME_CALLBACK_EVENT_SET= $10;
+
+const
+  TIME_CALLBACK_EVENT_PULSE= $20;
+
+const
+  TIME_KILL_SYNCHRONOUS= $0100;
+
+-- /* after the user calls timeKillEvent() to 
+-- /* destroy it. 
+-- /* timer device capabilities data structure 
+type
+  timecaps_tag      = record
+wPeriodMin      : UINT;
+wPeriodMax      : UINT;
+  end record;
+  TIMECAPS          = timecaps_tag;
+  PTIMECAPS         = ^timecaps_tag;
+  NPTIMECAPS        = ^timecaps_tag;
+  LPTIMECAPS        = ^timecaps_tag;
+
+-- /* timer function prototypes 
+procedure timeGetSystemTime(
+    pmmt            : out mmtime_tag; 
+    cbmmt           : in UINT)
+                      return MMRESULT;
+#pragma convention(timeGetSystemTime,system);
+#pragma import(timeGetSystemTime,'timeGetSystemTime','winmm.dll');
+
+procedure timeGetTime
+                      return DWORD;
+#pragma convention(timeGetTime,system);
+#pragma import(timeGetTime,'timeGetTime','winmm.dll');
+
+procedure timeSetEvent(
+    uDelay          : in UINT; 
+    uResolution     : in UINT; 
+    fptc            : in LPTIMECALLBACK; 
+    dwUser          : in DWORD_PTR; 
+    fuEvent         : in UINT)
+                      return MMRESULT;
+#pragma convention(timeSetEvent,system);
+#pragma import(timeSetEvent,'timeSetEvent','winmm.dll');
+
+procedure timeKillEvent(
+    uTimerID        : in UINT)
+                      return MMRESULT;
+#pragma convention(timeKillEvent,system);
+#pragma import(timeKillEvent,'timeKillEvent','winmm.dll');
+
+procedure timeGetDevCaps(
+    ptc             : out timecaps_tag; 
+    cbtc            : in UINT)
+                      return MMRESULT;
+#pragma convention(timeGetDevCaps,system);
+#pragma import(timeGetDevCaps,'timeGetDevCaps','winmm.dll');
+
+procedure timeBeginPeriod(
+    uPeriod         : in UINT)
+                      return MMRESULT;
+#pragma convention(timeBeginPeriod,system);
+#pragma import(timeBeginPeriod,'timeBeginPeriod','winmm.dll');
+
+procedure timeEndPeriod(
+    uPeriod         : in UINT)
+                      return MMRESULT;
+#pragma convention(timeEndPeriod,system);
+#pragma import(timeEndPeriod,'timeEndPeriod','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                             Joystick support
+-- 
+-- ****************************************************************************/
+-- /* joystick error return values 
+-- /* constants used with JOYINFO and JOYINFOEX structures and MM_JOY* messages 
+const
+  JOY_BUTTON1       = $01;
+
+const
+  JOY_BUTTON2       = $02;
+
+const
+  JOY_BUTTON3       = $04;
+
+const
+  JOY_BUTTON4       = $08;
+
+const
+  JOY_BUTTON1CHG    = $0100;
+
+const
+  JOY_BUTTON2CHG    = $0200;
+
+const
+  JOY_BUTTON3CHG    = $0400;
+
+const
+  JOY_BUTTON4CHG    = $0800;
+
+-- /* constants used with JOYINFOEX 
+const
+  JOY_BUTTON5       = $10;
+
+const
+  JOY_BUTTON6       = $20;
+
+const
+  JOY_BUTTON7       = $40;
+
+const
+  JOY_BUTTON8       = $80;
+
+const
+  JOY_BUTTON9       = $0100;
+
+const
+  JOY_BUTTON10      = $0200;
+
+const
+  JOY_BUTTON11      = $0400;
+
+const
+  JOY_BUTTON12      = $0800;
+
+const
+  JOY_BUTTON13      = $1000;
+
+const
+  JOY_BUTTON14      = $2000;
+
+const
+  JOY_BUTTON15      = $4000;
+
+const
+  JOY_BUTTON16      = $8000;
+
+const
+  JOY_BUTTON17      = $10000;
+
+const
+  JOY_BUTTON18      = $20000;
+
+const
+  JOY_BUTTON19      = $40000;
+
+const
+  JOY_BUTTON20      = $80000;
+
+const
+  JOY_BUTTON21      = $100000;
+
+const
+  JOY_BUTTON22      = $200000;
+
+const
+  JOY_BUTTON23      = $400000;
+
+const
+  JOY_BUTTON24      = $800000;
+
+const
+  JOY_BUTTON25      = $1000000;
+
+const
+  JOY_BUTTON26      = $2000000;
+
+const
+  JOY_BUTTON27      = $4000000;
+
+const
+  JOY_BUTTON28      = $8000000;
+
+const
+  JOY_BUTTON29      = $10000000;
+
+const
+  JOY_BUTTON30      = $20000000;
+
+const
+  JOY_BUTTON31      = $40000000;
+
+const
+  JOY_BUTTON32      = $80000000;
+
+-- /* constants used with JOYINFOEX structure 
+const
+  JOY_POVFORWARD    = 0;
+
+const
+  JOY_POVRIGHT      = 9000;
+
+const
+  JOY_POVBACKWARD   = 18000;
+
+const
+  JOY_POVLEFT       = 27000;
+
+const
+  JOY_RETURNX       = $01;
+
+const
+  JOY_RETURNY       = $02;
+
+const
+  JOY_RETURNZ       = $04;
+
+const
+  JOY_RETURNR       = $08;
+
+const
+  JOY_RETURNU       = $10;
+
+const
+  JOY_RETURNV       = $20;
+
+const
+  JOY_RETURNPOV     = $40;
+
+const
+  JOY_RETURNBUTTONS = $80;
+
+const
+  JOY_RETURNRAWDATA = $0100;
+
+const
+  JOY_RETURNPOVCTS  = $0200;
+
+const
+  JOY_RETURNCENTERED= $0400;
+
+const
+  JOY_USEDEADZONE   = $0800;
+
+const
+  JOY_CAL_READALWAYS= $10000;
+
+const
+  JOY_CAL_READXYONLY= $20000;
+
+const
+  JOY_CAL_READ3     = $40000;
+
+const
+  JOY_CAL_READ4     = $80000;
+
+const
+  JOY_CAL_READXONLY = $100000;
+
+const
+  JOY_CAL_READYONLY = $200000;
+
+const
+  JOY_CAL_READ5     = $400000;
+
+const
+  JOY_CAL_READ6     = $800000;
+
+const
+  JOY_CAL_READZONLY = $1000000;
+
+const
+  JOY_CAL_READRONLY = $2000000;
+
+const
+  JOY_CAL_READUONLY = $4000000;
+
+const
+  JOY_CAL_READVONLY = $8000000;
+
+-- /* joystick ID constants 
+const
+  JOYSTICKID1       = 0;
+
+const
+  JOYSTICKID2       = 1;
+
+-- /* joystick driver capabilites 
+const
+  JOYCAPS_HASZ      = $01;
+
+const
+  JOYCAPS_HASR      = $02;
+
+const
+  JOYCAPS_HASU      = $04;
+
+const
+  JOYCAPS_HASV      = $08;
+
+const
+  JOYCAPS_HASPOV    = $10;
+
+const
+  JOYCAPS_POV4DIR   = $20;
+
+const
+  JOYCAPS_POVCTS    = $40;
+
+-- /* joystick device capabilities data structure 
+type
+  tagJOYCAPSA       = record
+wMid            : WORD;
+wPid            : WORD;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wXmin           : UINT;
+wXmax           : UINT;
+wYmin           : UINT;
+wYmax           : UINT;
+wZmin           : UINT;
+wZmax           : UINT;
+wNumButtons     : UINT;
+wPeriodMin      : UINT;
+wPeriodMax      : UINT;
+wRmin           : UINT;
+wRmax           : UINT;
+wUmin           : UINT;
+wUmax           : UINT;
+wVmin           : UINT;
+wVmax           : UINT;
+wCaps           : UINT;
+wMaxAxes        : UINT;
+wNumAxes        : UINT;
+wMaxButtons     : UINT;
+szRegKey        : array 0..MAXPNAMELEN-1 of CHAR;
+szOEMVxD        : array 0..MAX_JOYSTICKOEMVXDNAME-1 of CHAR;
+  end record;
+  JOYCAPSA          = tagJOYCAPSA;
+  PJOYCAPSA         = ^tagJOYCAPSA;
+  NPJOYCAPSA        = ^tagJOYCAPSA;
+  LPJOYCAPSA        = ^tagJOYCAPSA;
+
+type
+  tagJOYCAPSW       = record
+wMid            : WORD;
+wPid            : WORD;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wXmin           : UINT;
+wXmax           : UINT;
+wYmin           : UINT;
+wYmax           : UINT;
+wZmin           : UINT;
+wZmax           : UINT;
+wNumButtons     : UINT;
+wPeriodMin      : UINT;
+wPeriodMax      : UINT;
+wRmin           : UINT;
+wRmax           : UINT;
+wUmin           : UINT;
+wUmax           : UINT;
+wVmin           : UINT;
+wVmax           : UINT;
+wCaps           : UINT;
+wMaxAxes        : UINT;
+wNumAxes        : UINT;
+wMaxButtons     : UINT;
+szRegKey        : array 0..MAXPNAMELEN-1 of WCHAR;
+szOEMVxD        : array 0..MAX_JOYSTICKOEMVXDNAME-1 of WCHAR;
+  end record;
+  JOYCAPSW          = tagJOYCAPSW;
+  PJOYCAPSW         = ^tagJOYCAPSW;
+  NPJOYCAPSW        = ^tagJOYCAPSW;
+  LPJOYCAPSW        = ^tagJOYCAPSW;
+
+#if #declared UNICODE; then;
+type
+JOYCAPS           = JOYCAPSW;
+type
+PJOYCAPS          = PJOYCAPSW;
+type
+NPJOYCAPS         = NPJOYCAPSW;
+type
+LPJOYCAPS         = LPJOYCAPSW;
+#else;
+type
+JOYCAPS           = JOYCAPSA;
+type
+PJOYCAPS          = PJOYCAPSA;
+type
+NPJOYCAPS         = NPJOYCAPSA;
+type
+LPJOYCAPS         = LPJOYCAPSA;
+#end if;
+
+type
+  tagJOYCAPS2A      = record
+wMid            : WORD;
+wPid            : WORD;
+szPname         : array 0..MAXPNAMELEN-1 of CHAR;
+wXmin           : UINT;
+wXmax           : UINT;
+wYmin           : UINT;
+wYmax           : UINT;
+wZmin           : UINT;
+wZmax           : UINT;
+wNumButtons     : UINT;
+wPeriodMin      : UINT;
+wPeriodMax      : UINT;
+wRmin           : UINT;
+wRmax           : UINT;
+wUmin           : UINT;
+wUmax           : UINT;
+wVmin           : UINT;
+wVmax           : UINT;
+wCaps           : UINT;
+wMaxAxes        : UINT;
+wNumAxes        : UINT;
+wMaxButtons     : UINT;
+szRegKey        : array 0..MAXPNAMELEN-1 of CHAR;
+szOEMVxD        : array 0..MAX_JOYSTICKOEMVXDNAME-1 of CHAR;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  JOYCAPS2A         = tagJOYCAPS2A;
+  PJOYCAPS2A        = ^tagJOYCAPS2A;
+  NPJOYCAPS2A       = ^tagJOYCAPS2A;
+  LPJOYCAPS2A       = ^tagJOYCAPS2A;
+
+type
+  tagJOYCAPS2W      = record
+wMid            : WORD;
+wPid            : WORD;
+szPname         : array 0..MAXPNAMELEN-1 of WCHAR;
+wXmin           : UINT;
+wXmax           : UINT;
+wYmin           : UINT;
+wYmax           : UINT;
+wZmin           : UINT;
+wZmax           : UINT;
+wNumButtons     : UINT;
+wPeriodMin      : UINT;
+wPeriodMax      : UINT;
+wRmin           : UINT;
+wRmax           : UINT;
+wUmin           : UINT;
+wUmax           : UINT;
+wVmin           : UINT;
+wVmax           : UINT;
+wCaps           : UINT;
+wMaxAxes        : UINT;
+wNumAxes        : UINT;
+wMaxButtons     : UINT;
+szRegKey        : array 0..MAXPNAMELEN-1 of WCHAR;
+szOEMVxD        : array 0..MAX_JOYSTICKOEMVXDNAME-1 of WCHAR;
+ManufacturerGuid : t_GUID;
+ProductGuid     : t_GUID;
+NameGuid        : t_GUID;
+  end record;
+  JOYCAPS2W         = tagJOYCAPS2W;
+  PJOYCAPS2W        = ^tagJOYCAPS2W;
+  NPJOYCAPS2W       = ^tagJOYCAPS2W;
+  LPJOYCAPS2W       = ^tagJOYCAPS2W;
+
+#if #declared UNICODE; then;
+type
+JOYCAPS2          = JOYCAPS2W;
+type
+PJOYCAPS2         = PJOYCAPS2W;
+type
+NPJOYCAPS2        = NPJOYCAPS2W;
+type
+LPJOYCAPS2        = LPJOYCAPS2W;
+#else;
+type
+JOYCAPS2          = JOYCAPS2A;
+type
+PJOYCAPS2         = PJOYCAPS2A;
+type
+NPJOYCAPS2        = NPJOYCAPS2A;
+type
+LPJOYCAPS2        = LPJOYCAPS2A;
+#end if;
+
+-- /* joystick information data structure 
+type
+  joyinfo_tag       = record
+wXpos           : UINT;
+wYpos           : UINT;
+wZpos           : UINT;
+wButtons        : UINT;
+  end record;
+  JOYINFO           = joyinfo_tag;
+  PJOYINFO          = ^joyinfo_tag;
+  NPJOYINFO         = ^joyinfo_tag;
+  LPJOYINFO         = ^joyinfo_tag;
+
+type
+  joyinfoex_tag     = record
+dwSize          : DWORD;
+dwFlags         : DWORD;
+dwXpos          : DWORD;
+dwYpos          : DWORD;
+dwZpos          : DWORD;
+dwRpos          : DWORD;
+dwUpos          : DWORD;
+dwVpos          : DWORD;
+dwButtons       : DWORD;
+dwButtonNumber  : DWORD;
+dwPOV           : DWORD;
+dwReserved1     : DWORD;
+dwReserved2     : DWORD;
+  end record;
+  JOYINFOEX         = joyinfoex_tag;
+  PJOYINFOEX        = ^joyinfoex_tag;
+  NPJOYINFOEX       = ^joyinfoex_tag;
+  LPJOYINFOEX       = ^joyinfoex_tag;
+
+-- /* joystick function prototypes 
+procedure joyGetNumDevs
+                      return UINT;
+#pragma convention(joyGetNumDevs,system);
+#pragma import(joyGetNumDevs,'joyGetNumDevs','winmm.dll');
+
+procedure joyGetDevCapsA(
+    uJoyID          : in UINT_PTR; 
+    pjc             : out tagJOYCAPSA; 
+    cbjc            : in UINT)
+                      return MMRESULT;
+#pragma convention(joyGetDevCapsA,system);
+#pragma import(joyGetDevCapsA,'joyGetDevCapsA','winmm.dll');
+
+procedure joyGetDevCapsW(
+    uJoyID          : in UINT_PTR; 
+    pjc             : out tagJOYCAPSW; 
+    cbjc            : in UINT)
+                      return MMRESULT;
+#pragma convention(joyGetDevCapsW,system);
+#pragma import(joyGetDevCapsW,'joyGetDevCapsW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template joyGetDevCaps;
+  joyGetDevCapsW 
+#end joyGetDevCaps;
+#else;
+#template joyGetDevCaps;
+  joyGetDevCapsA 
+#end joyGetDevCaps;
+#end if;
+
+procedure joyGetPos(
+    uJoyID          : in UINT; 
+    pji             : out joyinfo_tag)
+                      return MMRESULT;
+#pragma convention(joyGetPos,system);
+#pragma import(joyGetPos,'joyGetPos','winmm.dll');
+
+procedure joyGetPosEx(
+    uJoyID          : in UINT; 
+    pji             : out joyinfoex_tag)
+                      return MMRESULT;
+#pragma convention(joyGetPosEx,system);
+#pragma import(joyGetPosEx,'joyGetPosEx','winmm.dll');
+
+procedure joyGetThreshold(
+    uJoyID          : in UINT; 
+    puThreshold     : out UINT )
+                      return MMRESULT;
+#pragma convention(joyGetThreshold,system);
+#pragma import(joyGetThreshold,'joyGetThreshold','winmm.dll');
+
+procedure joyReleaseCapture(
+    uJoyID          : in UINT)
+                      return MMRESULT;
+#pragma convention(joyReleaseCapture,system);
+#pragma import(joyReleaseCapture,'joyReleaseCapture','winmm.dll');
+
+procedure joySetCapture(
+    hwnd            : in t_HWND; 
+    uJoyID          : in UINT; 
+    uPeriod         : in UINT; 
+    fChanged        : in BOOL)
+                      return MMRESULT;
+#pragma convention(joySetCapture,system);
+#pragma import(joySetCapture,'joySetCapture','winmm.dll');
+
+procedure joySetThreshold(
+    uJoyID          : in UINT; 
+    uThreshold      : in UINT)
+                      return MMRESULT;
+#pragma convention(joySetThreshold,system);
+#pragma import(joySetThreshold,'joySetThreshold','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                         Multimedia File I/O support
+-- 
+-- ****************************************************************************/
+-- /* MMIO error return values 
+const
+  MMIOERR_BASE      = 256;
+
+-- /* MMIO constants 
+-- /* MMIO data types 
+type
+FOURCC            = DWORD;
+-- /* a four character code 
+type
+HPSTR             = LPSTR;
+-- /* a huge version of LPSTR 
+type
+t_HMMIO           = t_HANDLE;
+-- /* a handle to an open file 
+type
+MMIOPROC          = procedure (
+    lpmmioinfo      : LPSTR;
+    uMsg            : UINT;
+    lParam1         : t_LPARAM;
+    lParam2         : t_LPARAM)
+                      return t_LRESULT;
+type
+LPMMIOPROC        = ^MMIOPROC for machine_pointer use true;
+-- /* general MMIO information data structure 
+type
+  _MMIOINFO         = record
+dwFlags         : DWORD;
+fccIOProc       : FOURCC;
+pIOProc         : LPMMIOPROC;
+wErrorRet       : UINT;
+htask           : t_HTASK;
+cchBuffer       : LONG;
+pchBuffer       : HPSTR;
+pchNext         : HPSTR;
+pchEndRead      : HPSTR;
+pchEndWrite     : HPSTR;
+lBufOffset      : LONG;
+lDiskOffset     : LONG;
+adwInfo         : array 0..2 of DWORD;
+dwReserved1     : DWORD;
+dwReserved2     : DWORD;
+hmmio           : t_HMMIO;
+  end record;
+  MMIOINFO          = _MMIOINFO;
+  PMMIOINFO         = ^_MMIOINFO;
+  NPMMIOINFO        = ^_MMIOINFO;
+  LPMMIOINFO        = ^_MMIOINFO;
+
+type
+LPCMMIOINFO       = ^MMIOINFO for machine_pointer use true;
+-- /* RIFF chunk information data structure 
+type
+  _MMCKINFO         = record
+ckid            : FOURCC;
+cksize          : DWORD;
+fccType         : FOURCC;
+dwDataOffset    : DWORD;
+dwFlags         : DWORD;
+  end record;
+  MMCKINFO          = _MMCKINFO;
+  PMMCKINFO         = ^_MMCKINFO;
+  NPMMCKINFO        = ^_MMCKINFO;
+  LPMMCKINFO        = ^_MMCKINFO;
+
+type
+LPCMMCKINFO       = ^MMCKINFO for machine_pointer use true;
+-- /* bit field masks 
+const
+  MMIO_RWMODE       = $03;
+
+const
+  MMIO_SHAREMODE    = $70;
+
+-- /* constants for dwFlags field of MMIOINFO 
+const
+  MMIO_CREATE       = $1000;
+
+const
+  MMIO_PARSE        = $0100;
+
+const
+  MMIO_DELETE       = $0200;
+
+const
+  MMIO_EXIST        = $4000;
+
+const
+  MMIO_ALLOCBUF     = $10000;
+
+const
+  MMIO_GETTEMP      = $20000;
+
+const
+  MMIO_DIRTY        = $10000000;
+
+-- /* read/write mode numbers (bit field MMIO_RWMODE) 
+const
+  MMIO_READ         = $00;
+
+const
+  MMIO_WRITE        = $01;
+
+const
+  MMIO_READWRITE    = $02;
+
+-- /* share mode numbers (bit field MMIO_SHAREMODE) 
+const
+  MMIO_COMPAT       = $00;
+
+const
+  MMIO_EXCLUSIVE    = $10;
+
+const
+  MMIO_DENYWRITE    = $20;
+
+const
+  MMIO_DENYREAD     = $30;
+
+const
+  MMIO_DENYNONE     = $40;
+
+-- /* various MMIO flags 
+const
+  MMIO_FHOPEN       = $10;
+
+const
+  MMIO_EMPTYBUF     = $10;
+
+const
+  MMIO_TOUPPER      = $10;
+
+const
+  MMIO_INSTALLPROC  = $10000;
+
+const
+  MMIO_GLOBALPROC   = $10000000;
+
+const
+  MMIO_REMOVEPROC   = $20000;
+
+const
+  MMIO_UNICODEPROC  = $1000000;
+
+const
+  MMIO_FINDPROC     = $40000;
+
+const
+  MMIO_FINDCHUNK    = $10;
+
+const
+  MMIO_FINDRIFF     = $20;
+
+const
+  MMIO_FINDLIST     = $40;
+
+const
+  MMIO_CREATERIFF   = $20;
+
+const
+  MMIO_CREATELIST   = $40;
+
+-- /* message numbers for MMIOPROC I/O procedure functions 
+const
+  MMIOM_SEEK        = 2;
+
+const
+  MMIOM_OPEN        = 3;
+
+const
+  MMIOM_CLOSE       = 4;
+
+const
+  MMIOM_WRITEFLUSH  = 5;
+
+const
+  MMIOM_RENAME      = 6;
+
+const
+  MMIOM_USER        = $8000;
+
+-- /* standard four character codes 
+-- /* four character codes used to identify standard built-in I/O procedures 
+-- /* flags for mmioSeek() 
+const
+  SEEK_SET          = 0;
+
+const
+  SEEK_CUR          = 1;
+
+const
+  SEEK_END          = 2;
+
+-- /* other constants 
+const
+  MMIO_DEFAULTBUFFER= 8192;
+
+-- /* MMIO macros 
+-- /* MMIO function prototypes 
+procedure mmioStringToFOURCCA(
+    sz              : in LPCSTR; 
+    uFlags          : in UINT)
+                      return FOURCC;
+#pragma convention(mmioStringToFOURCCA,system);
+#pragma import(mmioStringToFOURCCA,'mmioStringToFOURCCA','winmm.dll');
+
+procedure mmioStringToFOURCCW(
+    sz              : in LPCWSTR; 
+    uFlags          : in UINT)
+                      return FOURCC;
+#pragma convention(mmioStringToFOURCCW,system);
+#pragma import(mmioStringToFOURCCW,'mmioStringToFOURCCW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mmioStringToFOURCC;
+  mmioStringToFOURCCW 
+#end mmioStringToFOURCC;
+#else;
+#template mmioStringToFOURCC;
+  mmioStringToFOURCCA 
+#end mmioStringToFOURCC;
+#end if;
+
+procedure mmioInstallIOProcA(
+    fccIOProc       : in FOURCC; 
+    pIOProc         : in LPMMIOPROC; 
+    dwFlags         : in DWORD)
+                      return LPMMIOPROC;
+#pragma convention(mmioInstallIOProcA,system);
+#pragma import(mmioInstallIOProcA,'mmioInstallIOProcA','winmm.dll');
+
+procedure mmioInstallIOProcW(
+    fccIOProc       : in FOURCC; 
+    pIOProc         : in LPMMIOPROC; 
+    dwFlags         : in DWORD)
+                      return LPMMIOPROC;
+#pragma convention(mmioInstallIOProcW,system);
+#pragma import(mmioInstallIOProcW,'mmioInstallIOProcW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mmioInstallIOProc;
+  mmioInstallIOProcW 
+#end mmioInstallIOProc;
+#else;
+#template mmioInstallIOProc;
+  mmioInstallIOProcA 
+#end mmioInstallIOProc;
+#end if;
+
+procedure mmioOpenA(
+    pszFileName     : in out CHARSTR ; 
+    pmmioinfo       : in out _MMIOINFO; 
+    fdwOpen         : in DWORD)
+                      return t_HMMIO;
+#pragma convention(mmioOpenA,system);
+#pragma import(mmioOpenA,'mmioOpenA','winmm.dll');
+
+procedure mmioOpenW(
+    pszFileName     : in out WCHARSTR ; 
+    pmmioinfo       : in out _MMIOINFO; 
+    fdwOpen         : in DWORD)
+                      return t_HMMIO;
+#pragma convention(mmioOpenW,system);
+#pragma import(mmioOpenW,'mmioOpenW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mmioOpen;
+  mmioOpenW 
+#end mmioOpen;
+#else;
+#template mmioOpen;
+  mmioOpenA 
+#end mmioOpen;
+#end if;
+
+procedure mmioRenameA(
+    pszFileName     : in LPCSTR; 
+    pszNewFileName  : in LPCSTR; 
+    pmmioinfo       : in LPCMMIOINFO; 
+    fdwRename       : in DWORD)
+                      return MMRESULT;
+#pragma convention(mmioRenameA,system);
+#pragma import(mmioRenameA,'mmioRenameA','winmm.dll');
+
+procedure mmioRenameW(
+    pszFileName     : in LPCWSTR; 
+    pszNewFileName  : in LPCWSTR; 
+    pmmioinfo       : in LPCMMIOINFO; 
+    fdwRename       : in DWORD)
+                      return MMRESULT;
+#pragma convention(mmioRenameW,system);
+#pragma import(mmioRenameW,'mmioRenameW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mmioRename;
+  mmioRenameW 
+#end mmioRename;
+#else;
+#template mmioRename;
+  mmioRenameA 
+#end mmioRename;
+#end if;
+
+procedure mmioClose(
+    hmmio           : in t_HMMIO; 
+    fuClose         : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioClose,system);
+#pragma import(mmioClose,'mmioClose','winmm.dll');
+
+procedure mmioRead(
+    hmmio           : in t_HMMIO; 
+    pch             : out CHARSTR; 
+    cch             : in LONG)
+                      return LONG;
+#pragma convention(mmioRead,system);
+#pragma import(mmioRead,'mmioRead','winmm.dll');
+
+type
+t_004=^character 8;
+
+procedure mmioWrite(
+    hmmio           : in t_HMMIO; 
+    pch             : in t_004; 
+    cch             : in LONG)
+                      return LONG;
+#pragma convention(mmioWrite,system);
+#pragma import(mmioWrite,'mmioWrite','winmm.dll');
+
+type
+t_005=signed 32;
+
+procedure mmioSeek(
+    hmmio           : in t_HMMIO; 
+    lOffset         : in LONG; 
+    iOrigin         : in t_005)
+                      return LONG;
+#pragma convention(mmioSeek,system);
+#pragma import(mmioSeek,'mmioSeek','winmm.dll');
+
+procedure mmioGetInfo(
+    hmmio           : in t_HMMIO; 
+    pmmioinfo       : out _MMIOINFO; 
+    fuInfo          : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioGetInfo,system);
+#pragma import(mmioGetInfo,'mmioGetInfo','winmm.dll');
+
+procedure mmioSetInfo(
+    hmmio           : in t_HMMIO; 
+    pmmioinfo       : in LPCMMIOINFO; 
+    fuInfo          : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioSetInfo,system);
+#pragma import(mmioSetInfo,'mmioSetInfo','winmm.dll');
+
+procedure mmioSetBuffer(
+    hmmio           : in t_HMMIO; 
+    pchBuffer       : in LPSTR; 
+    cchBuffer       : in LONG; 
+    fuBuffer        : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioSetBuffer,system);
+#pragma import(mmioSetBuffer,'mmioSetBuffer','winmm.dll');
+
+procedure mmioFlush(
+    hmmio           : in t_HMMIO; 
+    fuFlush         : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioFlush,system);
+#pragma import(mmioFlush,'mmioFlush','winmm.dll');
+
+procedure mmioAdvance(
+    hmmio           : in t_HMMIO; 
+    pmmioinfo       : in out _MMIOINFO; 
+    fuAdvance       : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioAdvance,system);
+#pragma import(mmioAdvance,'mmioAdvance','winmm.dll');
+
+procedure mmioSendMessage(
+    hmmio           : in t_HMMIO; 
+    uMsg            : in UINT; 
+    lParam1         : in t_LPARAM; 
+    lParam2         : in t_LPARAM)
+                      return t_LRESULT;
+#pragma convention(mmioSendMessage,system);
+#pragma import(mmioSendMessage,'mmioSendMessage','winmm.dll');
+
+type
+t_006=^MMCKINFO for machine_pointer use true;
+
+procedure mmioDescend(
+    hmmio           : in t_HMMIO; 
+    pmmcki          : in out _MMCKINFO; 
+    pmmckiParent    : in t_006; 
+    fuDescend       : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioDescend,system);
+#pragma import(mmioDescend,'mmioDescend','winmm.dll');
+
+procedure mmioAscend(
+    hmmio           : in t_HMMIO; 
+    pmmcki          : in LPMMCKINFO; 
+    fuAscend        : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioAscend,system);
+#pragma import(mmioAscend,'mmioAscend','winmm.dll');
+
+procedure mmioCreateChunk(
+    hmmio           : in t_HMMIO; 
+    pmmcki          : in LPMMCKINFO; 
+    fuCreate        : in UINT)
+                      return MMRESULT;
+#pragma convention(mmioCreateChunk,system);
+#pragma import(mmioCreateChunk,'mmioCreateChunk','winmm.dll');
+
+-- /****************************************************************************
+-- 
+--                             MCI support
+-- 
+-- ****************************************************************************/
+type
+MCIERROR          = DWORD;
+-- /* error return code, 0 means no error 
+type
+MCIDEVICEID       = UINT;
+-- /* MCI device ID type 
+type
+YIELDPROC         = ^procedure (
+    mciId           : MCIDEVICEID;
+    dwYieldData     : DWORD)
+                      return UINT for machine_pointer use true;
+-- /* MCI function prototypes 
+procedure mciSendCommandA(
+    mciId           : in MCIDEVICEID; 
+    uMsg            : in UINT; 
+    dwParam1        : in DWORD_PTR; 
+    dwParam2        : in DWORD_PTR)
+                      return MCIERROR;
+#pragma convention(mciSendCommandA,system);
+#pragma import(mciSendCommandA,'mciSendCommandA','winmm.dll');
+
+procedure mciSendCommandW(
+    mciId           : in MCIDEVICEID; 
+    uMsg            : in UINT; 
+    dwParam1        : in DWORD_PTR; 
+    dwParam2        : in DWORD_PTR)
+                      return MCIERROR;
+#pragma convention(mciSendCommandW,system);
+#pragma import(mciSendCommandW,'mciSendCommandW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mciSendCommand;
+  mciSendCommandW 
+#end mciSendCommand;
+#else;
+#template mciSendCommand;
+  mciSendCommandA 
+#end mciSendCommand;
+#end if;
+
+procedure mciSendStringA(
+    lpstrCommand    : in LPCSTR; 
+    lpstrReturnString : out CHARSTR ; 
+    uReturnLength   : in UINT; 
+    hwndCallback    : in t_HWND)
+                      return MCIERROR;
+#pragma convention(mciSendStringA,system);
+#pragma import(mciSendStringA,'mciSendStringA','winmm.dll');
+
+procedure mciSendStringW(
+    lpstrCommand    : in LPCWSTR; 
+    lpstrReturnString : out WCHARSTR ; 
+    uReturnLength   : in UINT; 
+    hwndCallback    : in t_HWND)
+                      return MCIERROR;
+#pragma convention(mciSendStringW,system);
+#pragma import(mciSendStringW,'mciSendStringW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mciSendString;
+  mciSendStringW 
+#end mciSendString;
+#else;
+#template mciSendString;
+  mciSendStringA 
+#end mciSendString;
+#end if;
+
+procedure mciGetDeviceIDA(
+    pszDevice       : in LPCSTR)
+                      return MCIDEVICEID;
+#pragma convention(mciGetDeviceIDA,system);
+#pragma import(mciGetDeviceIDA,'mciGetDeviceIDA','winmm.dll');
+
+procedure mciGetDeviceIDW(
+    pszDevice       : in LPCWSTR)
+                      return MCIDEVICEID;
+#pragma convention(mciGetDeviceIDW,system);
+#pragma import(mciGetDeviceIDW,'mciGetDeviceIDW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mciGetDeviceID;
+  mciGetDeviceIDW 
+#end mciGetDeviceID;
+#else;
+#template mciGetDeviceID;
+  mciGetDeviceIDA 
+#end mciGetDeviceID;
+#end if;
+
+procedure mciGetDeviceIDFromElementIDA(
+    dwElementID     : in DWORD; 
+    lpstrType       : in LPCSTR)
+                      return MCIDEVICEID;
+#pragma convention(mciGetDeviceIDFromElementIDA,system);
+#pragma import(mciGetDeviceIDFromElementIDA,'mciGetDeviceIDFromElementIDA','winmm.dll');
+
+procedure mciGetDeviceIDFromElementIDW(
+    dwElementID     : in DWORD; 
+    lpstrType       : in LPCWSTR)
+                      return MCIDEVICEID;
+#pragma convention(mciGetDeviceIDFromElementIDW,system);
+#pragma import(mciGetDeviceIDFromElementIDW,'mciGetDeviceIDFromElementIDW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mciGetDeviceIDFromElementID;
+  mciGetDeviceIDFromElementIDW 
+#end mciGetDeviceIDFromElementID;
+#else;
+#template mciGetDeviceIDFromElementID;
+  mciGetDeviceIDFromElementIDA 
+#end mciGetDeviceIDFromElementID;
+#end if;
+
+procedure mciGetErrorStringA(
+    mcierr          : in MCIERROR; 
+    pszText         : out CHARSTR ; 
+    cchText         : in UINT)
+                      return BOOL;
+#pragma convention(mciGetErrorStringA,system);
+#pragma import(mciGetErrorStringA,'mciGetErrorStringA','winmm.dll');
+
+procedure mciGetErrorStringW(
+    mcierr          : in MCIERROR; 
+    pszText         : out WCHARSTR ; 
+    cchText         : in UINT)
+                      return BOOL;
+#pragma convention(mciGetErrorStringW,system);
+#pragma import(mciGetErrorStringW,'mciGetErrorStringW','winmm.dll');
+
+#if #declared UNICODE; then;
+#template mciGetErrorString;
+  mciGetErrorStringW 
+#end mciGetErrorString;
+#else;
+#template mciGetErrorString;
+  mciGetErrorStringA 
+#end mciGetErrorString;
+#end if;
+
+procedure mciSetYieldProc(
+    mciId           : in MCIDEVICEID; 
+    fpYieldProc     : in YIELDPROC; 
+    dwYieldData     : in DWORD)
+                      return BOOL;
+#pragma convention(mciSetYieldProc,system);
+#pragma import(mciSetYieldProc,'mciSetYieldProc','winmm.dll');
+
+procedure mciGetCreatorTask(
+    mciId           : in MCIDEVICEID)
+                      return t_HTASK;
+#pragma convention(mciGetCreatorTask,system);
+#pragma import(mciGetCreatorTask,'mciGetCreatorTask','winmm.dll');
+
+procedure mciGetYieldProc(
+    mciId           : in MCIDEVICEID; 
+    pdwYieldData    : in LPDWORD)
+                      return YIELDPROC;
+#pragma convention(mciGetYieldProc,system);
+#pragma import(mciGetYieldProc,'mciGetYieldProc','winmm.dll');
+
+-- /* MCI error return values 
+-- /* all custom device driver errors must be >= than this value 
+-- /* MCI command message identifiers 
+const
+  MCI_OPEN          = $0803;
+
+const
+  MCI_CLOSE         = $0804;
+
+const
+  MCI_ESCAPE        = $0805;
+
+const
+  MCI_PLAY          = $0806;
+
+const
+  MCI_SEEK          = $0807;
+
+const
+  MCI_STOP          = $0808;
+
+const
+  MCI_PAUSE         = $0809;
+
+const
+  MCI_INFO          = $080A;
+
+const
+  MCI_GETDEVCAPS    = $080B;
+
+const
+  MCI_SPIN          = $080C;
+
+const
+  MCI_SET           = $080D;
+
+const
+  MCI_STEP          = $080E;
+
+const
+  MCI_RECORD        = $080F;
+
+const
+  MCI_SYSINFO       = $0810;
+
+const
+  MCI_BREAK         = $0811;
+
+const
+  MCI_SAVE          = $0813;
+
+const
+  MCI_STATUS        = $0814;
+
+const
+  MCI_CUE           = $0830;
+
+const
+  MCI_REALIZE       = $0840;
+
+const
+  MCI_WINDOW        = $0841;
+
+const
+  MCI_PUT           = $0842;
+
+const
+  MCI_WHERE         = $0843;
+
+const
+  MCI_FREEZE        = $0844;
+
+const
+  MCI_UNFREEZE      = $0845;
+
+const
+  MCI_LOAD          = $0850;
+
+const
+  MCI_CUT           = $0851;
+
+const
+  MCI_COPY          = $0852;
+
+const
+  MCI_PASTE         = $0853;
+
+const
+  MCI_UPDATE        = $0854;
+
+const
+  MCI_RESUME        = $0855;
+
+const
+  MCI_DELETE        = $0856;
+
+-- /* all custom MCI command messages must be >= than this value 
+const
+  MCI_LAST          = $0FFF;
+
+-- /* device ID for "all devices" 
+-- /* constants for predefined MCI device types 
+const
+  MCI_DEVTYPE_VCR   = 513;
+
+const
+  MCI_DEVTYPE_VIDEODISC= 514;
+
+const
+  MCI_DEVTYPE_OVERLAY= 515;
+
+const
+  MCI_DEVTYPE_CD_AUDIO= 516;
+
+const
+  MCI_DEVTYPE_DAT   = 517;
+
+const
+  MCI_DEVTYPE_SCANNER= 518;
+
+const
+  MCI_DEVTYPE_ANIMATION= 519;
+
+const
+  MCI_DEVTYPE_DIGITAL_VIDEO= 520;
+
+const
+  MCI_DEVTYPE_OTHER = 521;
+
+const
+  MCI_DEVTYPE_WAVEFORM_AUDIO= 522;
+
+const
+  MCI_DEVTYPE_SEQUENCER= 523;
+
+const
+  MCI_DEVTYPE_FIRST_USER= $1000;
+
+-- /* return values for 'status mode' command 
+-- /* constants used in 'set time format' and 'status time format' commands 
+const
+  MCI_FORMAT_MILLISECONDS= 0;
+
+const
+  MCI_FORMAT_HMS    = 1;
+
+const
+  MCI_FORMAT_MSF    = 2;
+
+const
+  MCI_FORMAT_FRAMES = 3;
+
+const
+  MCI_FORMAT_SMPTE_24= 4;
+
+const
+  MCI_FORMAT_SMPTE_25= 5;
+
+const
+  MCI_FORMAT_SMPTE_30= 6;
+
+const
+  MCI_FORMAT_SMPTE_30DROP= 7;
+
+const
+  MCI_FORMAT_BYTES  = 8;
+
+const
+  MCI_FORMAT_SAMPLES= 9;
+
+const
+  MCI_FORMAT_TMSF   = 10;
+
+-- /* MCI time format conversion macros 
+-- /* flags for wParam of MM_MCINOTIFY message 
+const
+  MCI_NOTIFY_SUCCESSFUL= $01;
+
+const
+  MCI_NOTIFY_SUPERSEDED= $02;
+
+const
+  MCI_NOTIFY_ABORTED= $04;
+
+const
+  MCI_NOTIFY_FAILURE= $08;
+
+-- /* common flags for dwFlags parameter of MCI command messages 
+const
+  MCI_NOTIFY        = $01;
+
+const
+  MCI_WAIT          = $02;
+
+const
+  MCI_FROM          = $04;
+
+const
+  MCI_TO            = $08;
+
+const
+  MCI_TRACK         = $10;
+
+-- /* flags for dwFlags parameter of MCI_OPEN command message 
+const
+  MCI_OPEN_SHAREABLE= $0100;
+
+const
+  MCI_OPEN_ELEMENT  = $0200;
+
+const
+  MCI_OPEN_ALIAS    = $0400;
+
+const
+  MCI_OPEN_ELEMENT_ID= $0800;
+
+const
+  MCI_OPEN_TYPE_ID  = $1000;
+
+const
+  MCI_OPEN_TYPE     = $2000;
+
+-- /* flags for dwFlags parameter of MCI_SEEK command message 
+const
+  MCI_SEEK_TO_START = $0100;
+
+const
+  MCI_SEEK_TO_END   = $0200;
+
+-- /* flags for dwFlags parameter of MCI_STATUS command message 
+const
+  MCI_STATUS_ITEM   = $0100;
+
+const
+  MCI_STATUS_START  = $0200;
+
+-- /* flags for dwItem field of the MCI_STATUS_PARMS parameter block 
+const
+  MCI_STATUS_LENGTH = $01;
+
+const
+  MCI_STATUS_POSITION= $02;
+
+const
+  MCI_STATUS_NUMBER_OF_TRACKS= $03;
+
+const
+  MCI_STATUS_MODE   = $04;
+
+const
+  MCI_STATUS_MEDIA_PRESENT= $05;
+
+const
+  MCI_STATUS_TIME_FORMAT= $06;
+
+const
+  MCI_STATUS_READY  = $07;
+
+const
+  MCI_STATUS_CURRENT_TRACK= $08;
+
+-- /* flags for dwFlags parameter of MCI_INFO command message 
+const
+  MCI_INFO_PRODUCT  = $0100;
+
+const
+  MCI_INFO_FILE     = $0200;
+
+const
+  MCI_INFO_MEDIA_UPC= $0400;
+
+const
+  MCI_INFO_MEDIA_IDENTITY= $0800;
+
+const
+  MCI_INFO_NAME     = $1000;
+
+const
+  MCI_INFO_COPYRIGHT= $2000;
+
+-- /* flags for dwFlags parameter of MCI_GETDEVCAPS command message 
+const
+  MCI_GETDEVCAPS_ITEM= $0100;
+
+-- /* flags for dwItem field of the MCI_GETDEVCAPS_PARMS parameter block 
+const
+  MCI_GETDEVCAPS_CAN_RECORD= $01;
+
+const
+  MCI_GETDEVCAPS_HAS_AUDIO= $02;
+
+const
+  MCI_GETDEVCAPS_HAS_VIDEO= $03;
+
+const
+  MCI_GETDEVCAPS_DEVICE_TYPE= $04;
+
+const
+  MCI_GETDEVCAPS_USES_FILES= $05;
+
+const
+  MCI_GETDEVCAPS_COMPOUND_DEVICE= $06;
+
+const
+  MCI_GETDEVCAPS_CAN_EJECT= $07;
+
+const
+  MCI_GETDEVCAPS_CAN_PLAY= $08;
+
+const
+  MCI_GETDEVCAPS_CAN_SAVE= $09;
+
+-- /* flags for dwFlags parameter of MCI_SYSINFO command message 
+const
+  MCI_SYSINFO_QUANTITY= $0100;
+
+const
+  MCI_SYSINFO_OPEN  = $0200;
+
+const
+  MCI_SYSINFO_NAME  = $0400;
+
+const
+  MCI_SYSINFO_INSTALLNAME= $0800;
+
+-- /* flags for dwFlags parameter of MCI_SET command message 
+const
+  MCI_SET_DOOR_OPEN = $0100;
+
+const
+  MCI_SET_DOOR_CLOSED= $0200;
+
+const
+  MCI_SET_TIME_FORMAT= $0400;
+
+const
+  MCI_SET_AUDIO     = $0800;
+
+const
+  MCI_SET_VIDEO     = $1000;
+
+const
+  MCI_SET_ON        = $2000;
+
+const
+  MCI_SET_OFF       = $4000;
+
+-- /* flags for dwAudio field of MCI_SET_PARMS or MCI_SEQ_SET_PARMS 
+const
+  MCI_SET_AUDIO_ALL = $00;
+
+const
+  MCI_SET_AUDIO_LEFT= $01;
+
+const
+  MCI_SET_AUDIO_RIGHT= $02;
+
+-- /* flags for dwFlags parameter of MCI_BREAK command message 
+const
+  MCI_BREAK_KEY     = $0100;
+
+const
+  MCI_BREAK_HWND    = $0200;
+
+const
+  MCI_BREAK_OFF     = $0400;
+
+-- /* flags for dwFlags parameter of MCI_RECORD command message 
+const
+  MCI_RECORD_INSERT = $0100;
+
+const
+  MCI_RECORD_OVERWRITE= $0200;
+
+-- /* flags for dwFlags parameter of MCI_SAVE command message 
+const
+  MCI_SAVE_FILE     = $0100;
+
+-- /* flags for dwFlags parameter of MCI_LOAD command message 
+const
+  MCI_LOAD_FILE     = $0100;
+
+-- /* generic parameter block for MCI command messages with no special parameters 
+type
+  tagMCI_GENERIC_PARMS = record
+dwCallback      : DWORD_PTR;
+  end record;
+  MCI_GENERIC_PARMS = tagMCI_GENERIC_PARMS;
+  PMCI_GENERIC_PARMS = ^tagMCI_GENERIC_PARMS;
+  LPMCI_GENERIC_PARMS = ^tagMCI_GENERIC_PARMS;
+
+-- /* parameter block for MCI_OPEN command message 
+type
+  tagMCI_OPEN_PARMSA = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCSTR;
+lpstrElementName : LPCSTR;
+lpstrAlias      : LPCSTR;
+  end record;
+  MCI_OPEN_PARMSA   = tagMCI_OPEN_PARMSA;
+  PMCI_OPEN_PARMSA  = ^tagMCI_OPEN_PARMSA;
+  LPMCI_OPEN_PARMSA = ^tagMCI_OPEN_PARMSA;
+
+type
+  tagMCI_OPEN_PARMSW = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCWSTR;
+lpstrElementName : LPCWSTR;
+lpstrAlias      : LPCWSTR;
+  end record;
+  MCI_OPEN_PARMSW   = tagMCI_OPEN_PARMSW;
+  PMCI_OPEN_PARMSW  = ^tagMCI_OPEN_PARMSW;
+  LPMCI_OPEN_PARMSW = ^tagMCI_OPEN_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_OPEN_PARMS    = MCI_OPEN_PARMSW;
+type
+PMCI_OPEN_PARMS   = PMCI_OPEN_PARMSW;
+type
+LPMCI_OPEN_PARMS  = LPMCI_OPEN_PARMSW;
+#else;
+type
+MCI_OPEN_PARMS    = MCI_OPEN_PARMSA;
+type
+PMCI_OPEN_PARMS   = PMCI_OPEN_PARMSA;
+type
+LPMCI_OPEN_PARMS  = LPMCI_OPEN_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_PLAY command message 
+type
+  tagMCI_PLAY_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrom          : DWORD;
+dwTo            : DWORD;
+  end record;
+  MCI_PLAY_PARMS    = tagMCI_PLAY_PARMS;
+  PMCI_PLAY_PARMS   = ^tagMCI_PLAY_PARMS;
+  LPMCI_PLAY_PARMS  = ^tagMCI_PLAY_PARMS;
+
+-- /* parameter block for MCI_SEEK command message 
+type
+  tagMCI_SEEK_PARMS = record
+dwCallback      : DWORD_PTR;
+dwTo            : DWORD;
+  end record;
+  MCI_SEEK_PARMS    = tagMCI_SEEK_PARMS;
+  PMCI_SEEK_PARMS   = ^tagMCI_SEEK_PARMS;
+  LPMCI_SEEK_PARMS  = ^tagMCI_SEEK_PARMS;
+
+-- /* parameter block for MCI_STATUS command message 
+type
+  tagMCI_STATUS_PARMS = record
+dwCallback      : DWORD_PTR;
+dwReturn        : DWORD_PTR;
+dwItem          : DWORD;
+dwTrack         : DWORD;
+  end record;
+  MCI_STATUS_PARMS  = tagMCI_STATUS_PARMS;
+  PMCI_STATUS_PARMS = ^tagMCI_STATUS_PARMS;
+  LPMCI_STATUS_PARMS = ^tagMCI_STATUS_PARMS;
+
+-- /* parameter block for MCI_INFO command message 
+type
+  tagMCI_INFO_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpstrReturn     : LPSTR;
+dwRetSize       : DWORD;
+  end record;
+  MCI_INFO_PARMSA   = tagMCI_INFO_PARMSA;
+  LPMCI_INFO_PARMSA = ^tagMCI_INFO_PARMSA;
+
+type
+  tagMCI_INFO_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpstrReturn     : LPWSTR;
+dwRetSize       : DWORD;
+  end record;
+  MCI_INFO_PARMSW   = tagMCI_INFO_PARMSW;
+  LPMCI_INFO_PARMSW = ^tagMCI_INFO_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_INFO_PARMS    = MCI_INFO_PARMSW;
+type
+LPMCI_INFO_PARMS  = LPMCI_INFO_PARMSW;
+#else;
+type
+MCI_INFO_PARMS    = MCI_INFO_PARMSA;
+type
+LPMCI_INFO_PARMS  = LPMCI_INFO_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_GETDEVCAPS command message 
+type
+  tagMCI_GETDEVCAPS_PARMS = record
+dwCallback      : DWORD_PTR;
+dwReturn        : DWORD;
+dwItem          : DWORD;
+  end record;
+  MCI_GETDEVCAPS_PARMS = tagMCI_GETDEVCAPS_PARMS;
+  PMCI_GETDEVCAPS_PARMS = ^tagMCI_GETDEVCAPS_PARMS;
+  LPMCI_GETDEVCAPS_PARMS = ^tagMCI_GETDEVCAPS_PARMS;
+
+-- /* parameter block for MCI_SYSINFO command message 
+type
+  tagMCI_SYSINFO_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpstrReturn     : LPSTR;
+dwRetSize       : DWORD;
+dwNumber        : DWORD;
+wDeviceType     : UINT;
+  end record;
+  MCI_SYSINFO_PARMSA = tagMCI_SYSINFO_PARMSA;
+  PMCI_SYSINFO_PARMSA = ^tagMCI_SYSINFO_PARMSA;
+  LPMCI_SYSINFO_PARMSA = ^tagMCI_SYSINFO_PARMSA;
+
+type
+  tagMCI_SYSINFO_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpstrReturn     : LPWSTR;
+dwRetSize       : DWORD;
+dwNumber        : DWORD;
+wDeviceType     : UINT;
+  end record;
+  MCI_SYSINFO_PARMSW = tagMCI_SYSINFO_PARMSW;
+  PMCI_SYSINFO_PARMSW = ^tagMCI_SYSINFO_PARMSW;
+  LPMCI_SYSINFO_PARMSW = ^tagMCI_SYSINFO_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_SYSINFO_PARMS = MCI_SYSINFO_PARMSW;
+type
+PMCI_SYSINFO_PARMS = PMCI_SYSINFO_PARMSW;
+type
+LPMCI_SYSINFO_PARMS = LPMCI_SYSINFO_PARMSW;
+#else;
+type
+MCI_SYSINFO_PARMS = MCI_SYSINFO_PARMSA;
+type
+PMCI_SYSINFO_PARMS = PMCI_SYSINFO_PARMSA;
+type
+LPMCI_SYSINFO_PARMS = LPMCI_SYSINFO_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_SET command message 
+type
+  tagMCI_SET_PARMS  = record
+dwCallback      : DWORD_PTR;
+dwTimeFormat    : DWORD;
+dwAudio         : DWORD;
+  end record;
+  MCI_SET_PARMS     = tagMCI_SET_PARMS;
+  PMCI_SET_PARMS    = ^tagMCI_SET_PARMS;
+  LPMCI_SET_PARMS   = ^tagMCI_SET_PARMS;
+
+-- /* parameter block for MCI_BREAK command message 
+type
+  tagMCI_BREAK_PARMS = record
+dwCallback      : DWORD_PTR;
+nVirtKey        : signed 32;
+hwndBreak       : t_HWND;
+  end record;
+  MCI_BREAK_PARMS   = tagMCI_BREAK_PARMS;
+  PMCI_BREAK_PARMS  = ^tagMCI_BREAK_PARMS;
+  LPMCI_BREAK_PARMS = ^tagMCI_BREAK_PARMS;
+
+-- /* parameter block for MCI_SAVE command message 
+type
+  tagMCI_SAVE_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCSTR;
+  end record;
+  MCI_SAVE_PARMSA   = tagMCI_SAVE_PARMSA;
+  PMCI_SAVE_PARMSA  = ^tagMCI_SAVE_PARMSA;
+  LPMCI_SAVE_PARMSA = ^tagMCI_SAVE_PARMSA;
+
+type
+  tagMCI_SAVE_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCWSTR;
+  end record;
+  MCI_SAVE_PARMSW   = tagMCI_SAVE_PARMSW;
+  PMCI_SAVE_PARMSW  = ^tagMCI_SAVE_PARMSW;
+  LPMCI_SAVE_PARMSW = ^tagMCI_SAVE_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_SAVE_PARMS    = MCI_SAVE_PARMSW;
+type
+PMCI_SAVE_PARMS   = PMCI_SAVE_PARMSW;
+type
+LPMCI_SAVE_PARMS  = LPMCI_SAVE_PARMSW;
+#else;
+type
+MCI_SAVE_PARMS    = MCI_SAVE_PARMSA;
+type
+PMCI_SAVE_PARMS   = PMCI_SAVE_PARMSA;
+type
+LPMCI_SAVE_PARMS  = LPMCI_SAVE_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_LOAD command message 
+type
+  tagMCI_LOAD_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCSTR;
+  end record;
+  MCI_LOAD_PARMSA   = tagMCI_LOAD_PARMSA;
+  PMCI_LOAD_PARMSA  = ^tagMCI_LOAD_PARMSA;
+  LPMCI_LOAD_PARMSA = ^tagMCI_LOAD_PARMSA;
+
+type
+  tagMCI_LOAD_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCWSTR;
+  end record;
+  MCI_LOAD_PARMSW   = tagMCI_LOAD_PARMSW;
+  PMCI_LOAD_PARMSW  = ^tagMCI_LOAD_PARMSW;
+  LPMCI_LOAD_PARMSW = ^tagMCI_LOAD_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_LOAD_PARMS    = MCI_LOAD_PARMSW;
+type
+PMCI_LOAD_PARMS   = PMCI_LOAD_PARMSW;
+type
+LPMCI_LOAD_PARMS  = LPMCI_LOAD_PARMSW;
+#else;
+type
+MCI_LOAD_PARMS    = MCI_LOAD_PARMSA;
+type
+PMCI_LOAD_PARMS   = PMCI_LOAD_PARMSA;
+type
+LPMCI_LOAD_PARMS  = LPMCI_LOAD_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_RECORD command message 
+type
+  tagMCI_RECORD_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrom          : DWORD;
+dwTo            : DWORD;
+  end record;
+  MCI_RECORD_PARMS  = tagMCI_RECORD_PARMS;
+  LPMCI_RECORD_PARMS = ^tagMCI_RECORD_PARMS;
+
+-- /* MCI extensions for videodisc devices 
+-- /* flag for dwReturn field of MCI_STATUS_PARMS 
+-- /* MCI_STATUS command, (dwItem == MCI_STATUS_MODE) 
+-- /* flag for dwReturn field of MCI_STATUS_PARMS 
+-- /* MCI_STATUS command, (dwItem == MCI_VD_STATUS_MEDIA_TYPE) 
+const
+  MCI_VD_FORMAT_TRACK= $4001;
+
+-- /* flags for dwFlags parameter of MCI_PLAY command message 
+const
+  MCI_VD_PLAY_REVERSE= $10000;
+
+const
+  MCI_VD_PLAY_FAST  = $20000;
+
+const
+  MCI_VD_PLAY_SPEED = $40000;
+
+const
+  MCI_VD_PLAY_SCAN  = $80000;
+
+const
+  MCI_VD_PLAY_SLOW  = $100000;
+
+-- /* flag for dwFlags parameter of MCI_SEEK command message 
+const
+  MCI_VD_SEEK_REVERSE= $10000;
+
+-- /* flags for dwItem field of MCI_STATUS_PARMS parameter block 
+const
+  MCI_VD_STATUS_SPEED= $4002;
+
+const
+  MCI_VD_STATUS_FORWARD= $4003;
+
+const
+  MCI_VD_STATUS_MEDIA_TYPE= $4004;
+
+const
+  MCI_VD_STATUS_SIDE= $4005;
+
+const
+  MCI_VD_STATUS_DISC_SIZE= $4006;
+
+-- /* flags for dwFlags parameter of MCI_GETDEVCAPS command message 
+const
+  MCI_VD_GETDEVCAPS_CLV= $10000;
+
+const
+  MCI_VD_GETDEVCAPS_CAV= $20000;
+
+const
+  MCI_VD_SPIN_UP    = $10000;
+
+const
+  MCI_VD_SPIN_DOWN  = $20000;
+
+-- /* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block 
+const
+  MCI_VD_GETDEVCAPS_CAN_REVERSE= $4002;
+
+const
+  MCI_VD_GETDEVCAPS_FAST_RATE= $4003;
+
+const
+  MCI_VD_GETDEVCAPS_SLOW_RATE= $4004;
+
+const
+  MCI_VD_GETDEVCAPS_NORMAL_RATE= $4005;
+
+-- /* flags for the dwFlags parameter of MCI_STEP command message 
+const
+  MCI_VD_STEP_FRAMES= $10000;
+
+const
+  MCI_VD_STEP_REVERSE= $20000;
+
+-- /* flag for the MCI_ESCAPE command message 
+const
+  MCI_VD_ESCAPE_STRING= $0100;
+
+-- /* parameter block for MCI_PLAY command message 
+type
+  tagMCI_VD_PLAY_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrom          : DWORD;
+dwTo            : DWORD;
+dwSpeed         : DWORD;
+  end record;
+  MCI_VD_PLAY_PARMS = tagMCI_VD_PLAY_PARMS;
+  PMCI_VD_PLAY_PARMS = ^tagMCI_VD_PLAY_PARMS;
+  LPMCI_VD_PLAY_PARMS = ^tagMCI_VD_PLAY_PARMS;
+
+-- /* parameter block for MCI_STEP command message 
+type
+  tagMCI_VD_STEP_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrames        : DWORD;
+  end record;
+  MCI_VD_STEP_PARMS = tagMCI_VD_STEP_PARMS;
+  PMCI_VD_STEP_PARMS = ^tagMCI_VD_STEP_PARMS;
+  LPMCI_VD_STEP_PARMS = ^tagMCI_VD_STEP_PARMS;
+
+-- /* parameter block for MCI_ESCAPE command message 
+type
+  tagMCI_VD_ESCAPE_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpstrCommand    : LPCSTR;
+  end record;
+  MCI_VD_ESCAPE_PARMSA = tagMCI_VD_ESCAPE_PARMSA;
+  PMCI_VD_ESCAPE_PARMSA = ^tagMCI_VD_ESCAPE_PARMSA;
+  LPMCI_VD_ESCAPE_PARMSA = ^tagMCI_VD_ESCAPE_PARMSA;
+
+type
+  tagMCI_VD_ESCAPE_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpstrCommand    : LPCWSTR;
+  end record;
+  MCI_VD_ESCAPE_PARMSW = tagMCI_VD_ESCAPE_PARMSW;
+  PMCI_VD_ESCAPE_PARMSW = ^tagMCI_VD_ESCAPE_PARMSW;
+  LPMCI_VD_ESCAPE_PARMSW = ^tagMCI_VD_ESCAPE_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_VD_ESCAPE_PARMS = MCI_VD_ESCAPE_PARMSW;
+type
+PMCI_VD_ESCAPE_PARMS = PMCI_VD_ESCAPE_PARMSW;
+type
+LPMCI_VD_ESCAPE_PARMS = LPMCI_VD_ESCAPE_PARMSW;
+#else;
+type
+MCI_VD_ESCAPE_PARMS = MCI_VD_ESCAPE_PARMSA;
+type
+PMCI_VD_ESCAPE_PARMS = PMCI_VD_ESCAPE_PARMSA;
+type
+LPMCI_VD_ESCAPE_PARMS = LPMCI_VD_ESCAPE_PARMSA;
+#end if;
+
+-- /* MCI extensions for CD audio devices 
+-- /* flags for the dwItem field of the MCI_STATUS_PARMS parameter block 
+const
+  MCI_CDA_STATUS_TYPE_TRACK= $4001;
+
+-- /* flags for the dwReturn field of MCI_STATUS_PARMS parameter block 
+-- /* MCI_STATUS command, (dwItem == MCI_CDA_STATUS_TYPE_TRACK) 
+-- /* MCI extensions for waveform audio devices 
+-- /* flags for the dwFlags parameter of MCI_OPEN command message 
+const
+  MCI_WAVE_OPEN_BUFFER= $10000;
+
+-- /* flags for the dwFlags parameter of MCI_SET command message 
+const
+  MCI_WAVE_SET_FORMATTAG= $10000;
+
+const
+  MCI_WAVE_SET_CHANNELS= $20000;
+
+const
+  MCI_WAVE_SET_SAMPLESPERSEC= $40000;
+
+const
+  MCI_WAVE_SET_AVGBYTESPERSEC= $80000;
+
+const
+  MCI_WAVE_SET_BLOCKALIGN= $100000;
+
+const
+  MCI_WAVE_SET_BITSPERSAMPLE= $200000;
+
+-- /* flags for the dwFlags parameter of MCI_STATUS, MCI_SET command messages 
+const
+  MCI_WAVE_INPUT    = $400000;
+
+const
+  MCI_WAVE_OUTPUT   = $800000;
+
+-- /* flags for the dwItem field of MCI_STATUS_PARMS parameter block 
+const
+  MCI_WAVE_STATUS_FORMATTAG= $4001;
+
+const
+  MCI_WAVE_STATUS_CHANNELS= $4002;
+
+const
+  MCI_WAVE_STATUS_SAMPLESPERSEC= $4003;
+
+const
+  MCI_WAVE_STATUS_AVGBYTESPERSEC= $4004;
+
+const
+  MCI_WAVE_STATUS_BLOCKALIGN= $4005;
+
+const
+  MCI_WAVE_STATUS_BITSPERSAMPLE= $4006;
+
+const
+  MCI_WAVE_STATUS_LEVEL= $4007;
+
+-- /* flags for the dwFlags parameter of MCI_SET command message 
+const
+  MCI_WAVE_SET_ANYINPUT= $4000000;
+
+const
+  MCI_WAVE_SET_ANYOUTPUT= $8000000;
+
+-- /* flags for the dwFlags parameter of MCI_GETDEVCAPS command message 
+const
+  MCI_WAVE_GETDEVCAPS_INPUTS= $4001;
+
+const
+  MCI_WAVE_GETDEVCAPS_OUTPUTS= $4002;
+
+-- /* parameter block for MCI_OPEN command message 
+type
+  tagMCI_WAVE_OPEN_PARMSA = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCSTR;
+lpstrElementName : LPCSTR;
+lpstrAlias      : LPCSTR;
+dwBufferSeconds : DWORD;
+  end record;
+  MCI_WAVE_OPEN_PARMSA = tagMCI_WAVE_OPEN_PARMSA;
+  PMCI_WAVE_OPEN_PARMSA = ^tagMCI_WAVE_OPEN_PARMSA;
+  LPMCI_WAVE_OPEN_PARMSA = ^tagMCI_WAVE_OPEN_PARMSA;
+
+type
+  tagMCI_WAVE_OPEN_PARMSW = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCWSTR;
+lpstrElementName : LPCWSTR;
+lpstrAlias      : LPCWSTR;
+dwBufferSeconds : DWORD;
+  end record;
+  MCI_WAVE_OPEN_PARMSW = tagMCI_WAVE_OPEN_PARMSW;
+  PMCI_WAVE_OPEN_PARMSW = ^tagMCI_WAVE_OPEN_PARMSW;
+  LPMCI_WAVE_OPEN_PARMSW = ^tagMCI_WAVE_OPEN_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_WAVE_OPEN_PARMS = MCI_WAVE_OPEN_PARMSW;
+type
+PMCI_WAVE_OPEN_PARMS = PMCI_WAVE_OPEN_PARMSW;
+type
+LPMCI_WAVE_OPEN_PARMS = LPMCI_WAVE_OPEN_PARMSW;
+#else;
+type
+MCI_WAVE_OPEN_PARMS = MCI_WAVE_OPEN_PARMSA;
+type
+PMCI_WAVE_OPEN_PARMS = PMCI_WAVE_OPEN_PARMSA;
+type
+LPMCI_WAVE_OPEN_PARMS = LPMCI_WAVE_OPEN_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_DELETE command message 
+type
+  tagMCI_WAVE_DELETE_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrom          : DWORD;
+dwTo            : DWORD;
+  end record;
+  MCI_WAVE_DELETE_PARMS = tagMCI_WAVE_DELETE_PARMS;
+  PMCI_WAVE_DELETE_PARMS = ^tagMCI_WAVE_DELETE_PARMS;
+  LPMCI_WAVE_DELETE_PARMS = ^tagMCI_WAVE_DELETE_PARMS;
+
+-- /* parameter block for MCI_SET command message 
+type
+  tagMCI_WAVE_SET_PARMS = record
+dwCallback      : DWORD_PTR;
+dwTimeFormat    : DWORD;
+dwAudio         : DWORD;
+wInput          : UINT;
+wOutput         : UINT;
+wFormatTag      : WORD;
+wReserved2      : WORD;
+nChannels       : WORD;
+wReserved3      : WORD;
+nSamplesPerSec  : DWORD;
+nAvgBytesPerSec : DWORD;
+nBlockAlign     : WORD;
+wReserved4      : WORD;
+wBitsPerSample  : WORD;
+wReserved5      : WORD;
+  end record;
+  MCI_WAVE_SET_PARMS = tagMCI_WAVE_SET_PARMS;
+  PMCI_WAVE_SET_PARMS = ^tagMCI_WAVE_SET_PARMS;
+  LPMCI_WAVE_SET_PARMS = ^tagMCI_WAVE_SET_PARMS;
+
+-- /* MCI extensions for MIDI sequencer devices 
+-- /* flags for the dwReturn field of MCI_STATUS_PARMS parameter block 
+-- /* MCI_STATUS command, (dwItem == MCI_SEQ_STATUS_DIVTYPE) 
+-- /* flags for the dwMaster field of MCI_SEQ_SET_PARMS parameter block 
+-- /* MCI_SET command, (dwFlags == MCI_SEQ_SET_MASTER) 
+const
+  MCI_SEQ_FORMAT_SONGPTR= $4001;
+
+const
+  MCI_SEQ_FILE      = $4002;
+
+const
+  MCI_SEQ_MIDI      = $4003;
+
+const
+  MCI_SEQ_SMPTE     = $4004;
+
+const
+  MCI_SEQ_NONE      = 65533;
+
+const
+  MCI_SEQ_MAPPER    = 65535;
+
+-- /* flags for the dwItem field of MCI_STATUS_PARMS parameter block 
+const
+  MCI_SEQ_STATUS_TEMPO= $4002;
+
+const
+  MCI_SEQ_STATUS_PORT= $4003;
+
+const
+  MCI_SEQ_STATUS_SLAVE= $4007;
+
+const
+  MCI_SEQ_STATUS_MASTER= $4008;
+
+const
+  MCI_SEQ_STATUS_OFFSET= $4009;
+
+const
+  MCI_SEQ_STATUS_DIVTYPE= $400A;
+
+const
+  MCI_SEQ_STATUS_NAME= $400B;
+
+const
+  MCI_SEQ_STATUS_COPYRIGHT= $400C;
+
+-- /* flags for the dwFlags parameter of MCI_SET command message 
+const
+  MCI_SEQ_SET_TEMPO = $10000;
+
+const
+  MCI_SEQ_SET_PORT  = $20000;
+
+const
+  MCI_SEQ_SET_SLAVE = $40000;
+
+const
+  MCI_SEQ_SET_MASTER= $80000;
+
+const
+  MCI_SEQ_SET_OFFSET= $1000000;
+
+-- /* parameter block for MCI_SET command message 
+type
+  tagMCI_SEQ_SET_PARMS = record
+dwCallback      : DWORD_PTR;
+dwTimeFormat    : DWORD;
+dwAudio         : DWORD;
+dwTempo         : DWORD;
+dwPort          : DWORD;
+dwSlave         : DWORD;
+dwMaster        : DWORD;
+dwOffset        : DWORD;
+  end record;
+  MCI_SEQ_SET_PARMS = tagMCI_SEQ_SET_PARMS;
+  PMCI_SEQ_SET_PARMS = ^tagMCI_SEQ_SET_PARMS;
+  LPMCI_SEQ_SET_PARMS = ^tagMCI_SEQ_SET_PARMS;
+
+-- /* MCI extensions for animation devices 
+-- /* flags for dwFlags parameter of MCI_OPEN command message 
+const
+  MCI_ANIM_OPEN_WS  = $10000;
+
+const
+  MCI_ANIM_OPEN_PARENT= $20000;
+
+const
+  MCI_ANIM_OPEN_NOSTATIC= $40000;
+
+-- /* flags for dwFlags parameter of MCI_PLAY command message 
+const
+  MCI_ANIM_PLAY_SPEED= $10000;
+
+const
+  MCI_ANIM_PLAY_REVERSE= $20000;
+
+const
+  MCI_ANIM_PLAY_FAST= $40000;
+
+const
+  MCI_ANIM_PLAY_SLOW= $80000;
+
+const
+  MCI_ANIM_PLAY_SCAN= $100000;
+
+-- /* flags for dwFlags parameter of MCI_STEP command message 
+const
+  MCI_ANIM_STEP_REVERSE= $10000;
+
+const
+  MCI_ANIM_STEP_FRAMES= $20000;
+
+-- /* flags for dwItem field of MCI_STATUS_PARMS parameter block 
+const
+  MCI_ANIM_STATUS_SPEED= $4001;
+
+const
+  MCI_ANIM_STATUS_FORWARD= $4002;
+
+const
+  MCI_ANIM_STATUS_HWND= $4003;
+
+const
+  MCI_ANIM_STATUS_HPAL= $4004;
+
+const
+  MCI_ANIM_STATUS_STRETCH= $4005;
+
+-- /* flags for the dwFlags parameter of MCI_INFO command message 
+const
+  MCI_ANIM_INFO_TEXT= $10000;
+
+-- /* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block 
+const
+  MCI_ANIM_GETDEVCAPS_CAN_REVERSE= $4001;
+
+const
+  MCI_ANIM_GETDEVCAPS_FAST_RATE= $4002;
+
+const
+  MCI_ANIM_GETDEVCAPS_SLOW_RATE= $4003;
+
+const
+  MCI_ANIM_GETDEVCAPS_NORMAL_RATE= $4004;
+
+const
+  MCI_ANIM_GETDEVCAPS_PALETTES= $4006;
+
+const
+  MCI_ANIM_GETDEVCAPS_CAN_STRETCH= $4007;
+
+const
+  MCI_ANIM_GETDEVCAPS_MAX_WINDOWS= $4008;
+
+-- /* flags for the MCI_REALIZE command message 
+const
+  MCI_ANIM_REALIZE_NORM= $10000;
+
+const
+  MCI_ANIM_REALIZE_BKGD= $20000;
+
+-- /* flags for dwFlags parameter of MCI_WINDOW command message 
+const
+  MCI_ANIM_WINDOW_HWND= $10000;
+
+const
+  MCI_ANIM_WINDOW_STATE= $40000;
+
+const
+  MCI_ANIM_WINDOW_TEXT= $80000;
+
+const
+  MCI_ANIM_WINDOW_ENABLE_STRETCH= $100000;
+
+const
+  MCI_ANIM_WINDOW_DISABLE_STRETCH= $200000;
+
+-- /* flags for hWnd field of MCI_ANIM_WINDOW_PARMS parameter block 
+-- /* MCI_WINDOW command message, (dwFlags == MCI_ANIM_WINDOW_HWND) 
+const
+  MCI_ANIM_WINDOW_DEFAULT= $00;
+
+-- /* flags for dwFlags parameter of MCI_PUT command message 
+const
+  MCI_ANIM_RECT     = $10000;
+
+const
+  MCI_ANIM_PUT_SOURCE= $20000;
+
+const
+  MCI_ANIM_PUT_DESTINATION= $40000;
+
+-- /* flags for dwFlags parameter of MCI_WHERE command message 
+const
+  MCI_ANIM_WHERE_SOURCE= $20000;
+
+const
+  MCI_ANIM_WHERE_DESTINATION= $40000;
+
+-- /* flags for dwFlags parameter of MCI_UPDATE command message 
+const
+  MCI_ANIM_UPDATE_HDC= $20000;
+
+-- /* parameter block for MCI_OPEN command message 
+type
+  tagMCI_ANIM_OPEN_PARMSA = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCSTR;
+lpstrElementName : LPCSTR;
+lpstrAlias      : LPCSTR;
+dwStyle         : DWORD;
+hWndParent      : t_HWND;
+  end record;
+  MCI_ANIM_OPEN_PARMSA = tagMCI_ANIM_OPEN_PARMSA;
+  PMCI_ANIM_OPEN_PARMSA = ^tagMCI_ANIM_OPEN_PARMSA;
+  LPMCI_ANIM_OPEN_PARMSA = ^tagMCI_ANIM_OPEN_PARMSA;
+
+type
+  tagMCI_ANIM_OPEN_PARMSW = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCWSTR;
+lpstrElementName : LPCWSTR;
+lpstrAlias      : LPCWSTR;
+dwStyle         : DWORD;
+hWndParent      : t_HWND;
+  end record;
+  MCI_ANIM_OPEN_PARMSW = tagMCI_ANIM_OPEN_PARMSW;
+  PMCI_ANIM_OPEN_PARMSW = ^tagMCI_ANIM_OPEN_PARMSW;
+  LPMCI_ANIM_OPEN_PARMSW = ^tagMCI_ANIM_OPEN_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_ANIM_OPEN_PARMS = MCI_ANIM_OPEN_PARMSW;
+type
+PMCI_ANIM_OPEN_PARMS = PMCI_ANIM_OPEN_PARMSW;
+type
+LPMCI_ANIM_OPEN_PARMS = LPMCI_ANIM_OPEN_PARMSW;
+#else;
+type
+MCI_ANIM_OPEN_PARMS = MCI_ANIM_OPEN_PARMSA;
+type
+PMCI_ANIM_OPEN_PARMS = PMCI_ANIM_OPEN_PARMSA;
+type
+LPMCI_ANIM_OPEN_PARMS = LPMCI_ANIM_OPEN_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_PLAY command message 
+type
+  tagMCI_ANIM_PLAY_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrom          : DWORD;
+dwTo            : DWORD;
+dwSpeed         : DWORD;
+  end record;
+  MCI_ANIM_PLAY_PARMS = tagMCI_ANIM_PLAY_PARMS;
+  PMCI_ANIM_PLAY_PARMS = ^tagMCI_ANIM_PLAY_PARMS;
+  LPMCI_ANIM_PLAY_PARMS = ^tagMCI_ANIM_PLAY_PARMS;
+
+-- /* parameter block for MCI_STEP command message 
+type
+  tagMCI_ANIM_STEP_PARMS = record
+dwCallback      : DWORD_PTR;
+dwFrames        : DWORD;
+  end record;
+  MCI_ANIM_STEP_PARMS = tagMCI_ANIM_STEP_PARMS;
+  PMCI_ANIM_STEP_PARMS = ^tagMCI_ANIM_STEP_PARMS;
+  LPMCI_ANIM_STEP_PARMS = ^tagMCI_ANIM_STEP_PARMS;
+
+-- /* parameter block for MCI_WINDOW command message 
+type
+  tagMCI_ANIM_WINDOW_PARMSA = record
+dwCallback      : DWORD_PTR;
+hWnd            : t_HWND;
+nCmdShow        : UINT;
+lpstrText       : LPCSTR;
+  end record;
+  MCI_ANIM_WINDOW_PARMSA = tagMCI_ANIM_WINDOW_PARMSA;
+  PMCI_ANIM_WINDOW_PARMSA = ^tagMCI_ANIM_WINDOW_PARMSA;
+  LPMCI_ANIM_WINDOW_PARMSA = ^tagMCI_ANIM_WINDOW_PARMSA;
+
+type
+  tagMCI_ANIM_WINDOW_PARMSW = record
+dwCallback      : DWORD_PTR;
+hWnd            : t_HWND;
+nCmdShow        : UINT;
+lpstrText       : LPCWSTR;
+  end record;
+  MCI_ANIM_WINDOW_PARMSW = tagMCI_ANIM_WINDOW_PARMSW;
+  PMCI_ANIM_WINDOW_PARMSW = ^tagMCI_ANIM_WINDOW_PARMSW;
+  LPMCI_ANIM_WINDOW_PARMSW = ^tagMCI_ANIM_WINDOW_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_ANIM_WINDOW_PARMS = MCI_ANIM_WINDOW_PARMSW;
+type
+PMCI_ANIM_WINDOW_PARMS = PMCI_ANIM_WINDOW_PARMSW;
+type
+LPMCI_ANIM_WINDOW_PARMS = LPMCI_ANIM_WINDOW_PARMSW;
+#else;
+type
+MCI_ANIM_WINDOW_PARMS = MCI_ANIM_WINDOW_PARMSA;
+type
+PMCI_ANIM_WINDOW_PARMS = PMCI_ANIM_WINDOW_PARMSA;
+type
+LPMCI_ANIM_WINDOW_PARMS = LPMCI_ANIM_WINDOW_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_PUT, MCI_UPDATE, MCI_WHERE command messages 
+type
+  tagMCI_ANIM_RECT_PARMS = record
+dwCallback      : DWORD_PTR;
+rc              : RECT;
+  end record;
+  MCI_ANIM_RECT_PARMS = tagMCI_ANIM_RECT_PARMS;
+
+type
+PMCI_ANIM_RECT_PARMS = ^MCI_ANIM_RECT_PARMS for machine_pointer use true;
+type
+LPMCI_ANIM_RECT_PARMS = ^MCI_ANIM_RECT_PARMS for machine_pointer use true;
+-- /* parameter block for MCI_UPDATE PARMS 
+type
+  tagMCI_ANIM_UPDATE_PARMS = record
+dwCallback      : DWORD_PTR;
+rc              : RECT;
+hDC             : t_HDC;
+  end record;
+  MCI_ANIM_UPDATE_PARMS = tagMCI_ANIM_UPDATE_PARMS;
+  PMCI_ANIM_UPDATE_PARMS = ^tagMCI_ANIM_UPDATE_PARMS;
+  LPMCI_ANIM_UPDATE_PARMS = ^tagMCI_ANIM_UPDATE_PARMS;
+
+-- /* MCI extensions for video overlay devices 
+-- /* flags for dwFlags parameter of MCI_OPEN command message 
+const
+  MCI_OVLY_OPEN_WS  = $10000;
+
+const
+  MCI_OVLY_OPEN_PARENT= $20000;
+
+-- /* flags for dwFlags parameter of MCI_STATUS command message 
+const
+  MCI_OVLY_STATUS_HWND= $4001;
+
+const
+  MCI_OVLY_STATUS_STRETCH= $4002;
+
+-- /* flags for dwFlags parameter of MCI_INFO command message 
+const
+  MCI_OVLY_INFO_TEXT= $10000;
+
+-- /* flags for dwItem field of MCI_GETDEVCAPS_PARMS parameter block 
+const
+  MCI_OVLY_GETDEVCAPS_CAN_STRETCH= $4001;
+
+const
+  MCI_OVLY_GETDEVCAPS_CAN_FREEZE= $4002;
+
+const
+  MCI_OVLY_GETDEVCAPS_MAX_WINDOWS= $4003;
+
+-- /* flags for dwFlags parameter of MCI_WINDOW command message 
+const
+  MCI_OVLY_WINDOW_HWND= $10000;
+
+const
+  MCI_OVLY_WINDOW_STATE= $40000;
+
+const
+  MCI_OVLY_WINDOW_TEXT= $80000;
+
+const
+  MCI_OVLY_WINDOW_ENABLE_STRETCH= $100000;
+
+const
+  MCI_OVLY_WINDOW_DISABLE_STRETCH= $200000;
+
+-- /* flags for hWnd parameter of MCI_OVLY_WINDOW_PARMS parameter block 
+const
+  MCI_OVLY_WINDOW_DEFAULT= $00;
+
+-- /* flags for dwFlags parameter of MCI_PUT command message 
+const
+  MCI_OVLY_RECT     = $10000;
+
+const
+  MCI_OVLY_PUT_SOURCE= $20000;
+
+const
+  MCI_OVLY_PUT_DESTINATION= $40000;
+
+const
+  MCI_OVLY_PUT_FRAME= $80000;
+
+const
+  MCI_OVLY_PUT_VIDEO= $100000;
+
+-- /* flags for dwFlags parameter of MCI_WHERE command message 
+const
+  MCI_OVLY_WHERE_SOURCE= $20000;
+
+const
+  MCI_OVLY_WHERE_DESTINATION= $40000;
+
+const
+  MCI_OVLY_WHERE_FRAME= $80000;
+
+const
+  MCI_OVLY_WHERE_VIDEO= $100000;
+
+-- /* parameter block for MCI_OPEN command message 
+type
+  tagMCI_OVLY_OPEN_PARMSA = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCSTR;
+lpstrElementName : LPCSTR;
+lpstrAlias      : LPCSTR;
+dwStyle         : DWORD;
+hWndParent      : t_HWND;
+  end record;
+  MCI_OVLY_OPEN_PARMSA = tagMCI_OVLY_OPEN_PARMSA;
+  PMCI_OVLY_OPEN_PARMSA = ^tagMCI_OVLY_OPEN_PARMSA;
+  LPMCI_OVLY_OPEN_PARMSA = ^tagMCI_OVLY_OPEN_PARMSA;
+
+type
+  tagMCI_OVLY_OPEN_PARMSW = record
+dwCallback      : DWORD_PTR;
+wDeviceID       : MCIDEVICEID;
+lpstrDeviceType : LPCWSTR;
+lpstrElementName : LPCWSTR;
+lpstrAlias      : LPCWSTR;
+dwStyle         : DWORD;
+hWndParent      : t_HWND;
+  end record;
+  MCI_OVLY_OPEN_PARMSW = tagMCI_OVLY_OPEN_PARMSW;
+  PMCI_OVLY_OPEN_PARMSW = ^tagMCI_OVLY_OPEN_PARMSW;
+  LPMCI_OVLY_OPEN_PARMSW = ^tagMCI_OVLY_OPEN_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_OVLY_OPEN_PARMS = MCI_OVLY_OPEN_PARMSW;
+type
+PMCI_OVLY_OPEN_PARMS = PMCI_OVLY_OPEN_PARMSW;
+type
+LPMCI_OVLY_OPEN_PARMS = LPMCI_OVLY_OPEN_PARMSW;
+#else;
+type
+MCI_OVLY_OPEN_PARMS = MCI_OVLY_OPEN_PARMSA;
+type
+PMCI_OVLY_OPEN_PARMS = PMCI_OVLY_OPEN_PARMSA;
+type
+LPMCI_OVLY_OPEN_PARMS = LPMCI_OVLY_OPEN_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_WINDOW command message 
+type
+  tagMCI_OVLY_WINDOW_PARMSA = record
+dwCallback      : DWORD_PTR;
+hWnd            : t_HWND;
+nCmdShow        : UINT;
+lpstrText       : LPCSTR;
+  end record;
+  MCI_OVLY_WINDOW_PARMSA = tagMCI_OVLY_WINDOW_PARMSA;
+  PMCI_OVLY_WINDOW_PARMSA = ^tagMCI_OVLY_WINDOW_PARMSA;
+  LPMCI_OVLY_WINDOW_PARMSA = ^tagMCI_OVLY_WINDOW_PARMSA;
+
+type
+  tagMCI_OVLY_WINDOW_PARMSW = record
+dwCallback      : DWORD_PTR;
+hWnd            : t_HWND;
+nCmdShow        : UINT;
+lpstrText       : LPCWSTR;
+  end record;
+  MCI_OVLY_WINDOW_PARMSW = tagMCI_OVLY_WINDOW_PARMSW;
+  PMCI_OVLY_WINDOW_PARMSW = ^tagMCI_OVLY_WINDOW_PARMSW;
+  LPMCI_OVLY_WINDOW_PARMSW = ^tagMCI_OVLY_WINDOW_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_OVLY_WINDOW_PARMS = MCI_OVLY_WINDOW_PARMSW;
+type
+PMCI_OVLY_WINDOW_PARMS = PMCI_OVLY_WINDOW_PARMSW;
+type
+LPMCI_OVLY_WINDOW_PARMS = LPMCI_OVLY_WINDOW_PARMSW;
+#else;
+type
+MCI_OVLY_WINDOW_PARMS = MCI_OVLY_WINDOW_PARMSA;
+type
+PMCI_OVLY_WINDOW_PARMS = PMCI_OVLY_WINDOW_PARMSA;
+type
+LPMCI_OVLY_WINDOW_PARMS = LPMCI_OVLY_WINDOW_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_PUT, MCI_UPDATE, and MCI_WHERE command messages 
+type
+  tagMCI_OVLY_RECT_PARMS = record
+dwCallback      : DWORD_PTR;
+rc              : RECT;
+  end record;
+  MCI_OVLY_RECT_PARMS = tagMCI_OVLY_RECT_PARMS;
+  PMCI_OVLY_RECT_PARMS = ^tagMCI_OVLY_RECT_PARMS;
+  LPMCI_OVLY_RECT_PARMS = ^tagMCI_OVLY_RECT_PARMS;
+
+-- /* parameter block for MCI_SAVE command message 
+type
+  tagMCI_OVLY_SAVE_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCSTR;
+rc              : RECT;
+  end record;
+  MCI_OVLY_SAVE_PARMSA = tagMCI_OVLY_SAVE_PARMSA;
+  PMCI_OVLY_SAVE_PARMSA = ^tagMCI_OVLY_SAVE_PARMSA;
+  LPMCI_OVLY_SAVE_PARMSA = ^tagMCI_OVLY_SAVE_PARMSA;
+
+type
+  tagMCI_OVLY_SAVE_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCWSTR;
+rc              : RECT;
+  end record;
+  MCI_OVLY_SAVE_PARMSW = tagMCI_OVLY_SAVE_PARMSW;
+  PMCI_OVLY_SAVE_PARMSW = ^tagMCI_OVLY_SAVE_PARMSW;
+  LPMCI_OVLY_SAVE_PARMSW = ^tagMCI_OVLY_SAVE_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_OVLY_SAVE_PARMS = MCI_OVLY_SAVE_PARMSW;
+type
+PMCI_OVLY_SAVE_PARMS = PMCI_OVLY_SAVE_PARMSW;
+type
+LPMCI_OVLY_SAVE_PARMS = LPMCI_OVLY_SAVE_PARMSW;
+#else;
+type
+MCI_OVLY_SAVE_PARMS = MCI_OVLY_SAVE_PARMSA;
+type
+PMCI_OVLY_SAVE_PARMS = PMCI_OVLY_SAVE_PARMSA;
+type
+LPMCI_OVLY_SAVE_PARMS = LPMCI_OVLY_SAVE_PARMSA;
+#end if;
+
+-- /* parameter block for MCI_LOAD command message 
+type
+  tagMCI_OVLY_LOAD_PARMSA = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCSTR;
+rc              : RECT;
+  end record;
+  MCI_OVLY_LOAD_PARMSA = tagMCI_OVLY_LOAD_PARMSA;
+  PMCI_OVLY_LOAD_PARMSA = ^tagMCI_OVLY_LOAD_PARMSA;
+  LPMCI_OVLY_LOAD_PARMSA = ^tagMCI_OVLY_LOAD_PARMSA;
+
+type
+  tagMCI_OVLY_LOAD_PARMSW = record
+dwCallback      : DWORD_PTR;
+lpfilename      : LPCWSTR;
+rc              : RECT;
+  end record;
+  MCI_OVLY_LOAD_PARMSW = tagMCI_OVLY_LOAD_PARMSW;
+  PMCI_OVLY_LOAD_PARMSW = ^tagMCI_OVLY_LOAD_PARMSW;
+  LPMCI_OVLY_LOAD_PARMSW = ^tagMCI_OVLY_LOAD_PARMSW;
+
+#if #declared UNICODE; then;
+type
+MCI_OVLY_LOAD_PARMS = MCI_OVLY_LOAD_PARMSW;
+type
+PMCI_OVLY_LOAD_PARMS = PMCI_OVLY_LOAD_PARMSW;
+type
+LPMCI_OVLY_LOAD_PARMS = LPMCI_OVLY_LOAD_PARMSW;
+#else;
+type
+MCI_OVLY_LOAD_PARMS = MCI_OVLY_LOAD_PARMSA;
+type
+PMCI_OVLY_LOAD_PARMS = PMCI_OVLY_LOAD_PARMSA;
+type
+LPMCI_OVLY_LOAD_PARMS = LPMCI_OVLY_LOAD_PARMSA;
+#end if;
+
+-- /****************************************************************************
+-- 
+--                         DISPLAY Driver extensions
+-- 
+-- ****************************************************************************/
+const
+  NEWTRANSPARENT    = 3;
+
+const
+  QUERYROPSUPPORT   = 40;
+
+-- /****************************************************************************
+-- 
+--                         DIB Driver extensions
+-- 
+-- ****************************************************************************/
+const
+  SELECTDIB         = 41;
+
+-- /****************************************************************************
+-- 
+--                         ScreenSaver support
+-- 
+--     The current application will receive a syscommand of SC_SCREENSAVE just
+--     before the screen saver is invoked.  If the app wishes to prevent a
+--     screen save, return non-zero value, otherwise call DefWindowProc().
+-- 
+-- ****************************************************************************/
+-- ignored #include <poppack.h>
+-- #pragma  pack()
+
+end mmsystem;

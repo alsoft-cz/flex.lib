@@ -1,0 +1,51 @@
+H2Flex TODO
+
+-- spojitou (=bez prázdných øádkù) sekvenci #define deklarujících konstanty
+   pøekládat jako jeden const blok
+
+   H:
+      #define FILE_BEGIN           0
+      #define FILE_CURRENT         1
+      #define FILE_END             2
+
+   SRC:
+      const
+        FILE_BEGIN           = 0;
+        FILE_CURRENT         = 1;
+        FILE_END             = 2;
+
+   RadekR asi vím jak by se to dalo øešit.
+
+-- pøed a za deklaraci procedury vložit náš oblíbený oddìlovaè ----...----
+
+   RadekR tohle je pohoda
+
+-- dtto pro #separate a #inlude
+
+   RadekR podobnì jako dtto
+
+-- odsazovat složky recordù
+
+   RadekR taky asi vím jak by se to dalo øešit.
+
+
+-- zkusit vymyslet, jestli by nešlo odstranit typy s podtržítky
+
+   Nyní:
+    type
+      _OVERLAPPED       = record
+        ....
+        end record;
+      OVERLAPPED        = _OVERLAPPED;
+      p_OVERLAPPED      = ^_OVERLAPPED;
+
+   Lépe:
+      OVERLAPPED       = record
+        ....
+        end record;
+      p_OVERLAPPED      = ^OVERLAPPED;
+
+   RadekR tohle øíkal PavelK že øešil a nakonec to musel zahodit ale já nevím 
+   možná by se to dalo ještì jenou analizovat.
+
+-- Doplnit seznam typu které se mbudou generovat jako private nabo protected.

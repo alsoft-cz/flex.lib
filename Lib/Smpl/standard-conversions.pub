@@ -1,0 +1,269 @@
+----------------------------------------------------------------------------------------------------
+module public conversions =
+-- Miscellaneous conversion routines.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Vytvoøil 2003-04-15 Aleš
+----------------------------------------------------------------------------------------------------
+-- %%TODO Change return value to unconstrained string
+--
+-- unsigned_to_string_primitive a signed_to_string_primitive pøedìlat na neomezenou délku èísla,
+-- zveøejnit všechny funkce *_primitive.
+--
+-- dodìlat rùzné varianty formátování.
+----------------------------------------------------------------------------------------------------
+
+with standard.strings;
+  
+message
+  conversion_error extend numeric_error;         -- exception
+
+type
+  t_radix          = t_unsigned range 2..36;     -- základ èíselné soustavy 
+
+  t_conversion_result = enum 
+      tcres_ok;                                  -- no error                            
+      tcres_not_a_number;                        -- number contains illegal character
+      tcres_out_of_range;                        -- number is out of implicit or desired limits
+      end enum;
+    
+  t_sign_mode      = enum                        -- conversion of positive sign
+      tsm_empty;                                 -- negative: '-', positive: '' (empty)
+      tsm_plus;                                  -- negative: '-', positive: '+' (plus sign)
+      tsm_space;                                 -- negative: '-', positive: ' ' (space)
+      end enum;
+
+  t_oversize_mode  = enum
+      tom_error;                               -- vyhlásí se výjimka
+      tom_full;                                -- èíslo se zobrazí na plný poèet platných míst
+      tom_asterisk;                            -- zobrazí se pole hvìzdièek
+      end enum;
+
+  t_float_conversion = enum
+      tfc_sci;                                   -- exponenciální formát
+      tfc_fix;                                   -- pevný poèet desetinných míst
+      tfc_eng;                                   -- exponenciální formát s exponentem dìlitelným 3
+      tfc_prefix;                                -- s pøipojením prefixu fyzikální jednotky (m, k, G, ...)
+      end enum;
+
+  -- formátovací záznam pro celá èísla %%CZ
+  t_integer_format  = record
+      width        : t_unsigned := 0;            -- poèet míst pro zarovnání èísla       
+                                                 -- 0 urèuje automatický formát
+      sign         : t_sign_mode := tsm_empty;   -- zpùsob zacházení s kladným znaménkem
+      aligned      : t_logical := false;         -- True = znaménko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znaménko je tìsnì pøed první èíslicí
+      fill         : t_char32 := " ";            -- výplòový znak 
+      oversize     : t_oversize_mode := tom_full;-- zpùsob zobrazení èísla, které se nevejde
+      radix        : t_radix := 10;              -- základ èísla
+      end record;
+
+  --  záznam pro zpracování celého èísla %%CZ
+  t_integer_parse  = record
+      radix        : t_radix := 10;              -- základ èísla
+      end record;
+
+  -- formátovací záznam pro floating-point èísla %%CZ
+  t_float_format   = record
+      width        : t_unsigned := 0;            -- poèet míst pro zarovnání èísla       
+      decimals     : t_unsigned := 0;            -- poèet desetinných míst
+      sign         : t_sign_mode :=tsm_empty;    -- zpùsob zacházení s kladným znaménkem
+      aligned      : t_logical := false;         -- True = znaménko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znaménko je tìsnì pøed první èíslicí
+      oversize     : t_oversize_mode := tom_error;   -- zpùsob zobrazení èísla, které se nevejde
+      conversion   : t_float_conversion := tfc_sci;  -- typ formatovani
+      end record;
+
+  -- záznam pro zpracování floating-point èísla %%CZ
+  t_float_parse    = record
+      min          : t_extended;                 -- zatím nic
+      max          : t_extended;                 -- zatím nic
+      end record;
+
+
+const
+  -- %%TODO konstanty zrušit a default hodnoty parametù pøedìlat na :value
+  c_integer_format_default : t_integer_format = [for radix use 10];
+  c_float_format_default   : t_float_format= [];
+  c_integer_parse_default : t_integer_parse = [for radix use 10];
+  c_float_parse_default   : t_float_parse = [];
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_string (
+    num            : in t_unsigned;              -- number to convert
+    format         : in t_integer_format := c_integer_format_default)  -- požadovaný formát èísla %%CZ
+    return t_char32str;                          -- it's string representation
+----------------------------------------------------------------------------------------------------
+procedure signed_to_string (
+    num            : in t_signed;                -- number to convert
+    format         : in t_integer_format := c_integer_format_default)  -- požadovaný formát èísla %%CZ
+    return t_char32str;                          -- it's string representation
+----------------------------------------------------------------------------------------------------
+procedure float_to_string (
+    num            : in t_extended;              -- èíslo které pøevést %%CZ
+    format         : in t_float_format := c_float_format_default)      -- požadovaný formát èísla %%CZ
+    return t_char32str;                          -- øetìzcová reprezentace
+-- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 až + 10e18-1.
+----------------------------------------------------------------------------------------------------
+procedure string_to_unsigned (
+    s              : in t_char32ustr;            -- string represetation of a value
+    parse          : in t_integer_parse := c_integer_parse_default)  -- požadovaný formát èísla %%CZ
+    return t_unsigned;
+------------------------------------------------------------------------------
+procedure string_to_signed (
+    s              : in t_char32ustr;            -- string represetation of a value
+    parse          : in t_integer_parse := c_integer_parse_default)  -- požadovaný formát èísla %%CZ
+    return t_signed;
+----------------------------------------------------------------------------------------------------
+procedure string_to_float (
+    s              : in t_char32ustr;            -- string represetation of a value
+    parse          : in t_float_parse := c_float_parse_default)      -- požadovaný formát èísla %%CZ
+    return t_extended;
+-- Pøevede celé èíslo v rozsahu 0 až + 10e18-1 na float point.
+-- Øetìzec str 
+--   - musí mít délku v rozsahu 1 až 18 znakù,
+--   - nesmí obsahovat jiné znaky než "0" az "9".
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_string_primitive (
+    num            : in t_unsigned;              -- number to convert
+    radix          : in t_radix;                 -- radix of the number system
+    s              : out t_char32str;            -- it's string representation
+    code           : out t_conversion_result);   -- conversion result
+-- Converts a signed integer to its string representation. 
+----------------------------------------------------------------------------------------------------
+procedure signed_to_string_primitive (
+    num            : in t_signed;                -- number to convert
+    radix          : in t_radix;                 -- radix of the number system
+    s              : out t_char32str;            -- it's string representation
+    sign           : out t_logical;              -- True = negative
+    code           : out t_conversion_result);   -- conversion result
+-- Converts a signed integer to its string representation. 
+----------------------------------------------------------------------------------------------------
+procedure string_to_unsigned_primitive (
+    s              : in t_char32ustr;            -- string represetation of a value
+    radix          : in t_radix;                 -- radix of the number system
+    num            : out unchecked;              -- corresponding binary representation
+    code           : out t_conversion_result);   -- conversion result
+-- Converts a string representation of an unsigned integer to the corresponding binary 
+-- representation. 
+----------------------------------------------------------------------------------------------------
+procedure string_to_signed_primitive (
+    s              : in t_char32ustr;            -- string represetation of a value
+    radix          : in t_radix;                 -- radix of the number system
+    sign           : in t_logical;               -- True = negative
+    num            : out unchecked;              -- corresponding binary representation
+    code           : out t_conversion_result);   -- conversion result
+-- Converts a string representation of an unsigned integer to the corresponding binary 
+-- representation. 
+----------------------------------------------------------------------------------------------------
+procedure string_to_float_primitive (
+    int            : in t_char32str;             -- celá èást mantisy 
+    frac           : in t_char32str;             -- desetinná èást mantisy
+    sign           : in t_logical;               -- znaménko èísla (TRUE = záporné)
+    exp            : in t_signed;                -- exponent 
+    num            : out t_extended);            -- pøevedené èíslo
+-- Pøevede øetìzec na float point.
+----------------------------------------------------------------------------------------------------
+procedure float_to_string_primitive (
+    num            : in t_extended;              -- èíslo které pøevést
+    int            : out t_char32str;            -- celá èást mantisy 
+    frac           : out t_char32str;            -- desetinná èást mantisy
+    sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
+    exp            : out t_signed);              -- exponent 
+-- Pøevede NUM na øetìzec.
+----------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- stará verze
+
+-- ----------------------------------------------------------------------------------------------------
+-- procedure signed_to_string (
+--     num            : in t_signed;                -- number to convert
+--     sign_always    : in t_logical := false)      -- T-always include sign
+--     return t_char32str;                          -- it's string representation
+-- -- Converts a signed integer to its decimal string representation. For a positive (or zero) value
+-- -- <par>num</par>, the plus sign is not included. For a negative value, the minus sign included.
+-- ----------------------------------------------------------------------------------------------------
+-- procedure unsigned_to_string (
+--     num            : in t_unsigned)              -- number to convert
+--     return t_char32str;                          -- it's string representation
+-- -- Converts an unsigned integer to its decimal string representation. The plus sign is not included.
+-- ----------------------------------------------------------------------------------------------------
+-- procedure unsigned_to_radix_string (
+--     num            : in t_unsigned;              -- number to convert
+--     radix          : in t_radix)                 -- desired radix
+--     return t_char32str;                          -- it's string representation
+-- -- Converts an unsigned integer to its string representation in the number system with the specified
+-- -- [radix]. The plus sign is not included.
+-- ----------------------------------------------------------------------------------------------------
+-- procedure string_to_unsigned (
+--     s              : in t_char32ustr;            -- string represetation of a value
+--     radix          : in t_radix := 10;           -- radix of the number system
+--     bin            : out unchecked;              -- corresponding binary representation
+--     error          : out t_signed);              -- error code
+-- -- Converts a string representation of an unsigned integer to the corresponding binary 
+-- -- representation. The number is expected to be in the number system specified by <par>radix</par>.
+-- --   The resulting value is stored into <par>bin</par> and must fit to <par>bin</par>:size bytes, 
+-- -- otherwise the subprogram fails and <ent>conv_radix</ent> is returned in <par>error</par>.
+-- --
+-- -- Parameters:
+-- --   s             <par>s</par> can contain only the decimal digits "0".."9" and extended digits 
+-- --                 "A".."Z" ("a".."z") further constrained by <par>radix</par> (e.g. when 
+-- --                 <par>radix</par> is 20, than <par>s</par> can contain only "0".."9" and 
+-- --                 "A".."J"), otherwise the subprogram fails and the index of the failing character
+-- --                 in <par>s</par> is returned in <par>error</par>.
+-- --    
+-- -- Result:
+-- --    -- When the subprogram fails, <par>error</par> contains the error code and the value of 
+-- --       <par>bin</par> is undefined.
+-- --    -- When the subprogram succeeds, <par>error</par> contains <ent>conv_ok</ent>.
+-- ----------------------------------------------------------------------------------------------------
+-- -- procedure string_to_signed (
+-- --     s              : in t_char32ustr;            -- string represetation of a value
+-- --     radix          : in t_radix := 10;           -- radix of the number system
+-- --     bin            : out unchecked;              -- corresponding binary representation
+-- --     error          : out t_signed);              -- error code
+-- -- Converts a string representation of a signed integer to the corresponding binary representation. 
+-- -- The number is expected to be in the number system specified by <par>radix</par>.
+-- --   The resulting value is stored into <par>bin</par> and must fit to <par>bin</par>:size bytes, 
+-- -- otherwise the subprogram fails and <ent>conv_radix</ent> is returned in <par>error</par>.
+-- --
+-- -- Parameters:
+-- --   s             The first character of <par>s</par> may be the minus sign "-", which indicates
+-- --                 a negative value, all other characters can contain only the decimal digits 
+-- --                 "0".."9" and extended digits "A".."Z" ("a".."z") further constrained by 
+-- --                 <par>radix</par> (e.g. when <par>radix</par> is 20, than <par>s</par> can contain 
+-- --                 only "0".."9" and "A".."J"), otherwise the subprogram fails and the index of the 
+-- --                 failing character in <par>s</par> is returned in <par>error</par>.
+-- --    
+-- -- Result:
+-- --    -- When the subprogram fails, <par>error</par> contains the error code and the value of 
+-- --       <par>bin</par> is undefined.
+-- --    -- When the subprogram succeeds, <par>error</par> contains <ent>conv_ok</ent>.
+-- ----------------------------------------------------------------------------------------------------
+
+end conversions;

@@ -1,0 +1,144 @@
+----------------------------------------------------------------------------------------------------
+module basetsd =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation.  All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     basetsd.h
+-- 
+-- Abstract:
+-- 
+--     Type definitions for the basic sized types.
+-- 
+-- Author:
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- #pragma  once
+type
+INT8              = character 8;
+PINT8             = ^character 8 for machine_pointer use true;
+type
+INT16             = signed 16;
+PINT16            = ^signed 16 for machine_pointer use true;
+type
+INT32             = signed 32;
+PINT32            = ^signed 32 for machine_pointer use true;
+type
+INT64             = signed 64;
+PINT64            = ^signed 64 for machine_pointer use true;
+type
+UINT8             = character 8;
+PUINT8            = ^character 8 for machine_pointer use true;
+type
+UINT16            = unsigned 16;
+PUINT16           = ^unsigned 16 for machine_pointer use true;
+type
+UINT32            = unsigned 32;
+PUINT32           = ^unsigned 32 for machine_pointer use true;
+type
+UINT64            = signed 64;
+PUINT64           = ^signed 64 for machine_pointer use true;
+-- 
+--  The following types are guaranteed to be signed and 32 bits wide.
+-- 
+type
+LONG32            = signed 32;
+PLONG32           = ^signed 32 for machine_pointer use true;
+-- 
+--  The following types are guaranteed to be unsigned and 32 bits wide.
+-- 
+type
+ULONG32           = unsigned 32;
+PULONG32          = ^unsigned 32 for machine_pointer use true;
+type
+DWORD32           = unsigned 32;
+PDWORD32          = ^unsigned 32 for machine_pointer use true;
+-- 
+--  The INT_PTR is guaranteed to be the same size as a pointer. Its
+--  size with change with pointer size (32/64). It should be used
+--  anywhere that a pointer is cast to an integer type. UINT_PTR is
+--  the unsigned variation.
+-- 
+--  __int3264 is intrinsic to 64b MIDL but not to old MIDL or to C compiler.
+-- 
+--  old midl and C++ compiler
+type
+INT_PTR           = signed 32;
+PINT_PTR          = ^signed 32 for machine_pointer use true;
+type
+UINT_PTR          = unsigned 32;
+PUINT_PTR         = ^unsigned 32 for machine_pointer use true;
+type
+LONG_PTR          = signed 32;
+PLONG_PTR         = ^signed 32 for machine_pointer use true;
+type
+ULONG_PTR         = unsigned 32;
+PULONG_PTR        = ^ULONG_PTR;
+-- 
+--  HALF_PTR is half the size of a pointer it intended for use with
+--  within structures which contain a pointer and two small fields.
+--  UHALF_PTR is the unsigned variation.
+-- 
+const
+  ADDRESS_TAG_BIT   = $80000000;
+
+type
+UHALF_PTR         = unsigned 16;
+PUHALF_PTR        = ^unsigned 16 for machine_pointer use true;
+type
+HALF_PTR          = signed 16;
+PHALF_PTR         = ^signed 16 for machine_pointer use true;
+type
+SHANDLE_PTR       = signed 32;
+type
+HANDLE_PTR        = unsigned 32;
+-- 
+--  SIZE_T used for counts or ranges which need to span the range of
+--  of a pointer. SSIZE_T is the signed variation.
+-- 
+type
+SIZE_T            = ULONG_PTR;
+PSIZE_T           = ^ULONG_PTR for machine_pointer use true;
+type
+SSIZE_T           = LONG_PTR;
+PSSIZE_T          = ^LONG_PTR for machine_pointer use true;
+-- 
+--  Add Windows flavor DWORD_PTR types
+-- 
+type
+DWORD_PTR         = ULONG_PTR;
+PDWORD_PTR        = ^ULONG_PTR for machine_pointer use true;
+-- 
+--  The following types are guaranteed to be signed and 64 bits wide.
+-- 
+type
+LONG64            = signed 64;
+PLONG64           = ^signed 64 for machine_pointer use true;
+-- 
+--  The following types are guaranteed to be unsigned and 64 bits wide.
+-- 
+type
+ULONG64           = signed 64;
+PULONG64          = ^signed 64 for machine_pointer use true;
+type
+DWORD64           = signed 64;
+PDWORD64          = ^signed 64 for machine_pointer use true;
+-- 
+--  Thread affinity.
+-- 
+type
+KAFFINITY         = ULONG_PTR;
+type
+PKAFFINITY        = ^KAFFINITY for machine_pointer use true;
+
+end basetsd;

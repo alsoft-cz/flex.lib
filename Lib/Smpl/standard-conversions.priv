@@ -1,0 +1,1099 @@
+----------------------------------------------------------------------------------------------------
+module private conversions =
+-- Miscellaneous conversion routines.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+
+const
+  -- konstanty pro pøevod 
+  fp_p_0       : t_extended = [$00,$00,$00,$00,$00,$00,$00,$00,$00,$00]; --  0
+  fp_p_1       : t_extended = [$00,$00,$00,$00,$00,$00,$00,$80,$FF,$3F]; --  1
+  fp_p_01      : t_extended = [$CD,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]; --  0.1
+  fp_p_10      : t_extended = [$00,$00,$00,$00,$00,$00,$00,$A0,$02,$40]; -- 10
+  fp_p_1e17    : t_extended = [$00,$00,$00,$C5,$2E,$BC,$A2,$B1,$37,$40]; --  1e17
+
+type
+  -- mocninný rozvoj pøevádìného èísla
+  t_expansion      = array 0..12 of record
+    exp            : t_signed;                   -- exponent 2^i
+    pos            : t_extended;                 -- koeficient 10^(2^i)
+    neg            : t_extended;                 -- koeficient 10^-(2^i)
+    end record;
+
+var
+  -- Mantisa je správnì zaokrouhlená, v komentáøi je uvedena pùvodní hodnota
+  -- pøed zaokrouhlením + jeden další byte mantisy.
+  -- Pozor, nìkteré hodnoty NEG vypoètené pøímo procesorem se o 1 bit liší
+  -- (nejsou zaokrouhlené, jen odøíznuté).
+  expansion   : const t_expansion := [
+    [ 0001, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$A0,$02,$40], [{$CC,}$CD{CC},$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]],
+    [ 0002, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$C8,$05,$40], [{$3D,}$0A{0A},$D7,$A3,$70,$3D,$0A,$D7,$A3,$F8,$3F]],
+    [ 0004, [{$00,}$00{00},$00,$00,$00,$00,$00,$40,$9C,$0C,$40], [{$D3,}$2C{2B},$65,$19,$E2,$58,$17,$B7,$D1,$F1,$3F]],
+    [ 0008, [{$00,}$00{00},$00,$00,$00,$00,$20,$BC,$BE,$19,$40], [{$FD,}$FD{FC},$CE,$61,$84,$11,$77,$CC,$AB,$E4,$3F]],
+    [ 0016, [{$00,}$00{00},$00,$00,$04,$BF,$C9,$1B,$8E,$34,$40], [{$4C,}$5B{5B},$E1,$4D,$C4,$BE,$94,$95,$E6,$C9,$3F]],
+    [ 0032, [{$F0,}$9E{9D},$B5,$70,$2B,$A8,$AD,$C5,$9D,$69,$40], [{$67,}$BA{BA},$94,$39,$45,$AD,$1E,$B1,$CF,$94,$3F]],
+    [ 0064, [{$3C,}$D5{D5},$A6,$CF,$FF,$49,$1F,$78,$C2,$D3,$40], [{$3F,}$A5{A5},$E9,$39,$A5,$27,$EA,$7F,$A8,$2A,$3F]],
+    [ 0128, [{$C6,}$E0{DF},$8C,$E9,$80,$C9,$47,$BA,$93,$A8,$41], [{$AC,}$A1{A0},$E4,$BC,$64,$7C,$46,$D0,$DD,$55,$3E]],
+    [ 0256, [{$DD,}$8E{8D},$DE,$F9,$9D,$FB,$EB,$7E,$AA,$51,$43], [{$FA,}$3A{39},$19,$7A,$63,$25,$43,$31,$C0,$AC,$3C]],
+    [ 0512, [{$CC,}$C7{C6},$91,$0E,$A6,$AE,$A0,$19,$E3,$A3,$46], [{$71,}$1D{1C},$D2,$23,$DB,$32,$EE,$49,$90,$5A,$39]],
+    [ 1024, [{$65,}$17{17},$0C,$75,$81,$86,$75,$76,$C9,$48,$4D], [{$87,}$BE{BD},$C0,$57,$DA,$A5,$82,$A6,$A2,$B5,$32]],
+    [ 2048, [{$A7,}$E5{E4},$5D,$3D,$C5,$5D,$3B,$8B,$9E,$92,$5A], [{$49,}$E4{E4},$2D,$36,$34,$4F,$53,$AE,$CE,$6B,$25]],
+    [ 4096, [{$C9,}$9B{9A},$97,$20,$8A,$02,$52,$60,$C4,$25,$75], [{$2D,}$DE{DE},$9F,$CE,$D2,$C8,$04,$DD,$A6,$D8,$0A]]];
+
+
+type
+  t_BCDmantissa    = array 0..17 of t_char32;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure addx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    n              : in t_unsigned;              -- constant (0-255)
+    overflow       : out t_logical) =
+-- Addition of a small coefficient within the range 0-255 to a long unsigned integer
+-- Coefficient's range is not tested.
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     ecx,lbin       -- délka binárního èísla
+        jecxz   @0             -- nulová, nic neprovádìt
+        mov     al,<1>n        -- pøièítaná konstanta
+        mov     edi,bin        -- index pole nastavit na zaèátek
+        clc                    -- žádný pøenos z minulého kroku
+        add     [edi],al       -- pøièíst jeden byte
+        mov     al,0           -- za chvíli tam budu potøebovat nulu
+        jmp     @2             
+@1:     adc     [edi],al       -- pøièíst pøenos
+@2:     jnc     @0             -- nenastal pøenos, konèíme s pøièítáním
+        inc     edi            -- index pole nastavit na další byte
+        loop    @1
+        mov     edi,overflow   -- adresa promìnné pro pøeteèení
+        mov     <1>[edi],1     -- nastal pøenos, vrátit chybu (jen 1 byte, pøedpokládám, že je promìnná vynulovaná)
+@0:     
+  #end asm;  
+  end addx;
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure mulx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    n              : in t_unsigned;              -- constant (0-255)
+    overflow       : out t_logical) =
+-- Multiplication of a long unsigned integer by a small coefficient within the range 0-255.
+-- Coefficient's range is not tested.
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     ecx,lbin       -- délka binárního èísla
+        jecxz   @0             -- nulová, nic neprovádìt
+        mov     dl,<1>n        -- koeficient
+        mov     edi,bin        -- index pole nastavit na zaèátek
+        mov     bx,0           -- pøenos z minulého kroku je pro zaèátek nulový
+@1:     mov     al,[edi]       -- èinitel
+        mul     dl             -- vynásobit koeficientem
+        add     ax,bx          -- pøenos z minulého kroku
+        mov     [edi],al
+        mov     bl,ah
+        inc     edi            -- index pole nastavit na další byte
+        loop    @1
+        cmp     bl,0           -- poslední pøenos je nulový, je to OK
+        jz      @0
+        mov     edi,overflow   -- adresa promìnné pro pøeteèení
+        mov     <1>[edi],1     -- nastal pøenos, vrátit chybu (jen 1 byte, pøedpokládám, že je promìnná vynulovaná)
+@0:     
+  #end asm;  
+  end mulx;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure divx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    n              : in t_unsigned;              -- constant (0-255)
+    remainder      : out t_unsigned) =
+-- Division long unsigned integer by a small coefficient within the range 0-255.
+-- Coefficient's range is not tested.
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     ebx,0          -- pøenos z minulého kroku je pro zaèátek nulový
+        mov     ecx,lbin       -- délka binárního èísla
+        jecxz   @0             -- nulová, nic neprovádìt
+        mov     dl,<1>n        -- dìlitel
+        mov     edi,bin        -- index pole... 
+        add     edi,ecx        -- ...nastavit tìsnì za konec
+        dec     edi            -- ...a teï pøesnì na konec
+@1:     mov     al,[edi]       -- dìlenec
+        mov     ah,0           -- vyšší slabika je nulová
+        add     ax,bx          -- pøenos z minulého kroku
+        div     dl             -- vydìlit
+        mov     [edi],al       -- výsledek uložit
+        mov     bh,ah          -- poznamenat si pøenost
+        dec     edi            -- index pole nastavit na pøedchozí byte
+        loop    @1
+@0:     mov     edi,remainder  -- adresa zbytku
+        mov     [edi],bh       -- pøedat zbytek (jen 1 byte, pøedpokládám, že je promìnná vynulovaná)
+  #end asm;  
+  end divx;
+
+
+  
+
+----------------------------------------------------------------------------------------------------
+procedure is_zero (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned)              -- length of the number in bytes
+    return t_logical =
+-- Test if a long unsigned integer is zero.
+-- Works for t_unsigned:bits >= 8
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     ecx,lbin       -- délka binárního èísla
+        jecxz   @0             -- nulová, nic neprovádìt
+@1:     cmp     <1>[edi],0     -- je to nula ?        
+        jnz     @2             -- není!
+        loop    @1
+        jmp     @0             -- všechno bylo nulové, konèíme
+@2:     mov     result,1       -- je to nula
+@0:     
+  #end asm;  
+  end is_zero;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure is_negative (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned)              -- length of the number in bytes
+    return t_logical =
+-- Test if a long signed integer is < 0.
+-- Works for t_unsigned:bits >= 8
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     edi,bin
+        add     edi,lbin
+        dec     edi
+        mov     al,[edi]
+        shr     al,7
+        mov     <1>result,al
+  #end asm;  
+  end is_negative;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure negx (
+    bin            : in out unchecked;           -- binary number
+    lbin           : in t_unsigned;              -- length of the number in bytes
+    overflow       : out t_logical) =
+-- Change sign
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm; 
+        mov     edi,bin
+        mov     ecx,lbin
+        clc
+        cld
+@1:     mov     al,0
+        sbb     al,[edi]
+        stosb
+        loop    @1
+        jno     @0
+        mov     edi,overflow
+        mov     <1>[edi],1
+@0:
+  #end asm;  
+  end negx;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_string_primitive =
+--  num            : in t_unsigned;              -- number to convert
+--  radix          : in t_radix;                 -- radix of the number system
+--  s              : out t_char32str;            -- it's string representation
+--  code           : out t_conversion_result) =  -- conversion result
+-- Converts a signed integer to its string representation. 
+----------------------------------------------------------------------------------------------------
+var
+  bin              : t_unsigned;
+  digit            : t_unsigned;                 -- 1 digit
+  c                : s:base;                     -- 1 digit in character representation
+
+begin
+  code:=tcres_ok;
+  s:='';
+  bin:=num;
+  loop
+    divx(bin,bin:size,radix,digit);
+    if digit<=9
+      then c:=c:type("0":ord+digit)
+      else c:=c:type("A":ord+digit-10);
+      end if;
+    s:=c & s;
+  until bin=0;
+  end unsigned_to_string_primitive;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure signed_to_string_primitive =
+--  num            : in t_signed;                -- number to convert
+--  radix          : in t_radix;                 -- radix of the number system
+--  s              : out t_char32str;            -- it's string representation
+--  sign           : out t_logical;              -- True = negative
+--  code           : out t_conversion_result) =  -- conversion result
+-- Converts a signed integer to its string representation. 
+----------------------------------------------------------------------------------------------------
+begin
+  if num>=0
+    then
+      sign:=false;
+      unsigned_to_string_primitive(t_unsigned(num),radix,s,code);
+    else 
+      sign:=true;
+      unsigned_to_string_primitive(t_unsigned(-num),radix,s,code);
+    end if;
+  end signed_to_string_primitive;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_unsigned_primitive =
+--  s              : in t_char32ustr;            -- string represetation of a value
+--  radix          : in t_radix;                 -- radix of the number system
+--  num            : out unchecked;              -- corresponding binary representation
+--  code           : out t_conversion_result) =  -- conversion result
+-- Converts a string representation of an unsigned integer to the corresponding binary 
+-- representation. 
+----------------------------------------------------------------------------------------------------
+var
+  i                : s:range:type;               -- index to the string
+  digit            : t_unsigned;                 -- 1 digit
+  c                : s:base;                     -- processed character
+  overflow         : t_logical;
+
+begin
+  -- convert
+  i:=1;
+  while i<=s:length loop
+    -- shift left (multiply by radix)
+    mulx(num,num:size,radix,overflow);
+    if overflow then
+      code:=tcres_out_of_range;
+      return;
+      end if;
+
+    -- get one character
+    c:=s[i];
+
+    -- convert the character to its corresponding value
+    if    {%%TODO(SET) c in digits}  c>="0" and c<="9" then digit:=c:ord-"0":ord
+    elsif {%%TODO(SET) c in letterL} c>="a" and c<="z" then digit:=c:ord-"a":ord+10
+    elsif {%%TODO(SET) c in letterU} c>="A" and c<="Z" then digit:=c:ord-"A":ord+10
+    else
+      code:=tcres_not_a_number;
+      return;
+      end if ;
+
+    -- does the digit fit to the expected radix ?
+    if digit>=radix then
+      code:=tcres_not_a_number;
+      return;
+      end if;
+
+    -- add digit
+    addx(num,num:size,digit,overflow);
+    if overflow then
+      code:=tcres_out_of_range;
+      return;
+      end if;
+
+    -- next character
+    succ i;
+    end loop;
+
+  end string_to_unsigned_primitive; 
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_signed_primitive =
+--  s              : in t_char32ustr;            -- string represetation of a value
+--  radix          : in t_radix;                 -- radix of the number system
+--  sign           : in t_logical;               -- True = negative
+--  num            : out unchecked;              -- corresponding binary representation
+--  code           : out t_conversion_result) =  -- conversion result
+-- Converts a string representation of an unsigned integer to the corresponding binary 
+-- representation. 
+----------------------------------------------------------------------------------------------------
+var
+  overflow         : t_logical;
+
+begin
+  string_to_unsigned_primitive(s,radix,num,code);
+  if code<>tcres_ok then return end if;
+  if sign then
+    negx(num,num:size,overflow);
+    if overflow then
+      code:=tcres_out_of_range;
+      return;
+      end if;
+    end if;
+  end string_to_signed_primitive; 
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure fp_evaluate_exception =
+-- Vyhodnotí stavový registr floating-point a vyvolá výjimku
+----------------------------------------------------------------------------------------------------
+var
+  fp_sw            : mod unsigned 16;
+  
+begin
+  #syntax asm; 
+    wait 
+    fstsw   fp_sw
+    fnclex       
+  #end asm;  
+
+  if (fp_sw and fp_sw_invalid) > 0 then raise fp_invalid_operand; end if;
+  if (fp_sw and fp_sw_denormal) > 0 then raise fp_denormal_operand; end if;
+  if (fp_sw and fp_sw_zerodivide) > 0 then raise fp_divide_by_zero; end if;
+  if (fp_sw and fp_sw_overflow) > 0 then raise fp_numeric_overflow; end if;
+  if (fp_sw and fp_sw_underflow) > 0 then raise fp_numeric_underflow; end if;
+--  if (fp_sw and fp_sw_inexact) > 0 then raise fp_inexact_result; end if;
+  end fp_evaluate_exception;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure mantissa_to_BCD (
+    num            : in t_extended;              -- èíslo které pøevést
+    BCD            : out t_BCDmantissa) =        -- znaková reprezentace
+-- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 až + 10e18-1.
+----------------------------------------------------------------------------------------------------
+var
+  z                : mod unsigned 8;                -- zpracovávaný nibble (BCD èíslice)
+  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formátu
+  FP               : t_extended;
+  x                : t_unsigned;                 -- index znaku v BCD
+
+begin
+
+  FP:=num;
+
+  -- pøevést float na packed BCD
+  #syntax asm; 
+    -- nacist cislo FP 
+    lea     eax,FP
+    fld     <10>[eax]
+    -- ulozit jako BCD
+    lea     eax,pBCD
+    fbstp   <10>[eax]
+  #end asm;  
+
+  fp_evaluate_exception;
+
+  -- indefinite
+  if pBCD[pBCD:last] = 2$11111111 then
+    raise fp_invalid_operand;
+    end if;
+ 
+  -- sign
+  if (pBCD[pBCD:last] and 2$10000000) = 2$10000000 then
+    raise fp_invalid_operand;
+    end if;
+ 
+  -- numerická èást
+  x:=BCD:first;
+  for i in reverse pBCD:first..pBCD:last-1 loop
+    -- z bytu vybrat první èíslici
+    z:=((pBCD[i] and 2$11110000) shr 4);
+    BCD[x]:=t_char32("0":ord+z);
+    x+1;
+
+    -- z bytu vybrat druhou èíslici
+    z:=(pBCD[i] and 2$00001111);
+    BCD[x]:=t_char32("0":ord+z);
+    x+1;
+
+    end loop;
+  end mantissa_to_BCD;
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure BCD_to_mantissa (
+    BCD            : in t_BCDmantissa;           -- znaková reprezentace   
+    num            : out t_extended) =           -- numerická reprezentace
+-- Pøevede celé èíslo v rozsahu 0 až + 10e18-1 na float point.
+-- Øetìzec str 
+--   - musí mít délku v rozsahu 1 až 18 znakù,
+--   - nesmí obsahovat jiné znaky než "0" az "9".
+----------------------------------------------------------------------------------------------------
+var
+  x                : t_unsigned;                     -- poøadí nibblu 
+  z                : mod unsigned 8;                 -- zpracovávaný nibble (BCD èíslice)
+  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formátu
+  FP               : t_extended;
+
+begin
+
+  x:=0;
+  for i in reverse BCD:range loop
+    -- nenumerický znak
+    if BCD[i]<"0" or BCD[i]>"9" then
+      raise fp_invalid_operand;
+      end if;
+
+    -- pøevést na nibble
+    z:=z:type(BCD[i]:ord-"0":ord);
+
+    -- pøidat nibble to packed BCD
+    if x mod 2 = 0
+      -- pøidat sudý nibble
+      then pBCD[x div 2] or (z and 2$00001111);
+      -- pøidat lichý nibble
+      else pBCD[x div 2] or ((z and 2$00001111) shl 4);
+      end if;
+
+    x+1;
+    end loop;
+
+  -- pøevést packed BCD na float
+  #syntax asm; 
+    -- nacist cislo BCD
+    lea     eax,pBCD
+    fbld    <10>[eax]
+    -- ulozit jako FP
+    lea     eax,FP
+    fstp    <10>[eax]
+  #end asm;  
+
+  fp_evaluate_exception;
+
+  num:=FP;
+
+  end BCD_to_mantissa;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure BCD_to_float (
+    -- dekadická reprezentace
+    sign           : in t_logical;               -- znaménko èísla (true = záporné)  
+    BCD            : in t_BCDmantissa;           -- znaková reprezentace   
+    exp            : in t_signed;                -- exponent 
+    -- float point èíslo
+    num            : out t_extended) =           -- numerická reprezentace
+-- Pøevede øetìzec na NUM.
+-- %%TODO Používá instrukci fbstp která omezuje pøesnost pøevodu --> èasem pøedìlat
+----------------------------------------------------------------------------------------------------
+var
+  wexp             : t_signed;                   -- pracovní hodnota exponentu   
+  i                : t_unsigned;                 -- index do tabulky mocninného rozvoje
+
+begin
+  -- mantisu pøevést na float point
+  BCD_to_mantissa(BCD,num);
+
+  -- Mantisa je uvedena na 18 míst, takže jsem získal èíslo 1e17 krát vìtší,
+  -- musíme tudíž korigovat exponent. A ještì je tu korekce o jednièku, protože
+  -- exponent snižuju na nulu (líp se to programuje) a ne na jednièku, jak by se 
+  -- dalo èekat. Tedy celkem se musí odeèíst 18.
+  wexp:=exp-18;
+
+
+  if wexp>=0
+    -- vynásobit koeficientem podle exponentu (pro nezáporné exponenty)
+    then
+      i:=expansion:last;
+      while wexp>0 loop
+        if wexp>=expansion[i].exp then
+          wexp-expansion[i].exp;
+          num*expansion[i].pos;
+          end if;
+        if i=0 then break end if;
+        i-1;
+        end loop;
+
+    -- vynásobit koeficientem podle exponentu (pro záporné exponenty)
+    else
+      i:=expansion:last;
+      -wexp;
+      while wexp>0 loop
+        if wexp>=expansion[i].exp then
+          wexp-expansion[i].exp;
+          num*expansion[i].neg;
+          end if;
+        if i=0 then break end if;
+        i-1;
+        end loop;
+      end if;
+
+  -- aplikovat znaménko
+  if sign then -num end if;
+  end BCD_to_float;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure float_to_BCD (
+    -- float point èíslo
+    num            : in t_extended;              -- èíslo které pøevést
+    -- dekadická reprezentace
+    sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
+    BCD            : out t_BCDmantissa;          -- znaková reprezentace   
+    exp            : out t_signed) =             -- exponent 
+-- Pøevede NUM na øetìzec. 
+-- %%TODO Používá instrukci fbstp která omezuje pøesnost pøevodu --> èasem pøedìlat
+----------------------------------------------------------------------------------------------------
+var
+  wnum             : t_extended;                 -- pracovní kopie èísla
+  wexp             : t_signed;                   -- pracovní exponent
+  i                : t_unsigned;
+
+
+begin
+  -- èíslo se bude prùbìžnì modifikovat
+  wnum:=num;
+
+  -- zjistit znaménko a odstranit jej z èísla
+  sign:=wnum>=fp_p_0;
+  abs wnum;
+
+
+  if wnum<>fp_p_0 then
+ 
+
+    -- pøíliš velká èísla normalizovat do intervalu <1, 10)
+    i:=expansion:last;
+    while wnum>=fp_p_10  loop
+      if wnum>=expansion[i].pos then
+        wnum*expansion[i].neg;
+        wexp+expansion[i].exp;
+        end if;
+      if i=0 then break end if;
+      i-1;
+      end loop;
+ 
+  
+    -- pøíliš malá èísla normalizovat do intervalu (0.1, 1> 
+    i:=expansion:last;
+    while wnum<=fp_p_01 loop
+      if wnum<=expansion[i].neg then
+        wnum*expansion[i].pos;
+        wexp-expansion[i].exp;
+        end if;
+      if i=0 then break end if;
+      i-1;
+      end loop;
+  
+    -- všechno normalizovat do intervalu <1, 10) 
+    if wnum<fp_p_1 then
+      wnum*fp_p_10;
+      wexp-1;
+      end if;
+ 
+    end if;
+
+
+  -- Nyní je každé èíslo (wnum) normalizované do intervalu <1, 10)
+  -- nebo je nulové.
+  -- Exponent (wexp) je správnì pøepoèten.
+
+  -- vynásobit 1e17, aby mantisa byla co nejtìsnìji pod hranicí
+  -- maximálního pøeveditelného celého èísla
+  wnum*fp_p_1e17; 
+
+  -- pøevést mantisu na øetìzec
+  mantissa_to_BCD(wnum,BCD);
+
+  -- pøedat exponent ven
+  exp:=wexp;
+  end float_to_BCD;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_float_primitive =
+--  int            : in t_char32str;             -- celá èást mantisy 
+--  frac           : in t_char32str;             -- desetinná èást mantisy
+--  sign           : in t_logical;               -- znaménko èísla (TRUE = záporné)
+--  exp            : in t_signed;                -- exponent 
+--  num            : out t_extended) =           -- pøevedené èíslo
+-- Pøevede øetìzec na float point.
+----------------------------------------------------------------------------------------------------
+var
+  BCD              : t_BCDmantissa;              -- znaková reprezentace   
+  wstr             : t_char32str;                -- zpracovávaný øetìzec
+
+begin
+  -- slouèit celou a desetinnou èást 
+  wstr:=int & frac;
+
+  -- string pøevést na BCD
+  for i in BCD:range loop
+    if i<wstr:length{%%TODO :last}
+      then BCD[i]:=wstr[i+wstr:first]
+      else BCD[i]:="0";
+      end if;
+    end loop;
+
+  -- ze získaných složek teï sestavit èíslo
+  -- exponent se zvyšuje o délku celé èásti
+  BCD_to_float(sign,BCD,exp+t_signed(int:length),num);
+  end string_to_float_primitive;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure float_to_string_primitive =
+--  num            : in t_extended;              -- èíslo které pøevést
+--  int            : out t_char32str;            -- celá èást mantisy 
+--  frac           : out t_char32str;            -- desetinná èást mantisy
+--  sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
+--  exp            : out t_signed) =             -- exponent 
+-- Pøevede NUM na øetìzec.
+----------------------------------------------------------------------------------------------------
+var
+  BCD              : t_BCDmantissa;              -- znaková reprezentace mantisy
+
+begin
+  float_to_BCD(num,sign,BCD,exp);
+
+  -- mantisa je vypoètena na 18 cifer v rozsahu <1,10), podle toho také 
+  -- bude vypadat rozdìlení na celou a desetinnou èást
+  int:='';           -- %%TODO divné, to pøiøazení znak --> øetìzec by mìlo fungovat
+  int & BCD[0];      -- takhle to musím ošklivì obcházet
+  frac:='';               
+  for i in 1..17 loop
+    frac & BCD[i];
+    end loop;
+  end float_to_string_primitive;
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure unsigned_to_string =
+--  num            : in t_unsigned;              -- number to convert
+--  format         : in t_integer_format := t_integer_default)  -- požadovaný formát èísla %%CZ
+--  return t_char32str =                         -- it's string representation
+----------------------------------------------------------------------------------------------------
+var
+  s                : t_char32str;
+  code             : t_conversion_result;        -- conversion result
+  w_before         : t_signed;                   -- poèet výplòových znakù pøed znaménkem
+  w_after          : t_signed;                   -- poèet výplòových znakù za znaménkem
+  
+begin
+  unsigned_to_string_primitive(num,format.radix,s,code);
+
+  if code<>tcres_ok then
+    raise conversion_error;
+    end if;
+
+  -- formátování se provede pouze pokud není požadován automatický formát 
+  if format.width>0 then
+
+    -- kolik výplòových znakù se musí použít 
+    w_before:=t_signed(format.width)-t_signed(s:length);
+
+    -- ještì se musí vejít znaménko
+    if format.sign<>tsm_empty then 
+      w_before-1 
+      end if;
+
+    -- nevejde se
+    if w_before<0 then
+      case format.oversize
+        when tom_error    do raise conversion_error;
+        when tom_full     do w_before:=0;
+        when tom_asterisk do
+          s:='';
+          for i in 1..format.width loop
+            s & '*';
+            end loop;
+          result:=s;
+          return;
+        end case;
+      end if;
+
+    -- nebudou výplòové znaky náhodou za znaménkem?
+    if format.aligned then 
+      w_after:=w_before;
+      w_before:=0;
+      end if;
+
+    -- pøidat výplò pøed znaménkem
+    for i in 1..w_before loop 
+      s:=format.fill & s;
+      end loop;
+
+    end if;
+
+  -- pøidat znaménko
+  case format.sign 
+    when tsm_empty do ;
+    when tsm_plus  do s:='+' & s;      
+    when tsm_space do s:=' ' & s;
+    end case;
+
+  -- formátování se provede pouze pokud není požadován automatický formát 
+  if format.width>0 then
+
+    -- pøidat výplò za znaménkem
+    for i in 1..w_after loop 
+      s:=format.fill & s;
+      end loop;
+
+    end if;
+
+  result:=s;
+
+  end unsigned_to_string;
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure signed_to_string =
+--  num            : in t_signed;                -- number to convert
+--  format         : in t_integer_format := t_integer_default)  -- požadovaný formát èísla %%CZ
+--  return t_char32str =                         -- it's string representation
+----------------------------------------------------------------------------------------------------
+var
+  s                : t_char32str;
+  code             : t_conversion_result;        -- conversion result
+  sign             : t_logical;                  -- True = negative
+  w_before         : t_signed;                   -- poèet výplòových znakù pøed znaménkem
+  w_after          : t_signed;                   -- poèet výplòových znakù za znaménkem
+  
+begin
+  signed_to_string_primitive(num,format.radix,s,sign,code);
+
+  if code<>tcres_ok then
+    raise conversion_error;
+    end if;
+
+  -- formátování se provede pouze pokud není požadován automatický formát 
+  if format.width>0 then
+
+    -- kolik výplòových znakù se musí použít 
+    w_before:=t_signed(format.width)-t_signed(s:length);
+
+    -- ještì se musí vejít znaménko
+    if sign or format.sign<>tsm_empty then 
+      w_before-1 
+      end if;
+
+    -- nevejde se
+    if w_before<0 then
+      case format.oversize
+        when tom_error    do raise conversion_error;
+        when tom_full     do w_before:=0;
+        when tom_asterisk do
+          s:='';
+          for i in 1..format.width loop
+            s & '*';
+            end loop;
+          result:=s;
+          return;
+        end case;
+      end if;
+
+    -- nebudou výplòové znaky náhodou za znaménkem?
+    if format.aligned then 
+      w_after:=w_before;
+      w_before:=0;
+      end if;
+
+    -- pøidat výplò pøed znaménkem
+    for i in 1..w_before loop 
+      s:=format.fill & s;
+      end loop;
+
+    end if;
+
+  -- pøidat znaménko
+  result:=s;
+  if sign
+    then 
+      s:='-' & s
+    else 
+      case format.sign 
+        when tsm_empty do ;
+        when tsm_plus  do s:='+' & s;      
+        when tsm_space do s:=' ' & s;
+        end case;
+    end if;
+
+  -- formátování se provede pouze pokud není požadován automatický formát 
+  if format.width>0 then
+
+    -- pøidat výplò za znaménkem
+    for i in 1..w_after loop 
+      s:=format.fill & s;
+      end loop;
+
+    end if;
+
+  result:=s;
+  end signed_to_string;
+
+
+
+ 
+ 
+----------------------------------------------------------------------------------------------------
+procedure string_to_unsigned =
+--  s              : in t_char32ustr;            -- string represetation of a value
+--  parse          : in t_integer_parse := t_integer_parse:value)  -- požadovaný formát èísla %%CZ
+--  return t_unsigned;
+------------------------------------------------------------------------------
+var
+  wstr             : t_char32str;                -- zpracovávaný øetìzec
+  num              : t_unsigned;                 -- pøevedené èíslo
+  code             : t_conversion_result;
+
+begin
+  -- oddìlit mezery zleva a zprava
+  wstr:=str_trim(s," ",[se_left,se_right]);
+
+  -- zbylo vùbec nìco?
+  if wstr:length=0 then raise conversion_error end if;
+
+  -- pøevést 
+  string_to_unsigned_primitive(wstr,parse.radix,num,code);
+
+  if code<>tcres_ok then
+    raise conversion_error;
+    end if;
+
+  result:=num;
+  end string_to_unsigned;
+
+
+
+
+------------------------------------------------------------------------------
+procedure string_to_signed =
+--  s              : in t_char32ustr;            -- string represetation of a value
+--  parse          : in t_integer_parse := t_integer_parse:value)  -- požadovaný formát èísla %%CZ
+--  return t_signed;
+----------------------------------------------------------------------------------------------------
+var
+  wstr             : t_char32str;                -- zpracovávaný øetìzec
+  sign             : t_logical;                  -- TRUE = èíslo je záporné
+  num              : t_signed;                   -- pøevedené èíslo
+  code             : t_conversion_result;
+
+begin
+  -- oddìlit mezery zleva a zprava
+  wstr:=str_trim(s," ",[se_left,se_right]);
+
+
+  -- zbylo vùbec nìco?
+  if wstr:length=0 then raise conversion_error end if;
+
+
+  -- pøevést znaménko na pøíznak sign
+  -- znaménko minus
+  if wstr[1]="-" then
+    sign:=true;
+    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+  -- znaménko plus
+  elsif wstr[1]="+" then
+    sign:=false;
+    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+  -- žádné znaménko
+  elsif wstr[1]>="0" and wstr[1]<="9"  then
+    sign:=false
+  -- chyba
+  else 
+    raise conversion_error 
+    end if;
+
+
+  -- pøevést 
+  string_to_signed_primitive(wstr,parse.radix,sign,num,code);
+
+  if code<>tcres_ok then
+    raise conversion_error;
+    end if;
+
+  result:=num;
+  end string_to_signed;
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure string_to_float =
+--  s              : in t_char32ustr)            -- string represetation of a value
+--  parse          : in t_float_parse := t_float_parse:value)      -- požadovaný formát èísla %%CZ
+--  return t_extended;
+-- Pøevede celé èíslo v rozsahu 0 až + 10e18-1 na float point.
+-- Øetìzec str 
+--   - musí mít délku v rozsahu 1 až 18 znakù,
+--   - nesmí obsahovat jiné znaky než "0" az "9".
+----------------------------------------------------------------------------------------------------
+var
+  wstr             : t_char32str;                -- zpracovávaný øetìzec
+  sign             : t_logical;                  -- TRUE = èíslo je záporné
+  point            : t_unsigned;                 -- poloha desetinné teèky
+  pexp             : t_unsigned;                 -- poloha exponentu
+  wexp             : t_char32str;                -- exponent øetìzcovì
+  exp              : t_signed;                   -- exponent pøevedný na èíslo
+  num              : t_extended;                 -- pøevedené èíslo
+  x                : t_signed;                   -- chyba v konverzi %%TODO pøijde pøedìlat na výjimku
+  int              : t_char32str;                -- celá èást mantisy 
+  frac             : t_char32str;                -- desetinná èást mantisy
+  code             : t_conversion_result;
+
+begin
+  -- oddìlit mezery zleva a zprava
+  wstr:=str_trim(s," ",[se_left,se_right]);
+
+
+  -- zbylo vùbec nìco?
+  if wstr:length=0 then raise conversion_error end if;
+
+
+  -- pøevést znaménko na pøíznak sign
+  -- znaménko minus
+  if wstr[1]="-" then
+    sign:=true;
+    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+  -- znaménko plus
+  elsif wstr[1]="+" then
+    sign:=false;
+    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+  -- žádné znaménko
+  elsif wstr[1]>="0" and wstr[1]<="9"  then
+    sign:=false
+  -- chyba
+  else 
+    raise conversion_error 
+    end if;
+
+
+  -- odstranit nevýznamné nuly zleva
+  while wstr:length>0 and wstr[1]="0" loop
+    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    end loop;
+  
+
+  -- zbylo vùbec nìco?
+  if wstr:length=0 then raise conversion_error end if;
+  
+
+  -- najít a oddìlit exponent 
+  pexp:=wstr:first;
+  while pexp<=wstr:length{%%TODO :last} and wstr[pexp]<>"e" and wstr[pexp]<>"E" loop
+    pexp+1
+    end loop;
+  if pexp<=wstr:length{%%TODO :last} then 
+    wexp:=str_copy(wstr,pexp+1,wstr:length{%%TODO :last});
+    wstr:=str_copy(wstr,1,pexp-1);
+    end if;
+
+
+  -- exponent pøevést na èíslo
+  if wexp:length=0 
+    then 
+      exp:=0
+    else
+      exp:=string_to_signed(wexp);
+      end if;
+
+
+  -- najít a oddìlit desetinnou teèku
+  -- není-li teèka nalezena, bude o jednu vyšší než délka celé èásti, což je pomìrnì logické
+  point:=wstr:first;
+  while point<=wstr:length{%%TODO :last} and wstr[point]<>"." loop
+    point+1
+    end loop;
+  frac:=str_copy(wstr,point+1,wstr:length{%%TODO :last});
+  int:=str_copy(wstr,1,point-1);
+
+  -- ze získaných složek teï sestavit èíslo
+  string_to_float_primitive(int,frac,sign,exp,num);
+
+  -- pøedat výsledek
+  result:=num;
+  
+  end string_to_float;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure float_to_string =
+--  num            : in t_extended;              -- èíslo které pøevést %%CZ
+--  format         : in t_float_format := t_float_format:value)      -- požadovaný formát èísla %%CZ
+--  return t_char32str =                         -- øetìzcová reprezentace
+-- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 až + 10e18-1.
+----------------------------------------------------------------------------------------------------
+var
+  sign             : t_logical;                  -- znaménko èísla (True = záporné)
+  csign            : t_char32;                   -- znaménko èísla znakovì
+  int              : t_char32str;                -- celá èást mantisy 
+  frac             : t_char32str;                -- desetinná èást mantisy
+  exp              : t_signed;                   -- exponent
+  BCD              : t_BCDmantissa;              -- znaková reprezentace mantisy
+
+begin
+  float_to_string_primitive(num,int,frac,sign,exp);
+  
+  -- pøevést znaméko
+  if sign then csign:="+" else csign:="-" end if;
+
+  -- sestavit z jednotlivých èástí
+  result:=csign & int & '.' & frac & 'E' & signed_to_string(exp,[for width use 5, 
+                                                                 for sign use tsm_plus, 
+                                                                 for aligned use false,
+                                                                 for fill use "0",
+                                                                 for oversize use tom_error,
+                                                                 for radix use 10]);
+
+  {%%TODO až bude udìlané pøiøazování implicitní hodnotyu podle typu, pøijde for radix use vyøadit}
+  end float_to_string;
+
+
+end conversions;

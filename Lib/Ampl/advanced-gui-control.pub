@@ -1,0 +1,25 @@
+----------------------------------------------------------------------------------------------------
+module public control =
+-- GUI control object.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- Foerward declarations
+class c_control; type p_control = ^class c_control;
+
+class public c_control = extend {c_class expose} c_window;
+----------------------------------------------------------------------------------------------------
+
+    -- creation and finalization
+    ------------------------------------------------------------------------------------------------
+    static create (
+        _handle    : in system_window_handle);   -- handle to system window
+    -- %% Working version for flex pascal 
+    ------------------------------------------------------------------------------------------------
+    virtual close; 
+    -- Closes window and finalizes all its resoucources etc.
+    ------------------------------------------------------------------------------------------------
+    end c_control;
+
+end control;

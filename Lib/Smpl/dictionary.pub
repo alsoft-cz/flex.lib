@@ -1,0 +1,156 @@
+----------------------------------------------------------------------------------------------------
+module public dictionary =
+-- Dictionary implementation
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes.trees;
+
+message
+  dictionary_error;
+
+-- dop©edn‚ deklarace
+class c_dictionary_key;           type p_dictionary_key           = ^class c_dictionary_key;
+class c_dictionary;               type p_dictionary               = ^class c_dictionary;
+class c_string_dictionary;        type p_string_dictionary        = ^class c_string_dictionary;
+class c_string_string_dictionary; type p_string_string_dictionary = ^class c_string_string_dictionary;
+class c_dictionary_value;         type p_dictionary_value         = ^class c_dictionary_value;
+
+type
+  -- v˜sledek porovn n¡ kl¡‡–
+  t_key_compare_result = enum
+      kct_equal;
+      kct_bigger;
+      kct_smaller;
+      end enum for size use 4;
+
+  t_dictionary_delete_mode = enum
+      ddm_none;
+      ddm_key;
+      ddm_value;
+      ddm_both;
+      end enum;
+
+----------------------------------------------------------------------------------------------------
+class public c_dictionary_key =
+-- Obecn˜ p©edek pro kl¡‡ do slovn¡ku
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract compare (
+        other      : p_dictionary_key)           -- porovn van˜ kl¡‡
+        return t_key_compare_result;
+    -- compares [this] and [other]
+    ------------------------------------------------------------------------------------------------
+
+    end c_dictionary_key;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_dictionary_value =
+-- Hodnota ukl dan  do slovn¡ku
+----------------------------------------------------------------------------------------------------
+
+    end c_dictionary_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_dictionary =
+-- Slovn¡k - t©¡da, kter  uchov v  seznam dvojic kl¡‡-hodnota 
+-- a pro ka‘d˜ kl¡‡ um¡ efektivnˆ naj¡t hodnotu
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_row (
+        key        : in p_dictionary_key;        -- kl¡‡
+        value      : in p_dictionary_value);     -- hodnota
+    -- P©id  do slovn¡ku dvojici [key,item]
+    -- Pokud u‘ [key] ve slovn¡ku existuje, vyvol  v˜jimku [dictionary_error]
+    ------------------------------------------------------------------------------------------------
+    static delete_row (
+        key        : in p_dictionary_key;        -- kl¡‡
+        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m  smazat
+    -- Vyma‘e kl¡‡ a jeho hodnotu ze slovn¡ku, kl¡‡ i jeho hodnotu uvoln¡ z pamˆti.
+    ------------------------------------------------------------------------------------------------
+    static remove_row (
+        key        : in p_dictionary_key);       -- kl¡‡
+    -- Vyma‘e kl¡‡ a jeho hodnotu ze slovn¡ku, kl¡‡ a jeho hodnotu neuvoln¡ z pamˆti.
+    ------------------------------------------------------------------------------------------------
+    static find_row (
+        key        : in p_dictionary_key)        -- kl¡‡
+        return p_dictionary_value;
+    -- Najde hodnotu kl¡‡e ve slovn¡ku.
+    ------------------------------------------------------------------------------------------------
+    static delete_all (
+        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m  smazat
+    -- Vyma‘e v¨echny polo‘ky slovn¡ku
+    ------------------------------------------------------------------------------------------------
+    static remove_all;
+    -- Vy‡ist¡ slovn¡k
+    ------------------------------------------------------------------------------------------------
+
+    end c_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_dictionary = extend c_dictionary;
+-- Slovn¡k s ©etˆzcov˜mi kl¡‡i
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value (
+        key        : in t_char32ustr;            -- kl¡‡
+        value      : in p_dictionary_value);     -- hodnota
+    -- P©id  do slovn¡ku dvojici [key,value]
+    ------------------------------------------------------------------------------------------------
+    static delete_value (
+        key        : in t_char32ustr;            -- kl¡‡
+        what       : in t_dictionary_delete_mode:=ddm_key); -- co se m  smazat
+    -- Vyma‘e kl¡‡ a jeho hodnotu ze slovn¡ku
+    ------------------------------------------------------------------------------------------------
+    static find_value (
+        key        : in t_char32ustr)            -- kl¡‡
+        return p_dictionary_value;
+    -- Najde hodnotu kl¡‡e ve slovn¡ku
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_string_dictionary = extend c_string_dictionary;
+-- Slovn¡k s ©etˆzcov˜mi kl¡‡i a ©etˆzcov˜mi hodnotami
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert (
+        key        : in t_char32ustr;            -- kl¡‡
+        value      : in t_char32ustr);           -- hodnota
+    -- P©id  do slovn¡ku dvojici [key,item]
+    ------------------------------------------------------------------------------------------------
+    static find (
+        key        : in t_char32ustr)            -- kl¡‡
+        return t_char32str;
+    -- Najde hodnotu kl¡‡e ve slovn¡ku
+    ------------------------------------------------------------------------------------------------
+    static search (
+        key        : in t_char32ustr;            -- kl¡‡
+        value      : out t_char32ustr)           -- hodnota kl¡‡e
+        return t_logical;
+    -- Najde hodnotu kl¡‡e ve slovn¡ku, vr t¡, zda byl kl¡‡ nalezen
+    ------------------------------------------------------------------------------------------------
+    static delete (
+        key        : in t_char32ustr);           -- kl¡‡
+    -- Vyma‘e kl¡‡ a jeho hodnotu ze slovn¡ku
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_string_dictionary;
+
+end dictionary;

@@ -1,0 +1,1265 @@
+----------------------------------------------------------------------------------------------------
+module private long_arithmetic =
+-- Long signed integer arithmetic operations.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+-- ‡¡slo je ulo‘eno ve tvaru LSB first
+-- internˆ je znam‚nko ulo‘eno jako prvn¡ element pole. 
+-- nejvy¨¨¡ bit posledn¡ho bytu je znam‚nko, kde 0 znamen 
+-- z porn‚ ‡¡slo, 0 je kladn‚ ‡¡slo. Nap©¡klad pro typ t_long_signed 32 bits:
+--   5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+--  -5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 10000000
+
+const
+  long_signed_neutral  = 0;
+  long_signed_positive = 1;
+  long_signed_negative = 2;
+
+type
+  t_cmp_result = enum 
+      cmp_res_equal;
+      cmp_res_smaller;
+      cmp_res_greater;
+      end enum;
+
+  t_cmp_result_set = set of t_cmp_result;
+
+
+
+-- z kladn¡ pr ce (alokace, uvolnˆn¡)
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_bits_to_items =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=(precision+t_long_unsigned:base:bits-1) div t_long_unsigned:base:bits;
+  end long_unsigned_bits_to_items;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_bits_to_items =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=(precision+t_long_signed:base:bits-1) div t_long_signed:base:bits
+         -- v prvn¡m elementu ‡¡sla je ulo‘eno znam‚nko
+         +1;
+  end long_signed_bits_to_items;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_new =
+----------------------------------------------------------------------------------------------------
+begin
+  -- velikost prostoru zaokrouhl¡me nahoru na nejbli‘¨¡ n sobek velikosti slova
+  new number range long_unsigned_bits_to_items(precision);
+  end long_unsigned_new;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_new =
+----------------------------------------------------------------------------------------------------
+begin
+  -- velikost prostoru zaokrouhl¡me nahoru na nejbli‘¨¡ n sobek velikosti slova
+  new number range long_signed_bits_to_items(precision);
+  end long_signed_new;
+
+
+
+-- na‡ten¡ mal‚ho ‡¡sla
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_load =
+----------------------------------------------------------------------------------------------------
+var
+  wsize : t_unsigned;  -- d‚lka dlouh‚ho ‡¡sla v bytech
+
+begin
+  -- zmˆ©it ‡¡slo
+  wsize:=number:size;
+  #syntax asm;
+      -- p©evz¡t po‘adovanou hodnotu
+      mov    eax,n
+      mov    edi,number
+
+      -- zjistit z kolika slov se skl d  dlouh‚ ‡¡slo
+      mov    ecx,wsize
+      shr    ecx,<t_unsigned8>2
+
+      -- ulo‘it do c¡lov‚ho prostoru
+      cld
+      stosd
+      dec    ecx
+
+      -- zbytek dlouh‚ho ‡¡sla zaplnit nulami
+      xor    eax,eax
+      rep stosd
+      #end asm;
+  end long_unsigned_load;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_load =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  nlen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve slovech 
+
+begin
+  -- zmˆ©it ‡¡slo (po‡et slov), a‘ bude p©eklada‡ umˆt atribut length, bude to jednodu¨¨¡
+  nlen:=t_mod_unsigned(number:size) shr 2;
+  #syntax asm;
+      -- p©evz¡t po‘adovanou hodnotu
+      mov    eax,i
+      mov    edi,number
+
+      cld
+
+      -- zjistit znam‚nko
+      xor    ecx,ecx
+      cmp    eax,1
+      adc    ecx,0
+      cmp    eax,$80000000
+      adc    ecx,0
+
+      -- nez porn  ‡¡sla pokra‡uj¡ d l
+      jnz    @2
+
+      -- ‡¡slo je z porn‚, mus¡me ho p©ev‚st na jeho dvojkov˜ komplement
+      neg    eax
+
+      -- v t‚to chv¡li m me v ECX znam‚nko (2="0", 1="+", 0="-")
+      -- normalizujeme ho do tvaru         (0="0", 1="+", 2="-")
+      -- a ulo‘¡me
+  @2: xor    ecx,$10
+      mov    [edi],ecx
+      add    edi,4
+
+      -- zjistit velikost c¡lov‚ho ‡¡sla
+      mov    ecx,nlen
+
+      -- ulo‘it absolutn¡ hodnotu ‡¡sla do c¡lov‚ho prostoru
+      stosd
+
+      -- znam‚nko a absolutn¡ hodnota ‡¡sla u‘ byly ulo‘eny
+      sub    ecx,2
+    --jc     @INVALID_LONG_NUMBER             <- nemˆlo by nastat, to m  za©¡dit p©eklada‡
+
+      -- zbytek dlouh‚ho ‡¡sla zaplnit nulami
+      xor    eax,eax
+      rep    stosd
+      #end asm;
+end long_signed_load;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_assign =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  srclen           : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve slovech
+  dstlen           : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve slovech
+
+begin
+  -- zmˆ©it ‡¡slo (po‡et slov), a‘ bude p©eklada‡ umˆt atribut length, bude to jednodu¨¨¡
+  srclen:=t_mod_unsigned(src:size) shr 2;
+  dstlen:=t_mod_unsigned(dst:size) shr 2;
+  #syntax asm;
+      -- adresy operand–
+      mov   esi,src
+      mov   edi,dst
+
+      cld
+
+      -- p©edpoklad: c¡lov‚ ‡¡slo je vˆt¨¡ ne‘ zdroj
+      mov   ecx,srclen
+      mov   edx,dstlen
+      sub   ecx,edx
+      jae   @1
+
+      -- p©edpoklad se nevyplnil, c¡lov‚ ‡¡slo je krat¨¡
+      mov   ecx,dstlen
+      xor   edx,edx
+             
+      -- zkop¡rovat
+  @1: cld
+      rep   movsd
+
+      -- zbytek c¡le zaplnit nulami
+      mov   ecx,edx
+      xor   eax,eax
+      rep   stosd
+  #end asm;
+  end long_unsigned_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_assign =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  srclen           : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve slovech
+  dstlen           : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve slovech
+
+begin
+  -- zmˆ©it ‡¡slo (po‡et slov), a‘ bude p©eklada‡ umˆt atribut length, bude to jednodu¨¨¡
+  srclen:=t_mod_unsigned(src:size) shr 2;
+  dstlen:=t_mod_unsigned(dst:size) shr 2;
+  #syntax asm;
+      -- adresy operand–
+      mov   esi,src
+      mov   edi,dst
+
+      cld
+
+      -- p©edpoklad: c¡lov‚ ‡¡slo je vˆt¨¡ ne‘ zdroj
+      mov   ecx,srclen
+      mov   edx,dstlen
+      sub   ecx,edx
+      jae   @1
+
+      -- p©edpoklad se nevyplnil, c¡lov‚ ‡¡slo je krat¨¡
+      mov   ecx,dstlen
+      xor   edx,edx
+             
+      -- zkop¡rovat
+  @1: cld
+      rep   movsd
+
+      -- zbytek c¡le zaplnit nulami
+      mov   ecx,edx
+      xor   eax,eax
+      rep   stosd
+  #end asm;
+  end long_signed_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_abs =
+----------------------------------------------------------------------------------------------------
+begin
+  if a[0]<>long_signed_neutral then
+    a[0]:=long_signed_positive;
+    end if;
+  end long_signed_abs;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_neg =
+-- Provede p©i©azen¡ A:=-A
+----------------------------------------------------------------------------------------------------
+begin
+  case a[0]
+    when long_signed_positive do a[0]:=long_signed_negative;
+    when long_signed_negative do a[0]:=long_signed_positive;
+    when others do;
+    end case;
+  end long_signed_neg;
+
+
+
+-- s‡¡t n¡, ode‡¡t n¡
+-- jako prvn¡ jsou zde primitivn¡ (z kladn¡ obecn‚) neve©ejn‚ operace, pro pr ci s unsigned ‡¡sly
+-- ulo‘en˜mi jako array of t_unsigned. Nad tˆmito operacemi je vystavˆna ve©ejnˆ dostupn  nadstavba.
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add =
+----------------------------------------------------------------------------------------------------
+var
+  alen             : t_unsigned;  -- d‚lka prvn¡ho s‡¡tance ve wordech
+  blen             : t_unsigned;  -- d‚lka druh‚ho s‡¡tance ve wordech
+  clen             : t_unsigned;  -- d‚lka sou‡tu ve wordech
+
+begin
+  -- zmˆ©it ‡¡sla
+  alen:=1+a:last;     -- %%TODO na tomto m¡stˆ :size vrac¡ tot‚‘ jako :last. Pro‡?
+  blen:=1+b:last;
+  clen:=1+c:last;
+  #syntax asm;
+      -- prvn¡ ‡ st v˜po‡tu bude podle schematu [edi...]=[esi...]+[ebx...], v d‚lce ecx
+      -- druh  ‡ st v˜po‡tu bude podle schematu [edi...]=[esi...]+0,        v d‚lce ???
+      -- t©et¡ ‡ st v˜po‡tu bude podle schematu [edi...]=0,                 v d‚lce ???
+
+      -- na‡teme £daje o ‡¡slech [esi,edx]=A a [ebx,ecx]=B
+      mov    esi,a
+      mov    edx,alen
+      mov    ebx,b
+      mov    ecx,blen
+
+      -- Zamˆn¡me po©ad¡ operand– A a B tak, aby [ebx,ecx] bylo krat¨¡ z obou ‡¡sel. V t‚to d‚lce
+      -- budeme prov dˆt plnohodnotn˜ sou‡et sou‡asnˆ vypo‡teme d‚lku ve kter‚ budeme prov dˆt 
+      -- druhou ‡ st v˜po‡tu
+      cmp    ecx,edx
+      jbe    @0
+
+      -- zd  se, ‘e do¨lo k p©ete‡n¡, mus¡me tedy zamˆnit po‡ tky obou ‡¡sel a taky pr vˆ vypo‡tenou
+      -- d‚lku druh‚ho kroku v˜po‡tu
+      xchg   esi,ebx
+      xchg   edx,ecx
+
+      -- nyn¡ m me ‡¡sla A a B na‡tena, p©i‡em‘ v [ebx,ecx] je krat¨¡ z nich a v [esi,edx] je del¨¡
+  @0: --     za chv¡li budeme pot©ebovat 0
+      xor    edi,edi
+
+      -- ECX je d‚lka krat¨¡ho s‡¡tance (kroku 1)
+      -- EDX je d‚lka del¨¡ho s‡¡tance
+
+      -- vypo‡teme d‚lku kroku 3
+      mov    eax,clen
+      sub    eax,edx
+
+      -- je-li del¨¡ s‡¡tanec del¨¡ ne‘ C, nebudeme t©et¡ krok prov dˆt a s‡¡tanec zkr t¡me
+      cmovc  eax,edi
+      cmovc  edx,clen
+      push   eax
+
+      -- vypo‡¡t me d‚lku kroku 2
+      mov    eax,edx
+      sub    eax,ecx
+
+      -- je-li krat¨¡ s‡¡tanec p©¡li¨ dlouh˜, zkr t¡me ho
+      cmovc  eax,edi
+      cmovc  ecx,edx
+      push   eax
+
+  --------------------
+  -- vlastn¡ v˜po‡et
+  --------------------
+      xor    edx,edx
+      mov    edi,c
+
+      cld
+
+  -- prvn¡ ‡ st v˜po‡tu C=A+B
+  @1: lodsd
+      adc    eax,[ebx+edx*4]
+      inc    edx
+      stosd
+      loop   @1
+
+  -- druh  ‡ st v˜po‡tu, d le u‘ budeme uva‘ovat jen del¨¡ z obou ‡¡sel A a B
+      pop    ecx
+      jecxz  @3
+  @2: lodsd
+      adc    eax,0
+      stosd
+      loop   @2
+
+  -- t©et¡ ‡ st v˜po‡tu
+  @3: pop    ecx
+      jecxz  @4
+  -- ulo‘it p©enos p©echoz¡ch v˜po‡t–...
+      mov    eax,0
+      adc    eax,eax
+      stosd
+      sub    ecx,1
+  -- a vynulov n¡ nevyu‘it‚ ‡ sti v˜sledku
+      xor    eax,eax
+      rep    stosd
+  @4: #end asm;
+  end long_unsigned_add;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add =
+----------------------------------------------------------------------------------------------------
+type
+  -- pracovn¡ pointer na absolutn¡ hodnotu dlouh‚ho ‡¡sla
+  tmpointer        = ^unchecked for machine_pointer use true;
+  tupointer        = record
+      ptr          : tmpointer;
+      rta_tag      : tag;
+      rta_last     : unsigned 32;
+      end record;
+
+var
+  unsigned_a : p_long_unsigned;
+  unsigned_b : p_long_unsigned;
+  unsigned_c : p_long_unsigned;
+
+begin
+  -- %%TODO(SLICE)
+  tupointer(unsigned_a:unchecked).ptr:=^a[1]:unchecked;
+  tupointer(unsigned_a:unchecked).rta_tag:=t_long_unsigned:tag;
+  tupointer(unsigned_a:unchecked).rta_last:=a:last-1;
+  tupointer(unsigned_b:unchecked).ptr:=^b[1]:unchecked;
+  tupointer(unsigned_b:unchecked).rta_tag:=t_long_unsigned:tag;
+  tupointer(unsigned_b:unchecked).rta_last:=b:last-1;
+  tupointer(unsigned_c:unchecked).ptr:=^c[1]:unchecked;
+  tupointer(unsigned_c:unchecked).rta_tag:=t_long_unsigned:tag;
+  tupointer(unsigned_c:unchecked).rta_last:=c:last-1;
+
+  case a[0]
+    when long_signed_neutral do
+      -- A=0, v˜sledkem sou‡tu je B
+      long_signed_assign(c,b);
+
+    -- A>0
+    when long_signed_positive do
+      case b[0]
+        when long_signed_neutral do
+          -- B=0, v˜sledkem sou‡tu je A
+          long_signed_assign(c,a);
+
+        when long_signed_positive do
+          -- A>0, B>0, v˜sledkem sou‡tu je A+B, v˜sledek bude kladn˜
+          long_unsigned_add(unsigned_c^,unsigned_a^,unsigned_b^);
+          #if #declared kamil; #and then; kamil then;
+          #end if;
+        when others do
+          -- A>0, B<0, v˜sledkem sou‡tu je A-ABS(B), znam‚nko v˜sledku mus¡me zjistit
+        end case;
+
+    -- A<0
+    when others do
+      case b[0]
+        when long_signed_neutral do
+          -- B=0, v˜sledkem sou‡tu je A
+          long_signed_assign(c,b);
+
+        when long_signed_positive do
+          -- A<0, B>0, v˜sledkem sou‡tu je B-ABS(A), znam‚nko v˜sledku mus¡me zjistit
+
+        when others do
+          -- A<0, B<0, v˜sledkem sou‡tu je -(ABS(A)+ABS(B)), v˜sledek bude z porn˜
+        end case;
+    end case;
+  end long_signed_add;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add_assign =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+  blen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it obˆ ‡¡sla
+  alen:=t_mod_unsigned(a:size) shr 2;
+  blen:=t_mod_unsigned(b:size) shr 2;
+  #syntax asm;
+      -- s‡¡tat budeme v d‚lce krat¨¡ho z obou operand–
+      mov   ecx,alen
+      cmp   ecx,blen
+      cmova ecx,blen
+
+      -- m -li krat¨¡ ‡¡slo nulovou d‚lku, nen¡ co s‡¡tat
+      -- jcxz  @1        TOHLE ALE NESM‹ NASTAT, €‹SLA 0 BIT¦ DLOUH NEPODPORUJEME
+
+      -- vlastn¡ sou‡et
+      clc
+      mov   edi,a
+      mov   esi,b
+  @2: lodsd
+      adc   [edi],eax
+      inc   edi
+      loop  @2
+
+      -- jestli‘e z posledn¡ho bloku nen¡ ‘ dn˜ p©enos, m–‘eme rovnou kon‡it
+      jnc   @1
+
+      -- pokud skon‡ilo A (B je del¨¡), m–‘eme kon‡it v˜po‡et, pokud skon‡ilo B (a pokra‡uje) mus¡me
+      -- je¨tˆ zapracovat p©enos z posledn¡ho proveden‚ho kroku
+      mov   ecx,alen
+      sub   ecx,blen
+      jc    @1
+
+      -- postupnˆ p©enos propagujeme do vy¨¨¡ch © d–, kon‡it m–‘eme:
+      --   1. kdy‘ v posledn¡m kroku nenastal p©enos
+      --   2. kdy‘ jsme se dostali za hranice ‡¡sla A
+      mov   eax,1
+  @3: add   [edi],eax
+      jnc   @1
+      loop  @3
+  @1: #end asm;
+  end long_unsigned_add_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add_assign =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+  blen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it obˆ ‡¡sla
+  alen:=t_mod_unsigned(a:size) shr 2;
+  blen:=t_mod_unsigned(b:size) shr 2;
+
+--  if long_signed_positive(a)=long_signed_positive(b) then
+    -- obˆ ‡¡sla maj¡ stejn‚ znam‚nko, provedeme sou‡et a znam‚nko z–stane zachov no
+    -- [   5 +  7  ->   12  ]
+    -- [ (-5)+(-7) -> (-12) ]
+--  elsif abs a>abs b then
+    -- ‡¡sla maj¡ rozd¡ln  znam‚nka, vypo‡teme (A-B), znam‚nko p©evezmeme z ‡¡sla A
+    -- [ (-7)+( 5) -> (-2) ]
+    -- [ ( 7)+(-5) -> ( 2) ]
+--  else
+    -- ‡¡sla maj¡ rozd¡ln  znam‚nka, vypo‡teme (B-A), znam‚nko p©evezmeme z ‡¡sla B
+    -- [ (-5)+( 7) -> ( 2) ]
+    -- [ ( 5)+(-7) -> (-2) ]
+--    end if;
+
+  #syntax asm;
+      -- s‡¡tat budeme v d‚lce krat¨¡ho z obou operand–
+      mov   ecx,alen
+      cmp   ecx,blen
+      cmova ecx,blen
+
+      -- m -li krat¨¡ ‡¡slo nulovou d‚lku, nen¡ co s‡¡tat
+      -- jcxz  @1        TOHLE ALE NESM‹ NASTAT, €‹SLA 0 BIT¦ DLOUH NEPODPORUJEME
+
+      -- vlastn¡ sou‡et
+      cld
+      clc
+      mov   edi,a
+      mov   esi,b
+  @2: lodsd
+      adc   [edi],eax
+      inc   edi
+      loop  @2
+  @3: lodsd
+      adc   eax,[edi]
+      stosd
+      loop  @3
+
+      -- schov me si posledn¡ p©enos
+      sahf
+
+      -- pokud skon‡ilo A, m–‘eme kon‡it v˜po‡et, pokud skon‡ilo B a m me p©enos z posledn¡ho 
+      -- sou‡tu, mus¡me ho taky zapracovat
+      cmp   ecx,alen
+      jnc   @1
+
+  @1: #end asm;
+  end long_signed_add_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_add_n =
+----------------------------------------------------------------------------------------------------
+begin
+  #syntax asm;
+
+      #end asm;
+  end long_unsigned_add_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_add_n =
+--%%TODO(KAMIL) O¨et©it pr ci se znam‚nky !!!                                                                    
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it ‡¡slo
+  alen:=t_mod_unsigned(a:size) shr 2;
+
+ #syntax asm;
+      -- p©evz¡t po‘adovanou hodnotu
+      mov    eax,I
+      mov    edi,A
+
+      -- zjistit z kolika slov se skl d  dlouh‚ ‡¡slo
+      mov    ecx,alen
+
+      -- p©i‡¡st  mal‚ ‡¡slo
+      add    [edi],eax
+
+      -- nen¡-li p©enos, konec
+      jnc    @0
+
+      -- ode‡¡st zpracovan‚ slovo od d‚lky
+      sub    ecx,4
+      jz     @0
+
+      -- zapo‡¡tat p©enos do vy¨¨¡ch © d–
+      mov    eax,1
+  @1: add    [edi],eax
+      add    edi,4
+      loop   @1
+  @0: #end asm;
+  end long_signed_add_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub_n =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it ‡¡slo
+  alen:=t_mod_unsigned(a:size) shr 2;
+  #syntax asm;
+      -- p©evz¡t po‘adovanou hodnotu
+      mov    eax,N
+      mov    edi,A
+
+      -- zjistit z kolika slov se skl d  dlouh‚ ‡¡slo
+      mov    ecx,alen
+
+      -- p©i‡¡st  mal‚ ‡¡slo
+      sub    [edi],eax
+
+      -- nen¡-li p©enos, konec
+      jnb    @0
+
+      -- ode‡¡st zpracovan‚ slovo od d‚lky
+      sub    ecx,4
+      jz     @0
+
+      -- zapo‡¡tat p©enos do vy¨¨¡ch © d–
+      mov    eax,1
+  @1: add    [edi],eax
+      add    edi,4
+      loop   @1
+  @0: #end asm;
+  end long_unsigned_sub_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub_n =
+-- O¨et©it pr ci se znam‚nky !!!                                                                   
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it ‡¡slo
+  alen:=t_mod_unsigned(a:size) shr 2;
+  #syntax asm;
+      -- p©evz¡t po‘adovanou hodnotu
+      mov    eax,I
+      mov    edi,A
+
+      -- zjistit z kolika slov se skl d  dlouh‚ ‡¡slo
+      mov    ecx,alen
+
+      -- p©i‡¡st  mal‚ ‡¡slo
+      sub    [edi],eax
+
+      -- nen¡-li p©enos, konec
+      jnb    @0
+
+      -- ode‡¡st zpracovan‚ slovo od d‚lky
+      sub    ecx,4
+      jz     @0
+
+      -- zapo‡¡tat p©enos do vy¨¨¡ch © d–
+      mov    eax,1
+  @1: add    [edi],eax
+      add    edi,4
+      loop   @1
+  @0: #end asm;
+  end long_signed_sub_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+  blen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+  clen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it ‡¡sla
+  alen:=t_mod_unsigned(a:size) shr 2;
+  blen:=t_mod_unsigned(b:size) shr 2;
+  clen:=t_mod_unsigned(c:size) shr 2;
+  #syntax asm;
+      -- prvn¡ ‡ st v˜po‡tu bude podle schematu [edi...]=[esi...]+[ebx...], v d‚lce ecx
+      -- druh  ‡ st v˜po‡tu bude podle schematu [edi...]=[esi...]+0,        v d‚lce ???
+      -- t©et¡ ‡ st v˜po‡tu bude podle schematu [edi...]=0,                 v d‚lce ???
+
+      -- na‡teme £daje o ‡¡slech [esi,edx]=A a [ebx,ecx]=B
+      mov    esi,a
+      mov    edx,alen
+      mov    ebx,b
+      mov    ecx,blen
+
+      -- Zamˆn¡me po©ad¡ operand– A a B tak, aby [ebx,ecx] bylo krat¨¡ z obou ‡¡sel. V t‚to d‚lce
+      -- budeme prov dˆt plnohodnotn˜ sou‡et sou‡asnˆ vypo‡teme d‚lku ve kter‚ budeme prov dˆt 
+      -- druhou ‡ st v˜po‡tu
+      cmp    ecx,edx
+      jbe    @0
+
+      -- zd  se, ‘e do¨lo k p©ete‡n¡, mus¡me tedy zamˆnit po‡ tky obou ‡¡sel a taky pr vˆ vypo‡tenou
+      -- d‚lku druh‚ho kroku v˜po‡tu
+      xchg   esi,ebx
+      xchg   edx,ecx
+
+      -- nyn¡ m me ‡¡sla A a B na‡tena, p©i‡em‘ v [ebx,ecx] je krat¨¡ z nich a v [esi,edx] je del¨¡
+  @0: --     za chv¡li budeme pot©ebovat 0
+      xor    edi,edi
+
+      -- ECX je d‚lka krat¨¡ho s‡¡tance (kroku 1)
+      -- EDX je d‚lka del¨¡ho s‡¡tance
+
+      -- vypo‡teme d‚lku kroku 3
+      mov    eax,clen
+      sub    eax,edx
+
+      -- je-li del¨¡ s‡¡tanec del¨¡ ne‘ C, nebudeme t©et¡ krok prov dˆt a s‡¡tanec zkr t¡me
+      cmovc  eax,edi
+      cmovc  edx,clen
+      push   eax
+
+      -- vypo‡¡t me d‚lku kroku 2
+      mov    eax,edx
+      sub    eax,ecx
+
+      -- je-li krat¨¡ s‡¡tanec p©¡li¨ dlouh˜, zkr t¡me ho
+      cmovc  eax,edi
+      cmovc  ecx,edx
+      push   eax
+
+  --------------------
+  -- vlastn¡ v˜po‡et
+  --------------------
+      xor    edx,edx
+      mov    edi,c
+
+      cld
+
+  -- prvn¡ ‡ st v˜po‡tu C=A+B
+  @1: lodsd
+      sbb    eax,[ebx+edx*4]
+      inc    edx
+      stosd
+      loop   @1
+
+  -- druh  ‡ st v˜po‡tu, d le u‘ budeme uva‘ovat jen del¨¡ z obou ‡¡sel A a B
+      pop    ecx
+      jecxz  @3
+  @2: lodsd
+      sbb    eax,0
+      stosd
+      loop   @2
+
+  -- t©et¡ ‡ st v˜po‡tu
+  @3: pop    ecx
+      jecxz  @4
+  -- ulo‘it p©enos p©echoz¡ch v˜po‡t–...
+      mov    eax,0
+      sbb    eax,eax
+      stosd
+      sub    ecx,1
+  -- a vynulov n¡ nevyu‘it‚ ‡ sti v˜sledku
+      xor    eax,eax
+      rep    stosd
+  @4: #end asm;
+  end long_unsigned_sub;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub =
+----------------------------------------------------------------------------------------------------
+begin
+  case a[0]
+    when long_signed_neutral do
+      -- A=0, v˜sledkem rozd¡lu je -B
+      long_signed_assign(c,b);
+      long_signed_neg(c);
+
+    -- A>0
+    when long_signed_positive do
+      case b[0]
+        when long_signed_neutral do
+          -- B=0, v˜sledkem rozd¡lu je A
+          long_signed_assign(c,a);
+
+        when long_signed_positive do
+          -- A>0, B>0, v˜sledkem rozd¡lu je A-B, znam‚nko v˜sledku mus¡me zjistit
+
+        when others do
+          -- A>0, B<0, v˜sledkem rozd¡lu je A+ABS(B), v˜sledek bude kladn˜
+
+        end case;
+
+    -- A<0
+    when others do
+      case b[0]
+        when long_signed_neutral do
+          -- B=0, v˜sledkem rozd¡lu je A
+          long_signed_assign(c,b);
+
+        when long_signed_positive do
+          -- A<0, B>0, v˜sledkem rozd¡lu je -(ABS(A)+ABS(B)), v˜sledek bude z porn˜
+
+        when others do
+          -- A<0, B<0, v˜sledkem rozd¡lu je           B-ABS(A), znam‚nko v˜sledku mus¡me zjistit
+
+        end case;
+    end case;
+  end long_signed_sub;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_sub_assign =
+----------------------------------------------------------------------------------------------------
+begin
+  long_unsigned_sub(a,a,b);
+  end long_unsigned_sub_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_sub_assign =
+----------------------------------------------------------------------------------------------------
+begin
+  long_signed_sub(a,a,b);
+  end long_signed_sub_assign;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_mul = 
+----------------------------------------------------------------------------------------------------
+var
+  alimit           : t_signed;
+  blimit           : t_signed;
+
+begin
+  -- 1. inicializace v˜sledku
+  long_unsigned_load(c,0);
+
+  -- maxim ln¡ d‚lka prvn¡ho operandu, kterou m  smysl se zab˜vat
+  if a:size<c:size then
+    alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1;
+  else
+    alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1;
+    end if;
+
+  -- prov‚st vlastn¡ v˜po‡et
+  for i in 0..alimit loop
+    -- maxim ln¡ d‚lka druh‚ho operandu, kterou m  smysl se zab˜vat
+    if t_signed(b:size) < t_signed(c:size)-i then
+      blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1;
+    else
+      blimit:=t_signed(c:size)-i-1;
+      end if;
+
+    for j in 0..i loop
+      -- p©i‡¡st mal˜ sou‡in
+      -- %%X a co propagace p©enosu?
+      c[t_unsigned(i+j)]+(a[t_unsigned(i)]*b[t_unsigned(j)]);
+      end loop;
+    end loop;
+  end long_unsigned_mul;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_mul = 
+----------------------------------------------------------------------------------------------------
+var
+  alimit           : t_signed;
+  blimit           : t_signed;
+
+begin
+  -- 1. inicializace v˜sledku
+  long_signed_load(c,0);
+
+  -- znam‚nko v˜sledku
+  if a[0]=long_signed_neutral or b[0]=long_signed_neutral then
+    -- jeden z operand– je nulov˜ v˜sledek bude nula
+    return;
+
+  elsif a[0]=b[0] then
+    -- oba operandy maj¡ stejn‚ znam‚nko, v˜sledek bude kladn˜
+    c[0]:=long_signed_positive;
+
+  else
+    -- oba operandy maj¡ rozd¡ln‚ znam‚nko, v˜sledek bude z porn˜
+    c[0]:=long_signed_negative;
+    end if;
+
+  -- maxim ln¡ d‚lka prvn¡ho operandu, kterou m  smysl se zab˜vat
+  if a:size<c:size then
+    alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1-1;
+  else
+    alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1-1;
+    end if;
+
+  -- prov‚st vlastn¡ v˜po‡et
+  for i in 0..alimit loop
+    -- maxim ln¡ d‚lka druh‚ho operandu, kterou m  smysl se zab˜vat
+    if t_signed(b:size) < t_signed(c:size)-i then
+      blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1-1;
+    else
+      blimit:=t_signed(c:size)-i-1-1;
+      end if;
+
+    for j in 0..i loop
+      -- p©i‡¡st mal˜ sou‡in
+      -- %%X a co propagace p©enosu?
+      c[t_unsigned(i+j+1)]+(a[t_unsigned(i)+1]*b[t_unsigned(j)+1]);
+      end loop;
+    end loop;
+  end long_signed_mul;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_div =
+----------------------------------------------------------------------------------------------------
+begin
+  end long_unsigned_div;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_div =
+----------------------------------------------------------------------------------------------------
+begin
+  if b[0]=long_signed_neutral then
+    -- dˆlen¡ nulou
+  elsif a[0]=long_signed_neutral then
+    -- nulov˜ ‡itatel, nulov˜ v˜sledek
+  elsif a[0]=b[0] then
+    -- ‡itatel a jmenovatel maj¡ stejn‚ znam‚nko, v˜sledek bude kladn˜
+  else
+    -- ‡itatel a jmenovatel maj¡ rozd¡ln‚ znam‚nko, v˜sledek bude z porn˜
+    end if;
+  end long_signed_div;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_mod =
+----------------------------------------------------------------------------------------------------
+begin
+  end long_unsigned_mod;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_mod =
+----------------------------------------------------------------------------------------------------
+begin
+  end long_signed_mod;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_is_odd =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=(t_mod_unsigned(a[0]) and 1)<>0;
+  end long_unsigned_is_odd;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_odd =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=(t_mod_unsigned(a[1]) and 1)<>0;
+  end long_signed_is_odd;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_is_even = 
+----------------------------------------------------------------------------------------------------
+begin
+  result:=(t_mod_unsigned(a[0]) and 1)=0;
+  end long_unsigned_is_even;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_even = 
+----------------------------------------------------------------------------------------------------
+begin 
+  result:=(t_mod_unsigned(a[1]) and 1)=0;
+  end long_signed_is_even;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_positive =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=a[0]=long_signed_positive;
+  end long_signed_is_positive;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_negative = 
+----------------------------------------------------------------------------------------------------
+begin
+  result:=a[0]=long_signed_negative;
+  end long_signed_is_negative;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_is_neutral =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=a[0]=long_signed_neutral;
+  end long_signed_is_neutral;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_cmp (
+    A              : in t_long_unsigned;
+    B              : in t_long_unsigned)
+    return t_cmp_result =
+----------------------------------------------------------------------------------------------------
+var
+  -- %%X A‘ bude intern¡ assembler umˆt pracovat s dynamick˜mi atributy promˆnn˜ch, bude tato promˆnn  zbyte‡n 
+  alen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+  blen             : t_mod_unsigned;             -- d‚lka dlouh‚ho ‡¡sla ve wordech
+
+begin
+  -- zmˆ©it obˆ ‡¡sla
+  alen:=t_mod_unsigned(a:size) shr 2;
+  blen:=t_mod_unsigned(b:size) shr 2;
+
+  #syntax asm;
+      -- p©evz¡t a velikosti adresy obou operand–
+      mov   esi,a
+      mov   edi,b
+      mov   ecx,alen
+      mov   edx,blen
+
+      -- p©edpoklad: A (ESI,ECX) je krat¨¡
+      sub   edx,ecx
+      jnc   @1
+
+      -- p©edpoklad se nevyplnil, zamˆn¡me oba operandy a t¡m se p©edpoklad spln¡
+      neg   edx
+      xchg  esi,edi
+      xchg  ecx,edx
+
+      -- nyn¡ je v (ESI,ECX d‚lka krat¨¡ho z porovn van˜ch ‡¡sel), v EDI je za‡ tek del¨¡ho, resp. 
+      -- nekrat¨¡ho ‡¡sla a v EDX je absolutn¡ hodnota rozd¡lu d‚lek porovn van˜ch ‡¡sel
+
+      -- porovn n¡ v d‚lce krat¨¡ho z nich
+  @1: repe  cmpsd
+
+      -- nalezen rozd¡l je¨tˆ p©ed koncem spole‡n‚ ‡ sti
+      jne   @2
+
+      -- po‡ tek obou ‡¡sel je shodn˜, zb˜v  ovˆ©it nulovost zbytku del¨¡ho z porovn van˜ch ‡¡sel
+      mov   ecx,edx
+
+      -- pokud jsou obˆ ‡¡sla stejnˆ dlouh , m–‘eme rovnou skon‡it
+      jcxz  @2
+
+      xor   eax,eax
+      repe  scasd
+
+      -- pokud jsme na¨li nenulu, je to rozd¡l
+      jne   @2
+
+      -- pokud jsme se dostali a‘ sem, jsou porovn van  ‡¡sla shodn 
+--      mov   eax,l_true
+      jmp   @0
+
+  @2: -- ‡¡sla nejsou stejn 
+--      mov   eax,l_false
+
+      -- ulo‘it v˜sledek
+  @0: mov   result,al
+      #end asm;
+  end long_unsigned_cmp;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_eq =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_equal];
+  end long_unsigned_eq;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_ne =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_smaller,cmp_res_greater];
+  end long_unsigned_ne;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_lt =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_smaller];
+  end long_unsigned_lt;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_le =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_smaller,cmp_res_equal];
+  end long_unsigned_le;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_gt =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_greater];
+  end long_unsigned_gt;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_unsigned_ge =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_unsigned_cmp(a,b) in t_cmp_result_set:[cmp_res_greater,cmp_res_equal];
+  end long_unsigned_ge;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_cmp (
+    A              : in t_long_signed;
+    B              : in t_long_signed)
+    return t_cmp_result =
+----------------------------------------------------------------------------------------------------
+begin
+  case a[0]
+    when long_signed_neutral do ;
+      case b[0]
+        when long_signed_neutral do 
+          -- A=0, B=0 -> A=B
+          result:=cmp_res_equal;
+        when long_signed_positive do
+          -- A=0, B>0 -> A<B
+          result:=cmp_res_smaller;
+        when long_signed_negative do
+          -- A=0, B<0 -> A>B
+          result:=cmp_res_greater;
+        end case;
+    when long_signed_positive do ;
+      case b[0]
+        when long_signed_neutral do 
+          -- A>0, B=0 -> A>B
+          result:=cmp_res_greater;
+        when long_signed_positive do
+          -- A>0, B>0 -> ?
+          begin
+            end;
+        when long_signed_negative do
+          -- A>0, B<0 -> A>B
+          result:=cmp_res_greater;
+        end case;
+    when long_signed_negative do ;
+      case b[0]
+        when long_signed_neutral do 
+          -- A<0, B=0 -> A<B
+          result:=cmp_res_smaller;
+        when long_signed_positive do
+          -- A<0, B>0 -> A<B
+          result:=cmp_res_smaller;
+        when long_signed_negative do
+          -- A<0, B<0 -> ?
+          begin
+            end;
+        end case;
+    end case;
+  end long_signed_cmp;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_eq =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_signed_cmp(a,b) in t_cmp_result_set:[cmp_res_equal];
+  end long_signed_eq;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_ne =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_signed_cmp(a,b) in t_cmp_result_set:[cmp_res_smaller,cmp_res_greater];
+  end long_signed_ne;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_lt =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_signed_cmp(a,b) in t_cmp_result_set:[cmp_res_smaller];
+  end long_signed_lt;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_le =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_signed_cmp(a,b) in t_cmp_result_set:[cmp_res_greater];
+  end long_signed_le;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_gt =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=not long_signed_le(a,b);
+  end long_signed_gt;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure long_signed_ge =
+----------------------------------------------------------------------------------------------------
+begin
+  result:=long_signed_cmp(a,b) in t_cmp_result_set:[cmp_res_greater,cmp_res_equal];
+  end long_signed_ge;
+
+
+
+end long_arithmetic;

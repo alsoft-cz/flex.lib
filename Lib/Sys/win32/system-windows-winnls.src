@@ -1,0 +1,2745 @@
+----------------------------------------------------------------------------------------------------
+module winnls =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,winbase,basetsd;
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation  All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     winnls.h
+-- 
+-- Abstract:
+-- 
+--     Procedure declarations, constant definitions, and macros for the
+--     NLS component.
+-- 
+-- --*/
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Constants
+-- 
+--  Define all constants for the NLS component here.
+-- 
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  String Length Maximums.
+-- 
+const
+  MAX_LEADBYTES     = 12;
+
+const
+  MAX_DEFAULTCHAR   = 2;
+
+-- 
+--  MBCS and Unicode Translation Flags.
+-- 
+const
+  MB_PRECOMPOSED    = $01;
+
+const
+  MB_COMPOSITE      = $02;
+
+const
+  MB_USEGLYPHCHARS  = $04;
+
+const
+  MB_ERR_INVALID_CHARS= $08;
+
+const
+  WC_COMPOSITECHECK = $0200;
+
+const
+  WC_DISCARDNS      = $10;
+
+const
+  WC_SEPCHARS       = $20;
+
+const
+  WC_DEFAULTCHAR    = $40;
+
+const
+  WC_NO_BEST_FIT_CHARS= $0400;
+
+-- 
+--  Character Type Flags.
+-- 
+const
+  CT_CTYPE1         = $01;
+
+const
+  CT_CTYPE2         = $02;
+
+const
+  CT_CTYPE3         = $04;
+
+-- 
+--  CType 1 Flag Bits.
+-- 
+const
+  C1_UPPER          = $01;
+
+const
+  C1_LOWER          = $02;
+
+const
+  C1_DIGIT          = $04;
+
+const
+  C1_SPACE          = $08;
+
+const
+  C1_PUNCT          = $10;
+
+const
+  C1_CNTRL          = $20;
+
+const
+  C1_BLANK          = $40;
+
+const
+  C1_XDIGIT         = $80;
+
+const
+  C1_ALPHA          = $0100;
+
+const
+  C1_DEFINED        = $0200;
+
+-- 
+--  CType 2 Flag Bits.
+-- 
+const
+  C2_LEFTTORIGHT    = $01;
+
+const
+  C2_RIGHTTOLEFT    = $02;
+
+const
+  C2_EUROPENUMBER   = $03;
+
+const
+  C2_EUROPESEPARATOR= $04;
+
+const
+  C2_EUROPETERMINATOR= $05;
+
+const
+  C2_ARABICNUMBER   = $06;
+
+const
+  C2_COMMONSEPARATOR= $07;
+
+const
+  C2_BLOCKSEPARATOR = $08;
+
+const
+  C2_SEGMENTSEPARATOR= $09;
+
+const
+  C2_WHITESPACE     = $0A;
+
+const
+  C2_OTHERNEUTRAL   = $0B;
+
+const
+  C2_NOTAPPLICABLE  = $00;
+
+-- 
+--  CType 3 Flag Bits.
+-- 
+const
+  C3_NONSPACING     = $01;
+
+const
+  C3_DIACRITIC      = $02;
+
+const
+  C3_VOWELMARK      = $04;
+
+const
+  C3_SYMBOL         = $08;
+
+const
+  C3_KATAKANA       = $10;
+
+const
+  C3_HIRAGANA       = $20;
+
+const
+  C3_HALFWIDTH      = $40;
+
+const
+  C3_FULLWIDTH      = $80;
+
+const
+  C3_IDEOGRAPH      = $0100;
+
+const
+  C3_KASHIDA        = $0200;
+
+const
+  C3_LEXICAL        = $0400;
+
+const
+  C3_ALPHA          = $8000;
+
+const
+  C3_NOTAPPLICABLE  = $00;
+
+-- 
+--  String Flags.
+-- 
+const
+  NORM_IGNORECASE   = $01;
+
+const
+  NORM_IGNORENONSPACE= $02;
+
+const
+  NORM_IGNORESYMBOLS= $04;
+
+const
+  NORM_IGNOREKANATYPE= $10000;
+
+const
+  NORM_IGNOREWIDTH  = $20000;
+
+-- 
+--  Locale Independent Mapping Flags.
+-- 
+const
+  MAP_FOLDCZONE     = $10;
+
+const
+  MAP_PRECOMPOSED   = $20;
+
+const
+  MAP_COMPOSITE     = $40;
+
+const
+  MAP_FOLDDIGITS    = $80;
+
+const
+  MAP_EXPAND_LIGATURES= $2000;
+
+-- 
+--  Locale Dependent Mapping Flags.
+-- 
+const
+  LCMAP_LOWERCASE   = $0100;
+
+const
+  LCMAP_UPPERCASE   = $0200;
+
+const
+  LCMAP_SORTKEY     = $0400;
+
+const
+  LCMAP_BYTEREV     = $0800;
+
+const
+  LCMAP_HIRAGANA    = $100000;
+
+const
+  LCMAP_KATAKANA    = $200000;
+
+const
+  LCMAP_HALFWIDTH   = $400000;
+
+const
+  LCMAP_FULLWIDTH   = $800000;
+
+const
+  LCMAP_LINGUISTIC_CASING= $1000000;
+
+const
+  LCMAP_SIMPLIFIED_CHINESE= $2000000;
+
+const
+  LCMAP_TRADITIONAL_CHINESE= $4000000;
+
+-- 
+--  Language Group Enumeration Flags.
+-- 
+const
+  LGRPID_INSTALLED  = $01;
+
+const
+  LGRPID_SUPPORTED  = $02;
+
+-- 
+--  Locale Enumeration Flags.
+-- 
+const
+  LCID_INSTALLED    = $01;
+
+const
+  LCID_SUPPORTED    = $02;
+
+const
+  LCID_ALTERNATE_SORTS= $04;
+
+-- 
+--  Code Page Enumeration Flags.
+-- 
+const
+  CP_INSTALLED      = $01;
+
+const
+  CP_SUPPORTED      = $02;
+
+-- 
+--  Sorting Flags.
+-- 
+--  WORD Sort: culturally correct sort
+--  hyphen and apostrophe are special cased
+--  example: "coop" and "co-op" will sort together in a list
+-- 
+--  co_op <------- underscore (symbol)
+--  coat
+--  comb
+--  coop
+--  co-op <------- hyphen (punctuation)
+--  cork
+--  went
+--  were
+--  we're <------- apostrophe (punctuation)
+-- 
+-- 
+--  STRING Sort: hyphen and apostrophe will sort with all other symbols
+-- 
+--  co-op <------- hyphen (punctuation)
+--  co_op <------- underscore (symbol)
+--  coat
+--  comb
+--  coop
+--  cork
+--  we're <------- apostrophe (punctuation)
+--  went
+--  were
+-- 
+const
+  SORT_STRINGSORT   = $1000;
+
+-- 
+--  Compare String Return Values.
+-- 
+const
+  CSTR_LESS_THAN    = 1;
+
+const
+  CSTR_EQUAL        = 2;
+
+const
+  CSTR_GREATER_THAN = 3;
+
+-- 
+--  Code Page Default Values.
+-- 
+const
+  CP_ACP            = 0;
+
+const
+  CP_OEMCP          = 1;
+
+const
+  CP_MACCP          = 2;
+
+const
+  CP_THREAD_ACP     = 3;
+
+const
+  CP_SYMBOL         = 42;
+
+const
+  CP_UTF7           = 65000;
+
+const
+  CP_UTF8           = 65001;
+
+-- 
+--  Country/Region Codes.
+-- 
+const
+  CTRY_DEFAULT      = 0;
+
+const
+  CTRY_ALBANIA      = 355;
+
+const
+  CTRY_ALGERIA      = 213;
+
+const
+  CTRY_ARGENTINA    = 54;
+
+const
+  CTRY_ARMENIA      = 374;
+
+const
+  CTRY_AUSTRALIA    = 61;
+
+const
+  CTRY_AUSTRIA      = 43;
+
+const
+  CTRY_AZERBAIJAN   = 994;
+
+const
+  CTRY_BAHRAIN      = 973;
+
+const
+  CTRY_BELARUS      = 375;
+
+const
+  CTRY_BELGIUM      = 32;
+
+const
+  CTRY_BELIZE       = 501;
+
+const
+  CTRY_BOLIVIA      = 591;
+
+const
+  CTRY_BRAZIL       = 55;
+
+const
+  CTRY_BRUNEI_DARUSSALAM= 673;
+
+const
+  CTRY_BULGARIA     = 359;
+
+const
+  CTRY_CANADA       = 2;
+
+const
+  CTRY_CARIBBEAN    = 1;
+
+const
+  CTRY_CHILE        = 56;
+
+const
+  CTRY_COLOMBIA     = 57;
+
+const
+  CTRY_COSTA_RICA   = 506;
+
+const
+  CTRY_CROATIA      = 385;
+
+const
+  CTRY_CZECH        = 420;
+
+const
+  CTRY_DENMARK      = 45;
+
+const
+  CTRY_DOMINICAN_REPUBLIC= 1;
+
+const
+  CTRY_ECUADOR      = 593;
+
+const
+  CTRY_EGYPT        = 20;
+
+const
+  CTRY_EL_SALVADOR  = 503;
+
+const
+  CTRY_ESTONIA      = 372;
+
+const
+  CTRY_FAEROE_ISLANDS= 298;
+
+const
+  CTRY_FINLAND      = 358;
+
+const
+  CTRY_FRANCE       = 33;
+
+const
+  CTRY_GEORGIA      = 995;
+
+const
+  CTRY_GERMANY      = 49;
+
+const
+  CTRY_GREECE       = 30;
+
+const
+  CTRY_GUATEMALA    = 502;
+
+const
+  CTRY_HONDURAS     = 504;
+
+const
+  CTRY_HONG_KONG    = 852;
+
+const
+  CTRY_HUNGARY      = 36;
+
+const
+  CTRY_ICELAND      = 354;
+
+const
+  CTRY_INDIA        = 91;
+
+const
+  CTRY_INDONESIA    = 62;
+
+const
+  CTRY_IRAN         = 981;
+
+const
+  CTRY_IRAQ         = 964;
+
+const
+  CTRY_IRELAND      = 353;
+
+const
+  CTRY_ISRAEL       = 972;
+
+const
+  CTRY_ITALY        = 39;
+
+const
+  CTRY_JAMAICA      = 1;
+
+const
+  CTRY_JAPAN        = 81;
+
+const
+  CTRY_JORDAN       = 962;
+
+const
+  CTRY_KAZAKSTAN    = 7;
+
+const
+  CTRY_KENYA        = 254;
+
+const
+  CTRY_KUWAIT       = 965;
+
+const
+  CTRY_KYRGYZSTAN   = 996;
+
+const
+  CTRY_LATVIA       = 371;
+
+const
+  CTRY_LEBANON      = 961;
+
+const
+  CTRY_LIBYA        = 218;
+
+const
+  CTRY_LIECHTENSTEIN= 41;
+
+const
+  CTRY_LITHUANIA    = 370;
+
+const
+  CTRY_LUXEMBOURG   = 352;
+
+const
+  CTRY_MACAU        = 853;
+
+const
+  CTRY_MACEDONIA    = 389;
+
+const
+  CTRY_MALAYSIA     = 60;
+
+const
+  CTRY_MALDIVES     = 960;
+
+const
+  CTRY_MEXICO       = 52;
+
+const
+  CTRY_MONACO       = 33;
+
+const
+  CTRY_MONGOLIA     = 976;
+
+const
+  CTRY_MOROCCO      = 212;
+
+const
+  CTRY_NETHERLANDS  = 31;
+
+const
+  CTRY_NEW_ZEALAND  = 64;
+
+const
+  CTRY_NICARAGUA    = 505;
+
+const
+  CTRY_NORWAY       = 47;
+
+const
+  CTRY_OMAN         = 968;
+
+const
+  CTRY_PAKISTAN     = 92;
+
+const
+  CTRY_PANAMA       = 507;
+
+const
+  CTRY_PARAGUAY     = 595;
+
+const
+  CTRY_PERU         = 51;
+
+const
+  CTRY_PHILIPPINES  = 63;
+
+const
+  CTRY_POLAND       = 48;
+
+const
+  CTRY_PORTUGAL     = 351;
+
+const
+  CTRY_PRCHINA      = 86;
+
+const
+  CTRY_PUERTO_RICO  = 1;
+
+const
+  CTRY_QATAR        = 974;
+
+const
+  CTRY_ROMANIA      = 40;
+
+const
+  CTRY_RUSSIA       = 7;
+
+const
+  CTRY_SAUDI_ARABIA = 966;
+
+const
+  CTRY_SERBIA       = 381;
+
+const
+  CTRY_SINGAPORE    = 65;
+
+const
+  CTRY_SLOVAK       = 421;
+
+const
+  CTRY_SLOVENIA     = 386;
+
+const
+  CTRY_SOUTH_AFRICA = 27;
+
+const
+  CTRY_SOUTH_KOREA  = 82;
+
+const
+  CTRY_SPAIN        = 34;
+
+const
+  CTRY_SWEDEN       = 46;
+
+const
+  CTRY_SWITZERLAND  = 41;
+
+const
+  CTRY_SYRIA        = 963;
+
+const
+  CTRY_TAIWAN       = 886;
+
+const
+  CTRY_TATARSTAN    = 7;
+
+const
+  CTRY_THAILAND     = 66;
+
+const
+  CTRY_TRINIDAD_Y_TOBAGO= 1;
+
+const
+  CTRY_TUNISIA      = 216;
+
+const
+  CTRY_TURKEY       = 90;
+
+const
+  CTRY_UAE          = 971;
+
+const
+  CTRY_UKRAINE      = 380;
+
+const
+  CTRY_UNITED_KINGDOM= 44;
+
+const
+  CTRY_UNITED_STATES= 1;
+
+const
+  CTRY_URUGUAY      = 598;
+
+const
+  CTRY_UZBEKISTAN   = 7;
+
+const
+  CTRY_VENEZUELA    = 58;
+
+const
+  CTRY_VIET_NAM     = 84;
+
+const
+  CTRY_YEMEN        = 967;
+
+const
+  CTRY_ZIMBABWE     = 263;
+
+-- 
+--  Locale Types.
+-- 
+--  These types are used for the GetLocaleInfo NLS API routine.
+--  Some of these types are also used for the SetLocaleInfo NLS API routine.
+-- 
+-- 
+--  The following LCTypes may be used in combination with any other LCTypes.
+-- 
+--  LOCALE_NOUSEROVERRIDE is also used in GetTimeFormat and
+--  GetDateFormat.
+-- 
+--  LOCALE_USE_CP_ACP is used in many of the A (Ansi) apis that need
+--  to do string translation.
+-- 
+--  LOCALE_RETURN_NUMBER will return the result from GetLocaleInfo as a
+--  number instead of a string. This flag is only valid for the LCTypes
+--  beginning with LOCALE_I.
+-- 
+const
+  LOCALE_NOUSEROVERRIDE= $80000000;
+
+const
+  LOCALE_USE_CP_ACP = $40000000;
+
+const
+  LOCALE_RETURN_NUMBER= $20000000;
+
+-- 
+--  The following LCTypes are mutually exclusive in that they may NOT
+--  be used in combination with each other.
+-- 
+const
+  LOCALE_ILANGUAGE  = $01;
+
+const
+  LOCALE_SLANGUAGE  = $02;
+
+const
+  LOCALE_SENGLANGUAGE= $1001;
+
+const
+  LOCALE_SABBREVLANGNAME= $03;
+
+const
+  LOCALE_SNATIVELANGNAME= $04;
+
+const
+  LOCALE_ICOUNTRY   = $05;
+
+const
+  LOCALE_SCOUNTRY   = $06;
+
+const
+  LOCALE_SENGCOUNTRY= $1002;
+
+const
+  LOCALE_SABBREVCTRYNAME= $07;
+
+const
+  LOCALE_SNATIVECTRYNAME= $08;
+
+const
+  LOCALE_IDEFAULTLANGUAGE= $09;
+
+const
+  LOCALE_IDEFAULTCOUNTRY= $0A;
+
+const
+  LOCALE_IDEFAULTCODEPAGE= $0B;
+
+const
+  LOCALE_IDEFAULTANSICODEPAGE= $1004;
+
+const
+  LOCALE_IDEFAULTMACCODEPAGE= $1011;
+
+const
+  LOCALE_SLIST      = $0C;
+
+const
+  LOCALE_IMEASURE   = $0D;
+
+const
+  LOCALE_SDECIMAL   = $0E;
+
+const
+  LOCALE_STHOUSAND  = $0F;
+
+const
+  LOCALE_SGROUPING  = $10;
+
+const
+  LOCALE_IDIGITS    = $11;
+
+const
+  LOCALE_ILZERO     = $12;
+
+const
+  LOCALE_INEGNUMBER = $1010;
+
+const
+  LOCALE_SNATIVEDIGITS= $13;
+
+const
+  LOCALE_SCURRENCY  = $14;
+
+const
+  LOCALE_SINTLSYMBOL= $15;
+
+const
+  LOCALE_SMONDECIMALSEP= $16;
+
+const
+  LOCALE_SMONTHOUSANDSEP= $17;
+
+const
+  LOCALE_SMONGROUPING= $18;
+
+const
+  LOCALE_ICURRDIGITS= $19;
+
+const
+  LOCALE_IINTLCURRDIGITS= $1A;
+
+const
+  LOCALE_ICURRENCY  = $1B;
+
+const
+  LOCALE_INEGCURR   = $1C;
+
+const
+  LOCALE_SDATE      = $1D;
+
+const
+  LOCALE_STIME      = $1E;
+
+const
+  LOCALE_SSHORTDATE = $1F;
+
+const
+  LOCALE_SLONGDATE  = $20;
+
+const
+  LOCALE_STIMEFORMAT= $1003;
+
+const
+  LOCALE_IDATE      = $21;
+
+const
+  LOCALE_ILDATE     = $22;
+
+const
+  LOCALE_ITIME      = $23;
+
+const
+  LOCALE_ITIMEMARKPOSN= $1005;
+
+const
+  LOCALE_ICENTURY   = $24;
+
+const
+  LOCALE_ITLZERO    = $25;
+
+const
+  LOCALE_IDAYLZERO  = $26;
+
+const
+  LOCALE_IMONLZERO  = $27;
+
+const
+  LOCALE_S1159      = $28;
+
+const
+  LOCALE_S2359      = $29;
+
+const
+  LOCALE_ICALENDARTYPE= $1009;
+
+const
+  LOCALE_IOPTIONALCALENDAR= $100B;
+
+const
+  LOCALE_IFIRSTDAYOFWEEK= $100C;
+
+const
+  LOCALE_IFIRSTWEEKOFYEAR= $100D;
+
+const
+  LOCALE_SDAYNAME1  = $2A;
+
+const
+  LOCALE_SDAYNAME2  = $2B;
+
+const
+  LOCALE_SDAYNAME3  = $2C;
+
+const
+  LOCALE_SDAYNAME4  = $2D;
+
+const
+  LOCALE_SDAYNAME5  = $2E;
+
+const
+  LOCALE_SDAYNAME6  = $2F;
+
+const
+  LOCALE_SDAYNAME7  = $30;
+
+const
+  LOCALE_SABBREVDAYNAME1= $31;
+
+const
+  LOCALE_SABBREVDAYNAME2= $32;
+
+const
+  LOCALE_SABBREVDAYNAME3= $33;
+
+const
+  LOCALE_SABBREVDAYNAME4= $34;
+
+const
+  LOCALE_SABBREVDAYNAME5= $35;
+
+const
+  LOCALE_SABBREVDAYNAME6= $36;
+
+const
+  LOCALE_SABBREVDAYNAME7= $37;
+
+const
+  LOCALE_SMONTHNAME1= $38;
+
+const
+  LOCALE_SMONTHNAME2= $39;
+
+const
+  LOCALE_SMONTHNAME3= $3A;
+
+const
+  LOCALE_SMONTHNAME4= $3B;
+
+const
+  LOCALE_SMONTHNAME5= $3C;
+
+const
+  LOCALE_SMONTHNAME6= $3D;
+
+const
+  LOCALE_SMONTHNAME7= $3E;
+
+const
+  LOCALE_SMONTHNAME8= $3F;
+
+const
+  LOCALE_SMONTHNAME9= $40;
+
+const
+  LOCALE_SMONTHNAME10= $41;
+
+const
+  LOCALE_SMONTHNAME11= $42;
+
+const
+  LOCALE_SMONTHNAME12= $43;
+
+const
+  LOCALE_SMONTHNAME13= $100E;
+
+const
+  LOCALE_SABBREVMONTHNAME1= $44;
+
+const
+  LOCALE_SABBREVMONTHNAME2= $45;
+
+const
+  LOCALE_SABBREVMONTHNAME3= $46;
+
+const
+  LOCALE_SABBREVMONTHNAME4= $47;
+
+const
+  LOCALE_SABBREVMONTHNAME5= $48;
+
+const
+  LOCALE_SABBREVMONTHNAME6= $49;
+
+const
+  LOCALE_SABBREVMONTHNAME7= $4A;
+
+const
+  LOCALE_SABBREVMONTHNAME8= $4B;
+
+const
+  LOCALE_SABBREVMONTHNAME9= $4C;
+
+const
+  LOCALE_SABBREVMONTHNAME10= $4D;
+
+const
+  LOCALE_SABBREVMONTHNAME11= $4E;
+
+const
+  LOCALE_SABBREVMONTHNAME12= $4F;
+
+const
+  LOCALE_SABBREVMONTHNAME13= $100F;
+
+const
+  LOCALE_SPOSITIVESIGN= $50;
+
+const
+  LOCALE_SNEGATIVESIGN= $51;
+
+const
+  LOCALE_IPOSSIGNPOSN= $52;
+
+const
+  LOCALE_INEGSIGNPOSN= $53;
+
+const
+  LOCALE_IPOSSYMPRECEDES= $54;
+
+const
+  LOCALE_IPOSSEPBYSPACE= $55;
+
+const
+  LOCALE_INEGSYMPRECEDES= $56;
+
+const
+  LOCALE_INEGSEPBYSPACE= $57;
+
+const
+  LOCALE_FONTSIGNATURE= $58;
+
+const
+  LOCALE_SISO639LANGNAME= $59;
+
+const
+  LOCALE_SISO3166CTRYNAME= $5A;
+
+const
+  LOCALE_IDEFAULTEBCDICCODEPAGE= $1012;
+
+const
+  LOCALE_IPAPERSIZE = $100A;
+
+const
+  LOCALE_SENGCURRNAME= $1007;
+
+const
+  LOCALE_SNATIVECURRNAME= $1008;
+
+const
+  LOCALE_SYEARMONTH = $1006;
+
+const
+  LOCALE_SSORTNAME  = $1013;
+
+const
+  LOCALE_IDIGITSUBSTITUTION= $1014;
+
+-- 
+--  Time Flags for GetTimeFormat.
+-- 
+const
+  TIME_NOMINUTESORSECONDS= $01;
+
+const
+  TIME_NOSECONDS    = $02;
+
+const
+  TIME_NOTIMEMARKER = $04;
+
+const
+  TIME_FORCE24HOURFORMAT= $08;
+
+-- 
+--  Date Flags for GetDateFormat.
+-- 
+const
+  DATE_SHORTDATE    = $01;
+
+const
+  DATE_LONGDATE     = $02;
+
+const
+  DATE_USE_ALT_CALENDAR= $04;
+
+const
+  DATE_YEARMONTH    = $08;
+
+const
+  DATE_LTRREADING   = $10;
+
+const
+  DATE_RTLREADING   = $20;
+
+-- 
+--  Calendar Types.
+-- 
+--  These types are used for the EnumCalendarInfo and GetCalendarInfo
+--  NLS API routines.
+--  Some of these types are also used for the SetCalendarInfo NLS API
+--  routine.
+-- 
+-- 
+--  The following CalTypes may be used in combination with any other CalTypes.
+-- 
+--  CAL_NOUSEROVERRIDE
+-- 
+--  CAL_USE_CP_ACP is used in the A (Ansi) apis that need to do string
+--  translation.
+-- 
+--  CAL_RETURN_NUMBER will return the result from GetCalendarInfo as a
+--  number instead of a string. This flag is only valid for the CalTypes
+--  beginning with CAL_I.
+-- 
+-- 
+--  The following CalTypes are mutually exclusive in that they may NOT
+--  be used in combination with each other.
+-- 
+const
+  CAL_ICALINTVALUE  = $01;
+
+const
+  CAL_SCALNAME      = $02;
+
+const
+  CAL_IYEAROFFSETRANGE= $03;
+
+const
+  CAL_SERASTRING    = $04;
+
+const
+  CAL_SSHORTDATE    = $05;
+
+const
+  CAL_SLONGDATE     = $06;
+
+const
+  CAL_SDAYNAME1     = $07;
+
+const
+  CAL_SDAYNAME2     = $08;
+
+const
+  CAL_SDAYNAME3     = $09;
+
+const
+  CAL_SDAYNAME4     = $0A;
+
+const
+  CAL_SDAYNAME5     = $0B;
+
+const
+  CAL_SDAYNAME6     = $0C;
+
+const
+  CAL_SDAYNAME7     = $0D;
+
+const
+  CAL_SABBREVDAYNAME1= $0E;
+
+const
+  CAL_SABBREVDAYNAME2= $0F;
+
+const
+  CAL_SABBREVDAYNAME3= $10;
+
+const
+  CAL_SABBREVDAYNAME4= $11;
+
+const
+  CAL_SABBREVDAYNAME5= $12;
+
+const
+  CAL_SABBREVDAYNAME6= $13;
+
+const
+  CAL_SABBREVDAYNAME7= $14;
+
+const
+  CAL_SMONTHNAME1   = $15;
+
+const
+  CAL_SMONTHNAME2   = $16;
+
+const
+  CAL_SMONTHNAME3   = $17;
+
+const
+  CAL_SMONTHNAME4   = $18;
+
+const
+  CAL_SMONTHNAME5   = $19;
+
+const
+  CAL_SMONTHNAME6   = $1A;
+
+const
+  CAL_SMONTHNAME7   = $1B;
+
+const
+  CAL_SMONTHNAME8   = $1C;
+
+const
+  CAL_SMONTHNAME9   = $1D;
+
+const
+  CAL_SMONTHNAME10  = $1E;
+
+const
+  CAL_SMONTHNAME11  = $1F;
+
+const
+  CAL_SMONTHNAME12  = $20;
+
+const
+  CAL_SMONTHNAME13  = $21;
+
+const
+  CAL_SABBREVMONTHNAME1= $22;
+
+const
+  CAL_SABBREVMONTHNAME2= $23;
+
+const
+  CAL_SABBREVMONTHNAME3= $24;
+
+const
+  CAL_SABBREVMONTHNAME4= $25;
+
+const
+  CAL_SABBREVMONTHNAME5= $26;
+
+const
+  CAL_SABBREVMONTHNAME6= $27;
+
+const
+  CAL_SABBREVMONTHNAME7= $28;
+
+const
+  CAL_SABBREVMONTHNAME8= $29;
+
+const
+  CAL_SABBREVMONTHNAME9= $2A;
+
+const
+  CAL_SABBREVMONTHNAME10= $2B;
+
+const
+  CAL_SABBREVMONTHNAME11= $2C;
+
+const
+  CAL_SABBREVMONTHNAME12= $2D;
+
+const
+  CAL_SABBREVMONTHNAME13= $2E;
+
+const
+  CAL_SYEARMONTH    = $2F;
+
+const
+  CAL_ITWODIGITYEARMAX= $30;
+
+-- 
+--  Calendar Enumeration Value.
+-- 
+const
+  ENUM_ALL_CALENDARS= $FFFFFFFF;
+
+-- 
+--  Calendar ID Values.
+-- 
+const
+  CAL_GREGORIAN     = 1;
+
+const
+  CAL_GREGORIAN_US  = 2;
+
+const
+  CAL_JAPAN         = 3;
+
+const
+  CAL_TAIWAN        = 4;
+
+const
+  CAL_KOREA         = 5;
+
+const
+  CAL_HIJRI         = 6;
+
+const
+  CAL_THAI          = 7;
+
+const
+  CAL_HEBREW        = 8;
+
+const
+  CAL_GREGORIAN_ME_FRENCH= 9;
+
+const
+  CAL_GREGORIAN_ARABIC= 10;
+
+const
+  CAL_GREGORIAN_XLIT_ENGLISH= 11;
+
+const
+  CAL_GREGORIAN_XLIT_FRENCH= 12;
+
+-- 
+--  Language Group ID Values.
+-- 
+const
+  LGRPID_WESTERN_EUROPE= $01;
+
+const
+  LGRPID_CENTRAL_EUROPE= $02;
+
+const
+  LGRPID_BALTIC     = $03;
+
+const
+  LGRPID_GREEK      = $04;
+
+const
+  LGRPID_CYRILLIC   = $05;
+
+const
+  LGRPID_TURKISH    = $06;
+
+const
+  LGRPID_JAPANESE   = $07;
+
+const
+  LGRPID_KOREAN     = $08;
+
+const
+  LGRPID_TRADITIONAL_CHINESE= $09;
+
+const
+  LGRPID_SIMPLIFIED_CHINESE= $0A;
+
+const
+  LGRPID_THAI       = $0B;
+
+const
+  LGRPID_HEBREW     = $0C;
+
+const
+  LGRPID_ARABIC     = $0D;
+
+const
+  LGRPID_VIETNAMESE = $0E;
+
+const
+  LGRPID_INDIC      = $0F;
+
+const
+  LGRPID_GEORGIAN   = $10;
+
+const
+  LGRPID_ARMENIAN   = $11;
+
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Typedefs
+-- 
+--  Define all types for the NLS component here.
+-- 
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Language Group ID.
+-- 
+type
+LGRPID            = DWORD;
+-- 
+--  Locale type constant.
+-- 
+type
+t_LCTYPE          = DWORD;
+-- 
+--  Calendar type constant.
+-- 
+type
+CALTYPE           = DWORD;
+-- 
+--  Calendar ID.
+-- 
+type
+CALID             = DWORD;
+-- 
+--  CP Info.
+-- 
+type
+  _cpinfo           = record
+MaxCharSize     : UINT;
+DefaultChar     : array 0..MAX_DEFAULTCHAR-1 of BYTE;
+LeadByte        : array 0..MAX_LEADBYTES-1 of BYTE;
+  end record;
+  CPINFO            = _cpinfo;
+  p_CPINFO          = ^_cpinfo;
+
+type
+  _cpinfoexA        = record
+MaxCharSize     : UINT;
+DefaultChar     : array 0..MAX_DEFAULTCHAR-1 of BYTE;
+LeadByte        : array 0..MAX_LEADBYTES-1 of BYTE;
+UnicodeDefaultChar : WCHAR;
+CodePage        : UINT;
+CodePageName    : array 0..MAX_PATH-1 of CHAR;
+  end record;
+  CPINFOEXA         = _cpinfoexA;
+  LPCPINFOEXA       = ^_cpinfoexA;
+
+type
+  _cpinfoexW        = record
+MaxCharSize     : UINT;
+DefaultChar     : array 0..MAX_DEFAULTCHAR-1 of BYTE;
+LeadByte        : array 0..MAX_LEADBYTES-1 of BYTE;
+UnicodeDefaultChar : WCHAR;
+CodePage        : UINT;
+CodePageName    : array 0..MAX_PATH-1 of WCHAR;
+  end record;
+  CPINFOEXW         = _cpinfoexW;
+  LPCPINFOEXW       = ^_cpinfoexW;
+
+#if #declared UNICODE; then;
+type
+CPINFOEX          = CPINFOEXW;
+type
+LPCPINFOEX        = LPCPINFOEXW;
+#else;
+type
+CPINFOEX          = CPINFOEXA;
+type
+LPCPINFOEX        = LPCPINFOEXA;
+#end if;
+
+-- 
+--  Number format.
+-- 
+type
+  _numberfmtA       = record
+NumDigits       : UINT;
+LeadingZero     : UINT;
+Grouping        : UINT;
+lpDecimalSep    : LPSTR;
+lpThousandSep   : LPSTR;
+NegativeOrder   : UINT;
+  end record;
+  NUMBERFMTA        = _numberfmtA;
+  LPNUMBERFMTA      = ^_numberfmtA;
+
+type
+  _numberfmtW       = record
+NumDigits       : UINT;
+LeadingZero     : UINT;
+Grouping        : UINT;
+lpDecimalSep    : LPWSTR;
+lpThousandSep   : LPWSTR;
+NegativeOrder   : UINT;
+  end record;
+  NUMBERFMTW        = _numberfmtW;
+  LPNUMBERFMTW      = ^_numberfmtW;
+
+#if #declared UNICODE; then;
+type
+NUMBERFMT         = NUMBERFMTW;
+type
+LPNUMBERFMT       = LPNUMBERFMTW;
+#else;
+type
+NUMBERFMT         = NUMBERFMTA;
+type
+LPNUMBERFMT       = LPNUMBERFMTA;
+#end if;
+
+-- 
+--  Currency format.
+-- 
+type
+  _currencyfmtA     = record
+NumDigits       : UINT;
+LeadingZero     : UINT;
+Grouping        : UINT;
+lpDecimalSep    : LPSTR;
+lpThousandSep   : LPSTR;
+NegativeOrder   : UINT;
+PositiveOrder   : UINT;
+lpCurrencySymbol : LPSTR;
+  end record;
+  CURRENCYFMTA      = _currencyfmtA;
+  LPCURRENCYFMTA    = ^_currencyfmtA;
+
+type
+  _currencyfmtW     = record
+NumDigits       : UINT;
+LeadingZero     : UINT;
+Grouping        : UINT;
+lpDecimalSep    : LPWSTR;
+lpThousandSep   : LPWSTR;
+NegativeOrder   : UINT;
+PositiveOrder   : UINT;
+lpCurrencySymbol : LPWSTR;
+  end record;
+  CURRENCYFMTW      = _currencyfmtW;
+  LPCURRENCYFMTW    = ^_currencyfmtW;
+
+#if #declared UNICODE; then;
+type
+CURRENCYFMT       = CURRENCYFMTW;
+type
+LPCURRENCYFMT     = LPCURRENCYFMTW;
+#else;
+type
+CURRENCYFMT       = CURRENCYFMTA;
+type
+LPCURRENCYFMT     = LPCURRENCYFMTA;
+#end if;
+
+-- 
+--  NLS function capabilities
+-- 
+type
+SYSNLS_FUNCTION   = enum
+    COMPARE_STRING  for ord use $01;
+  end enum for size use 4;
+type
+NLS_FUNCTION      = DWORD;
+-- 
+--  NLS version structure.
+-- 
+type
+  _nlsversioninfo   = record
+dwNLSVersionInfoSize : DWORD;
+dwNLSVersion    : DWORD;
+dwDefinedVersion : DWORD;
+  end record;
+  NLSVERSIONINFO    = _nlsversioninfo;
+  LPNLSVERSIONINFO  = ^_nlsversioninfo;
+
+-- 
+--  GEO defines
+-- 
+type
+GEOID             = LONG;
+type
+GEOTYPE           = DWORD;
+type
+GEOCLASS          = DWORD;
+-- 
+--  GEO information types for clients to query
+-- 
+type
+SYSGEOTYPE        = enum
+    GEO_NATION      for ord use $01;
+    GEO_LATITUDE    for ord use $02;
+    GEO_LONGITUDE   for ord use $03;
+    GEO_ISO2        for ord use $04;
+    GEO_ISO3        for ord use $05;
+    GEO_RFC1766     for ord use $06;
+    GEO_LCID        for ord use $07;
+    GEO_FRIENDLYNAME for ord use $08;
+    GEO_OFFICIALNAME for ord use $09;
+    GEO_TIMEZONES   for ord use $0A;
+    GEO_OFFICIALLANGUAGES for ord use $0B;
+  end enum for size use 4;
+-- 
+--  More GEOCLASS defines will be listed here
+-- 
+type
+SYSGEOCLASS       = enum
+    GEOCLASS_NATION for ord use 16;
+    GEOCLASS_REGION for ord use 14;
+  end enum for size use 4;
+-- 
+--  Enumeration function constants.
+-- 
+type
+LANGUAGEGROUP_ENUMPROCA = FARPROC;
+type
+LANGGROUPLOCALE_ENUMPROCA = FARPROC;
+type
+UILANGUAGE_ENUMPROCA = FARPROC;
+type
+LOCALE_ENUMPROCA  = FARPROC;
+type
+CODEPAGE_ENUMPROCA = FARPROC;
+type
+DATEFMT_ENUMPROCA = FARPROC;
+type
+DATEFMT_ENUMPROCEXA = FARPROC;
+type
+TIMEFMT_ENUMPROCA = FARPROC;
+type
+CALINFO_ENUMPROCA = FARPROC;
+type
+CALINFO_ENUMPROCEXA = FARPROC;
+type
+GEO_ENUMPROC      = FARPROC;
+type
+LANGUAGEGROUP_ENUMPROCW = FARPROC;
+type
+LANGGROUPLOCALE_ENUMPROCW = FARPROC;
+type
+UILANGUAGE_ENUMPROCW = FARPROC;
+type
+LOCALE_ENUMPROCW  = FARPROC;
+type
+CODEPAGE_ENUMPROCW = FARPROC;
+type
+DATEFMT_ENUMPROCW = FARPROC;
+type
+DATEFMT_ENUMPROCEXW = FARPROC;
+type
+TIMEFMT_ENUMPROCW = FARPROC;
+type
+CALINFO_ENUMPROCW = FARPROC;
+type
+CALINFO_ENUMPROCEXW = FARPROC;
+#if #declared UNICODE; then;
+#template LANGUAGEGROUP_ENUMPROC;
+  LANGUAGEGROUP_ENUMPROCW 
+#end LANGUAGEGROUP_ENUMPROC;
+#template LANGGROUPLOCALE_ENUMPROC;
+  LANGGROUPLOCALE_ENUMPROCW 
+#end LANGGROUPLOCALE_ENUMPROC;
+#template UILANGUAGE_ENUMPROC;
+  UILANGUAGE_ENUMPROCW 
+#end UILANGUAGE_ENUMPROC;
+#template LOCALE_ENUMPROC;
+  LOCALE_ENUMPROCW 
+#end LOCALE_ENUMPROC;
+#template CODEPAGE_ENUMPROC;
+  CODEPAGE_ENUMPROCW 
+#end CODEPAGE_ENUMPROC;
+#template DATEFMT_ENUMPROC;
+  DATEFMT_ENUMPROCW 
+#end DATEFMT_ENUMPROC;
+#template DATEFMT_ENUMPROCEX;
+  DATEFMT_ENUMPROCEXW 
+#end DATEFMT_ENUMPROCEX;
+#template TIMEFMT_ENUMPROC;
+  TIMEFMT_ENUMPROCW 
+#end TIMEFMT_ENUMPROC;
+#template CALINFO_ENUMPROC;
+  CALINFO_ENUMPROCW 
+#end CALINFO_ENUMPROC;
+#template CALINFO_ENUMPROCEX;
+  CALINFO_ENUMPROCEXW 
+#end CALINFO_ENUMPROCEX;
+#else;
+#template LANGUAGEGROUP_ENUMPROC;
+  LANGUAGEGROUP_ENUMPROCA 
+#end LANGUAGEGROUP_ENUMPROC;
+#template LANGGROUPLOCALE_ENUMPROC;
+  LANGGROUPLOCALE_ENUMPROCA 
+#end LANGGROUPLOCALE_ENUMPROC;
+#template UILANGUAGE_ENUMPROC;
+  UILANGUAGE_ENUMPROCA 
+#end UILANGUAGE_ENUMPROC;
+#template LOCALE_ENUMPROC;
+  LOCALE_ENUMPROCA 
+#end LOCALE_ENUMPROC;
+#template CODEPAGE_ENUMPROC;
+  CODEPAGE_ENUMPROCA 
+#end CODEPAGE_ENUMPROC;
+#template DATEFMT_ENUMPROC;
+  DATEFMT_ENUMPROCA 
+#end DATEFMT_ENUMPROC;
+#template DATEFMT_ENUMPROCEX;
+  DATEFMT_ENUMPROCEXA 
+#end DATEFMT_ENUMPROCEX;
+#template TIMEFMT_ENUMPROC;
+  TIMEFMT_ENUMPROCA 
+#end TIMEFMT_ENUMPROC;
+#template CALINFO_ENUMPROC;
+  CALINFO_ENUMPROCA 
+#end CALINFO_ENUMPROC;
+#template CALINFO_ENUMPROCEX;
+  CALINFO_ENUMPROCEXA 
+#end CALINFO_ENUMPROCEX;
+#end if;
+
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Macros
+-- 
+--  Define all macros for the NLS component here.
+-- 
+-- //////////////////////////////////////////////////////////////////////////
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Function Prototypes
+-- 
+--  Only prototypes for the NLS APIs should go here.
+-- 
+-- //////////////////////////////////////////////////////////////////////////
+-- 
+--  Code Page Dependent APIs.
+-- 
+procedure IsValidCodePage(
+    CodePage        : in UINT)
+                      return BOOL;
+#pragma convention(IsValidCodePage,system);
+#pragma import(IsValidCodePage,'IsValidCodePage','kernel32.dll');
+
+procedure GetACP
+                      return UINT;
+#pragma convention(GetACP,system);
+#pragma import(GetACP,'GetACP','kernel32.dll');
+
+procedure GetOEMCP
+                      return UINT;
+#pragma convention(GetOEMCP,system);
+#pragma import(GetOEMCP,'GetOEMCP','kernel32.dll');
+
+procedure GetCPInfo(
+    CodePage        : in UINT; 
+    lpCPInfo        : out _cpinfo)
+                      return BOOL;
+#pragma convention(GetCPInfo,system);
+#pragma import(GetCPInfo,'GetCPInfo','kernel32.dll');
+
+procedure GetCPInfoExA(
+    CodePage        : in UINT; 
+    dwFlags         : in DWORD; 
+    lpCPInfoEx      : out _cpinfoexA)
+                      return BOOL;
+#pragma convention(GetCPInfoExA,system);
+#pragma import(GetCPInfoExA,'GetCPInfoExA','kernel32.dll');
+
+procedure GetCPInfoExW(
+    CodePage        : in UINT; 
+    dwFlags         : in DWORD; 
+    lpCPInfoEx      : out _cpinfoexW)
+                      return BOOL;
+#pragma convention(GetCPInfoExW,system);
+#pragma import(GetCPInfoExW,'GetCPInfoExW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetCPInfoEx;
+  GetCPInfoExW 
+#end GetCPInfoEx;
+#else;
+#template GetCPInfoEx;
+  GetCPInfoExA 
+#end GetCPInfoEx;
+#end if;
+
+procedure IsDBCSLeadByte(
+    TestChar        : in BYTE)
+                      return BOOL;
+#pragma convention(IsDBCSLeadByte,system);
+#pragma import(IsDBCSLeadByte,'IsDBCSLeadByte','kernel32.dll');
+
+procedure IsDBCSLeadByteEx(
+    CodePage        : in UINT; 
+    TestChar        : in BYTE)
+                      return BOOL;
+#pragma convention(IsDBCSLeadByteEx,system);
+#pragma import(IsDBCSLeadByteEx,'IsDBCSLeadByteEx','kernel32.dll');
+
+type
+t_001=signed 32;
+
+t_002=signed 32;
+
+  t_003 = signed 32;
+
+procedure MultiByteToWideChar(
+    CodePage        : in UINT; 
+    dwFlags         : in DWORD; 
+    lpMultiByteStr  : in LPCSTR; 
+    cbMultiByte     : in t_001; 
+    lpWideCharStr   : out WCHARSTR ; 
+    cchWideChar     : in t_002)
+                      return t_003;
+#pragma convention(MultiByteToWideChar,system);
+#pragma import(MultiByteToWideChar,'MultiByteToWideChar','kernel32.dll');
+
+type
+t_004=signed 32;
+
+t_005=signed 32;
+
+  t_006 = signed 32;
+
+procedure WideCharToMultiByte(
+    CodePage        : in UINT; 
+    dwFlags         : in DWORD; 
+    lpWideCharStr   : in LPCWSTR; 
+    cchWideChar     : in t_004; 
+    lpMultiByteStr  : out CHARSTR ; 
+    cbMultiByte     : in t_005; 
+    lpDefaultChar   : in LPCSTR; 
+    lpUsedDefaultChar : out BOOL )
+                      return t_006;
+#pragma convention(WideCharToMultiByte,system);
+#pragma import(WideCharToMultiByte,'WideCharToMultiByte','kernel32.dll');
+
+-- 
+--  Locale Dependent APIs.
+-- 
+type
+t_007=signed 32;
+
+t_008=signed 32;
+
+  t_009 = signed 32;
+
+procedure CompareStringA(
+    Locale          : in LCID; 
+    dwCmpFlags      : in DWORD; 
+    lpString1       : in LPCSTR; 
+    cchCount1       : in t_007; 
+    lpString2       : in LPCSTR; 
+    cchCount2       : in t_008)
+                      return t_009;
+#pragma convention(CompareStringA,system);
+#pragma import(CompareStringA,'CompareStringA','kernel32.dll');
+
+type
+t_010=signed 32;
+
+t_011=signed 32;
+
+  t_012 = signed 32;
+
+procedure CompareStringW(
+    Locale          : in LCID; 
+    dwCmpFlags      : in DWORD; 
+    lpString1       : in LPCWSTR; 
+    cchCount1       : in t_010; 
+    lpString2       : in LPCWSTR; 
+    cchCount2       : in t_011)
+                      return t_012;
+#pragma convention(CompareStringW,system);
+#pragma import(CompareStringW,'CompareStringW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template CompareString;
+  CompareStringW 
+#end CompareString;
+#else;
+#template CompareString;
+  CompareStringA 
+#end CompareString;
+#end if;
+
+type
+t_013=signed 32;
+
+t_014=signed 32;
+
+  t_015 = signed 32;
+
+procedure LCMapStringA(
+    Locale          : in LCID; 
+    dwMapFlags      : in DWORD; 
+    lpSrcStr        : in LPCSTR; 
+    cchSrc          : in t_013; 
+    lpDestStr       : out CHARSTR ; 
+    cchDest         : in t_014)
+                      return t_015;
+#pragma convention(LCMapStringA,system);
+#pragma import(LCMapStringA,'LCMapStringA','kernel32.dll');
+
+type
+t_016=signed 32;
+
+t_017=signed 32;
+
+  t_018 = signed 32;
+
+procedure LCMapStringW(
+    Locale          : in LCID; 
+    dwMapFlags      : in DWORD; 
+    lpSrcStr        : in LPCWSTR; 
+    cchSrc          : in t_016; 
+    lpDestStr       : out WCHARSTR ; 
+    cchDest         : in t_017)
+                      return t_018;
+#pragma convention(LCMapStringW,system);
+#pragma import(LCMapStringW,'LCMapStringW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template LCMapString;
+  LCMapStringW 
+#end LCMapString;
+#else;
+#template LCMapString;
+  LCMapStringA 
+#end LCMapString;
+#end if;
+
+type
+t_019=signed 32;
+
+  t_020 = signed 32;
+
+procedure GetLocaleInfoA(
+    Locale          : in LCID; 
+    LCType          : in t_LCTYPE; 
+    lpLCData        : out CHARSTR ; 
+    cchData         : in t_019)
+                      return t_020;
+#pragma convention(GetLocaleInfoA,system);
+#pragma import(GetLocaleInfoA,'GetLocaleInfoA','kernel32.dll');
+
+type
+t_021=signed 32;
+
+  t_022 = signed 32;
+
+procedure GetLocaleInfoW(
+    Locale          : in LCID; 
+    LCType          : in t_LCTYPE; 
+    lpLCData        : out WCHARSTR ; 
+    cchData         : in t_021)
+                      return t_022;
+#pragma convention(GetLocaleInfoW,system);
+#pragma import(GetLocaleInfoW,'GetLocaleInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetLocaleInfo;
+  GetLocaleInfoW 
+#end GetLocaleInfo;
+#else;
+#template GetLocaleInfo;
+  GetLocaleInfoA 
+#end GetLocaleInfo;
+#end if;
+
+procedure SetLocaleInfoA(
+    Locale          : in LCID; 
+    LCType          : in t_LCTYPE; 
+    lpLCData        : in LPCSTR)
+                      return BOOL;
+#pragma convention(SetLocaleInfoA,system);
+#pragma import(SetLocaleInfoA,'SetLocaleInfoA','kernel32.dll');
+
+procedure SetLocaleInfoW(
+    Locale          : in LCID; 
+    LCType          : in t_LCTYPE; 
+    lpLCData        : in LPCWSTR)
+                      return BOOL;
+#pragma convention(SetLocaleInfoW,system);
+#pragma import(SetLocaleInfoW,'SetLocaleInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template SetLocaleInfo;
+  SetLocaleInfoW 
+#end SetLocaleInfo;
+#else;
+#template SetLocaleInfo;
+  SetLocaleInfoA 
+#end SetLocaleInfo;
+#end if;
+
+type
+t_023=signed 32;
+
+  t_024 = signed 32;
+
+procedure GetCalendarInfoA(
+    Locale          : LCID; 
+    Calendar        : CALID; 
+    CalType_x       : CALTYPE; 
+    lpCalData       : LPSTR; 
+    cchData         : t_023; 
+    lpValue         : LPDWORD)
+                      return t_024;
+#pragma convention(GetCalendarInfoA,system);
+#pragma import(GetCalendarInfoA,'GetCalendarInfoA','kernel32.dll');
+
+type
+t_025=signed 32;
+
+  t_026 = signed 32;
+
+procedure GetCalendarInfoW(
+    Locale          : LCID; 
+    Calendar        : CALID; 
+    CalType_x       : CALTYPE; 
+    lpCalData       : LPWSTR; 
+    cchData         : t_025; 
+    lpValue         : LPDWORD)
+                      return t_026;
+#pragma convention(GetCalendarInfoW,system);
+#pragma import(GetCalendarInfoW,'GetCalendarInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetCalendarInfo;
+  GetCalendarInfoW 
+#end GetCalendarInfo;
+#else;
+#template GetCalendarInfo;
+  GetCalendarInfoA 
+#end GetCalendarInfo;
+#end if;
+
+procedure SetCalendarInfoA(
+    Locale          : LCID; 
+    Calendar        : CALID; 
+    CalType_x       : CALTYPE; 
+    lpCalData       : LPCSTR)
+                      return BOOL;
+#pragma convention(SetCalendarInfoA,system);
+#pragma import(SetCalendarInfoA,'SetCalendarInfoA','kernel32.dll');
+
+procedure SetCalendarInfoW(
+    Locale          : LCID; 
+    Calendar        : CALID; 
+    CalType_x       : CALTYPE; 
+    lpCalData       : LPCWSTR)
+                      return BOOL;
+#pragma convention(SetCalendarInfoW,system);
+#pragma import(SetCalendarInfoW,'SetCalendarInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template SetCalendarInfo;
+  SetCalendarInfoW 
+#end SetCalendarInfo;
+#else;
+#template SetCalendarInfo;
+  SetCalendarInfoA 
+#end SetCalendarInfo;
+#end if;
+
+type
+t_027=^t_SYSTEMTIME for machine_pointer use true;
+
+t_028=signed 32;
+
+  t_029 = signed 32;
+
+procedure GetTimeFormatA(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpTime          : in t_027; 
+    lpFormat        : in LPCSTR; 
+    lpTimeStr       : out CHARSTR ; 
+    cchTime         : in t_028)
+                      return t_029;
+#pragma convention(GetTimeFormatA,system);
+#pragma import(GetTimeFormatA,'GetTimeFormatA','kernel32.dll');
+
+type
+t_030=^t_SYSTEMTIME for machine_pointer use true;
+
+t_031=signed 32;
+
+  t_032 = signed 32;
+
+procedure GetTimeFormatW(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpTime          : in t_030; 
+    lpFormat        : in LPCWSTR; 
+    lpTimeStr       : out WCHARSTR ; 
+    cchTime         : in t_031)
+                      return t_032;
+#pragma convention(GetTimeFormatW,system);
+#pragma import(GetTimeFormatW,'GetTimeFormatW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetTimeFormat;
+  GetTimeFormatW 
+#end GetTimeFormat;
+#else;
+#template GetTimeFormat;
+  GetTimeFormatA 
+#end GetTimeFormat;
+#end if;
+
+type
+t_033=^t_SYSTEMTIME for machine_pointer use true;
+
+t_034=signed 32;
+
+  t_035 = signed 32;
+
+procedure GetDateFormatA(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpDate          : in t_033; 
+    lpFormat        : in LPCSTR; 
+    lpDateStr       : out CHARSTR ; 
+    cchDate         : in t_034)
+                      return t_035;
+#pragma convention(GetDateFormatA,system);
+#pragma import(GetDateFormatA,'GetDateFormatA','kernel32.dll');
+
+type
+t_036=^t_SYSTEMTIME for machine_pointer use true;
+
+t_037=signed 32;
+
+  t_038 = signed 32;
+
+procedure GetDateFormatW(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpDate          : in t_036; 
+    lpFormat        : in LPCWSTR; 
+    lpDateStr       : out WCHARSTR ; 
+    cchDate         : in t_037)
+                      return t_038;
+#pragma convention(GetDateFormatW,system);
+#pragma import(GetDateFormatW,'GetDateFormatW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetDateFormat;
+  GetDateFormatW 
+#end GetDateFormat;
+#else;
+#template GetDateFormat;
+  GetDateFormatA 
+#end GetDateFormat;
+#end if;
+
+type
+t_039=^NUMBERFMTA for machine_pointer use true;
+
+t_040=signed 32;
+
+  t_041 = signed 32;
+
+procedure GetNumberFormatA(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpValue         : in LPCSTR; 
+    lpFormat        : in t_039; 
+    lpNumberStr     : out CHARSTR ; 
+    cchNumber       : in t_040)
+                      return t_041;
+#pragma convention(GetNumberFormatA,system);
+#pragma import(GetNumberFormatA,'GetNumberFormatA','kernel32.dll');
+
+type
+t_042=^NUMBERFMTW for machine_pointer use true;
+
+t_043=signed 32;
+
+  t_044 = signed 32;
+
+procedure GetNumberFormatW(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpValue         : in LPCWSTR; 
+    lpFormat        : in t_042; 
+    lpNumberStr     : out WCHARSTR ; 
+    cchNumber       : in t_043)
+                      return t_044;
+#pragma convention(GetNumberFormatW,system);
+#pragma import(GetNumberFormatW,'GetNumberFormatW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetNumberFormat;
+  GetNumberFormatW 
+#end GetNumberFormat;
+#else;
+#template GetNumberFormat;
+  GetNumberFormatA 
+#end GetNumberFormat;
+#end if;
+
+type
+t_045=^CURRENCYFMTA for machine_pointer use true;
+
+t_046=signed 32;
+
+  t_047 = signed 32;
+
+procedure GetCurrencyFormatA(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpValue         : in LPCSTR; 
+    lpFormat        : in t_045; 
+    lpCurrencyStr   : out CHARSTR ; 
+    cchCurrency     : in t_046)
+                      return t_047;
+#pragma convention(GetCurrencyFormatA,system);
+#pragma import(GetCurrencyFormatA,'GetCurrencyFormatA','kernel32.dll');
+
+type
+t_048=^CURRENCYFMTW for machine_pointer use true;
+
+t_049=signed 32;
+
+  t_050 = signed 32;
+
+procedure GetCurrencyFormatW(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD; 
+    lpValue         : in LPCWSTR; 
+    lpFormat        : in t_048; 
+    lpCurrencyStr   : out WCHARSTR ; 
+    cchCurrency     : in t_049)
+                      return t_050;
+#pragma convention(GetCurrencyFormatW,system);
+#pragma import(GetCurrencyFormatW,'GetCurrencyFormatW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetCurrencyFormat;
+  GetCurrencyFormatW 
+#end GetCurrencyFormat;
+#else;
+#template GetCurrencyFormat;
+  GetCurrencyFormatA 
+#end GetCurrencyFormat;
+#end if;
+
+procedure EnumCalendarInfoA(
+    lpCalInfoEnumProc : in CALINFO_ENUMPROCA; 
+    Locale          : in LCID; 
+    Calendar        : in CALID; 
+    CalType_x       : in CALTYPE)
+                      return BOOL;
+#pragma convention(EnumCalendarInfoA,system);
+#pragma import(EnumCalendarInfoA,'EnumCalendarInfoA','kernel32.dll');
+
+procedure EnumCalendarInfoW(
+    lpCalInfoEnumProc : in CALINFO_ENUMPROCW; 
+    Locale          : in LCID; 
+    Calendar        : in CALID; 
+    CalType_x       : in CALTYPE)
+                      return BOOL;
+#pragma convention(EnumCalendarInfoW,system);
+#pragma import(EnumCalendarInfoW,'EnumCalendarInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumCalendarInfo;
+  EnumCalendarInfoW 
+#end EnumCalendarInfo;
+#else;
+#template EnumCalendarInfo;
+  EnumCalendarInfoA 
+#end EnumCalendarInfo;
+#end if;
+
+procedure EnumCalendarInfoExA(
+    lpCalInfoEnumProcEx : in CALINFO_ENUMPROCEXA; 
+    Locale          : in LCID; 
+    Calendar        : in CALID; 
+    CalType_x       : in CALTYPE)
+                      return BOOL;
+#pragma convention(EnumCalendarInfoExA,system);
+#pragma import(EnumCalendarInfoExA,'EnumCalendarInfoExA','kernel32.dll');
+
+procedure EnumCalendarInfoExW(
+    lpCalInfoEnumProcEx : in CALINFO_ENUMPROCEXW; 
+    Locale          : in LCID; 
+    Calendar        : in CALID; 
+    CalType_x       : in CALTYPE)
+                      return BOOL;
+#pragma convention(EnumCalendarInfoExW,system);
+#pragma import(EnumCalendarInfoExW,'EnumCalendarInfoExW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumCalendarInfoEx;
+  EnumCalendarInfoExW 
+#end EnumCalendarInfoEx;
+#else;
+#template EnumCalendarInfoEx;
+  EnumCalendarInfoExA 
+#end EnumCalendarInfoEx;
+#end if;
+
+procedure EnumTimeFormatsA(
+    lpTimeFmtEnumProc : in TIMEFMT_ENUMPROCA; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumTimeFormatsA,system);
+#pragma import(EnumTimeFormatsA,'EnumTimeFormatsA','kernel32.dll');
+
+procedure EnumTimeFormatsW(
+    lpTimeFmtEnumProc : in TIMEFMT_ENUMPROCW; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumTimeFormatsW,system);
+#pragma import(EnumTimeFormatsW,'EnumTimeFormatsW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumTimeFormats;
+  EnumTimeFormatsW 
+#end EnumTimeFormats;
+#else;
+#template EnumTimeFormats;
+  EnumTimeFormatsA 
+#end EnumTimeFormats;
+#end if;
+
+procedure EnumDateFormatsA(
+    lpDateFmtEnumProc : in DATEFMT_ENUMPROCA; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumDateFormatsA,system);
+#pragma import(EnumDateFormatsA,'EnumDateFormatsA','kernel32.dll');
+
+procedure EnumDateFormatsW(
+    lpDateFmtEnumProc : in DATEFMT_ENUMPROCW; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumDateFormatsW,system);
+#pragma import(EnumDateFormatsW,'EnumDateFormatsW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumDateFormats;
+  EnumDateFormatsW 
+#end EnumDateFormats;
+#else;
+#template EnumDateFormats;
+  EnumDateFormatsA 
+#end EnumDateFormats;
+#end if;
+
+procedure EnumDateFormatsExA(
+    lpDateFmtEnumProcEx : in DATEFMT_ENUMPROCEXA; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumDateFormatsExA,system);
+#pragma import(EnumDateFormatsExA,'EnumDateFormatsExA','kernel32.dll');
+
+procedure EnumDateFormatsExW(
+    lpDateFmtEnumProcEx : in DATEFMT_ENUMPROCEXW; 
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumDateFormatsExW,system);
+#pragma import(EnumDateFormatsExW,'EnumDateFormatsExW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumDateFormatsEx;
+  EnumDateFormatsExW 
+#end EnumDateFormatsEx;
+#else;
+#template EnumDateFormatsEx;
+  EnumDateFormatsExA 
+#end EnumDateFormatsEx;
+#end if;
+
+procedure IsValidLanguageGroup(
+    LanguageGroup   : in LGRPID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(IsValidLanguageGroup,system);
+#pragma import(IsValidLanguageGroup,'IsValidLanguageGroup','kernel32.dll');
+
+procedure GetNLSVersion(
+    Function        : in NLS_FUNCTION; 
+    Locale          : in LCID; 
+    lpVersionInformation : out _nlsversioninfo)
+                      return BOOL;
+#pragma convention(GetNLSVersion,system);
+#pragma import(GetNLSVersion,'GetNLSVersion','kernel32.dll');
+
+procedure IsNLSDefinedString(
+    Function        : in NLS_FUNCTION; 
+    dwFlags         : in DWORD; 
+    lpVersionInformation : in LPNLSVERSIONINFO; 
+    lpString        : in LPCWSTR; 
+    cchStr          : in INT)
+                      return BOOL;
+#pragma convention(IsNLSDefinedString,system);
+#pragma import(IsNLSDefinedString,'IsNLSDefinedString','kernel32.dll');
+
+procedure IsValidLocale(
+    Locale          : in LCID; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(IsValidLocale,system);
+#pragma import(IsValidLocale,'IsValidLocale','kernel32.dll');
+
+type
+t_051=signed 32;
+
+  t_052 = signed 32;
+
+procedure GetGeoInfoA(
+    Location        : GEOID; 
+    GeoType_x       : GEOTYPE; 
+    lpGeoData       : LPSTR; 
+    cchData         : t_051; 
+    LangId_x        : LANGID)
+                      return t_052;
+#pragma convention(GetGeoInfoA,system);
+#pragma import(GetGeoInfoA,'GetGeoInfoA','kernel32.dll');
+
+type
+t_053=signed 32;
+
+  t_054 = signed 32;
+
+procedure GetGeoInfoW(
+    Location        : GEOID; 
+    GeoType_x       : GEOTYPE; 
+    lpGeoData       : LPWSTR; 
+    cchData         : t_053; 
+    LangId_x        : LANGID)
+                      return t_054;
+#pragma convention(GetGeoInfoW,system);
+#pragma import(GetGeoInfoW,'GetGeoInfoW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetGeoInfo;
+  GetGeoInfoW 
+#end GetGeoInfo;
+#else;
+#template GetGeoInfo;
+  GetGeoInfoA 
+#end GetGeoInfo;
+#end if;
+
+procedure EnumSystemGeoID(
+    GeoClass_x      : GEOCLASS; 
+    ParentGeoId     : GEOID; 
+    lpGeoEnumProc   : GEO_ENUMPROC)
+                      return BOOL;
+#pragma convention(EnumSystemGeoID,system);
+#pragma import(EnumSystemGeoID,'EnumSystemGeoID','kernel32.dll');
+
+procedure GetUserGeoID(
+    GeoClass_x      : GEOCLASS)
+                      return GEOID;
+#pragma convention(GetUserGeoID,system);
+#pragma import(GetUserGeoID,'GetUserGeoID','kernel32.dll');
+
+procedure SetUserGeoID(
+    GeoId_x         : GEOID)
+                      return BOOL;
+#pragma convention(SetUserGeoID,system);
+#pragma import(SetUserGeoID,'SetUserGeoID','kernel32.dll');
+
+procedure ConvertDefaultLocale(
+    Locale          : in out {!}LCID)
+                      return LCID;
+#pragma convention(ConvertDefaultLocale,system);
+#pragma import(ConvertDefaultLocale,'ConvertDefaultLocale','kernel32.dll');
+
+procedure GetThreadLocale
+                      return LCID;
+#pragma convention(GetThreadLocale,system);
+#pragma import(GetThreadLocale,'GetThreadLocale','kernel32.dll');
+
+procedure SetThreadLocale(
+    Locale          : in LCID)
+                      return BOOL;
+#pragma convention(SetThreadLocale,system);
+#pragma import(SetThreadLocale,'SetThreadLocale','kernel32.dll');
+
+procedure GetSystemDefaultUILanguage
+                      return LANGID;
+#pragma convention(GetSystemDefaultUILanguage,system);
+#pragma import(GetSystemDefaultUILanguage,'GetSystemDefaultUILanguage','kernel32.dll');
+
+procedure GetUserDefaultUILanguage
+                      return LANGID;
+#pragma convention(GetUserDefaultUILanguage,system);
+#pragma import(GetUserDefaultUILanguage,'GetUserDefaultUILanguage','kernel32.dll');
+
+procedure GetSystemDefaultLangID
+                      return LANGID;
+#pragma convention(GetSystemDefaultLangID,system);
+#pragma import(GetSystemDefaultLangID,'GetSystemDefaultLangID','kernel32.dll');
+
+procedure GetUserDefaultLangID
+                      return LANGID;
+#pragma convention(GetUserDefaultLangID,system);
+#pragma import(GetUserDefaultLangID,'GetUserDefaultLangID','kernel32.dll');
+
+procedure GetSystemDefaultLCID
+                      return LCID;
+#pragma convention(GetSystemDefaultLCID,system);
+#pragma import(GetSystemDefaultLCID,'GetSystemDefaultLCID','kernel32.dll');
+
+procedure GetUserDefaultLCID
+                      return LCID;
+#pragma convention(GetUserDefaultLCID,system);
+#pragma import(GetUserDefaultLCID,'GetUserDefaultLCID','kernel32.dll');
+
+-- 
+--  Locale Independent APIs.
+-- 
+type
+t_055=signed 32;
+
+procedure GetStringTypeExA(
+    Locale          : in LCID; 
+    dwInfoType      : in DWORD; 
+    lpSrcStr        : in LPCSTR; 
+    cchSrc          : in t_055; 
+    lpCharType      : out WORD )
+                      return BOOL;
+#pragma convention(GetStringTypeExA,system);
+#pragma import(GetStringTypeExA,'GetStringTypeExA','kernel32.dll');
+
+type
+t_056=signed 32;
+
+procedure GetStringTypeExW(
+    Locale          : in LCID; 
+    dwInfoType      : in DWORD; 
+    lpSrcStr        : in LPCWSTR; 
+    cchSrc          : in t_056; 
+    lpCharType      : out WORD )
+                      return BOOL;
+#pragma convention(GetStringTypeExW,system);
+#pragma import(GetStringTypeExW,'GetStringTypeExW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template GetStringTypeEx;
+  GetStringTypeExW 
+#end GetStringTypeEx;
+#else;
+#template GetStringTypeEx;
+  GetStringTypeExA 
+#end GetStringTypeEx;
+#end if;
+
+-- 
+--  NOTE: The parameters for GetStringTypeA and GetStringTypeW are
+--  NOT the same. The W version was shipped in NT 3.1. The
+--  A version was then shipped in 16-bit OLE with the wrong
+--  parameters (ported from Win95). To be compatible, we
+--  must break the relationship between the A and W versions
+--  of GetStringType. There will be NO function call for the
+--  generic GetStringType.
+-- 
+--  GetStringTypeEx (above) should be used instead.
+-- 
+type
+t_057=signed 32;
+
+procedure GetStringTypeA(
+    Locale          : in LCID; 
+    dwInfoType      : in DWORD; 
+    lpSrcStr        : in LPCSTR; 
+    cchSrc          : in t_057; 
+    lpCharType      : out WORD )
+                      return BOOL;
+#pragma convention(GetStringTypeA,system);
+#pragma import(GetStringTypeA,'GetStringTypeA','kernel32.dll');
+
+type
+t_058=signed 32;
+
+procedure GetStringTypeW(
+    dwInfoType      : in DWORD; 
+    lpSrcStr        : in LPCWSTR; 
+    cchSrc          : in t_058; 
+    lpCharType      : out WORD )
+                      return BOOL;
+#pragma convention(GetStringTypeW,system);
+#pragma import(GetStringTypeW,'GetStringTypeW','kernel32.dll');
+
+type
+t_059=signed 32;
+
+t_060=signed 32;
+
+  t_061 = signed 32;
+
+procedure FoldStringA(
+    dwMapFlags      : in DWORD; 
+    lpSrcStr        : in LPCSTR; 
+    cchSrc          : in t_059; 
+    lpDestStr       : out CHARSTR ; 
+    cchDest         : in t_060)
+                      return t_061;
+#pragma convention(FoldStringA,system);
+#pragma import(FoldStringA,'FoldStringA','kernel32.dll');
+
+type
+t_062=signed 32;
+
+t_063=signed 32;
+
+  t_064 = signed 32;
+
+procedure FoldStringW(
+    dwMapFlags      : in DWORD; 
+    lpSrcStr        : in LPCWSTR; 
+    cchSrc          : in t_062; 
+    lpDestStr       : out WCHARSTR ; 
+    cchDest         : in t_063)
+                      return t_064;
+#pragma convention(FoldStringW,system);
+#pragma import(FoldStringW,'FoldStringW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template FoldString;
+  FoldStringW 
+#end FoldString;
+#else;
+#template FoldString;
+  FoldStringA 
+#end FoldString;
+#end if;
+
+procedure EnumSystemLanguageGroupsA(
+    lpLanguageGroupEnumProc : in LANGUAGEGROUP_ENUMPROCA; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumSystemLanguageGroupsA,system);
+#pragma import(EnumSystemLanguageGroupsA,'EnumSystemLanguageGroupsA','kernel32.dll');
+
+procedure EnumSystemLanguageGroupsW(
+    lpLanguageGroupEnumProc : in LANGUAGEGROUP_ENUMPROCW; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumSystemLanguageGroupsW,system);
+#pragma import(EnumSystemLanguageGroupsW,'EnumSystemLanguageGroupsW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumSystemLanguageGroups;
+  EnumSystemLanguageGroupsW 
+#end EnumSystemLanguageGroups;
+#else;
+#template EnumSystemLanguageGroups;
+  EnumSystemLanguageGroupsA 
+#end EnumSystemLanguageGroups;
+#end if;
+
+procedure EnumLanguageGroupLocalesA(
+    lpLangGroupLocaleEnumProc : in LANGGROUPLOCALE_ENUMPROCA; 
+    LanguageGroup   : in LGRPID; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumLanguageGroupLocalesA,system);
+#pragma import(EnumLanguageGroupLocalesA,'EnumLanguageGroupLocalesA','kernel32.dll');
+
+procedure EnumLanguageGroupLocalesW(
+    lpLangGroupLocaleEnumProc : in LANGGROUPLOCALE_ENUMPROCW; 
+    LanguageGroup   : in LGRPID; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumLanguageGroupLocalesW,system);
+#pragma import(EnumLanguageGroupLocalesW,'EnumLanguageGroupLocalesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumLanguageGroupLocales;
+  EnumLanguageGroupLocalesW 
+#end EnumLanguageGroupLocales;
+#else;
+#template EnumLanguageGroupLocales;
+  EnumLanguageGroupLocalesA 
+#end EnumLanguageGroupLocales;
+#end if;
+
+procedure EnumUILanguagesA(
+    lpUILanguageEnumProc : in UILANGUAGE_ENUMPROCA; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumUILanguagesA,system);
+#pragma import(EnumUILanguagesA,'EnumUILanguagesA','kernel32.dll');
+
+procedure EnumUILanguagesW(
+    lpUILanguageEnumProc : in UILANGUAGE_ENUMPROCW; 
+    dwFlags         : in DWORD; 
+    lParam          : in LONG_PTR)
+                      return BOOL;
+#pragma convention(EnumUILanguagesW,system);
+#pragma import(EnumUILanguagesW,'EnumUILanguagesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumUILanguages;
+  EnumUILanguagesW 
+#end EnumUILanguages;
+#else;
+#template EnumUILanguages;
+  EnumUILanguagesA 
+#end EnumUILanguages;
+#end if;
+
+procedure EnumSystemLocalesA(
+    lpLocaleEnumProc : in LOCALE_ENUMPROCA; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumSystemLocalesA,system);
+#pragma import(EnumSystemLocalesA,'EnumSystemLocalesA','kernel32.dll');
+
+procedure EnumSystemLocalesW(
+    lpLocaleEnumProc : in LOCALE_ENUMPROCW; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumSystemLocalesW,system);
+#pragma import(EnumSystemLocalesW,'EnumSystemLocalesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumSystemLocales;
+  EnumSystemLocalesW 
+#end EnumSystemLocales;
+#else;
+#template EnumSystemLocales;
+  EnumSystemLocalesA 
+#end EnumSystemLocales;
+#end if;
+
+procedure EnumSystemCodePagesA(
+    lpCodePageEnumProc : in CODEPAGE_ENUMPROCA; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumSystemCodePagesA,system);
+#pragma import(EnumSystemCodePagesA,'EnumSystemCodePagesA','kernel32.dll');
+
+procedure EnumSystemCodePagesW(
+    lpCodePageEnumProc : in CODEPAGE_ENUMPROCW; 
+    dwFlags         : in DWORD)
+                      return BOOL;
+#pragma convention(EnumSystemCodePagesW,system);
+#pragma import(EnumSystemCodePagesW,'EnumSystemCodePagesW','kernel32.dll');
+
+#if #declared UNICODE; then;
+#template EnumSystemCodePages;
+  EnumSystemCodePagesW 
+#end EnumSystemCodePages;
+#else;
+#template EnumSystemCodePages;
+  EnumSystemCodePagesA 
+#end EnumSystemCodePages;
+#end if;
+
+
+end winnls;

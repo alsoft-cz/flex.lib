@@ -1,0 +1,35 @@
+----------------------------------------------------------------------------------------------------
+module public formatters =
+----------------------------------------------------------------------------------------------------
+with
+  standard.streams,
+  standard.characters;
+
+----------------------------------------------------------------------------------------------------
+class public c_console_text_writer = extend c_stream_text_writer;
+-- implementace zapisovace textu do streamu
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_console_writer (
+    target         : p_output_stream);           -- vystupni stream
+  --------------------------------------------------------------------------------------------------
+  virtual set_cursor_position (
+    x              : in t_cursor_position_x;     -- horizontal position
+    y              : in t_cursor_position_y);    -- vertical position
+  --------------------------------------------------------------------------------------------------
+  end c_console_text_writer;
+type p_console_text_writer = ^class c_console_text_writer;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_console_text_reader = extend c_stream_text_reader;
+-- implementace ctenare textu ze streamu
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_console_reader(
+    source         : p_input_stream);             -- zdrojovy stream
+  --------------------------------------------------------------------------------------------------
+  end c_console_text_reader;
+type p_console_text_reader = ^class c_console_text_reader;
+
+end formatters;

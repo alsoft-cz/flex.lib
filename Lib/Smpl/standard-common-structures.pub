@@ -1,0 +1,34 @@
+----------------------------------------------------------------------------------------------------
+module public structures =
+-- Common utility declarations reused in different parts of the SMPL.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+type
+  -- the direction of walking through a list
+  t_list_walking_direction = enum
+     tlwd_forward;                               -- from the first item to the last
+     tlwd_backward;                              -- from the last item to the first
+     end enum;
+
+  -- ©¡zen¡ po©ad¡ uzl– p©i proch zen¡ stromem
+  t_tree_walking_direction = enum
+      ttwd_prefix;                               -- uzel -> lev˜ -> prav˜
+      ttwd_inv_prefix;                           -- uzel -> prav˜ -> lev˜
+      ttwd_postfix;                              -- lev˜ -> prav˜ -> uzel
+      ttwd_inv_postfix;                          -- prav˜ -> lev˜ -> uzel
+      ttwd_infix;                                -- lev˜ -> uzel -> prav˜, jen pro bin rn¡ strom
+      ttwd_inv_infix;                            -- prav˜ -> uzel -> lev˜, jen pro bin rn¡ strom
+      end enum;
+  t_tree_walking_direction_set = set of t_tree_walking_direction;
+
+type
+  -- a hash code
+  t_hash_item_id   = protected t_unsigned;
+
+message
+  list_error       : exception;                  -- raised when an error occurs during manipulation with the list
+  tree_error       : exception;                  -- chyba p©i pr ci se stromy
+
+end structures;

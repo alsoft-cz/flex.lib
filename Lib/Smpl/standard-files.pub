@@ -1,0 +1,546 @@
+---------------------------------------------------------------------------------------------------
+module public files =
+-- Files.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+-- To do:
+--   -- use automatic memory management (ref) for NAME,
+--   -- remove the LEN parameter from READ, WRITE and APPEND methods and use BUFFER:SIZE instead, 
+--      users should use array slices.
+--   -- consider declaring separate type for representation of file's size,
+--   -- add more file attributes and take Linux and other OSes into account,
+--   -- implement data streams as interfaces and remove [get_output_stream] and 
+--      [get_text_output_stream].
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.triggers,
+  standard.classes,
+  standard.classes.lists,
+  standard.names,
+  standard.datetime,
+  standard.streams,
+  standard.characters;  
+  
+-- forward declarations
+class c_filesystem_object; type p_filesystem_object = ^class c_filesystem_object;
+class c_file;              type p_file              = ^class c_file;
+class c_folder;            type p_folder            = ^class c_folder;
+class c_drive;             type p_drive             = ^class c_drive;
+class c_drives;            type p_drives            = ^class c_drives;
+class c_file_manager;      type p_file_manager      = ^class c_file_manager;
+
+
+
+type
+  -- file open mode
+  t_fs_object_mode = enum
+      tfm_read;                                  -- data can be read from the file
+      tfm_write;                                 -- data can be written to the file
+      end enum;
+  t_fs_object_mode_set  = set of t_fs_object_mode;
+
+const
+  -- read/write open mode
+  tfms_rw          = {%%FLEX}t_fs_object_mode_set:[tfm_read,tfm_write];
+  -- read-only open mode
+  tfms_read        = {%%FLEX}t_fs_object_mode_set:[tfm_read];
+  -- write-only open mode
+  tfms_write       = {%%FLEX}t_fs_object_mode_set:[tfm_write];
+
+type
+  -- file access mode (hint to the OS to optimize caching)
+  t_file_access    = enum
+      tfa_random;                                -- data is read/written to a random position
+      tfa_sequential;                            -- file is accessed mostly sequentially
+      tfa_write_through;                         -- no write-caching
+      tfa_no_cache;                              -- the OS shall not cache the file (furhter 
+                                                 -- restrictions may apply in this mode - e.g. 
+                                                 -- aligned disk access only)
+      end enum;
+
+type
+  -- file sharing mode
+  t_file_sharing   = enum
+      tfs_read;                                  -- shared read
+      tfs_write;                                 -- shared write
+      end enum;
+  t_file_sharing_set = set of t_file_sharing;
+
+const
+  -- composite sharing modes
+  tfss_not_shared  = t_file_sharing_set:[];      -- not shared
+  tfss_shared_read = t_file_sharing_set:[tfs_read];  -- shared read only
+  tfss_shared_write= t_file_sharing_set:[tfs_write]; -- shared write only  
+  tfss_full_shared = t_file_sharing_set:[tfs_read,tfs_write]; -- full read/write sharing
+
+type
+  -- kind of date and time information
+  t_file_datim_kind= enum
+      tfdk_creation;                             -- file creation date and time
+      tfdk_last_access;                          -- last access timestamp
+      tfdk_last_modification;                    -- last modification timestamp
+      end enum;
+  t_file_datim_kind_set= set of t_file_datim_kind;
+
+type
+  -- position within the file (0-based)
+  t_file_pointer   = t_offset;
+
+type
+  -- error codes
+  t_fs_object_error     = enum
+      tfe_ok;                                    -- OK
+      tfe_open;                                  -- cannot open file
+      tfe_create;                                -- cannot create file
+      tfe_delete;                                -- cannot delete filesystem object
+      tfe_close;                                 -- error closing file
+      tfe_read;                                  -- error reading from file
+      tfe_write;                                 -- error writing to file
+      tfe_get_info;                              -- cannot determine requested information
+      tfe_set_info;                              -- cannot set required information
+      tfe_err;                                   -- general error
+      end enum;
+
+type
+  -- file attributes
+  t_fs_object_attribute = enum
+      tfattr_readonly;                           -- the file is read-only
+      tfattr_temporary;                          -- the file is being used for temporary storage
+      tfattr_compressed;                         -- the file is compressed
+      tfattr_encrypted;                          -- the file is encrypted
+      tfattr_sparse;                             -- the file is sparse (contains lots of zeroes)
+      tfattr_hidden;                             -- the file is hidden
+      end enum;
+
+type  
+  -- file manager error flag
+  t_fm_error       = enum   
+      tfme_ok;                                   -- operation succeeded
+      tfme_move;                                 -- file or folder can not be moved
+      tfme_copy;                                 -- file or folder can not be copied
+      tfme_delete;                               -- file or folder can not be deleted
+      end enum;
+
+----------------------------------------------------------------------------------------------------
+class public c_filesystem_object = extend c_trigger_container;
+-- Filesystem class.
+----------------------------------------------------------------------------------------------------
+-- This class is used as a general ancestor for all filesystem objects, such as c_drive, c_folder
+-- and c_file.
+-- As such contains general attributes common to all of those filesystem objects and provides
+-- methods to operate with these attributes and other virtual methods that have to be overriden.
+----------------------------------------------------------------------------------------------------
+
+    var
+      name         : protected c_name;           -- file(object) name
+      mode         : protected t_fs_object_mode_set; -- file(object) opening mode
+      res          : protected t_fs_object_error;-- result of the last operation
+  
+    ------------------------------------------------------------------------------------------------
+    virtual set_ok; 
+    -- Clears [this.res] error flag.
+    ------------------------------------------------------------------------------------------------
+    virtual set_error (
+        res        : in t_fs_object_error);     -- error code
+    -- Sets [this.res] to [res], retrieves the error code from the operating system  and executes 
+    -- the [event_error] trigger.
+    ------------------------------------------------------------------------------------------------
+    virtual get_datim (
+        kind       : in t_file_datim_kind)       -- what datim to return
+        return t_datim;
+    -- Returns requested date and time information. When the subprogram fails, [res] is set to 
+    -- [tfe_get_info].
+    ------------------------------------------------------------------------------------------------
+    virtual set_datim (
+        datim      : in t_datim;                 -- date and time
+        kind       : in t_file_datim_kind_set    -- what datims to set
+                   := [tfdk_last_modification]);      
+    -- Sets all date and time informations of the file contained in [kind] to [datim]. When the 
+    -- method fails, [res] is set to [tfe_set_info].
+    ------------------------------------------------------------------------------------------------
+    virtual get_attribute (
+        attr       : in t_fs_object_attribute)        -- what attribute to check
+        return t_logical;                        -- state of the attribute (T-set, F-unset)
+    -- Returns the state of the given file attribute [attr]. When the subprogram fails, [res] is set 
+    -- to [tfe_get_info] and the return value is undefined.
+    ------------------------------------------------------------------------------------------------
+    virtual set_attribute (
+        attr       : in t_fs_object_attribute;        -- what attribute to set
+        status     : in t_logical);              -- state of the attribute (T-set, F-unset)
+    -- Sets the state of the given file attribute [attr]. When the subprogram fails, [res] is set to 
+    -- [tfe_set_info].
+    ------------------------------------------------------------------------------------------------
+
+    end c_filesystem_object;
+
+
+
+---- Working with files ---------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_file = extend c_filesystem_object;
+-- File access class.
+---------------------------------------------------------------------------------------------------
+-- There are two steps needed to open or create a file:
+--   1. specify its name by calling the [init] subprogram,
+--   2. open or create it using the [open] or [create] subprogram respectively.
+-- Once opened, any other subprogram can be used. A file can be closed by calling the [close] 
+-- subprogram and possibly inited/opened/created again. An unclosed file is automatically closed 
+-- upon [tfile] instance destruction.
+--
+-- Default result:
+--   -- When the subprogram fails, [res] contains the error code, 
+--   -- When the subprogram succeeds, [res] contains [tfe_ok].
+----------------------------------------------------------------------------------------------------
+
+    var
+      access       : protected t_file_access;    -- expected file access style
+      sharing      : protected t_file_sharing_set;-- sharing allowance
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static init_decomposed_name (
+        name       : in c_name);                 -- name of the file
+    -- Initializes the instance of the file access class. Given file name will be used in the 
+    -- [open]/[create] operations. 
+    --
+    -- Result:
+    --   This subprogram always succeeds.
+    --
+    -- Remarks:
+    --   -- This subprogram is not triggerable.
+    ------------------------------------------------------------------------------------------------
+    static init_text_name (
+        name       : in t_text_name);            -- name of the file
+    -- Initializes the instance of the file access class. Given file name will be used in the 
+    -- [open]/[create] operations. 
+    --
+    -- Result:
+    --   This subprogram always succeeds.
+    --
+    -- Remarks:
+    --   -- This subprogram is not triggerable.
+    ------------------------------------------------------------------------------------------------
+    -- %%TODO(OVERLOAD) overload init : init_decomposed_name,init_text_name;
+    ------------------------------------------------------------------------------------------------
+    virtual open (
+        mode       : in t_fs_object_mode_set     -- requested open mode
+                   := tfms_rw; 
+        access     : in t_file_access            -- requested access mode
+                   := tfa_random;
+        sharing    : in t_file_sharing_set       -- requested sharing mode
+                   := tfss_not_shared;
+        always     : in t_logical:=false);       -- T-create new file when one doesn't exist
+    -- Opens an existing file.
+    --   When [always] is True and the file doesn't exist, a new file is created, otherwise 
+    -- file opening fails. 
+    --   When file opening (creation) failes, [res] is set to [tfe_open].
+    ------------------------------------------------------------------------------------------------
+    virtual create (
+        mode       : in t_fs_object_mode_set     -- requested open mode
+                   := tfms_rw; 
+        access     : in t_file_access            -- requested access mode
+                   := tfa_random;
+        sharing    : in t_file_sharing_set       -- requested sharing mode
+                   := tfss_not_shared;
+        always     : in t_logical:=false);       -- T-create new file even when one exists
+    -- Creates a new file.
+    --   When [always] is True and the file exists, it is deleted and a new file is created, 
+    -- oherwise file opening fails.
+    --   When file creation failes, [res] is set to [tfe_create].
+    ------------------------------------------------------------------------------------------------
+    static close; {%%TODO(ANCESTOR) Change this to virtual when inherited calls become available }
+    -- Closes the file.
+    -- The file needs not to be opened (nothing happens in this case).
+    ------------------------------------------------------------------------------------------------
+    static read (
+        pos        : in t_file_pointer;          -- position within the file
+        buffer     : out unchecked;              -- destination buffer
+        len        : in t_unsigned);             -- number of bytes to read
+    -- Reads [len] bytes at position [pos] from the file and stores them to the 
+    -- [buffer]. 
+    --   File must be opened for read (or read/write) access, otherwise the read operation fails.
+    -- When the read operation fails due to any kind of error, [res] is set to [tfe_read].
+    --   When the method fails, the content of [buffer] is undefined.
+    ------------------------------------------------------------------------------------------------
+    static write (
+        pos        : in t_file_pointer;          -- position within the file
+        buffer     : in unchecked;               -- source buffer
+        len        : in t_unsigned);             -- number of bytes to write
+    -- Writes [len] bytes of data from [buffer] to the file to position 
+    -- [pos].
+    --   File must be opened for write (or read/write) access, otherwise the write operation fails.
+    -- When the write operation fails due to any kind of error, [res] is set to [tfe_write].
+    ------------------------------------------------------------------------------------------------
+    static append (
+        buffer     : in unchecked;               -- source buffer
+        len        : in t_unsigned);             -- number of bytes to write
+    -- Writes [len] bytes of data from [buffer] to the end of file.
+    --   File must be opened for write (or read/write) access, otherwise the write operation fails.
+    -- When the write operation fails due to any kind of error, [res] is set to [tfe_write].
+    ------------------------------------------------------------------------------------------------
+    static flush;
+    -- Flushes file buffers
+    ------------------------------------------------------------------------------------------------
+    static get_size return t_file_pointer;
+    -- Returns the actual size of the file. When the subprogram fails, [res] is set to
+    -- [tfe_get_info].
+    ------------------------------------------------------------------------------------------------
+    static set_size (
+        size       : in t_file_pointer;          -- desired size of the file
+        zero       : in t_logical := true);      -- T-zero out new space
+    -- Sets file's size to [size].
+    --   When [size] is shorter than the actual file size, the file is truncated. When [size] is 
+    -- longer than the actual file size, it is enlarged and the new space is filled with binary 
+    -- zeroes when [zero] is [true], otherwise it is left uninitialized.
+    ------------------------------------------------------------------------------------------------
+  
+    ------------------------------------------------------------------------------------------------
+    static get_output_stream return p_output_stream;
+    -- Temporary, to be removed once interfaces (abstract classes) will work.
+    ------------------------------------------------------------------------------------------------
+
+    end c_file;
+
+
+
+---- Working with folders --------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_folder = extend c_filesystem_object;
+----------------------------------------------------------------------------------------------------
+
+    var 
+      files        : protected aliased c_names;  -- collection of all files in this folder
+      folders      : protected aliased c_names;  -- collection of all folders in this folder
+
+    ------------------------------------------------------------------------------------------------
+    static init_decomposed_name (
+        name       : in c_name);                 -- name of the file
+    -- Initializes the instance of the folder access class with the given folder name. 
+    --
+    -- Result:
+    --   This subprogram always succeeds.
+    --
+    -- Remarks:
+    --   -- This subprogram is not triggerable.
+    ------------------------------------------------------------------------------------------------
+    static init_text_name (
+        name       : in t_text_name);            -- name of the file
+    -- Initializes the instance of the folder access class with the given folder name. 
+    --
+    -- Result:
+    --   This subprogram always succeeds.
+    --
+    -- Remarks:
+    --   -- This subprogram is not triggerable.
+    ------------------------------------------------------------------------------------------------
+    -- %%TODO(OVERLOAD) overload init : init_decomposed_name,init_text_name;
+    ------------------------------------------------------------------------------------------------
+  {
+    static open (
+        mode       : in t_fs_object_mode_set     -- requested open mode
+                   := tfms_rw);         
+    -- Opens an existing folder.
+    --
+    -- Result:
+    --   When folder does not exist opening failes, [res] is set to [tfe_open].
+    --   When user program has no rigths to open the folder, opening fails,
+    --      [res] is set to [tfe_open].
+  }
+    ------------------------------------------------------------------------------------------------
+    static create (
+        mode       : in t_fs_object_mode_set     -- requested open mode
+                   := tfms_rw;
+        template   : in p_folder                 -- template folder
+                   := nil); 
+    -- Creates a new folder.
+    --
+    -- Result:
+    --   When folder exists then it will be opened.
+    --   When folder does not exist, new one is created.
+    --   When user program has no rigths to create the folder, creation fails,
+    --      [res] is set to [tfe_create].
+    ------------------------------------------------------------------------------------------------
+  {
+    static close;
+    -- Closes the folder.
+    -- The file needs not to be opened (nothing happens in this case).
+  }
+    ------------------------------------------------------------------------------------------------
+    static get_sub_folder (
+        sub_folder  : in c_name)                 -- 
+        return c_folder;                         -- 
+    -- 
+    ------------------------------------------------------------------------------------------------
+
+    end c_folder;
+
+
+
+---- Working with drives ---------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_drive = extend c_filesystem_object;
+----------------------------------------------------------------------------------------------------
+    
+    var 
+      mount_point  : protected c_name;
+      mounted      : protected t_logical;
+
+    ------------------------------------------------------------------------------------------------
+    static set_mount_point (
+        new_mount_point : in c_name);            -- new mount point
+    -- Sets [mount_point] of the drive to [new_mount_point].
+    ------------------------------------------------------------------------------------------------
+    static get_mount_point return c_name;
+    -- Returns mount point of the logical drive.
+    ------------------------------------------------------------------------------------------------
+    static mount;
+    -- Mounts drive to the specified [mount_point].
+    ------------------------------------------------------------------------------------------------
+    static unmount; 
+    -- Unmounts the drive. On system which does not support unmounting it simulates the unmount and 
+    -- then the drive will behave as unmounted for our application.
+    -- %%TODO to je ale nˆjak˜ divn˜
+    ------------------------------------------------------------------------------------------------
+
+    end c_drive;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_drives = extend c_list;
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static update;
+    -- Updates the list of available drives.
+    ------------------------------------------------------------------------------------------------
+
+    end c_drives;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_file_manager =
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    static copy_file (
+        srcname    : in c_name;                  -- absulute path name of the file to be copied
+        destname   : in c_name;                  -- absulute path name of the destination
+        fm_error   : out t_fm_error);            -- error indication      
+    -- Copies file of name [srcname] to a file at destination of [destname].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_copy].
+    ------------------------------------------------------------------------------------------------
+    static move_file (
+        srcname    : in c_name;                  -- absulute path name of the file to be moved
+        destname   : in c_name;                  -- absulute path name of the destination
+        fm_error   : out t_fm_error);            -- error indication      
+    -- Moves file of name [srcname] to a file at destination of [destname].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_move].
+    ------------------------------------------------------------------------------------------------
+    static delete_file (
+        filename   : in c_name;                  -- absulute path name of the file to be deleted
+        fm_error   : out t_fm_error);            -- error indication      
+    -- Deletes file of name [filename].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_delete].
+    ------------------------------------------------------------------------------------------------
+    static copy_folder (
+        srcname    : in c_name;                  -- absulute path name of the folder to be copied
+        destname   : in c_name;                  -- absulute path name of the destination
+        fm_error   : out t_fm_error);            -- error indication      
+    -- Copies folder of name [srcname] to a folder at destination of [destname].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_copy].
+    ------------------------------------------------------------------------------------------------
+    static move_folder (
+        srcname    : in c_name;                  -- absulute path name of the folder to be copied
+        destname   : in c_name;                  -- absulute path name of the destination
+        fm_error   : out t_fm_error);            -- error indication      
+    -- Moves file of name [srcname] to a file at destination of [destname].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_move].
+    ------------------------------------------------------------------------------------------------
+    static remove_folder (
+        pathname   : in c_name;                  -- absulute path name of the folder to be deleted
+        fm_error   : out t_fm_error;             -- error indication
+        always     : in t_logical:=false);       -- T- remove folder even if not empty
+    -- Removes folder of name [pathname].
+    --
+    -- Result:
+    --   If program has no rigths to perform such opration subprogram fails.
+    --   If parametr [always] is false the folder must be empty otherwise this operation fails.
+    --   If subprogram fails [fm_error] flag will be set to [tfme_delete].
+    ------------------------------------------------------------------------------------------------
+    virtual progress; 
+    -- Returns progress information about the operation being processed.
+    ------------------------------------------------------------------------------------------------
+
+    end c_file_manager;
+
+----------------------------------------------------------------------------------------------------
+#separate public streams;
+----------------------------------------------------------------------------------------------------
+
+protected
+
+{
+----------------------------------------------------------------------------------------------------
+virtual do_copy_file (
+    src_name       : in c_name;                  -- source name
+    src_namespace  : in t_tag;                   -- source namespace
+    dst_name       : in c_name;                  -- destination name
+    dst_namespace  : in t_tag);                  -- destination namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+virtual do_move_file (
+    src_name       : in c_name;                  -- source name
+    src_namespace  : in t_tag;                   -- source namespace
+    dst_name       : in c_name;                  -- destination name
+    dst_namespace  : in t_tag);                  -- destination namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+virtual do_delete_file (
+    name           : in c_name;                  -- filename
+    namespace      : in t_tag);                  -- file namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+virtual do_copy_folder (
+    src_name       : in c_name;                  -- source name
+    src_namespace  : in t_tag;                   -- source namespace
+    dst_name       : in c_name;                  -- destination name
+    dst_namespace  : in t_tag);                  -- destination namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+virtual do_move_folder (
+    src_name       : in c_name;                  -- source name
+    src_namespace  : in t_tag;                   -- source namespace
+    dst_name       : in c_name;                  -- destination name
+    dst_namespace  : in t_tag);                  -- destination namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+virtual do_delete_folder (
+    name           : in c_name;                  -- folder name
+    namespace      : in t_tag);                  -- folder namespace
+-- Virtual template for subprogram processing file copying.
+----------------------------------------------------------------------------------------------------
+}
+
+end files;

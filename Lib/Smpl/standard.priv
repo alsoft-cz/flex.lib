@@ -1,0 +1,244 @@
+----------------------------------------------------------------------------------------------------
+module private standard =
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  system;
+
+#if #environment target_os_family;='WIN32' then;
+use
+  windows.winbase;
+#end if;
+#if #environment target_os_family;='UNIX' then;
+use
+  unix;
+#end if;
+
+const
+  -- standard library debugging mode
+  std_debug        = true;
+
+const
+  -- operating system selection (to ease conditional compilation)
+  os_win32         = #environment target_os_family;='WIN32';
+  os_linux         = #environment target_os_family;='UNIX' and then #environment target_os_type;='LINUX';
+  -- subsystem
+  sub_console      = #environment target_os_subsystem_type;='CONSOLE';
+  sub_gui          = #environment target_os_subsystem_type;='GUI';
+  -- unsupported #error message
+  os_unsupported   = 'Unsupported OS family';
+
+#if #environment target_os_family;='WIN32' then;
+type
+  -- conversions of specific system types to modular arithmetic
+  t_mod_dword      = mod unsigned system.windows.windef.dword:bits;
+#end if;
+
+#if os_win32 then;
+----------------------------------------------------------------------------------------------------
+procedure to_system_string (
+    str            : in t_char32ustr;
+    sysstr         : out windows.windef.winnt.pwstr) =
+-- Convert standard string to OS string.
+----------------------------------------------------------------------------------------------------
+var
+  j                : t_unsigned;
+  surrogate_pairs  : t_unsigned;
+  low_surrogate    : t_char16;
+  high_surrogate   : t_char16;
+
+begin
+  -- compute number of surrogate pairs
+  for i in str:range loop
+    if str[i]:ord>$FFFF then
+      succ surrogate_pairs;
+      end if;
+    end loop;
+
+  -- allocate memory
+  new sysstr range str:length+surrogate_pairs+1;
+
+  -- convert from ISO to UNICODE
+  for i in str:range loop
+    if str[i]:ord>$FFFF
+
+      -- convert and assign character which scalar value is greater than $FFFF as surrogates
+      then
+        high_surrogate:ord:=(str[i]:ord-$1_0000) div $400 + $D800;
+        low_surrogate:ord:=(str[i]:ord-$1_0000) mod $400 + $DC00;
+        sysstr^[j]:=high_surrogate;
+        succ j;
+        sysstr^[j]:=low_surrogate;
+
+      -- assign normal 16-bit character
+      else
+        sysstr^[j]:=str[i];
+        end if;
+    succ j;
+    end loop;
+
+  -- append zero
+  sysstr^[str:length+surrogate_pairs]:=\0;
+  end to_system_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure to_ascii_string (
+    str            : in t_char32ustr;
+    sysstr         : out windows.windef.winnt.lpstr) =
+-- Convert standard string to OS 8bit string.
+----------------------------------------------------------------------------------------------------
+begin
+  -- %%TODO(LIB) Toto je velmi zjednodu¨en‚. Mˆlo by se to sna‘it nap©¡klad odh ‡kov vat
+  -- znaky s diakritikou, zohlednit syst‚movou k¢dovou str nku a podobnˆ.
+
+  -- allocate memory
+  new sysstr range str:length+1;
+
+  -- convert from ISO to UNICODE
+  for i in str:range loop
+    sysstr^[i-1]:=str[i];
+    end loop;
+
+  -- append zero
+  sysstr^[str:length]:=\0;
+  end to_ascii_string;
+
+#elsif os_linux then;
+
+----------------------------------------------------------------------------------------------------
+procedure to_system_string (
+    str            : in t_char32ustr;
+    sysstr         : out unix.psys_str) =
+-- Convert standard string to OS string.
+----------------------------------------------------------------------------------------------------
+begin
+  raise feature_not_implemented;
+  end to_system_string;
+#else;
+  #error os_unsupported;
+#end if;
+
+
+
+#if os_win32 then;
+----------------------------------------------------------------------------------------------------
+procedure from_system_string (
+    sysstr         : in windows.windef.winnt.pwstr;
+    str            : out p_char32ustr) =
+-- Convert standard string to OS string.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    #template is_surrogate (index);
+    ------------------------------------------------------------------------------------------------
+      (t_mod_unsigned16(sysstr^[index]:ord) and $D800)=$D800 and (t_mod_unsigned16(sysstr^[index+1]:ord) and $DC00)=$DC00
+      #end is_surrogate;
+
+var
+  length           : t_unsigned;
+  i                : t_unsigned;
+  surrogate_pairs  : t_unsigned;
+
+begin
+  -- compute string's length
+  while sysstr^[length]<>\0 loop 
+    -- check is system string contains a surrogate pair
+    if is_surrogate(length) then
+      succ surrogate_pairs;
+      end if;
+
+    succ length;
+    end loop;
+
+  -- allocate memory for standard string
+  new str range length-surrogate_pairs;
+
+  -- convert from UNICODE to ISO
+  while i < length loop
+    -- check for a surrogate
+    if is_surrogate(i) 
+
+      -- convert surrogate pairs to 32-bit scalar value
+      then
+        str^ & t_char32((t_unsigned32(sysstr^[i]:ord)-$D800)*$400 + (t_unsigned32(sysstr^[i+1]:ord)-$DC00) + $1_0000);
+        i+2;
+
+      -- non-surrogate character
+      else 
+        str^ & t_char32(sysstr^[i]);
+        succ i;
+        end if;
+    end loop;
+  end from_system_string;
+#else;
+  #error os_unsupported;
+#end if;
+
+
+
+----------------------------------------------------------------------------------------------------
+#separate private common;
+-- 
+----------------------------------------------------------------------------------------------------
+#separate private triggers;
+-- Event triggers.
+----------------------------------------------------------------------------------------------------
+#separate private structures;
+-- Data structures (lists, trees).
+----------------------------------------------------------------------------------------------------
+#separate private classes;
+-- Object data structers
+----------------------------------------------------------------------------------------------------
+#separate private synchronization;
+-- synchronization
+----------------------------------------------------------------------------------------------------
+#separate private tasks;
+-- tasks
+----------------------------------------------------------------------------------------------------
+#separate private streams;
+-- Data streams.
+----------------------------------------------------------------------------------------------------
+#separate private characters;
+-- Support for different character coding schemes (ASCII/UNICODE/ISO 10646).
+---------------------------------------------------------------------------------------------------
+#separate private datetime;
+-- Date/time.
+----------------------------------------------------------------------------------------------------
+#separate private input;
+-- Input operations routines.
+----------------------------------------------------------------------------------------------------
+#separate private console;
+-- Console I/O.
+----------------------------------------------------------------------------------------------------
+#separate private conversions;
+-- Miscellaneous conversion routines.
+----------------------------------------------------------------------------------------------------
+#separate private strings;
+-- Character strings' manipulation.
+----------------------------------------------------------------------------------------------------
+#separate private numerics;
+-- Mathematical computations.
+----------------------------------------------------------------------------------------------------
+#separate private names;
+-- Object names.
+----------------------------------------------------------------------------------------------------
+#separate private files;
+-- Files.
+----------------------------------------------------------------------------------------------------
+#separate private program_control;
+-- General program execution control.
+----------------------------------------------------------------------------------------------------
+#separate private state_machine;
+-- State machine.
+----------------------------------------------------------------------------------------------------
+#if #declared radekr_text; #and then; radekr_text then;
+#separate private text;
+#end if;
+-- Text processing.
+----------------------------------------------------------------------------------------------------
+
+end standard;

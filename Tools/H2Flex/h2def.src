@@ -1,0 +1,799 @@
+----------------------------------------------------------------------------------------------------
+-- h2def
+----------------------------------------------------------------------------------------------------
+-- Definice zakladnich typu a globalnich promennych
+----------------------------------------------------------------------------------------------------
+
+module h2def =
+
+with
+  system,str,log,lstr,num;
+
+{%OFF}
+
+exception
+  internal_error;                                -- interni chyba = chyba programatora :-)
+
+------------------------------------------------------------------------------
+#define wr(num,lc,s);
+-- Z pis ©etˆzce do protokolu a na obrazovku
+------------------------------------------------------------------------------
+  x_writelog(num,lc,[ld_scr,ld_pro],'H2FLEX',s);
+#enddef;
+
+const
+  library_ext      = '.lib';
+
+  mypath           = 'q:\flex\tools\h2flex\';
+
+  configname       = 'h2flex.ini';
+
+  define_true      = '@TRUE';
+  define_false     = '@FALSE';
+  define_empty     = '@EMPTY';
+  define_through   = '@THROUGH';
+  define_ignore    = '@IGNORE';
+  define_const     = '@CONST';
+
+  spaces           = charset : [\9,\12,' '];
+  spaces2          = spaces + charset : [\13,\26];
+  numchars         = charset : ['0'..'9'];
+  hexchars         = numchars + charset : ['A'..'F','a'..'f'];
+  idchars1         = charset : ['A'..'Z','a'..'z','_'];
+  idchars          = idchars1 + numchars;
+  operchars        = charset : ['{','}','[',']','(',')','<','>',
+                                '%',':',';','.','?','*','+','-',
+                                '/','^','&','|','~','!','=',',',
+                                {'\',}'"',''''];
+
+  crlf             = \13\10;
+
+type
+  tfilepart        = enum
+    fp_dir;
+    fp_name;
+    fp_ext;
+    end enum;
+  tfileparts       = set of tfilepart;
+
+type
+  tphase           = enum
+    phase_0;                                     -- pripravne prace
+    phase_1;                                     -- preprocesor
+    phase_2;                                     -- vlastni preklad
+    end enum;
+  tphases          = set of tphase;
+
+type
+  tlexelement      = enum
+    -- zakladni symboly
+{0}
+    lex_nul;                                     -- prazdny symbol
+    lex_eol;                                     -- konec © dku
+    lex_eof;                                     -- konec souboru
+    lex_id;                                      -- identifik tor
+    lex_num;                                     -- cel‚ ‡¡slo
+    lex_num2;                                    -- vetsi cislo
+    lex_str;                                     -- retezec
+    lex_char1;                                   -- znakovy literal
+    lex_char2;                                   -- viceznakovy literal
+
+    -- preprocesor
+    lex_metaid;                                  -- # (metaidentifikator)
+{10}
+    lex_metaid2;                                 -- ##
+
+    -- specialni symboly - komentare
+    lex_comment;                                 -- //
+    lex_mlcomment;                               -- /*
+    lex_mlcomment2;                              -- */
+
+    -- operatory
+    lex_lcurly;                                  -- {}
+    lex_rcurly;                                  -- {}
+    lex_lbra;                                    -- [
+    lex_rbra;                                    -- ]
+    lex_lpar;                                    -- (
+    lex_rpar;                                    -- )
+{20}
+    lex_lbra2;                                   -- <:
+    lex_rbra2;                                   -- :>
+    lex_lcurly2;                                 -- <%
+    lex_rcurly2;                                 -- %>
+    lex_scol;                                    -- ;
+    lex_col;                                     -- :
+    lex_3dot;                                    -- ...
+    lex_add;                                     -- +
+    lex_sub;                                     -- -
+    lex_mul;                                     -- *
+{30}
+    lex_div;                                     -- /
+    lex_mod;                                     -- %
+    lex_xor;                                     -- ^
+    lex_bitand;                                  -- &
+    lex_bitor;                                   -- |
+    lex_compl;                                   -- ~
+    lex_not;                                     -- !
+    lex_assign;                                  -- =
+    lex_lt;                                      -- <
+    lex_gt;                                      -- >
+{40}
+    lex_assign_add;                              -- +=
+    lex_assign_sub;                              -- -=
+    lex_assign_mul;                              -- *=
+    lex_assign_div;                              -- /=
+    lex_assign_mod;                              -- %=
+    lex_xor_eq;                                  -- ^=
+    lex_and_eq;                                  -- &=
+    lex_or_eq;                                   -- |=
+    lex_shl;                                     -- <<
+    lex_shr;                                     -- >>
+{50}
+    lex_assign_shr;                              -- >>=
+    lex_assign_shl;                              -- <<=
+    lex_eq;                                      -- ==
+    lex_not_eq;                                  -- !=
+    lex_le;                                      -- <=
+    lex_ge;                                      -- >=
+    lex_and;                                     -- &&
+    lex_or;                                      -- ||
+    lex_inc;                                     -- ++
+    lex_dec;                                     -- --
+{60}
+    lex_comma;                                   -- ,
+    lex_of2;                                     -- ->*
+    lex_of;                                      -- ->
+    lex_question;                                -- ?
+
+    -- klicova slova
+    lex_asm;
+    lex_auto;
+    lex_bool;
+    lex_break;
+    lex_case;
+    lex_catch;
+{70}
+    lex_char;
+    lex_class;
+    lex_const;
+    lex_const_cast;
+    lex_continue;
+    lex_default;
+    lex_delete;
+    lex_do;
+    lex_double;
+    lex_dynamic_cast;
+{80}
+    lex_else;
+    lex_enum;
+    lex_explicit;
+    lex_export;
+    lex_extern;
+    lex_false;
+    lex_float;
+    lex_for;
+    lex_friend;
+    lex_goto;
+{90}
+    lex_if;
+    lex_inline;
+    lex_int;
+    lex_long;
+    lex_mutable;
+    lex_namespace;
+    lex_new;
+    lex_operator;
+    lex_private;
+    lex_protected;
+{100}
+    lex_public;
+    lex_register;
+    lex_reinterpret_cast;
+    lex_return;
+    lex_short;
+    lex_signed;
+    lex_sizeof;
+    lex_static;
+    lex_static_cast;
+    lex_struct;
+{110}
+    lex_switch;
+    lex_template;
+    lex_this;
+    lex_throw;
+    lex_true;
+    lex_try;
+    lex_typedef;
+    lex_typeid;
+    lex_typename;
+    lex_union;
+{120}
+    lex_unsigned;
+    lex_virtual;
+    lex_void;
+    lex_volatile;
+    lex_wchar_t;
+    lex_while;
+
+    -- ostatni
+    lex_flex;                                    -- jiz zpracovany element
+    lex_metaflex;                                -- jiz zpracovany element (meta)
+    lex_unknown;                                 -- jeste nezpracovany element
+{129}
+    end enum;
+  tlexelements     = set of tlexelement;  
+
+type
+  tradix           = enum
+    tr_dec;                                      -- decimalni     = desitkova
+    tr_hex;                                      -- hexadecimalni = sestnactkova
+    tr_oct;                                      -- oktalova      = osmickova
+    end enum;
+
+type
+  tlexvalue        = record
+    x            : lstring;                      -- zpracovana cast radku
+--    case
+      -- analyzovane polozky
+      id           : str255;                     -- identifik tor
+      endspace     : boolean;                    -- T=konci mezerou
+      endlpar      : boolean;                    -- T=konci levou zavorkou
+--        or
+      longer       : boolean;                    -- T=64bitove cislo
+      n            : tunsigned32;                -- cislo
+      n2           : tuint64;                    -- vetsi cislo
+      radix        : tradix;                     -- ciselna soustava
+      _unsigned    : boolean;
+      _longint     : boolean;
+--        or
+      s            : str255;                     -- retezec
+--        or
+      ch           : char;                       -- znakovy literal
+--        or
+      ch2          : tunsigned32;                -- viceznakovy literal
+--        end case;
+      end record;
+
+type
+  -- zaznam jednoho lexikalniho symbolu
+  tlex             = record
+    lex            : tlexelement;
+    value          : tlexvalue;
+    next           : ^tlex;
+    prev           : ^tlex;
+    end record;
+  plex             = ^tlex;
+
+  -- zaznam o proudu (seznamu) symbolu
+  tstream          = record
+    name           : str255;
+    counter        : longint;
+    first          : plex;
+    current        : plex;
+    end record;
+  pstream          = ^tstream;
+
+  -- zaznam o zpracovavanem souboru
+  tfilelist        = record
+    name           : str255; 
+    stream         : tstream;
+    next           : ^tfilelist;
+    end record;
+  pfilelist        = ^tfilelist;
+
+type
+  -- informace o provadeni vetvi #if
+  texec            = enum
+    e_none;                                      -- neprovadet zadnou vetev
+    e_true;                                      -- provest pouze jednu vetev TRUE
+    e_through;                                   -- provadet obe vetve
+    end enum;
+
+  -- informace o provedeni vetvi #if
+  tbranch          = enum
+    b_false;                                     -- prepiname se na vetev FALSE
+    b_true;                                      -- prepiname se na vetev TRUE
+    b_else;                                      -- prepiname se na vetev ELSE
+    end enum;
+
+  -- extra priznaky o provedeni vetvi
+  taddon           = enum
+    a_wasif;                                     -- byl zpracovan prvni #if
+    a_wastrue;                                   -- v #if jiz byl zpracovana vetev TRUE
+    end enum;
+  taddons          = set of taddon;
+
+  -- extra priznaky definovanych identifikatoru
+  textra           = enum
+    tx_through;                                  -- @THROUGH
+    tx_ignore;                                   -- @IGNORE
+    tx_false;                                    -- @FALSE
+    tx_forward1;                                 -- @FORWARD1
+    tx_ignore1;                                  -- @IGNORE1
+    tx_ignore2;                                  -- @IGNORE2
+    tx_forward2;                                 -- @FORWARD2
+    tx_const;                                    -- @CONST
+    tx_const_def;                                -- @CONST = value
+    end enum;
+
+  -- typ vysledku
+  tvysl            = enum
+    tv_nic;                                      -- chyba
+    tv_extra;                                    -- specialni typ
+    tv_str;                                      -- ©etˆzec
+    tv_boolean;                                  -- boolean
+    tv_longint;                                  -- longint
+    tv_expr;                                     -- vyraz
+    end enum;
+
+  -- hodnota vysledku
+  tvalue           = record
+    typ            : tvysl;                      -- typ vysledku
+--    case
+    -- tv_extra
+    x              : textra;                     -- nastaveni externich priznaku
+--      or
+    -- tv_boolean
+    b              : boolean;                    -- hodnota vysledku typu boolean
+--      or
+    -- tv_longint
+    l              : longint;                    -- hodnota vysledku typu longint
+    _unsigned      : boolean;
+    _longint       : boolean;
+--      or
+    -- tv_expr
+    p              : str255;                     -- parametry
+--      end case;
+    -- lstring nemuze byt v case
+    -- tv_str
+    s              : lstring;                    -- hodnota vysledku typu retezec
+    -- tv_expr
+    e              : lstring;                    -- rozlozeny tvar
+    end record;
+
+type
+  tstrlist         = record
+    name           : str255; 
+    value          : tvalue;
+--    system         : boolean;
+    next           : ^tstrlist;
+    end record;
+  pstrlist         = ^tstrlist;
+  pstrlist2        = array '@'..'Z' of pstrlist;
+
+const
+  maxitems         = 128;
+
+type
+  strrec           = record
+    s              : str255; 
+    next           : boolean;
+    end record;
+
+  strrec2          = record
+    s              : str255; 
+    p              : str255; 
+    end record;
+
+type
+  strarray         = array 1..maxitems of strrec;
+  numarray         = array 1..maxitems of tvalue;
+
+type
+  tprocname        = record
+    name           : str255; 
+    dll            : str255; 
+    next           : ^tprocname;
+    end record;
+  pprocname        = ^tprocname;
+  tproclist        = array '@'..'Z' of pprocname;
+
+type
+  tfilearray       = array 1..255 of str255; 
+
+type
+  tfilearray2      = array 1..127 of strrec2;
+
+var
+  -- globalni parametry platne pro vsechny moduly
+  defines          : pstrlist2 := [for others use nil];
+
+  -- zpracovavany soubor
+  header_file      : str255 := 'windows.h';
+
+  -- seznam cest, kde lze dohledavat includnute soubory
+  header_path      : array 0..9 of str255 := [for others use ''];
+
+  -- cesta kde jsou k dispozici originalni .LIB knihovny
+  library_path     : str255 := '';
+
+  -- cesta kde jsou k dispozici spustitelne programy
+  program_files    : str255 := '';
+
+  -- cesta kam se budou ukladat vystupni .SRC soubory
+  output_path      : str255 := '';
+
+  -- pripona vyslednych souboru (.src nebo .priv)
+  flex_ext         : str8 := '.src';
+
+  -- predpona vyslednych souboru
+  flex_prefix      : str255 := 'system-';
+
+  -- pripona docasnych souboru (po zpracovani preprocesorem)
+  phase_ext        : str8 := '.h2s';
+
+  verbose_mode     : boolean := false;
+
+  -- cesta kam se ukladaji docasne soubory
+  work_path        : str255 := '';
+
+  -- pripona souboru obsahujici seznam zpracovanych souboru
+  list_ext         : str8 := '._list_';
+
+  -- seznam vynucene zpracovanych souboru
+  force_file       : tfilearray2 := [for others use ['','']];
+
+  phase            : tphases := [phase_0,phase_1,phase_2];
+  dofiles          : pfilelist:=nil;             -- seznam zpracovavanych souboru
+  typedefs         : pstrlist2 := [for others use nil];
+  library_file     : tfilearray := [for others use ''];
+  proclist         : tproclist := [for others use nil];
+  ignore_file      : tfilearray := [for others use ''];
+  with_list        : tproclist := [for others use nil];
+  consts           : pstrlist2 := [for others use nil];
+
+  -- seznam modulu podle vnoreni
+  header_list      : tproclist := [for others use nil];
+
+  -- parametry zavisle na modulu (nelze nastavit konfiguraci)
+  module_name      : str255;
+  module_path      : str255 := '';
+
+  -- nacitat knihovny
+  ignore_libraries : boolean := false;
+
+  -- seznam zavislosti poradi souboru pri zpracovani
+  needed_list      : tproclist := [for others use nil];
+
+  header_header    : array 1..9 of str255 := [for others use ''];
+
+  parameters       : pstrlist2 := [for others use nil];
+
+var
+  keywords         : array lex_asm..lex_while of str16 := [
+    { lex_asm       } 'asm',
+    { lex_auto      } 'auto',
+    { lex_bool      } 'bool',
+    { lex_break     } 'break',
+    { lex_case      } 'case',
+    { lex_catch     } 'catch',
+    { lex_char      } 'char',
+    { lex_class     } 'class',
+    { lex_const     } 'const',
+    { lex_const_cast} 'const_cast',
+    { lex_continue  } 'continue',
+    { lex_default   } 'default',
+    { lex_delete    } 'delete',
+    { lex_do        } 'do',
+    { lex_double    } 'double',
+    { lex_dynamic_cast}'dynamic_cast',
+    { lex_else      } 'else',
+    { lex_enum      } 'enum',
+    { lex_explicit  } 'explicit',
+    { lex_export    } 'export',
+    { lex_extern    } 'extern',
+    { lex_false     } 'false',
+    { lex_float     } 'float',
+    { lex_for       } 'for',
+    { lex_friend    } 'friend',
+    { lex_goto      } 'goto',
+    { lex_if        } 'if',
+    { lex_inline    } 'inline',
+    { lex_int       } 'int',
+    { lex_long      } 'long',
+    { lex_mutable   } 'mutable',
+    { lex_namespace } 'namespace',
+    { lex_new       } 'new',
+    { lex_operator  } 'operator',
+    { lex_private   } 'private',
+    { lex_protected } 'protected',
+    { lex_public    } 'public',
+    { lex_register  } 'register',
+    { lex_reinterpr.} 'reinterpret_cast',
+    { lex_return    } 'return',
+    { lex_short     } 'short',
+    { lex_signed    } 'signed',
+    { lex_sizeof    } 'sizeof',
+    { lex_static    } 'static',
+    { lex_static_ca.}'static_cast',
+    { lex_struct    } 'struct',
+    { lex_switch    } 'switch',
+    { lex_template  } 'template',
+    { lex_this      } 'this',
+    { lex_throw     } 'throw',
+    { lex_true      } 'true',
+    { lex_try       } 'try',
+    { lex_typedef   } 'typedef',
+    { lex_typeid    } 'typeid',
+    { lex_typename  } 'typename',
+    { lex_union     } 'union',
+    { lex_unsigned  } 'unsigned',
+    { lex_virtual   } 'virtual',
+    { lex_void      } 'void',
+    { lex_volatile  } 'volatile',
+    { lex_wchar_t   } 'wchar_t',
+    { lex_while     } 'while'];
+
+var
+  operators        : array lex_lcurly..lex_question of str8 := [
+    { lex_lcurly       } '{',
+    { lex_rcurly       } '}',
+    { lex_lbra         } '[',
+    { lex_rbra         } ']',
+    { lex_lpar         } '(',
+    { lex_rpar         } ')',
+    { lex_lbra2        } '<:',
+    { lex_rbra2        } ':>',
+    { lex_lcurly2      } '<%',
+    { lex_rcurly2      } '%>',
+    { lex_scol         } ';',
+    { lex_col          } ':',
+    { lex_3dot         } '...',
+    { lex_add          } '+',
+    { lex_sub          } '-',
+    { lex_mul          } '*',
+    { lex_div          } '/',
+    { lex_mod          } '%',
+    { lex_xor          } '^',
+    { lex_bitand       } '&',
+    { lex_bitor        } '|',
+    { lex_compl        } '~',
+    { lex_not          } '!',
+    { lex_assign       } '=',
+    { lex_lt           } '<',
+    { lex_gt           } '>',
+    { lex_assign_add   } '+=',
+    { lex_assign_sub   } '-=',
+    { lex_assign_mul   } '*=',
+    { lex_assign_div   } '/=',
+    { lex_assign_mod   } '%=',
+    { lex_xor_eq       } '^=',
+    { lex_and_eq       } '&=',
+    { lex_or_eq        } '|=',
+    { lex_shl          } '<<',
+    { lex_shr          } '>>',
+    { lex_assign_shr   } '>>=',
+    { lex_assign_shl   } '<<=',
+    { lex_eq           } '==',
+    { lex_not_eq       } '!=',
+    { lex_le           } '<=',
+    { lex_ge           } '>=',
+    { lex_and          } '&&',
+    { lex_or           } '||',
+    { lex_inc          } '++',
+    { lex_dec          } '--',
+    { lex_comma        } ',',
+    { lex_of2          } '->*',
+    { lex_of           } '->',
+    { lex_question     } '?'];
+
+type
+  -- mozne typy
+  tcstype          = enum
+    ct_nil;                                      -- nedefinovano
+    ct_void;                                     -- void
+    ct_signed;                                   -- cele cislo (signed, unsigned)
+    ct_digits;                                   -- realne cislo
+    ct_char;                                     -- char
+    ct_pointer;                                  -- pointer
+    ct_proc;                                     -- procedura nebo funkce
+    ct_named;                                    -- neznamy typ
+    end enum;
+
+  tinout           = enum
+    -- zakladni
+    io_in;                                       -- parametr typu in
+    io_out;                                      -- parametr typu out
+    -- dodatkove
+    io_optional;                                 -- parametr typu optional
+    -- predavane
+    io_ref;                                      -- parametr typu ref
+    end enum;
+  tinouts          = set of tinout;  
+
+  tctype           = record
+    cstype         : tcstype;                    -- zakladni typ
+    -- obecne parametry
+    _array         : boolean;
+    _bits          : byte;
+    _cdecl         : boolean;
+    _const         : boolean;
+    _export        : boolean;
+    _high          : str255;                     -- horni index pole
+    _machine       : boolean;
+    _pointer       : byte;
+    _stdcall       : boolean;
+    _struct        : boolean;
+    -- parametry ct_signed a ct_digits
+    _signed        : boolean;
+    _size          : byte;                       -- v bitech nebo v digits
+    -- parametry ct_proc
+    _import        : boolean;                    -- import z .LIB (.DLL) knihovny
+    _noreturn      : boolean;                    -- z teto procedury neni cesta zpet
+    _return        : str255;                     -- typ navratove hodnoty
+    _params        : lstring;                    -- definice parametru
+    _inout         : tinouts;                    -- typ parametru (in/out)
+    -- parametry ct_proc a ct_named
+    name           : str255;                     -- jmeno typu
+    _name          : str255;                     -- jmeno promenne
+    end record;
+
+type
+  -- klicova slova Flexu (jen ta ktera se lisi od C++)
+  tflexkeyword     = enum
+    tfk_abs;
+    tkf_abstract;
+    tfk_accept;
+    tfk_adjust;
+    tfk_and;
+    tfk_array;
+    tfk_attribute;
+    tfk_begin;
+    tfk_chracter;
+    tfk_concurent;
+    tfk_current;
+    tfk_declare;
+    tfk_define;
+    tfk_delay;
+    tfk_delta;
+    tfk_digits;
+    tfk_discard;
+    tfk_div;
+    tfk_elsif;
+    tfk_end;
+    tfk_enum;
+    tfk_entry;
+    tfk_exit;
+    tfk_extend;
+    tfk_generic;
+    tfk_in;
+    tfk_label;
+    tfk_leave;
+    tfk_limited;
+    tfk_local;
+    tfk_logical;
+    tfk_loop;
+    tfk_macro;
+    tfk_message;
+    tfk_mod;
+    tfk_module;
+    tfk_mutex;
+    tfk_nil;
+    tfk_not;
+    tfk_of;
+    tfk_or;
+    tfk_others;
+    tfk_out;
+    tfk_overload;
+    tfk_override;
+    tfk_pred;
+    tfk_private;
+    tfk_procedure;
+    tfk_program;
+    tfk_queue;
+    tfk_raise;
+    tfk_range;
+    tfk_record;
+    tfk_ref;
+    tfk_result;
+    tfk_reverse;
+    tfk_send;
+    tfk_sequential;
+    tfk_set;
+    tfk_shl;
+    tfk_shr;
+    tfk_string;
+    tfk_succ;
+    tfk_tag;
+    tfk_task;
+    tfk_then;
+    tfk_this;
+    tfk_to;
+    tfk_type;
+    tfk_unchecked;
+    tfk_until;
+    tfk_use;
+    tfk_var;
+    tfk_vector;
+    tfk_when;
+    tfk_with;
+    tfk_xor;
+    end enum;
+
+var
+  tflexkeywords : array tflexkeyword of str16 := [
+    { tfk_abs        } 'abs',
+    { tfk_abstract   } 'abstract',
+    { tfk_accept     } 'accept',
+    { tfk_adjust     } 'adjust',
+    { tfk_and        } 'and',
+    { tfk_array      } 'array',
+    { tfk_attribute  } 'attribute',
+    { tfk_begin      } 'begin',
+    { tfk_chracter   } 'chracter',
+    { tfk_concurent  } 'concurent',
+    { tfk_current    } 'current',
+    { tfk_declare    } 'declare',
+    { tfk_define     } 'define',
+    { tfk_delay      } 'delay',
+    { tfk_delta      } 'delta',
+    { tfk_digits     } 'digits',
+    { tfk_discard    } 'discard',
+    { tfk_div        } 'div',
+    { tfk_elsif      } 'elsif',
+    { tfk_end        } 'end',
+    { tfk_enum       } 'enum',
+    { tfk_entry      } 'entry',
+    { tfk_exit       } 'exit',
+    { tfk_extend     } 'extend',
+    { tfk_generic    } 'generic',
+    { tfk_in         } 'in',
+    { tfk_label      } 'label',
+    { tfk_leave      } 'leave',
+    { tfk_limited    } 'limited',
+    { tfk_local      } 'local',
+    { tfk_logical    } 'logical',
+    { tfk_loop       } 'loop',
+    { tfk_macro      } 'macro',
+    { tfk_message    } 'message',
+    { tfk_mod        } 'mod',
+    { tfk_module     } 'module',
+    { tfk_mutex      } 'mutex',
+    { tfk_nil        } 'nil',
+    { tfk_not        } 'not',
+    { tfk_of         } 'of',
+    { tfk_or         } 'or',
+    { tfk_others     } 'others',
+    { tfk_out        } 'out',
+    { tfk_overload   } 'overload',
+    { tfk_override   } 'override',
+    { tfk_pred       } 'pred',
+    { tfk_private    } 'private',
+    { tfk_procedure  } 'procedure',
+    { tfk_program    } 'program',
+    { tfk_queue      } 'queue',
+    { tfk_raise      } 'raise',
+    { tfk_range      } 'range',
+    { tfk_record     } 'record',
+    { tfk_ref        } 'ref',
+    { tfk_result     } 'result',
+    { tfk_reverse    } 'reverse',
+    { tfk_send       } 'send',
+    { tfk_sequential } 'sequential',
+    { tfk_set        } 'set',
+    { tfk_shl        } 'shl',
+    { tfk_shr        } 'shr',
+    { tfk_string     } 'string',
+    { tfk_succ       } 'succ',
+    { tfk_tag        } 'tag',
+    { tfk_task       } 'task',
+    { tfk_then       } 'then',
+    { tfk_this       } 'this',
+    { tfk_to         } 'to',
+    { tfk_type       } 'type',
+    { tfk_unchecked  } 'unchecked',
+    { tfk_until      } 'until',
+    { tfk_use        } 'use',
+    { tfk_var        } 'var',
+    { tfk_vector     } 'vector',
+    { tfk_when       } 'when',
+    { tfk_with       } 'with',
+    { tfk_xor        } 'xor'];
+
+var
+  gcounter         : longint;                    -- globalni citac nazvu typu
+
+end h2def;
+
+{%ON}
+

@@ -1,0 +1,589 @@
+----------------------------------------------------------------------------------------------------
+module dlgs =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef;
+
+-- /*++
+-- 
+-- Copyright (c) Microsoft Corporation. All rights reserved.
+-- 
+-- Module Name:
+-- 
+--     dlgs.h
+-- 
+-- Abstract:
+-- 
+--     This module contains the UI dialog header information.
+-- 
+-- --*/
+-- 
+--  Constant Declarations.
+-- 
+const
+  ctlFirst          = $0400;
+
+const
+  ctlLast           = $04FF;
+
+-- 
+--  Push buttons.
+-- 
+const
+  psh1              = $0400;
+
+const
+  psh2              = $0401;
+
+const
+  psh3              = $0402;
+
+const
+  psh4              = $0403;
+
+const
+  psh5              = $0404;
+
+const
+  psh6              = $0405;
+
+const
+  psh7              = $0406;
+
+const
+  psh8              = $0407;
+
+const
+  psh9              = $0408;
+
+const
+  psh10             = $0409;
+
+const
+  psh11             = $040A;
+
+const
+  psh12             = $040B;
+
+const
+  psh13             = $040C;
+
+const
+  psh14             = $040D;
+
+const
+  psh15             = $040E;
+
+const
+  psh16             = $040F;
+
+-- 
+--  Checkboxes.
+-- 
+const
+  chx1              = $0410;
+
+const
+  chx2              = $0411;
+
+const
+  chx3              = $0412;
+
+const
+  chx4              = $0413;
+
+const
+  chx5              = $0414;
+
+const
+  chx6              = $0415;
+
+const
+  chx7              = $0416;
+
+const
+  chx8              = $0417;
+
+const
+  chx9              = $0418;
+
+const
+  chx10             = $0419;
+
+const
+  chx11             = $041A;
+
+const
+  chx12             = $041B;
+
+const
+  chx13             = $041C;
+
+const
+  chx14             = $041D;
+
+const
+  chx15             = $041E;
+
+const
+  chx16             = $041F;
+
+-- 
+--  Radio buttons.
+-- 
+const
+  rad1              = $0420;
+
+const
+  rad2              = $0421;
+
+const
+  rad3              = $0422;
+
+const
+  rad4              = $0423;
+
+const
+  rad5              = $0424;
+
+const
+  rad6              = $0425;
+
+const
+  rad7              = $0426;
+
+const
+  rad8              = $0427;
+
+const
+  rad9              = $0428;
+
+const
+  rad10             = $0429;
+
+const
+  rad11             = $042A;
+
+const
+  rad12             = $042B;
+
+const
+  rad13             = $042C;
+
+const
+  rad14             = $042D;
+
+const
+  rad15             = $042E;
+
+const
+  rad16             = $042F;
+
+-- 
+--  Groups, frames, rectangles, and icons.
+-- 
+const
+  grp1              = $0430;
+
+const
+  grp2              = $0431;
+
+const
+  grp3              = $0432;
+
+const
+  grp4              = $0433;
+
+const
+  frm1              = $0434;
+
+const
+  frm2              = $0435;
+
+const
+  frm3              = $0436;
+
+const
+  frm4              = $0437;
+
+const
+  rct1              = $0438;
+
+const
+  rct2              = $0439;
+
+const
+  rct3              = $043A;
+
+const
+  rct4              = $043B;
+
+const
+  ico1              = $043C;
+
+const
+  ico2              = $043D;
+
+const
+  ico3              = $043E;
+
+const
+  ico4              = $043F;
+
+-- 
+--  Static text.
+-- 
+const
+  stc1              = $0440;
+
+const
+  stc2              = $0441;
+
+const
+  stc3              = $0442;
+
+const
+  stc4              = $0443;
+
+const
+  stc5              = $0444;
+
+const
+  stc6              = $0445;
+
+const
+  stc7              = $0446;
+
+const
+  stc8              = $0447;
+
+const
+  stc9              = $0448;
+
+const
+  stc10             = $0449;
+
+const
+  stc11             = $044A;
+
+const
+  stc12             = $044B;
+
+const
+  stc13             = $044C;
+
+const
+  stc14             = $044D;
+
+const
+  stc15             = $044E;
+
+const
+  stc16             = $044F;
+
+const
+  stc17             = $0450;
+
+const
+  stc18             = $0451;
+
+const
+  stc19             = $0452;
+
+const
+  stc20             = $0453;
+
+const
+  stc21             = $0454;
+
+const
+  stc22             = $0455;
+
+const
+  stc23             = $0456;
+
+const
+  stc24             = $0457;
+
+const
+  stc25             = $0458;
+
+const
+  stc26             = $0459;
+
+const
+  stc27             = $045A;
+
+const
+  stc28             = $045B;
+
+const
+  stc29             = $045C;
+
+const
+  stc30             = $045D;
+
+const
+  stc31             = $045E;
+
+const
+  stc32             = $045F;
+
+-- 
+--  Listboxes.
+-- 
+const
+  lst1              = $0460;
+
+const
+  lst2              = $0461;
+
+const
+  lst3              = $0462;
+
+const
+  lst4              = $0463;
+
+const
+  lst5              = $0464;
+
+const
+  lst6              = $0465;
+
+const
+  lst7              = $0466;
+
+const
+  lst8              = $0467;
+
+const
+  lst9              = $0468;
+
+const
+  lst10             = $0469;
+
+const
+  lst11             = $046A;
+
+const
+  lst12             = $046B;
+
+const
+  lst13             = $046C;
+
+const
+  lst14             = $046D;
+
+const
+  lst15             = $046E;
+
+const
+  lst16             = $046F;
+
+-- 
+--  Combo boxes.
+-- 
+const
+  cmb1              = $0470;
+
+const
+  cmb2              = $0471;
+
+const
+  cmb3              = $0472;
+
+const
+  cmb4              = $0473;
+
+const
+  cmb5              = $0474;
+
+const
+  cmb6              = $0475;
+
+const
+  cmb7              = $0476;
+
+const
+  cmb8              = $0477;
+
+const
+  cmb9              = $0478;
+
+const
+  cmb10             = $0479;
+
+const
+  cmb11             = $047A;
+
+const
+  cmb12             = $047B;
+
+const
+  cmb13             = $047C;
+
+const
+  cmb14             = $047D;
+
+const
+  cmb15             = $047E;
+
+const
+  cmb16             = $047F;
+
+-- 
+--  Edit controls.
+-- 
+const
+  edt1              = $0480;
+
+const
+  edt2              = $0481;
+
+const
+  edt3              = $0482;
+
+const
+  edt4              = $0483;
+
+const
+  edt5              = $0484;
+
+const
+  edt6              = $0485;
+
+const
+  edt7              = $0486;
+
+const
+  edt8              = $0487;
+
+const
+  edt9              = $0488;
+
+const
+  edt10             = $0489;
+
+const
+  edt11             = $048A;
+
+const
+  edt12             = $048B;
+
+const
+  edt13             = $048C;
+
+const
+  edt14             = $048D;
+
+const
+  edt15             = $048E;
+
+const
+  edt16             = $048F;
+
+-- 
+--  Scroll bars.
+-- 
+const
+  scr1              = $0490;
+
+const
+  scr2              = $0491;
+
+const
+  scr3              = $0492;
+
+const
+  scr4              = $0493;
+
+const
+  scr5              = $0494;
+
+const
+  scr6              = $0495;
+
+const
+  scr7              = $0496;
+
+const
+  scr8              = $0497;
+
+-- 
+--  Controls
+-- 
+const
+  ctl1              = $04A0;
+
+-- 
+--  These dialog resource ordinals really start at 0x0600, but the
+--  RC Compiler can't handle hex for resource IDs, hence the decimal.
+-- 
+const
+  FILEOPENORD       = 1536;
+
+const
+  MULTIFILEOPENORD  = 1537;
+
+const
+  PRINTDLGORD       = 1538;
+
+const
+  PRNSETUPDLGORD    = 1539;
+
+const
+  FINDDLGORD        = 1540;
+
+const
+  REPLACEDLGORD     = 1541;
+
+const
+  FONTDLGORD        = 1542;
+
+const
+  FORMATDLGORD31    = 1543;
+
+const
+  FORMATDLGORD30    = 1544;
+
+const
+  RUNDLGORD         = 1545;
+
+const
+  PAGESETUPDLGORD   = 1546;
+
+const
+  NEWFILEOPENORD    = 1547;
+
+const
+  PRINTDLGEXORD     = 1549;
+
+const
+  PAGESETUPDLGORDMOTIF= 1550;
+
+const
+  COLORMGMTDLGORD   = 1551;
+
+const
+  NEWFILEOPENV2ORD  = 1552;
+
+-- 
+--  Typedef Declarations.
+-- 
+type
+  tagCRGB           = record
+bRed            : BYTE;
+bGreen          : BYTE;
+bBlue           : BYTE;
+bExtra          : BYTE;
+  end record;
+  CRGB              = tagCRGB;
+
+-- /* RGB Color 
+
+end dlgs;

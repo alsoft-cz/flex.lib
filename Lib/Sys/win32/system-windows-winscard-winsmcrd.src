@@ -1,0 +1,302 @@
+----------------------------------------------------------------------------------------------------
+module winsmcrd =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt;
+
+-- /*++
+-- 
+-- Copyright (c) 1996  Microsoft Corporation
+-- 
+-- Module Name:
+-- 
+--     winsmcrd.h
+-- 
+-- Abstract:
+--     Smart Card class/port IOCTL codes. This file is required for all code
+--     user mode and kernel mode, using Smart Card IOCTL's, defines,
+--     data structures
+-- 
+-- Revision History:
+-- 
+-- --*/
+-- #pragma  once
+type
+ULONG             = DWORD;
+type
+UWORD             = WORD;
+type
+UCHAR             = BYTE;
+-- 
+--  Various constants
+-- 
+const
+  SCARD_ATR_LENGTH  = 33;
+
+-- 
+-- /////////////////////////////////////////////////////////////////////////////
+-- 
+--  Protocol Flag definitions
+-- 
+const
+  SCARD_PROTOCOL_UNDEFINED= $00;
+
+const
+  SCARD_PROTOCOL_T0 = $01;
+
+const
+  SCARD_PROTOCOL_T1 = $02;
+
+const
+  SCARD_PROTOCOL_RAW= $10000;
+
+-- 
+--  This is the mask of ISO defined transmission protocols
+-- 
+-- 
+--  Use the default transmission parameters / card clock freq.
+-- 
+const
+  SCARD_PROTOCOL_DEFAULT= $80000000;
+
+-- 
+--  Use optimal transmission parameters / card clock freq.
+--  Since using the optimal parameters is the default case no bit is defined to be 1
+-- 
+const
+  SCARD_PROTOCOL_OPTIMAL= $00;
+
+-- 
+--  Ioctl parameters 1 for IOCTL_SMARTCARD_POWER
+-- 
+const
+  SCARD_POWER_DOWN  = 0;
+
+const
+  SCARD_COLD_RESET  = 1;
+
+const
+  SCARD_WARM_RESET  = 2;
+
+-- 
+-- /////////////////////////////////////////////////////////////////////////////
+-- 
+--  Reader Action IOCTLs
+-- 
+--  #define IOCTL_SMARTCARD_READ SCARD_CTL_CODE( 8) obsolete
+--  #define IOCTL_SMARTCARD_WRITE SCARD_CTL_CODE( 9) obsolete
+-- 
+-- /////////////////////////////////////////////////////////////////////////////
+-- 
+--  Tags for requesting card and reader attributes
+-- 
+const
+  MAXIMUM_ATTR_STRING_LENGTH= 32;
+
+const
+  MAXIMUM_SMARTCARD_READERS= 10;
+
+const
+  SCARD_CLASS_VENDOR_INFO= 1;
+
+const
+  SCARD_CLASS_COMMUNICATIONS= 2;
+
+const
+  SCARD_CLASS_PROTOCOL= 3;
+
+const
+  SCARD_CLASS_POWER_MGMT= 4;
+
+const
+  SCARD_CLASS_SECURITY= 5;
+
+const
+  SCARD_CLASS_MECHANICAL= 6;
+
+const
+  SCARD_CLASS_VENDOR_DEFINED= 7;
+
+const
+  SCARD_CLASS_IFD_PROTOCOL= 8;
+
+const
+  SCARD_CLASS_ICC_STATE= 9;
+
+const
+  SCARD_CLASS_PERF  = $7FFE;
+
+const
+  SCARD_CLASS_SYSTEM= $7FFF;
+
+--  #define SCARD_ATTR_ASYNC_PROTOCOL_TYPES SCARD_ATTR_VALUE(SCARD_CLASS_PROTOCOL, 0x0120)
+--  #define SCARD_ATTR_SYNC_PROTOCOL_TYPES SCARD_ATTR_VALUE(SCARD_CLASS_PROTOCOL, 0x0126)
+-- 
+--  T=0 Protocol Defines
+-- 
+const
+  SCARD_T0_HEADER_LENGTH= 7;
+
+const
+  SCARD_T0_CMD_LENGTH= 5;
+
+-- 
+--  T=1 Protocol Defines
+-- 
+const
+  SCARD_T1_PROLOGUE_LENGTH= 3;
+
+const
+  SCARD_T1_EPILOGUE_LENGTH= 2;
+
+const
+  SCARD_T1_MAX_IFS  = 254;
+
+-- 
+-- /////////////////////////////////////////////////////////////////////////////
+-- 
+--  Reader states
+-- 
+const
+  SCARD_UNKNOWN     = 0;
+
+--  of the current state of the reader.
+const
+  SCARD_ABSENT      = 1;
+
+--  the reader.
+const
+  SCARD_PRESENT     = 2;
+
+--  present in the reader, but that it has
+--  not been moved into position for use.
+const
+  SCARD_SWALLOWED   = 3;
+
+--  reader in position for use. The card is
+--  not powered.
+const
+  SCARD_POWERED     = 4;
+
+--  being provided to the card, but the
+--  Reader Driver is unaware of the mode of
+--  the card.
+const
+  SCARD_NEGOTIABLE  = 5;
+
+--  reset and is awaiting PTS negotiation.
+const
+  SCARD_SPECIFIC    = 6;
+
+--  reset and specific communication
+--  protocols have been established.
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  I/O Services
+-- 
+--  The following services provide access to the I/O capabilities of the
+--  reader drivers. Services of the Smart Card are requested by placing the
+--  following structure into the protocol buffer:
+-- 
+type
+  _SCARD_IO_REQUEST = record
+dwProtocol      : DWORD;
+cbPciLength     : DWORD;
+  end record;
+  SCARD_IO_REQUEST  = _SCARD_IO_REQUEST;
+  PSCARD_IO_REQUEST = ^_SCARD_IO_REQUEST;
+  LPSCARD_IO_REQUEST = ^_SCARD_IO_REQUEST;
+
+type
+LPCSCARD_IO_REQUEST = ^SCARD_IO_REQUEST for machine_pointer use true;
+-- 
+--  T=0 protocol services.
+-- 
+type
+  SCARD_T0_COMMAND  = record
+bCla            : BYTE;
+bIns            : BYTE;
+bP1             : BYTE;
+bP2             : BYTE;
+bP3             : BYTE;
+  end record;
+  LPSCARD_T0_COMMAND = ^SCARD_T0_COMMAND;
+
+type
+  SCARD_T0_REQUEST  = record
+ioRequest       : SCARD_IO_REQUEST;
+bSw1            : BYTE;
+bSw2            : BYTE;
+t_001            : record
+      CmdBytes      : SCARD_T0_COMMAND for position use 0;
+      rgbHeader     : array 0..4 of BYTE for position use 0;
+    end record;
+  end record;
+
+type
+PSCARD_T0_REQUEST = ^SCARD_T0_REQUEST for machine_pointer use true;
+LPSCARD_T0_REQUEST = ^^SCARD_T0_REQUEST for machine_pointer use true;
+-- 
+--  T=1 Protocol Services
+-- 
+type
+  SCARD_T1_REQUEST  = record
+ioRequest       : SCARD_IO_REQUEST;
+  end record;
+
+type
+PSCARD_T1_REQUEST = ^SCARD_T1_REQUEST for machine_pointer use true;
+LPSCARD_T1_REQUEST = ^^SCARD_T1_REQUEST for machine_pointer use true;
+-- 
+-- //////////////////////////////////////////////////////////////////////////////
+-- 
+--  Driver attribute flags
+-- 
+const
+  SCARD_READER_SWALLOWS= $01;
+
+--  mechanism.
+const
+  SCARD_READER_EJECTS= $02;
+
+--  mechanism.
+const
+  SCARD_READER_CONFISCATES= $04;
+
+--  mechanism.
+-- 
+-- /////////////////////////////////////////////////////////////////////////////
+-- 
+--  Type of reader
+-- 
+const
+  SCARD_READER_TYPE_SERIAL= $01;
+
+const
+  SCARD_READER_TYPE_PARALELL= $02;
+
+const
+  SCARD_READER_TYPE_KEYBOARD= $04;
+
+const
+  SCARD_READER_TYPE_SCSI= $08;
+
+const
+  SCARD_READER_TYPE_IDE= $10;
+
+const
+  SCARD_READER_TYPE_USB= $20;
+
+const
+  SCARD_READER_TYPE_PCMCIA= $40;
+
+const
+  SCARD_READER_TYPE_VENDOR= $F0;
+
+
+end winsmcrd;

@@ -1,0 +1,336 @@
+----------------------------------------------------------------------------------------------------
+class private c_file_output_stream =
+----------------------------------------------------------------------------------------------------
+var
+  pf               : p_file;
+  autoclose        : t_logical;
+  ofs              : t_file_pointer;
+  closed           : t_logical;
+  eod              : t_logical;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    this.pf:=file;
+    autoclose:=false;
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static create =
+  ------------------------------------------------------------------------------------------------
+  begin
+    new pf;
+    pf^.init_text_name(name);
+    pf^.create([tfm_write],tfa_sequential,sharing,always);
+    autoclose:=true;
+    end create;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    new pf;
+    pf^.init_text_name(name);
+    pf^.open([tfm_write],tfa_sequential,sharing,always);
+    autoclose:=true;
+    end open;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if autoclose then
+      pf^.close;
+      discard pf;
+      end if;
+    closed:=true;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data           : p_data_array;
+    _size           : t_offset;
+
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+
+    if data.style=t_dps_signal then 
+      -- flush packet
+      if data.signal=t_dpss_flush then
+        pf^.flush;
+        end if;
+      -- eod
+      if data.signal=t_dpss_eod then
+        eod:=true;
+        end if;
+    else
+      read_packet(data,_data,_size);
+      if _size>0 then
+        pf^.write(ofs,p_data_array_long(_data:unchecked)^,_size);
+        end if;
+      end if;
+    ofs+_size;
+    add_flow(data);
+    discard_packet(data);
+    end write_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=true;
+    end is_reading;
+  end c_file_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_file_input_stream = 
+----------------------------------------------------------------------------------------------------
+var
+  pf               : p_file;
+  ofs              : t_file_pointer;
+  closed           : t_logical;
+  eod              : t_logical;
+  autoclose        : t_logical;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    this.pf:=file;
+    autoclose:=false;
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    new pf;
+    pf^.init_text_name(name);
+    pf^.open([tfm_read],tfa_sequential,sharing,always);
+    autoclose:=true;
+    end open;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if autoclose then
+      pf^.close;
+      discard pf;
+      end if;
+    closed:=true;
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet = 
+  ------------------------------------------------------------------------------------------------
+  var
+    filesize       : t_offset;
+    size           : t_offset;
+    _data          : p_data_array;
+    optimal_size   : t_offset;
+
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+    filesize:=pf^.get_size();
+    size:=filesize-ofs;
+    if size>0 then
+      get_optimal_packet_size(optimal_size);
+      if size>optimal_size then
+        size:=optimal_size;
+        end if;
+
+      new _data range size;
+      pf^.read(ofs,p_data_array_long(_data:unchecked)^,size);
+      ofs + size;
+      create_packet(data,_data,size,t_dps_heap);
+      add_flow(data);
+    else
+      eod:=true;
+      create_eod(data);
+      end if;
+    end read_packet;
+
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=eod;
+    end is_eod;
+  end c_file_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_buffered_file_output_stream =
+----------------------------------------------------------------------------------------------------
+var
+  filestream       : aliased c_file_output_stream;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.init(file);
+    init_output_buffer(^filestream);
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.open(name,sharing,always);
+    init_output_buffer(^filestream);
+    end open;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  static create =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.create(name,sharing,always);
+    init_output_buffer(^filestream);
+    end create;
+  end c_buffered_file_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_buffered_file_input_stream =
+----------------------------------------------------------------------------------------------------
+var
+  filestream       : aliased c_file_input_stream;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.init(file);
+    init_input_buffer(^filestream);
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.open(name,sharing,always);
+    init_input_buffer(^filestream);
+    end open;
+  end c_buffered_file_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_text_file_reader = 
+-- ctenar textoveho souboru
+----------------------------------------------------------------------------------------------------
+var
+  filestream       : aliased c_file_input_stream;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.init(file);
+    this.init_text_reader(p_input_stream(^filestream),decoder);
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.open(name,sharing,always);
+    this.init_text_reader(p_input_stream(^filestream),decoder);
+    end open;
+  end c_text_file_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_text_file_writer = 
+-- zapisujici textoveho souboru
+----------------------------------------------------------------------------------------------------
+var
+  filestream       : aliased c_file_output_stream;
+
+  ------------------------------------------------------------------------------------------------
+  static init =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.init(file);
+    this.init_text_writer(p_output_stream(^filestream),encoder);
+    end init;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.open(name,sharing,always);
+    this.init_text_writer(p_output_stream(^filestream),encoder);
+    end open;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static create =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.create(name,sharing,always);
+    this.init_text_writer(p_output_stream(^filestream),encoder);
+    end create;
+  end c_text_file_writer;
