@@ -204,6 +204,9 @@ var
     -- cekam na packet
     que.accept_any_msg(packet);
     data:=p_data_packet(packet)^;
+
+    -- uvolnim handle na packet
+    discard packet;
  
     -- zapocitam prutok
     c_input_stream:(this).add_flow(data);
@@ -213,8 +216,6 @@ var
       eod:=true;
       end if;
 
-    -- uvolnim handle na packet
-    discard packet;
     end read_packet;
 
 
@@ -300,8 +301,9 @@ var
     if isreading then
       -- pockam az cerpadlo vytlaci packety ven
       c_output_stream:(this).flush;
+      c_output_stream:(this).write_eod;
       -- zastavim cerpadlo
-      c_task:(this).kill;
+      c_task:(this).wait;
       end if;
 
     closed:=true;
@@ -393,8 +395,6 @@ var
       if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
         break;
         end if;
-      
-      discard data;
       end loop;
     end run;
 

@@ -6,6 +6,7 @@ module private synchronization =
 ----------------------------------------------------------------------------------------------------
 with
   flex.hw_api,
+  flex.references,
   flex.synchronization;
 
 ----------------------------------------------------------------------------------------------------
@@ -201,7 +202,7 @@ var
   entry =
   --------------------------------------------------------------------------------------------------
   begin
-    rtl_squeue_new(que,rtl_cst_waitable,^rtl_sset_free_data_discard);
+    rtl_squeue_new(que,^rtl_ref_collector_discard);
     end entry;
 
 

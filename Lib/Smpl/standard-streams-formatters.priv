@@ -47,6 +47,7 @@ var
       --%%TODO(FLEX) call parent method p_stream_writer(^this)^.set_lazy_buffer(lazy);
       _target^.set_lazy_buffer(lazy);
       --%%END TODO
+      is_lazy:=lazy;
       end if;
     end set_lazy_buffer;
 
