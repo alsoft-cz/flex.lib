@@ -11,12 +11,12 @@ class c_trigger_container;           type p_trigger_container = ^class c_trigger
 
 type
   -- triggered event
-  t_triggered_event= private t_tag := t_triggered_event:tag;
+  t_triggered_event= private t_tag {%%TODO(TAG) := t_triggered_event:tag};
 
   -- types of common events
-  t_event_before   = t_triggered_event := t_event_before:tag;
-  t_event_after    = t_triggered_event := t_event_after:tag;
-  t_event_error    = t_triggered_event := t_event_error:tag;
+  t_event_before   = t_triggered_event {%%TODO(TAG) := t_event_before:tag};
+  t_event_after    = t_triggered_event {%%TODO(TAG) := t_event_after:tag};
+  t_event_error    = t_triggered_event {%%TODO(TAG) := t_event_error:tag};
 
 var
   -- common events

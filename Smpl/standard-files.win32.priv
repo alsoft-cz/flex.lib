@@ -78,7 +78,7 @@ class private c_filesystem_object =
 
     
     ------------------------------------------------------------------------------------------------
-    static get_datim =
+    virtual get_datim =
     -- Returns requested date and time information. When the subprogram fails, [res] is set to 
     -- [tfe_get_info].
     ------------------------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ class private c_filesystem_object =
 
 
     ------------------------------------------------------------------------------------------------
-    static set_datim =
+    virtual set_datim =
     -- Sets all date and time informations of the file contained in [kind] to [datim]. When the 
     -- method fails, [res] is set to [tfe_set_info].
     ------------------------------------------------------------------------------------------------
@@ -100,25 +100,124 @@ class private c_filesystem_object =
 
 
     ------------------------------------------------------------------------------------------------
-    static get_attribute =                        -- state of the attribute (T-set, F-unset)
+    virtual get_attribute =                        
     -- Returns the state of the given file attribute [attr]. When the subprogram fails, [res] is set 
     -- to [tfe_get_info] and the return value is undefined.
     ------------------------------------------------------------------------------------------------
+    var
+      win32_attrs   : windows.windef.tsys_dword;
+      sys_name      : windows.windef.winnt.psys_wstr; -- system name
+      
     begin
-      raise feature_not_implemented;
+      -- composes system file name
+      declare var
+        text_name  : p_text_name;                -- plain-text name of a file
+      begin
+        name.compose_name(text_name);
+        to_system_string(text_name^,sys_name);
+      leave
+        discard text_name;
+        end declare;
+
+      -- read file attributes
+      win32_attrs:=windows.winbase.GetFileAttributes(sys_name);
+      if win32_attrs=system.windows.winbase.INVALID_FILE_ATTRIBUTES then
+        #if #declared tomash;; #and then; tomash then;
+          #warning 'README';
+          {
+            Na tohle je tu nˆjak  metoda [set_result] nebo tak nˆco, kter  kromˆ nastaven¡
+            k¢du chyby vol  trigger [event_error]. Pros¡m zmˆnit.
+          }
+        #end if;
+        res:=tfe_get_info;
+        return;
+        end if;
+
+      -- remap win32 attributes to ours
+      case attr
+        when tfattr_readonly    do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_READONLY) <> 0;
+        when tfattr_temporary   do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_TEMPORARY) <> 0;
+        when tfattr_compressed  do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_COMPRESSED) <> 0;
+        when tfattr_encrypted   do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_ENCRYPTED) <> 0;
+        when tfattr_sparse      do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_SPARSE_FILE) <> 0;
+        when tfattr_hidden      do result:=(win32_attrs and system.windows.windef.winnt.FILE_ATTRIBUTE_HIDDEN) <> 0;
+        when others             do res := tfe_get_info; return;{%%TODO(ERRORS)};
+        end case;
+
+    leave
+      discard sys_name;
       end get_attribute;
 
 
 
     ------------------------------------------------------------------------------------------------
-    static set_attribute =
+    virtual set_attribute =
     -- Sets the state of the given file attribute [attr]. When the subprogram fails, [res] is set to 
     -- [tfe_set_info].
     ------------------------------------------------------------------------------------------------
-    begin
-      raise feature_not_implemented;
-      end set_attribute;
+    var
+      win32_attrs   : windows.windef.tsys_dword;
+      sys_name      : windows.windef.winnt.psys_wstr; -- system name
+      text_name     : p_text_name;                -- plain-text name of a file
+      attr_mask     : windows.windef.tsys_dword;
 
+    begin
+      -- composes system file name
+      declare var
+        text_name  : p_text_name;                -- plain-text name of a file
+      begin
+        name.compose_name(text_name);
+        to_system_string(text_name^,sys_name);
+      leave
+        discard text_name;
+        end declare;
+
+      -- read original file attributes
+      win32_attrs:=windows.winbase.GetFileAttributes(sys_name);
+      if win32_attrs = system.windows.winbase.INVALID_FILE_ATTRIBUTES then
+        #if #declared tomash;; #and then; tomash then;
+          #warning 'README';
+          {
+            Na tohle je tu nˆjak  metoda [set_result] nebo tak nˆco, kter  kromˆ nastaven¡
+            k¢du chyby vol  trigger [event_error]. Pros¡m zmˆnit.
+          }
+        #end if;
+        res:=tfe_set_info;
+        return;
+        end if;
+
+      -- prepare attribute mask  = which bit will be set/reset
+      case attr
+        when tfattr_readonly    do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_READONLY;
+        when tfattr_temporary   do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_TEMPORARY;
+--      when tfattr_compressed  do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_COMPRESSED;   {by other system calls than SetFileAttributes}
+--      when tfattr_encrypted   do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_ENCRYPTED;
+--      when tfattr_sparse      do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_SPARSE_FILE;
+        when tfattr_hidden      do attr_mask := system.windows.windef.winnt.FILE_ATTRIBUTE_HIDDEN;
+        when others             do res := tfe_set_info; return; {%%TODO(ERRORS)};
+        end case;
+
+      -- change bit as required
+      if status 
+        then win32_attrs or attr_mask
+        else win32_attrs and not attr_mask
+        end if;
+
+      -- store modified flags
+      if not windows.winbase.SetFileAttributes(sys_name, win32_attrs) then 
+        #if #declared tomash;; #and then; tomash then;
+          #warning 'README';
+          {
+            Na tohle je tu nˆjak  metoda [set_result] nebo tak nˆco, kter  kromˆ nastaven¡
+            k¢du chyby vol  trigger [event_error]. Pros¡m zmˆnit.
+          }
+        #end if;
+        res:=tfe_set_info 
+        end if;
+
+    leave
+      discard sys_name;
+      end set_attribute;
 
     end c_filesystem_object;
 
@@ -1288,7 +1387,6 @@ class c_file_output_text_stream = extend c_output_text_stream;
     override write =
     ------------------------------------------------------------------------------------------------
     var
-      i            : t_unsigned;
       all_out      : t_logical;
       b            : t_unsigned8;
 

@@ -11,12 +11,7 @@ module private unicode =
 procedure to_unicode =
 -- Converts ISO 10646 string to UNICODE string.
 ----------------------------------------------------------------------------------------------------
-var
-  i            : t_unsigned;
-  j            : t_unsigned;
-
 begin
-  j:=istr:length;
   for i in 1..istr:length loop
     ustr & t_char16(istr[i]);
     end loop;

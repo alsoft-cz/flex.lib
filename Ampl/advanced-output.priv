@@ -31,9 +31,6 @@ class private c_listing =
     static create =
     -- Creates a new listing.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       this.os:=os;
       this.width:=width;
@@ -61,9 +58,6 @@ class private c_listing =
     virtual start_section =
     -- Starts a new named section within the listing.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       -- finish the current section if there is any
       if section_pending then
@@ -129,9 +123,6 @@ class private c_listing =
     -- Outputs a single line of text into the listing. The text is indented according the current
     -- indentation level.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       -- first handle the current indent
       for i in 1..current_indent loop
@@ -186,7 +177,5 @@ class private c_listing =
       end exit;
 
     end c_listing;
-
-
 
 end output;

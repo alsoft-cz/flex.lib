@@ -9,9 +9,6 @@ module private unchecked_memory_access =
 procedure memory_fill_zero =
 -- Sets [size] bytes of [x] to zero.
 ----------------------------------------------------------------------------------------------------
-var
-  i                : t_unsigned;
-
 begin
   {%%TODO(LIB) P©epsat do assembleru, naprogramovat t‚‘ MMX variantu }
   for i in 1..size loop
@@ -25,9 +22,6 @@ begin
 procedure memory_fill_byte =
 -- Sets [size] bytes of [x] to [fill_with].
 ----------------------------------------------------------------------------------------------------
-var
-  i                : t_unsigned;
-
 begin
   {%%TODO(LIB) P©epsat do assembleru, naprogramovat t‚‘ MMX variantu }
   for i in 1..size loop
@@ -42,7 +36,6 @@ procedure memory_copy =
 -- Moves [size] of bytes from [source] to [destination].
 ----------------------------------------------------------------------------------------------------
 var
-  i                : t_unsigned;
   source_ptr       : t_machine_pointer;
   destination_ptr  : t_machine_pointer;
 
@@ -71,7 +64,5 @@ begin
       end loop;
     end if;
   end memory_copy;
-
-
 
 end unchecked_memory_access;

@@ -106,9 +106,6 @@ class private c_trigger_container =
     override execute =
     -- Event trigger.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       -- execute all triggers
       if triggers<>nil then
@@ -124,9 +121,6 @@ class private c_trigger_container =
     exit =
     -- Finalization.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       if triggers<>nil then
         for i in triggers^:range loop

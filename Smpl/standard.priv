@@ -43,7 +43,6 @@ procedure to_system_string (
 -- Convert standard string to OS string.
 ----------------------------------------------------------------------------------------------------
 var
-  i                : str:range:type;
   j                : t_unsigned;
   surrogate_pairs  : t_unsigned;
   low_surrogate    : character 16;
@@ -51,13 +50,11 @@ var
 
 begin
   -- compute string's length
-  i:=i:first;
-  while i<str:length loop
+  for i in str:range loop
     if str[i]:ord>$FFFF then
       -- meanwhile compute number of surrogate pairs
       succ surrogate_pairs;
       end if;
-    succ i;
     end loop;
 
   -- allocate memory
@@ -94,9 +91,6 @@ procedure to_ascii_string (
     sysstr         : out windows.windef.winnt.psys_ustr) =
 -- Convert standard string to OS 8bit string.
 ----------------------------------------------------------------------------------------------------
-var
-  i                : str:range:type;
-
 begin
   -- %%TODO(LIB) Toto je velmi zjednodu¨en‚. Mˆlo by se to sna‘it nap©¡klad odh ‡kov vat
   -- znaky s diakritikou, zohlednit syst‚movou k¢dovou str nku a podobnˆ.

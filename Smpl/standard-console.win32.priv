@@ -374,6 +374,7 @@ begin
   if input_queue<>nil then
     discard input_queue; 
     end if;
+  discard console_output;
   end exit;
 
 

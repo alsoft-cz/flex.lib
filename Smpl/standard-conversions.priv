@@ -44,7 +44,7 @@ begin
   while j>0 loop
     k:=k:type(i div j);
     if k>=0 and then k<=9 then
-      result[z]:ord:=48+k;
+      result[z]:ord:="0":ord+k;
       z+1;
       i:=i mod j;
       j:=j div 10;
@@ -86,7 +86,7 @@ begin
   while j>0 loop
     k:=k:type(i div j);
     if k>=0 and then k<=9 then
-      result[z]:ord:=48+k;
+      result[z]:ord:="0":ord+k;
       z+1;
       i:=i mod j;
       j:=j div 10;
@@ -251,6 +251,7 @@ begin
 
 
 
+
 ----------------------------------------------------------------------------------------------------
 procedure string_to_signed =
 -- Converts a string representation of a signed integer to the corresponding binary representation. 
@@ -258,6 +259,195 @@ procedure string_to_signed =
 begin
   raise feature_not_implemented;
   end string_to_signed;
+
+
+
+{
+
+
+----------------------------------------------------------------------------------------------------
+procedure getnum (
+    lex            : out lexsym;                 -- ziskany symbol
+    val            : out lexval;                 -- hodnota symbolu
+    append         : in t_logical) =             -- T-textovou reprezentaci p©idat k ji‘ existuj¡c¡
+-- Ziska z prectene hodnoty cislo.
+----------------------------------------------------------------------------------------------------
+var
+  c                : lexchar;                    -- znak ze vstupu
+  c1               : lexchar;                    -- znak ze vstupu
+  ui               : tuniint;                    -- hodnota ‡¡sla
+  radix            : standard.conversions.t_radix;-- ‡¡seln  soustava
+
+begin
+  -- p©ipravit buffer na textovou reprezentaci ‡¡sla
+  if not append then
+    buf_txt.newtext;
+    end if;
+
+  -- p©ipravit buffer na dekadickou ‡ st ‡¡sla
+  buf_num.newtext;
+
+  -- dekadick  ‡ st ‡¡sla
+  loop
+    -- p©e‡¡st znak
+    getchar(c);
+    if {%%TODO(IN) c not in ["0".."9","_"]} not (c>="0" and c<="9") and c<>"_" then break end if;
+
+    -- za©adit do bufferu textov‚ reprezentace
+    buf_txt.addchar(c);
+
+    -- za©adit do bufferu numerick‚ho liter lu
+    if c<>"_" then
+      buf_num.addchar(c);
+      end if;
+    end loop;
+
+  -- pod¡vat se o znak dop©edu
+  getchar(c1);
+  ungetchar;
+
+  ----- ‡¡slo v obecn‚ soustavˆ -----
+  if c="$" then
+    -- za©adit do bufferu textov‚ reprezentace
+    buf_txt.addchar(c);
+
+    -- ‡¡slo mus¡ za‡¡nat ‡¡slic¡
+    if {%%TODO(IN) c1 not in ["0".."9","a".."z","A".."Z"]} not ((c1>="0" and c1<="9") or (c1>="A" and c1<="Z") or (c1>="a" and c1<="z")) then
+      ce^.seterror({CCERR=}000078,ce_errnum);
+      ce^.loadtextpos;
+      getchar(c);
+      end if;
+
+    -- ur‡it ‡¡selnou soustavu
+    getui(10,ui,ui_radix_hex);
+    if ui<ui_radix_first or ui>ui_radix_last
+      then
+        ce^.seterror({CCERR=}000077,ce_radix);
+        ce^.loadtextpos;
+        radix:=36;
+      else
+        radix:=uniint_to_unsigned(ui);
+        end if;
+
+    -- p©ipravit buffer na vlastn¡ ‡¡slo
+    buf_num.newtext;
+
+    -- na‡¡st ‡¡slo
+    loop
+      -- p©e‡¡st znak
+      getchar(c);
+      if {%%TODO(IN) c not in ["0".."9","a".."z","A".."Z","_"]} not ((c>="0" and c<="9") or (c>="A" and c<="Z") or (c>="a" and c<="z") or c="_") then 
+        ungetchar;
+        break;
+        end if;
+
+      -- za©adit do bufferu textov‚ reprezentace
+      buf_txt.addchar(c);
+
+      -- za©adit do bufferu numerick‚ho liter lu
+      if c<>"_" then
+        buf_num.addchar(c);
+        end if;
+      end loop;
+
+    -- konvertovat ‡¡slo
+    getui(radix,val.ui,ui_0);
+
+    -- v˜sledn˜ lexik ln¡ element
+    lex:=lex_numi;
+
+  ----- re ln‚ ‡¡slo -----
+  elsif c="e" or c="E" or (c="." and c1>="0" and c1<="9") then
+    -- desetinn  ‡ st
+    if c="." then
+      -- za©adit desetinnou te‡ku do bufferu textov‚ reprezentace
+      buf_txt.addchar(c);
+
+      -- dekadick  ‡ st ‡¡sla
+      loop
+        -- p©e‡¡st znak
+        getchar(c);
+        if {%%TODO(IN) c not in ["0".."9","_"]} not (c>="0" and c<="9") and c<>"_" then break end if;
+
+        -- za©adit do bufferu textov‚ reprezentace
+        buf_txt.addchar(c);
+
+        -- za©adit do bufferu numerick‚ho liter lu
+        if c<>"_" then
+          buf_num.addchar(c);
+          end if;
+        end loop;
+      end if;
+
+    -- konvertovat desetinnou ‡ st
+    buf_num.discardlast;
+
+    -- exponent
+    if c="e" or c="E" then
+      -- za©adit zna‡ku exponentu do bufferu textov‚ reprezentace
+      buf_txt.addchar(c);
+
+      -- p©ipravit buffer na exponent
+      buf_num.newtext;
+
+      -- m–‘e n sledovat +/-
+      getchar(c);
+      if c="+" or c="-" then
+        -- za©adit znam‚nko do bufferu textov‚ reprezentace
+        buf_txt.addchar(c);
+
+        -- dal¨¡ znak
+        getchar(c);
+        end if;
+
+      -- mus¡ n sledovat ‡¡slice
+      ungetchar;
+      if not (c>="0" and c<="9") then
+        ce^.seterror({CCERR=}000075,ce_errnum);
+        ce^.loadtextpos;
+        end if;
+
+      -- hodnota exponentu
+      loop
+        -- p©e‡¡st znak
+        getchar(c);
+        if {%%TODO(IN) c not in ["0".."9","_"]} not (c>="0" and c<="9") and c<>"_" then break end if;
+
+        -- za©adit do bufferu textov‚ reprezentace
+        buf_txt.addchar(c);
+
+        -- za©adit do bufferu numerick‚ho liter lu
+        if c<>"_" then
+          buf_num.addchar(c);
+          end if;
+        end loop;
+
+      -- konvertovat exponent
+      end if;
+
+    -- v˜sledn˜ lexik ln¡ element
+    lex:=lex_numr;
+
+  ----- dekadick‚ ‡¡slo -----
+  else
+    -- poslednˆ p©e‡ten˜ znak vr tit zpˆt do vstupu
+    ungetchar;
+
+    -- konvertovat
+    getui(10,val.ui,ui_0);
+
+    -- v˜sledn˜ lexik ln¡ element
+    lex:=lex_numi;
+    end if;
+
+  -- z¡skat pointer na textovou reprezentaci ‡¡sla
+  if not append then
+    val.txt:=buf_txt.endtext;
+    end if;  
+  end getnum;
+
+
+}
 
 
 

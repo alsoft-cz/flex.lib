@@ -846,8 +846,6 @@ procedure long_unsigned_mul =
 var
   alimit           : t_signed;
   blimit           : t_signed;
-  i                : t_signed;
-  j                : t_signed;
 
 begin
   -- 1. inicializace v˜sledku
@@ -885,8 +883,6 @@ procedure long_signed_mul =
 var
   alimit           : t_signed;
   blimit           : t_signed;
-  i                : t_signed;
-  j                : t_signed;
 
 begin
   -- 1. inicializace v˜sledku

@@ -13,6 +13,7 @@ const
   INVALID_HANDLE_VALUE = tsys_handle:last{((HANDLE)-1)};
   INVALID_FILE_SIZE    = $FFFF_FFFF;
   INVALID_SET_FILE_POINTER = tsys_dword:last{((DWORD)-1)};
+  INVALID_FILE_ATTRIBUTES = tsys_dword:last{((DWORD)-1)};
 
 const
   FILE_BEGIN           = 0;
@@ -69,24 +70,24 @@ const
 
 ----------------------------------------------------------------------------------------------------
 procedure GetEnvironmentStrings return psys_void;
-#pragma convention(GetEnvironmentStrings,stdcall);
+#pragma convention(GetEnvironmentStrings,system);
 #pragma import(GetEnvironmentStrings,'GetEnvironmentStringsW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure GetLastError return tsys_dword;
-#pragma convention(GetLastError,stdcall);
+#pragma convention(GetLastError,system);
 #pragma import(GetLastError,'GetLastError','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure GetFileSize (
     hFile          : in tsys_handle;
     lpFileSizeHigh : in psys_dword)
     return tsys_dword;
-#pragma convention(GetFileSize,stdcall);
+#pragma convention(GetFileSize,system);
 #pragma import(GetFileSize,'GetFileSize','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure GetStdHandle (
     nStdHandle                 : in tsys_dword)
     return tsys_handle;
-#pragma convention(GetStdHandle,stdcall);
+#pragma convention(GetStdHandle,system);
 #pragma import(GetStdHandle,'GetStdHandle','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
@@ -97,7 +98,7 @@ procedure WriteFile(
     lpNumberOfBytesWritten : out tsys_dword;
     lpOverlapped           : in POVERLAPPED)
     return tsys_bool;
-#pragma convention(WriteFile,stdcall);
+#pragma convention(WriteFile,system);
 #pragma import(WriteFile,'WriteFile','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure ReadFile (
@@ -107,7 +108,7 @@ procedure ReadFile (
     lpNumberOfBytesRead    : out tsys_dword;
     lpOverlapped           : in POVERLAPPED)
     return tsys_bool;
-#pragma convention(ReadFile,stdcall);
+#pragma convention(ReadFile,system);
 #pragma import(ReadFile,'ReadFile','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure SetFilePointer (
@@ -116,23 +117,23 @@ procedure SetFilePointer (
     lpDistanceToMoveHigh : in psys_dword;
     dwMoveMethod         : in tsys_dword)
     return tsys_dword;
-#pragma convention(SetFilePointer,stdcall);
+#pragma convention(SetFilePointer,system);
 #pragma import(SetFilePointer,'SetFilePointer','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure FindClose (
     hFindFile      : in tsys_handle)
     return tsys_bool;
-#pragma convention(FindClose,stdcall);
+#pragma convention(FindClose,system);
 #pragma import(FindClose,'FindClose','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure CloseHandle (
     hObject        : in tsys_handle)
     return tsys_bool;
-#pragma convention(CloseHandle,stdcall);
+#pragma convention(CloseHandle,system);
 #pragma import(CloseHandle,'CloseHandle','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure GetTickCount return tsys_dword;
-#pragma convention(GetTickCount,stdcall);
+#pragma convention(GetTickCount,system);
 #pragma import(GetTickCount,'GetTickCount','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure WaitForSingleObject (
@@ -140,7 +141,7 @@ procedure WaitForSingleObject (
     milliseconds   : in tsys_dword;
     alertable      : in tsys_dword)
     return tsys_dword;
-#pragma convention(WaitForSingleObject,stdcall);
+#pragma convention(WaitForSingleObject,system);
 #pragma import(WaitForSingleObject,'WaitForSingleObjectEx','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 
@@ -161,7 +162,7 @@ type
 
 ----------------------------------------------------------------------------------------------------
 procedure GetCommandLine return psys_wstr;
-#pragma convention(GetCommandLine,stdcall);
+#pragma convention(GetCommandLine,system);
 #pragma import(GetCommandLine,'GetCommandLineW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure GetEnvironmentVariable(
@@ -169,21 +170,21 @@ procedure GetEnvironmentVariable(
     env_value      : in psys_wstr;
     size           : in tsys_dword)
     return tsys_dword;
-#pragma convention(GetEnvironmentVariable,stdcall);
+#pragma convention(GetEnvironmentVariable,system);
 #pragma import(GetEnvironmentVariable,'GetEnvironmentVariableW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure SetEnvironmentVariable(
     env_var        : in psys_wstr;
     env_value      : in psys_wstr)
     return tsys_bool;
-#pragma convention(SetEnvironmentVariable,stdcall);
+#pragma convention(SetEnvironmentVariable,system);
 #pragma import(SetEnvironmentVariable,'SetEnvironmentVariableW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure CreateDirectory (
     path_name      : in psys_wstr;
     security_attrs : in security_attributes)
     return tsys_bool;
-#pragma convention(CreateDirectory,stdcall);
+#pragma convention(CreateDirectory,system);
 #pragma import(CreateDirectory,'CreateDirectoryW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure CreateDirectoryEx (
@@ -191,7 +192,7 @@ procedure CreateDirectoryEx (
     path_name      : in psys_wstr;
     security_attrs : in security_attributes)
     return tsys_bool;
-#pragma convention(CreateDirectoryEx,stdcall);
+#pragma convention(CreateDirectoryEx,system);
 #pragma import(CreateDirectoryEx,'CreateDirectoryExW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure CreateFile (
@@ -203,7 +204,7 @@ procedure CreateFile (
     dwFlagsAndAttributes       : in tsys_dword;
     hTemplateFile              : in tsys_handle)
     return tsys_handle;
-#pragma convention(CreateFile,stdcall);
+#pragma convention(CreateFile,system);
 #pragma import(CreateFile,'CreateFileW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 
@@ -232,22 +233,62 @@ procedure FindFirstFileExW(
     lpSearchFilter  : in psys_void; 
     dwAdditionalFlags : in tsys_dword)
                       return tsys_handle;
-#pragma convention(FindFirstFileExW,stdcall);
+#pragma convention(FindFirstFileExW,system);
 #pragma import(FindFirstFileExW,'FindFirstFileExW','kernel32.dll');
 ----------------------------------------------------------------------------------------------------
 procedure FindFirstFile (
     lpFileName                 : in psys_wstr;
     lpFIndFileData             : out tsys_win32_find_dataw)
     return tsys_handle;
-#pragma convention(FindFirstFile,stdcall);
+#pragma convention(FindFirstFile,system);
 #pragma import(FindFirstFile,'FindFirstFileW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure FindNextFile (
     hFindFile      : in tsys_handle;
     lpFindFileData : out tsys_win32_find_dataw)
     return tsys_bool;
-#pragma convention(FindNextFile,stdcall);
+#pragma convention(FindNextFile,system);
 #pragma import(FindNextFile,'FindNextFileW','KERNEL32.DLL');
+----------------------------------------------------------------------------------------------------
+procedure SetFileAttributes(
+    lpFileName       : in psys_wstr; 
+    dwFileAttributes : in tsys_dword)
+                       return tsys_bool;
+#pragma convention(SetFileAttributes,system);
+#pragma import(SetFileAttributes,'SetFileAttributesW','kernel32.dll');
+----------------------------------------------------------------------------------------------------
+procedure GetFileAttributes(
+    lpFileName       : in psys_wstr)
+                       return tsys_dword;
+#pragma convention(GetFileAttributes,system);
+#pragma import(GetFileAttributes,'GetFileAttributesW','kernel32.dll');
+----------------------------------------------------------------------------------------------------
+type
+  _GET_FILEEX_INFO_LEVELS= enum
+    GetFileExInfoStandard;
+    GetFileExMaxInfoLevel;
+    end enum for size use 4;
+  GET_FILEEX_INFO_LEVELS = _GET_FILEEX_INFO_LEVELS;
+----------------------------------------------------------------------------------------------------
+type
+  _WIN32_FILE_ATTRIBUTE_DATA = record
+    dwFileAttributes  : tsys_dword;
+    ftCreationTime    : tsys_filetime;
+    ftLastAccessTime  : tsys_filetime;
+    ftLastWriteTime   : tsys_filetime;
+    nFileSizeHigh     : tsys_dword;
+    nFileSizeLow      : tsys_dword;
+    end record;
+  WIN32_FILE_ATTRIBUTE_DATA = _WIN32_FILE_ATTRIBUTE_DATA;
+  LPWIN32_FILE_ATTRIBUTE_DATA = ^_WIN32_FILE_ATTRIBUTE_DATA;
+----------------------------------------------------------------------------------------------------
+procedure GetFileAttributesEx(
+    lpFileName        : in psys_wstr; 
+    fInfoLevelId      : in GET_FILEEX_INFO_LEVELS; 
+    lpFileInformation : out unchecked )
+                        return tsys_bool;
+#pragma convention(GetFileAttributesEx,system);
+#pragma import(GetFileAttributesEx,'GetFileAttributesExW','kernel32.dll');
 ----------------------------------------------------------------------------------------------------
 
 end winbase;

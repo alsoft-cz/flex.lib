@@ -215,7 +215,7 @@ procedure PeekConsoleInput (
     nLength                    : in tsys_dword;
     lpNumberOfEventsRead       : out tsys_dword)
     return tsys_bool;
-#pragma convention(PeekConsoleInput,stdcall);
+#pragma convention(PeekConsoleInput,system);
 #pragma import(PeekConsoleInput,'PeekConsoleInputW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure ReadConsoleInput (
@@ -224,7 +224,7 @@ procedure ReadConsoleInput (
     nLength                    : in tsys_dword;
     lpNumberOfEventsRead       : out tsys_dword)
     return tsys_bool;
-#pragma convention(ReadConsoleInput,stdcall);
+#pragma convention(ReadConsoleInput,system);
 #pragma import(ReadConsoleInput,'ReadConsoleInputW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure WriteConsoleInput (
@@ -233,13 +233,13 @@ procedure WriteConsoleInput (
     nLength                    : in tsys_dword;
     lpNumberOfEventsWritten    : out tsys_dword)
     return tsys_bool;
-#pragma convention(WriteConsoleInput,stdcall);
+#pragma convention(WriteConsoleInput,system);
 #pragma import(WriteConsoleInput,'ReadConsoleInputW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure FlushConsoleInputBuffer (
     hConsoleInput              : in tsys_handle)
     return tsys_bool;
-#pragma convention(FlushConsoleInputBuffer,stdcall);
+#pragma convention(FlushConsoleInputBuffer,system);
 #pragma import(FlushConsoleInputBuffer,'FlushConsoleInputBuffer','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 procedure WriteConsole (
@@ -249,7 +249,7 @@ procedure WriteConsole (
     lpNumberOfCharsWritten     : out tsys_dword;
     lpReserved                 : in psys_void)
     return tsys_bool;
-#pragma convention(WriteConsole,stdcall);
+#pragma convention(WriteConsole,system);
 #pragma import(WriteConsole,'WriteConsoleW','KERNEL32.DLL');
 ----------------------------------------------------------------------------------------------------
 

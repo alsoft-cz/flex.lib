@@ -9,6 +9,9 @@ module public low_level =
 #separate public long_arithmetic;
 -- Long signed integer arithmetic operations.
 ----------------------------------------------------------------------------------------------------
+#separate public floating_point_arithmetic;
+-- Floating point arithmetic.
+----------------------------------------------------------------------------------------------------
 #separate public bit_operations;
 -- Bit-level operations.
 ----------------------------------------------------------------------------------------------------

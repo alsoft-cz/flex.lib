@@ -44,7 +44,6 @@ var
   in_quotes        : t_logical;                  -- text is between quotes
   skip_whitespace  : t_logical;                  -- skip whitespace
   first_parameter  : t_logical;                  -- the actual parametr is the first parameter
-  i                : t_unsigned;
 
 begin
   -- retrieve the command line string
@@ -57,7 +56,7 @@ begin
   first_parameter:=true;
   for i in full_cmd_line^:range loop
     -- handle new parameter
-    if (full_cmd_line^[i]=" "{%%TODO(SET) in [" ",\9]} and not in_quotes) or i=full_cmd_line^:first then
+    if (full_cmd_line^[i]=" "{%%TODO(SET) in [" ",\9]} and not in_quotes and not skip_whitespace) or i=full_cmd_line^:first then
       -- append previous parameter to the list
       if parameter<>nil then
         if first_parameter
@@ -312,9 +311,6 @@ leave
 procedure discard_environment_variables =
 -- Helper subprogram to discard a block of environment variables.
 ----------------------------------------------------------------------------------------------------
-var
-  i                : t_unsigned;
-
 begin
   if env_vars=nil then return end if;
 
@@ -335,9 +331,6 @@ procedure discard_command_line_parameters =
 -- Result:
 --   This subprogram never fails.
 ----------------------------------------------------------------------------------------------------
-var
-  i                : t_unsigned;
-
 begin
   if cmd_line=nil then return end if;
 
@@ -347,7 +340,5 @@ begin
     end loop;
   discard cmd_line;
   end discard_command_line_parameters;
-
-
 
 end program_control;

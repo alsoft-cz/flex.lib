@@ -145,13 +145,15 @@ type
   p_logical32      = ^t_logical32;
   p_logical        = ^t_logical;
 
-  -- real types
-  t_real32         = digits 6;
-  t_real64         = digits 15;
-  t_real80         = digits 19;
-  p_real32         = ^t_real32;
-  p_real64         = ^t_real64;
-  p_real80         = ^t_real80;
+  -- floating-point types
+#if #environment compiler_version;='4.0.2' then;
+  t_float32        = float 32;
+  t_float64        = float 64;
+  t_float80        = float 80;
+  p_float32        = ^t_float32;
+  p_float64        = ^t_float64;
+  p_float80        = ^t_float80;
+#end if;
 
   -- pointers
   t_pointer        = ^unchecked {%%FLEX t_abstract};

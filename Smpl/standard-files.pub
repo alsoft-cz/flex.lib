@@ -108,6 +108,7 @@ type
       tfattr_compressed;                         -- the file is compressed
       tfattr_encrypted;                          -- the file is encrypted
       tfattr_sparse;                             -- the file is sparse (contains lots of zeroes)
+      tfattr_hidden;                             -- the file is hidden
       end enum;
 
 type  
@@ -135,26 +136,26 @@ class public c_filesystem_object = extend c_trigger_container;
       res          : protected t_fs_object_error;-- result of the last operation
   
     ------------------------------------------------------------------------------------------------
-    static get_datim (
+    virtual get_datim (
         kind       : in t_file_datim_kind)       -- what datim to return
         return t_datim;
     -- Returns requested date and time information. When the subprogram fails, [res] is set to 
     -- [tfe_get_info].
     ------------------------------------------------------------------------------------------------
-    static set_datim (
+    virtual set_datim (
         datim      : in t_datim;                 -- date and time
         kind       : in t_file_datim_kind_set    -- what datims to set
                    := [tfdk_last_modification]);      
     -- Sets all date and time informations of the file contained in [kind] to [datim]. When the 
     -- method fails, [res] is set to [tfe_set_info].
     ------------------------------------------------------------------------------------------------
-    static get_attribute (
+    virtual get_attribute (
         attr       : in t_fs_object_attribute)        -- what attribute to check
         return t_logical;                        -- state of the attribute (T-set, F-unset)
     -- Returns the state of the given file attribute [attr]. When the subprogram fails, [res] is set 
     -- to [tfe_get_info] and the return value is undefined.
     ------------------------------------------------------------------------------------------------
-    static set_attribute (
+    virtual set_attribute (
         attr       : in t_fs_object_attribute;        -- what attribute to set
         status     : in t_logical);              -- state of the attribute (T-set, F-unset)
     -- Sets the state of the given file attribute [attr]. When the subprogram fails, [res] is set to 

@@ -358,9 +358,6 @@ class private c_namespace_system =
             return t_logical =
         -- Checks if the name contains only valid characters
         --------------------------------------------------------------------------------------------
-        var
-          i        : t_unsigned;
-
         begin
           for i in from..text_name:length loop
             -- the invalid characters within a name are >, <, :, " and |
@@ -431,7 +428,6 @@ class private c_namespace_system =
         --------------------------------------------------------------------------------------------
         var
           stop     : t_unsigned;
-          i        : t_unsigned;
 
         begin
           -- find the end of the name
@@ -763,8 +759,19 @@ class private c_name_component_file_or_folder =
     -- Retrieves the base name of a file or folder name.
     --   The caller is responsible for freeing the memory.
     ------------------------------------------------------------------------------------------------
+    var
+      base_name_subcomponent : p_name_subcomponent_base_name;
+
     begin
-      raise feature_not_implemented;
+      subcomponents.set_first(p_list_item(base_name_subcomponent));
+      new base_name range base_name_subcomponent^.name^:length;
+      base_name^:=base_name_subcomponent^.name^;
+      #if #declared tomash;; #and then; tomash then;
+        #warning 'README';
+        {
+          Mˆla by se pou‘¡t metoda [compose_name] prvn¡ subkomponenty m¡sto ru‡n¡ho skl d n¡ jm‚na.
+        }
+      #end if;
       end get_base_name;
 
 
@@ -838,7 +845,6 @@ class private c_name_component_file_or_folder =
         --------------------------------------------------------------------------------------------
         var
           stop     : t_unsigned;
-          i        : t_unsigned;
 
         begin
           -- find the end of the name

@@ -15,7 +15,7 @@ type
 const
   -- error codes of the conversion routines
   conv_ok          = 0;                          -- conversion OK
-  conv_small       = -1;                         -- destination buffer to small
+  conv_small       = -1;                         -- destination buffer too small
   { error > 0                                    -- error in the ERRORth number                    }
 
 ----------------------------------------------------------------------------------------------------

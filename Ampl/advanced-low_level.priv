@@ -9,6 +9,9 @@ module private low_level =
 #separate private long_arithmetic;
 -- Long signed integer arithmetic operations.
 ----------------------------------------------------------------------------------------------------
+#separate private floating_point_arithmetic;
+-- Floating point arithmetic.
+----------------------------------------------------------------------------------------------------
 #separate private bit_operations;
 -- Bit-level operations.
 ----------------------------------------------------------------------------------------------------

@@ -1,0 +1,8 @@
+----------------------------------------------------------------------------------------------------
+module private floating_point_arithmetic =
+-- Floating point arithmetic.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+end floating_point_arithmetic;

@@ -25,7 +25,11 @@ type
   tsys_bool    = logical 32;
   tsys_byte    = unsigned 8;
   tsys_word    = unsigned 16;
+#if #environment compiler_version;='4.0.2' then; -- #declared new_float; #and then; new_float then;
+  tsys_float   = float 32;
+#else;
   tsys_float   = digits 15;
+#end if;
   tsys_int     = signed 32;
   tsys_uint    = unsigned 32;
   psys_float   = ^tsys_float;

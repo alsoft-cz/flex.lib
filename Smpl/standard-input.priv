@@ -68,10 +68,8 @@ class private c_input_queue =
     --   If subprogram fails error flag wil be set to true
     ------------------------------------------------------------------------------------------------
     var   
-      i            : t_unsigned32:=1;
-      j            : t_unsigned32:=1;
+      i            : t_unsigned32 := queue_data:first;
       count        : t_unsigned;                 -- number of new event pushed into queue
-
 
     begin 
       -- wait until there is the required event in queue
@@ -94,14 +92,13 @@ class private c_input_queue =
           for j in queue_data:range loop
             if j<i then queue_data[j]:=queue_data[j];
             elsif j>i then queue_data[j-1]:=queue_data[j];
-              end if;
+            end if;
             end loop;
           queue_data:length-1;
           return;
           end if;
         i+1;
         until i<=queue_data:length;
-
       end get_event;
 
 
@@ -111,7 +108,7 @@ class private c_input_queue =
     --
     ------------------------------------------------------------------------------------------------
     var   
-      i            : t_unsigned32:=1;
+      i            : t_unsigned32 := queue_data:first;
     
     begin 
       loop
@@ -121,7 +118,6 @@ class private c_input_queue =
           end if;
         i+1;
         until i<=queue_data:length;
-
       end look_event;
 
 
@@ -136,7 +132,7 @@ class private c_input_queue =
     --   Otherwise returns False.
     ------------------------------------------------------------------------------------------------
     var 
-      i            : t_unsigned32:=1;
+      i            : t_unsigned32 := queue_data:first;
       count        : t_unsigned;                 -- number of new event pushed into queue
     
     begin 
@@ -148,8 +144,6 @@ class private c_input_queue =
           end if;
         i+1;
         end loop;
-
-      
       end test_event;
 
 
@@ -162,8 +156,7 @@ class private c_input_queue =
     --   This subprogram never fails.
     ------------------------------------------------------------------------------------------------
     var 
-      i            : t_unsigned:=1;
-      j            : t_unsigned;
+      i            : t_unsigned := queue_data:first;
 
     begin
       -- test for existence of event
@@ -183,8 +176,8 @@ class private c_input_queue =
           i+1;
           end if;
         end loop;
-
       end flush_queue;
+
 
 
     ------------------------------------------------------------------------------------------------
@@ -195,19 +188,9 @@ class private c_input_queue =
       -- stdin:=getstdhandle(std_input_handle);
       -- %% tady bych mˆl nastartovat thread kter˜ bude cp t ud losti do fronty
       end entry; 
-    
-
+  
     end c_input_queue;
 
-
-
-
-----------------------------------------------------------------------------------------------------
-entry =
-begin
-  end entry;
--- %% entry jen pro jistotu
-----------------------------------------------------------------------------------------------------
 
 
 end input;

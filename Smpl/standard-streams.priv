@@ -227,9 +227,6 @@ class private c_output_buffer =
     static write_block =
     -- Writes a block of bytes into the buffer.
     ------------------------------------------------------------------------------------------------
-    var
-      i            : t_unsigned;
-
     begin
       -- flush the buffer if there is not enough space to hold more data
       if buffer^:length+len>buffer^:last then

@@ -26,9 +26,6 @@ module private ascii =
 procedure to_ascii =
 -- Converts ISO 10646 string to ASCII string.
 ----------------------------------------------------------------------------------------------------
-var
-  i            : t_unsigned;
-
 begin
   for i in 1..istr:length loop
     astr & t_char8(istr[i]);

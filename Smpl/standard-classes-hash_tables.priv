@@ -181,7 +181,6 @@ class private c_auto_hash_table =
     var
       min_id       : t_hash_item_id;             -- ID of the slot with the minimum number of items
       min_count    : t_unsigned;                 -- minimal number of items in a slot
-      i            : t_unsigned;
 
     begin
       -- find the slot with the least number of items
