@@ -6,241 +6,330 @@ module public datetime =
 ----------------------------------------------------------------------------------------------------
 
 type
-#if #declared ondra; #and then; ondra then;
-  -- date
-  t_date;
+  -- 100-nanosekundovy interval = 1 tick
+  t_timespan = t_signed64;
+  p_timespan = ^t_timespan;
 
-  -- time
-  t_time;
-#end if;
+  -- ticku od     pondeli 1. ledna (-)4713 BCE 12:00:00.0 (UTC)
+  -- kladny rozsah konci kus po roku 24000 CE             (UTC)
+  t_datetime = t_signed64{protected t_timespan};
+  p_datetime = ^t_datetime;
 
-  -- date and time
-  t_datim;
 
-#if #declared ondra; #and then; ondra then;
+const
+  t_dtc_julian_zero              : t_datetime = [$00,$00,$00,$00,$00,$00,$00,$00];--pondeli  1. ledna  (-)4713 BCE 12:00:00.0 (UTC)
+  --t_dtc_modified_julian_zero     17 Nov 1858 at 00:00:00 UTC. 
+  --t_dtc_lilian_zero              14 Oct 1582 at 00:00:00 UTC. 
+  t_dtc_common_era_zero : t_datetime = [$00,$00,$0C,$D8,$DE,$FC,$A3,$14];--sobota   1. ledna        1 CE  12:00:00.0 (UTC)
+  t_dtc_win32_zero      : t_datetime = [$00,$A0,$21,$BA,$23,$CC,$A5,$1B];--pondeli  1. ledna     1601 CE  00:00:00.0 (UTC)
+  t_dtc_unix_zero       : t_datetime = [$00,$20,$60,$8F,$02,$7E,$43,$1D];--ctvrtek  1. ledna     1970 CE  00:00:00.0 (UTC)
+  t_dtc_21century_ce    : t_datetime = [$00,$60,$BF,$82,$A9,$3F,$66,$1D];--pondeli  1. ledna     2001 CE  00:00:00.0 (UTC)
+  t_dtc_flex_zero       : t_datetime = [$00,$82,$CB,$B0,$B0,$7E,$69,$1D];--pondeli 21. listopadu 2003 CE  13:15:00.0 (UTC)
+
+message 
+    calendar_error;
+
+--------------------------------------------------------------------------------------------------
+procedure get_timespan(
+  a              : in t_datetime;
+  b              : in t_datetime)
+  return t_timespan;
+-- a<b
+--------------------------------------------------------------------------------------------------
+procedure add_timespan(
+  a              : in t_datetime;
+  span           : in t_timespan)
+  return t_datetime;
+--------------------------------------------------------------------------------------------------
+procedure substract_timespan(
+  a              : in t_datetime;
+  span           : in t_timespan)
+  return t_datetime;
+--------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_calendar =
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  virtual abstract datim_to_string(
+    datim          : in t_datetime)
+    return         t_char32ustr;
+  --------------------------------------------------------------------------------------------------
+  virtual get_timespan(
+    a              : in t_datetime;
+    b              : in t_datetime)
+    return t_timespan;
+  --------------------------------------------------------------------------------------------------
+  virtual add_timespan(
+    a              : in t_datetime;
+    span           : in t_timespan)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual substract_timespan(
+    a              : in t_datetime;
+    span           : in t_timespan)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  end c_calendar;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_earth_calendar = extend c_calendar;
+----------------------------------------------------------------------------------------------------
 type
-  -- components of a date
-  t_date_year      = protected t_signed;
-  t_date_month     = protected t_signed;
-  t_date_day       = protected t_signed;
+  -- 0 based,timespan values (wait for 123456 seconds)
+  t_ts_ticks       = t_timespan;                 -- count of ticks and timespan is equal
+  t_ts_seconds     = t_signed64;                 -- last tick in second is 9999999th tick
+  t_ts_minutes     = t_signed64;                 -- last tick in minute is 59 seconds and 9999999 ticks
+  t_ts_hours       = t_signed64;                 -- last tick in minute is 59 minutes and 59 seconds and 9999999 ticks
+  t_ts_days        = t_signed;
+  t_ts_weeks       = t_signed;
+  t_ts_months      = t_signed;
+  t_ts_years       = t_signed;
+  t_ts_eras        = t_signed;
 
-  -- components of a time
-  t_time_hour      = protected t_signed;
-  t_time_minute    = protected t_signed;
-  t_time_second    = protected t_signed;
-{
-----------------------------------------------------------------------------------------------------
-class abstract public c_datim_provider =
--- Date and time information provider.
-----------------------------------------------------------------------------------------------------
+  -- ordinal number (day of week,month,year)
+  t_dt_tick        = protected t_unsigned range 0..9999999;
+  t_dt_second      = protected t_unsigned range 0..60;
+  t_dt_minute      = protected t_unsigned range 0..59;
+  t_dt_hour        = protected t_unsigned range 0..23;
+  t_dt_week_day    = protected t_unsigned range 1..7;
+  t_dt_month_day   = protected t_unsigned range 1..31;
+  t_dt_year_day    = protected t_unsigned range 1..366;
+  t_dt_month_week  = protected t_unsigned range 1..6;
+  t_dt_year_week   = protected t_unsigned range 1..53;
+  t_dt_month       = protected t_unsigned range 1..12;
+  t_dt_year        = protected t_unsigned;
+  t_dt_era         = protected t_unsigned;
 
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} get_time return t_time;
-    -- Returns the actual time.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} get_date return t_date;
-    -- Returns the actual date.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} get_datim return t_datim;
-    -- Returns the actual date and time.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} compose_time
-        hour       : in t_time_hour;             -- hour
-        minute     : in t_time_minute;           -- minute
-        second     : in t_time_second;           -- second
-        time       : out t_time);                -- resulting time
-    -- Composes a [time] information from [hour], [minute] and [second] components.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} compose_date
-        year       : in t_date_year;             -- year
-        month      : in t_date_month;            -- month
-        day        : in t_date_day;              -- day
-        date       : out t_date);                -- resulting date
-    -- Composes a [datim] information from [year], [month] and [day] components.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} compose_datim
-        year       : in t_date_year;             -- year
-        month      : in t_date_month;            -- month
-        day        : in t_date_day;              -- day
-        hour       : in t_time_hour;             -- hour
-        minute     : in t_time_minute;           -- minute
-        second     : in t_time_second;           -- second
-        datim      : out t_datim);               -- resulting date and time
-    -- Composes a [datim] information from [year], [month], [day], [hour], [minute] and [second] 
-    -- components.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} shift_time (
-        time       : in out t_time;
-        seconds    : in t_time_second;
-        minutes    : in t_time_minute;
-        hours      : in t_time_hour);
-    -- Shifts the given [time] by [seconds] seconds. When [seconds] is positive, the [time] is 
-    -- shifted forward, when [seconds] is negative, it is shifted backwards.
-    ------------------------------------------------------------------------------------------------
-    virtual {abstract} shift_date (
-        date       : in out t_date;
-        days       : in t_date_day);
-    -- Shifts the given [date] by [days] days. When [days] is positive, the [date] is shifted 
-    -- forward, when [days] is negative, it is shifted backwards.        
-    ------------------------------------------------------------------------------------------------
+  t_decomposed_timespan = record
+    ticks          : t_ts_ticks;
+    seconds        : t_ts_seconds;
+    minutes        : t_ts_minutes;
+    hours          : t_ts_hours;
+    days           : t_ts_days;
+    months         : t_ts_months;
+    years          : t_ts_years;
+    end record;
 
-    end c_datim_provider;
-}
-#end if;
-
-{
-type
-  -- components of a date
-  tdate_year       = protected tsigned;
-  tdate_month      = protected tunsigned range 1..12;
-  tdate_day        = protected tunsigned range 1..31;
-
-  -- components of a time
-  ttime_hour       = protected tunsigned range 0..23;
-  ttime_minute     = protected tunsigned range 0..59;
-  ttime_second     = protected tunsigned range 0..59;
-
-  -- UTC time
-  tutctime;                                      -- time
-  tutcdate;                                      -- date
-  tutcdatim;                                     -- date & time
-
-  -- local time
-  tlocaltime;                                    -- time
-  tlocaldate;                                    -- date
-  tlocaldatim;                                   -- date & time
+  
+  t_decomposed_datetime = record
+    tick           : t_dt_tick;
+    second         : t_dt_second;
+    minute         : t_dt_minute;
+    hour           : t_dt_hour;
+    day            : t_dt_month_day;
+    month          : t_dt_month;
+    year           : t_dt_year;
+    era            : t_dt_era;
+    end record;
 
 
-
-----------------------------------------------------------------------------------------------------
--- UTC date & time subprograms
-----------------------------------------------------------------------------------------------------
-procedure get_utc_time return tutctime;
-----------------------------------------------------------------------------------------------------
-procedure get_utc_date return tutcdate;
-----------------------------------------------------------------------------------------------------
-procedure get_utc_datim return tutcdatim;
-----------------------------------------------------------------------------------------------------
-procedure combine_utc_datim (
-    date           : in tutcdate;
-    time           : in tutctime)
-    return tutcdatim;
-----------------------------------------------------------------------------------------------------
-procedure compose_utc_date (
-    year           : in tdate_year;
-    month          : in tdate_month;
-    day            : in tdate_day;
-    date           : out tutcdate);
-----------------------------------------------------------------------------------------------------
-procedure compose_utc_time (
-    hour           : in ttime_hour;
-    minute         : in ttime_minute;
-    second         : in ttime_second;
-    time           : out tutctime);
-----------------------------------------------------------------------------------------------------
-procedure compose_utc_datim (
-    year           : in tdate_year;
-    month          : in tdate_month;
-    day            : in tdate_day;
-    hour           : in ttime_hour;
-    minute         : in ttime_minute;
-    second         : in ttime_second;
-    datim          : out tutcdatim);
-----------------------------------------------------------------------------------------------------
-procedure utc_datim_to_date_time (
-    datim          : in tutctime;
-    date           : out tutcdate;
-    time           : out tutctime);
-----------------------------------------------------------------------------------------------------
-procedure utc_datim_to_date (
-    datim          : in tlocaltime)
-    return tutcdate;
-----------------------------------------------------------------------------------------------------
-procedure utc_datim_to_time (
-    datim          : in tlocaltime)
-    return tutctime;
-----------------------------------------------------------------------------------------------------
+  t_dt_find_direction = enum
+    t_dtf_prev;
+    t_dtf_prev_or_same;
+    t_dtf_next_or_same;
+    t_dtf_next;
+    end enum;
+  
+  t_ts_decomposition = enum
+    t_tsd_ticks;
+    t_tsd_seconds;
+    t_tsd_minutes;
+    t_tsd_hours;
+    t_tsd_days;
+    t_tsd_months;
+    t_tsd_years;
+    end enum;
 
 
+  t_ts_rounding = enum
+    t_tsr_none;
+    t_tsr_truncate;
+    t_tsr_nearest;
+    end enum;
+
+  --------------------------------------------------------------------------------------------------
+  virtual abstract decompose_datetime(
+    datim          : in t_datetime)
+    return t_decomposed_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract compose_datetime(
+    datim          : in t_decomposed_datetime)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract add_decomposed_timespan(
+    datim          : in t_datetime;
+    timespan       : in t_decomposed_timespan)
+    return         t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract substract_decomposed_timespan(
+    datim          : in t_datetime;
+    timespan       : in t_decomposed_timespan)
+    return         t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_decomposed_timespan(
+    a              : in t_datetime;
+    b              : in t_datetime;
+    smallest       : in t_ts_decomposition:=t_tsd_ticks;
+    largest        : in t_ts_decomposition:=t_tsd_years;
+    rounding       : in t_ts_rounding:=t_tsr_none)
+    return         t_decomposed_timespan;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_tick(
+    datim          : in t_datetime)
+    return t_dt_tick;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_second(
+    datim          : in t_datetime)
+    return t_dt_second;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_minute(
+    datim          : in t_datetime)
+    return t_dt_minute;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_hour(
+    datim          : in t_datetime)
+    return t_dt_hour;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_day_of_week(
+    datim          : in t_datetime)
+    return t_dt_week_day;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_day_of_month(
+    datim          : in t_datetime)
+    return t_dt_month_day;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_day_of_year(
+    datim          : in t_datetime)
+    return t_dt_year_day;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_week_of_month(
+    datim          : in t_datetime)
+    return t_dt_month_week;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_week_of_year(
+    datim          : in t_datetime)
+    return t_dt_year_week;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_month(
+    datim          : in t_datetime)
+    return t_dt_month;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_year(
+    datim          : in t_datetime)
+    return t_dt_year;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_era(
+    datim          : in t_datetime)
+    return t_dt_era;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract is_leap_second(
+    datim          : in t_datetime)
+    return t_logical;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract is_leap_day(
+    datim          : in t_datetime)
+    return t_logical;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract is_leap_month(
+    datim          : in t_datetime)
+    return t_logical;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract is_leap_year(
+    datim          : in t_datetime)
+    return t_logical;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_tick_of_second(
+    datim          : in t_datetime;
+    second         : in t_dt_tick;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_second_of_minute(
+    datim          : in t_datetime;
+    second         : in t_dt_second;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_minute_of_hour(
+    datim          : in t_datetime;
+    second         : in t_dt_minute;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_hour_of_day(
+    datim          : in t_datetime;
+    second         : in t_dt_hour;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_day_of_week(
+    datim          : in t_datetime;
+    day            : in t_dt_week_day;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_day_of_month(
+    datim          : in t_datetime;
+    second         : in t_dt_month_day;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract find_day_of_year(
+    datim          : in t_datetime;
+    second         : in t_dt_year_day;
+    direction      : in t_dt_find_direction:=t_dtf_next;
+    reset_shorter  : in t_logical:=true)
+    return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_days_in_week(
+    datim          : in t_datetime)
+    return t_ts_days;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_days_in_month(
+    datim          : in t_datetime)
+    return t_ts_days;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_days_in_year(
+    datim          : in t_datetime)
+    return t_ts_days;
+  --------------------------------------------------------------------------------------------------
+  end c_earth_calendar;
+
+
 
 ----------------------------------------------------------------------------------------------------
--- Local date & time subprograms
+#separate public julian;
 ----------------------------------------------------------------------------------------------------
-procedure get_local_time return tlocaltime;
-----------------------------------------------------------------------------------------------------
-procedure get_local_date return tlocaldate;
-----------------------------------------------------------------------------------------------------
-procedure get_local_datim return tlocaldatim;
-----------------------------------------------------------------------------------------------------
-procedure combine_local_datim (
-    date           : in tlocaldate;
-    time           : in tlocaltime)
-    return tlocaldatim;
-----------------------------------------------------------------------------------------------------
-procedure compose_local_date (
-    year           : in tdate_year;
-    month          : in tdate_month;
-    day            : in tdate_day;
-    date           : out tlocaldate);
-----------------------------------------------------------------------------------------------------
-procedure compose_local_time (
-    hour           : in ttime_hour;
-    minute         : in ttime_minute;
-    second         : in ttime_second;
-    time           : out tlocaltime);
-----------------------------------------------------------------------------------------------------
-procedure compose_local_datim (
-    year           : in tdate_year;
-    month          : in tdate_month;
-    day            : in tdate_day;
-    hour           : in ttime_hour;
-    minute         : in ttime_minute;
-    second         : in ttime_second;
-    datim          : out tlocaldatim);
-----------------------------------------------------------------------------------------------------
-procedure local_datim_to_date_time (
-    datim          : in tlocaltime;
-    date           : out tlocaldate;
-    time           : out tlocaltime);
-----------------------------------------------------------------------------------------------------
-procedure local_datim_to_date (
-    datim          : in tlocaltime)
-    return tlocaldate;
-----------------------------------------------------------------------------------------------------
-procedure local_datim_to_time (
-    datim          : in tlocaltime)
-    return tlocaltime;
+--#separate public gregorian;
 ----------------------------------------------------------------------------------------------------
 
 
 
 ----------------------------------------------------------------------------------------------------
--- Conversions between UTC and local time & date
+class abstract c_datetime_provider =
 ----------------------------------------------------------------------------------------------------
-procedure utc_date_to_local_date (
-    date           : in tutcdate)
-    return tlocaldate;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_datetime return t_datetime;
+  --------------------------------------------------------------------------------------------------
+  virtual abstract get_machine_uptime return t_timespan;
+  --------------------------------------------------------------------------------------------------
+  end c_datetime_provider;
+
+
+
 ----------------------------------------------------------------------------------------------------
-procedure utc_time_to_local_time (
-    time           : in tutctime)
-    return tlocaltime;
+#separate public os;
 ----------------------------------------------------------------------------------------------------
-procedure utc_datim_to_local_datim (
-    datim          : in tutcdatim)
-    return tlocaldatim;
-----------------------------------------------------------------------------------------------------
-procedure local_date_to_utc_date (
-    date           : in tlocaldate)
-    return tutcdate;
-----------------------------------------------------------------------------------------------------
-procedure local_time_to_utc_time (
-    time           : in tlocaltime)
-    return tutctime;
-----------------------------------------------------------------------------------------------------
-procedure local_datim_to_utc_datim (
-    datim          : in tlocaldatim)
-    return tutcdatim;
-----------------------------------------------------------------------------------------------------
-}
+
 
 end datetime;

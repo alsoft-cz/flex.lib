@@ -72,7 +72,7 @@ class private c_dictionary_value =
 
 
 ----------------------------------------------------------------------------------------------------
-class private c_dictionary_key =
+class private abstract c_dictionary_key =
 -- Obecný předek pro klíč do slovníku
 ----------------------------------------------------------------------------------------------------
 

@@ -296,8 +296,23 @@ var
 class private abstract c_stream_generic_reader =
 ----------------------------------------------------------------------------------------------------
 var
+  is_lazy          : t_logical;
   packet           : t_data_packet;
   position         : t_offset;
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.set_lazy_buffer =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if is_lazy<>lazy then
+      --%%TODO(FLEX) call parent method p_stream_reader(^this)^.set_lazy_buffer(lazy);
+      _source^.set_lazy_buffer(lazy);
+      --%%END TODO
+      is_lazy:=lazy;
+      end if;
+    end set_lazy_buffer;
+
+
 
   ------------------------------------------------------------------------------------------------
   static read_unchecked_internal (
@@ -308,6 +323,7 @@ var
   ------------------------------------------------------------------------------------------------
   var
     _data          : p_data_array;
+    options        : t_read_options;
 
   begin
     _data:unchecked:=^data;
@@ -316,7 +332,11 @@ var
       end if;
     while (sizebytes>readbytes) loop
       if packet.style=t_dps_invalid then
-        _source^.read_packet(packet);
+         options:=t_ro_default;
+         if not is_lazy then
+           options.maximal_size:=sizebytes-readbytes;
+           end if;
+        _source^.read_packet(packet,options);
         end if;
       if packet.style<>t_dps_signal then
         copy_from_packet(packet,position,_data,readbytes,sizebytes-readbytes);
@@ -433,7 +453,20 @@ var
     data:length:=readbytes div t_char32:size;
     end read_text;
 
-  
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_stream_reader.init_reader =
+  ------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO(FLEX) call parent method p_stream_reader(^this)^.init_reader(lazy);
+    _source:=source;
+    _isinicialized:=true;
+    --%%END TODO
+    set_lazy_buffer(true);
+    end init_reader;
+
+
   
   ------------------------------------------------------------------------------------------------
   exit =

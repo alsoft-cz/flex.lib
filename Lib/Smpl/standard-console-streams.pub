@@ -31,6 +31,9 @@ class public c_console_input_stream = extend c_input_stream;
   virtual get_cursor_position (
   pos              : out t_cursor_coordinates);
   --------------------------------------------------------------------------------------------------
+  virtual get_console_size (
+  pos              : out t_cursor_coordinates);
+  --------------------------------------------------------------------------------------------------
   end c_console_input_stream;
 type p_console_input_stream = ^class c_console_input_stream;
 

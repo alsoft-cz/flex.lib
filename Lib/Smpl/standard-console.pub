@@ -21,48 +21,71 @@ type
   t_cursor_position_x = protected t_unsigned;
   t_cursor_position_y = protected t_unsigned;
   t_cursor_coordinates = record
-    x              : t_cursor_position_x;
-    y              : t_cursor_position_y;
-    end record;
+      x            : t_cursor_position_x;
+      y            : t_cursor_position_y;
+      end record;
   p_cursor_coordinates = ^t_cursor_coordinates;
 
-  t_control_keys = enum
-    t_key_caps_lock;
-    t_key_num_lock;
-    t_key_scroll_lock;
-
-    t_key_left_alt;
-    t_key_right_alt;
-
-    t_key_left_ctrl;
-    t_key_right_ctrl;
-
-    t_key_left_shift;
-    t_key_right_shift;
-
-    t_key_left_mouse;
-    t_key_second_mouse;
-    t_key_third_mouse;
-    t_key_fourth_mouse;
-    t_key_right_mouse;
+  t_console_color = enum
+    t_cc_black;
+    t_cc_blue;
+    t_cc_green;
+    t_cc_cyan;
+    t_cc_red;
+    t_cc_magenta;
+    t_cc_yellow;
+    t_cc_white;
+    t_cc_grey;
+    t_cc_light_blue;
+    t_cc_light_green;
+    t_cc_light_cyan;
+    t_cc_light_red;
+    t_cc_light_magenta;
+    t_cc_light_yellow;
+    t_cc_light_white;
     end enum;
+  p_console_color = ^t_console_color;
+
+  t_control_keys = enum
+      t_key_caps_lock;
+      t_key_num_lock;
+      t_key_scroll_lock;
+
+      t_key_left_alt;
+      t_key_right_alt;
+
+      t_key_left_ctrl;
+      t_key_right_ctrl;
+
+      t_key_left_shift;
+      t_key_right_shift;
+
+      t_key_left_mouse;
+      t_key_second_mouse;
+      t_key_third_mouse;
+      t_key_fourth_mouse;
+      t_key_right_mouse;
+      end enum;
 
   t_control_keys_set = set of t_control_keys;
 
   t_event_code  = protected t_unsigned;
 
   t_console_event = record
-    event_code     : t_event_code;
-    control_keys   : t_control_keys_set;
-    down           : t_logical;
-    char           : t_char32;
-    mouse_pos      : t_cursor_coordinates;
-    end record;
+      event_code     : t_event_code;
+      control_keys   : t_control_keys_set;
+      down           : t_logical;
+      char           : t_char32;
+      mouse_pos      : t_cursor_coordinates;
+      end record;
   p_console_event = ^t_console_event;
 
 
   t_input_mode = enum
-    t_im_events_no_echo;
+    t_im_test_key_no_echo;
+    t_im_mouse_events_no_echo;
+    t_im_key_events_no_echo;
+    t_im_all_events_no_echo;
     t_im_char_no_echo;
     t_im_char_with_echo;
     t_im_line_no_echo;
@@ -91,16 +114,22 @@ var
 
 
 ----------------------------------------------------------------------------------------------------
-procedure clear_console;
+procedure get_console_size (
+    pos            : out t_cursor_coordinates);
 ----------------------------------------------------------------------------------------------------
 procedure get_cursor_position (
     pos            : out t_cursor_coordinates);
 ----------------------------------------------------------------------------------------------------
+procedure clear_console;
+----------------------------------------------------------------------------------------------------
 procedure set_cursor_position (
     pos            : in t_cursor_coordinates);
 ----------------------------------------------------------------------------------------------------
--- procedure set_attributes(
---    attr           : t_con_attributes_set);
+procedure set_foreground_color (
+    color          : in t_console_color);
+----------------------------------------------------------------------------------------------------
+procedure set_background_color (
+    color          : in t_console_color);
 ----------------------------------------------------------------------------------------------------
 procedure write_char (
     s              : in t_char32);               -- character to write
@@ -132,6 +161,24 @@ procedure read_line (
     s              : out t_char32ustr;           -- string to read into
     mode           : in t_input_mode:=t_im_line_with_echo)
     return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure input_char (
+    s              : out t_char32;               -- character to write
+    mode           : in t_input_mode:=t_im_char_with_echo);
+-- throws stream_end_of_data
+----------------------------------------------------------------------------------------------------
+procedure input (
+    s              : out t_char32ustr;           -- string to read into
+    mode           : in t_input_mode:=t_im_char_with_echo);
+-- throws stream_end_of_data
+----------------------------------------------------------------------------------------------------
+procedure input_line (
+    s              : out t_char32ustr;           -- string to read into
+    mode           : in t_input_mode:=t_im_line_with_echo);
+-- throws stream_end_of_data
+----------------------------------------------------------------------------------------------------
+procedure input_key(
+    key            : out t_console_event);
 ----------------------------------------------------------------------------------------------------
 procedure read_key(
     key            : out t_console_event)

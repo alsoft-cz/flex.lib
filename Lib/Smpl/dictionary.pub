@@ -13,7 +13,7 @@ message
   dictionary_error;
 
 -- dopředné deklarace
-class c_dictionary_key;           type p_dictionary_key           = ^class c_dictionary_key;
+class abstract c_dictionary_key;  type p_dictionary_key           = ^class c_dictionary_key;
 class c_dictionary;               type p_dictionary               = ^class c_dictionary;
 class c_string_dictionary;        type p_string_dictionary        = ^class c_string_dictionary;
 class c_string_string_dictionary; type p_string_string_dictionary = ^class c_string_string_dictionary;
@@ -35,7 +35,7 @@ type
       end enum;
 
 ----------------------------------------------------------------------------------------------------
-class public c_dictionary_key =
+class public abstract c_dictionary_key =
 -- Obecný předek pro klíč do slovníku
 ----------------------------------------------------------------------------------------------------
 

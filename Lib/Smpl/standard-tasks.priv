@@ -8,15 +8,11 @@ module private tasks =
 with
   flex.tasks;
 
-type 
-  pm_task = ^c_task for machine_pointer use true;
-
-
 ----------------------------------------------------------------------------------------------------
 procedure internal_task_helper : t_rtl_task_entry =
 ----------------------------------------------------------------------------------------------------
 begin
-  pm_task(selfptr:unchecked)^.run(userdata);
+  p_task(selfptr:unchecked)^.run(userdata);
   end internal_task_helper;
 
 
@@ -33,6 +29,8 @@ var
     rtl_start_task(^internal_task_helper,^reference,false,,^this,userdata);
     end start;
 
+
+
   --------------------------------------------------------------------------------------------------
   static wait =
   --------------------------------------------------------------------------------------------------
@@ -40,11 +38,22 @@ var
     rtl_wait_and_finish_task(reference);
     end wait;
 
+
+
   --------------------------------------------------------------------------------------------------
   static kill =
   --------------------------------------------------------------------------------------------------
   begin
     rtl_kill_when_need_and_finish_task(reference);
     end kill;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  exit = 
+  --------------------------------------------------------------------------------------------------
+  begin
+    kill;
+    end exit;
   end c_task;
 end tasks;

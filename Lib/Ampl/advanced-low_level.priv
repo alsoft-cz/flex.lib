@@ -18,5 +18,8 @@ module private low_level =
 #separate private unchecked_memory_access;
 -- Unchecked memory access.
 ----------------------------------------------------------------------------------------------------
+#separate private short_arithmetic;
+-- Short unsigned integer arithmetic operations.
+----------------------------------------------------------------------------------------------------
 
 end low_level;

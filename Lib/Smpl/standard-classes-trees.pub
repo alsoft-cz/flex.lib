@@ -11,7 +11,7 @@ extend
 
 -- forward declarations
 class abstract c_binary_tree_node; type p_binary_tree_node     = ^class c_binary_tree_node;
-class c_binary_tree;               type p_binary_tree          = ^class c_binary_tree;
+class abstract c_binary_tree;      type p_binary_tree          = ^class c_binary_tree;
 class c_binary_tree_iterator;      type p_binary_tree_iterator = ^class c_binary_tree_iterator;
 class c_tree_node;                 type p_tree_node            = ^class c_tree_node;
 class c_tree;                      type p_tree                 = ^class c_tree;
@@ -55,7 +55,7 @@ class public abstract c_binary_tree_node = extend c_item;
 
 
 ----------------------------------------------------------------------------------------------------
-class public c_binary_tree = extend c_container;
+class public abstract c_binary_tree = extend c_container;
 -- Vyhledávací strom s podporou AVL. 
 ----------------------------------------------------------------------------------------------------
 

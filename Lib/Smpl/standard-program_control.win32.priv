@@ -36,20 +36,37 @@ procedure get_command_line_parameters =
 ----------------------------------------------------------------------------------------------------
 var
   full_cmd_line    : p_char32ustr;               -- full command line
+
+begin
+  -- retrieve the command line string
+  get_command_line(full_cmd_line);
+
+  -- split into separate parameters
+  parse_command_line_parameters(full_cmd_line,cmd_line,for ignore_first use true);
+
+leave
+  -- free memory
+  discard full_cmd_line;
+  end get_command_line_parameters;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure parse_command_line_parameters =
+-- %%TODO(DOCUMENTATION)
+----------------------------------------------------------------------------------------------------
+var
   parameter        : p_char32ustr;               -- single parameter
   in_quotes        : t_logical;                  -- text is between quotes
   skip_whitespace  : t_logical;                  -- skip whitespace
   first_parameter  : t_logical;                  -- the actual parametr is the first parameter
 
 begin
-  -- retrieve the command line string
-  get_command_line(full_cmd_line);
-
   -- there will be at least one command line parameter
   new cmd_line range {%%TODO(ADJUST) předělat!}30;
 
   -- split into separate parameters
-  first_parameter:=true;
+  first_parameter:=ignore_first;
   for i in full_cmd_line^:range loop
     -- handle new parameter
     if (full_cmd_line^[i]=" "{%%TODO(SET) in [" ",\9]} and not in_quotes and not skip_whitespace) or i=full_cmd_line^:first then
@@ -107,8 +124,23 @@ begin
     then cmd_line^ & parameter;
     else discard parameter;
     end if;
-  end get_command_line_parameters;
+  end parse_command_line_parameters;
 
+
+
+----------------------------------------------------------------------------------------------------
+procedure compose_command_line_parameters =
+----------------------------------------------------------------------------------------------------
+begin
+  new full_cmd_line range 1000;
+  if full_cmd_line<>nil then
+    for p in cmd_line^:range loop
+      full_cmd_line^ & '"';
+      full_cmd_line^ & cmd_line^[p]^;
+      full_cmd_line^ & '" ';
+      end loop;
+    end if;
+  end compose_command_line_parameters;
 
 
 ----------------------------------------------------------------------------------------------------
@@ -335,4 +367,84 @@ begin
   discard cmd_line;
   end discard_command_line_parameters;
 
+
+
+----------------------------------------------------------------------------------------------------
+procedure set_task_exit_code =
+----------------------------------------------------------------------------------------------------
+with
+  flex,
+  flex.tasks;
+
+begin
+  rtl_set_task_exitcode(t_rtl_native_unsigned(exitcode));
+  end set_task_exit_code;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure run_external_program = 
+----------------------------------------------------------------------------------------------------
+var
+  ps_params        : windows.windef.winnt.pwstr;
+  ps_directory     : windows.windef.winnt.pwstr;
+  ps_eviron        : windows.windef.lpvoid;
+   s_st_info       : aliased windows.winbase._STARTUPINFOW;
+   s_pr_info       : windows.winbase._PROCESS_INFORMATION;
+  f_params         : p_char32ustr;
+
+begin
+  -- convert params
+  if cmd_line<>nil then
+    compose_command_line_parameters(f_params,cmd_line,false);
+    to_system_string(f_params^,ps_params);
+  else
+    raise process_start_error;
+    end if;
+
+  -- convert environment
+  if env_vars<>nil then
+    --%%TODO env_vars,ps_eviron
+    raise feature_not_implemented;
+    end if;
+
+  -- convert directory
+  if directory<>nil then
+    to_system_string(directory^,ps_directory);
+    end if;
+  
+  -- convert command
+  s_st_info.cb:=s_st_info:size;
+
+  -- create process
+  if windows.winbase.CreateProcessW(nil,ps_params,nil,nil,false,windows.winbase.NORMAL_PRIORITY_CLASS,ps_eviron,ps_directory,^s_st_info,s_pr_info) then
+    if exitcode<>nil then
+      -- Wait until child process exits.
+      if windows.winbase.WaitForSingleObject(s_pr_info.hProcess,windows.winbase.INFINITE)<>windows.winbase.WAIT_OBJECT_0 then
+        raise tasking_error;
+        end if;
+      
+      -- get exitcode
+      if not windows.winbase.GetExitCodeProcess(s_pr_info.hProcess,windows.windef.DWORD(exitcode^:unchecked)) then
+        raise process_start_error;
+        end if;
+      end if;
+  else
+    raise process_start_error;
+    end if;
+
+leave 
+  if s_pr_info.hProcess<>nil then
+    if not windows.winbase.CloseHandle(s_pr_info.hProcess) then
+      raise process_start_error;
+      end if;
+    if not windows.winbase.CloseHandle(s_pr_info.hThread) then
+      raise process_start_error;
+      end if;
+    end if;
+  discard ps_params;
+  discard ps_directory;
+  discard ps_eviron;
+  discard f_params;
+  end run_external_program;
 end program_control;

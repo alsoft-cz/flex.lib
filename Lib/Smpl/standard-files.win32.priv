@@ -9,7 +9,6 @@ with
   classes.lists;
 
 use 
-  system,
   system.windows,
   system.windows.windef,
   system.windows.windef.winnt,
@@ -104,24 +103,24 @@ class private c_filesystem_object =
 
 
     ------------------------------------------------------------------------------------------------
-    virtual get_datim =
+    virtual get_datetime =
     -- Returns requested date and time information. When the subprogram fails, [res] is set to 
     -- [tfe_get_info].
     ------------------------------------------------------------------------------------------------
     begin
       raise feature_not_implemented;
-      end get_datim;
+      end get_datetime;
 
 
 
     ------------------------------------------------------------------------------------------------
-    virtual set_datim =
+    virtual set_datetime =
     -- Sets all date and time informations of the file contained in [kind] to [datim]. When the 
     -- method fails, [res] is set to [tfe_set_info].
     ------------------------------------------------------------------------------------------------
     begin
       raise feature_not_implemented;
-      end set_datim;
+      end set_datetime;
 
 
 

@@ -37,7 +37,7 @@ class private abstract c_binary_tree_node =
 
 
 ----------------------------------------------------------------------------------------------------
-class private c_binary_tree =
+class private abstract c_binary_tree =
 -- Binární vyhledávací strom s podporou AVL. 
 ----------------------------------------------------------------------------------------------------
 
@@ -1157,7 +1157,7 @@ class private c_binary_tree_iterator =
             if current_node^.left<>nil then current_node:=current_node^.left;
             elsif current_node^.right<>nil then current_node:=current_node^.right;
             else break;
-              end if;
+            end if;
             end loop;
 
         -- inverzní postfix
@@ -1168,7 +1168,7 @@ class private c_binary_tree_iterator =
             if current_node^.right<>nil then current_node:=current_node^.right;
             elsif current_node^.left<>nil then current_node:=current_node^.left;
             else break;
-              end if;
+            end if;
             end loop;
 
         -- infix
@@ -1258,7 +1258,7 @@ class private c_binary_tree_iterator =
               if current_node^.left<>nil then current_node:=current_node^.left;
               elsif current_node^.right<>nil then current_node:=current_node^.right;
               else break;
-                end if;
+              end if;
               end loop;
 
           else 
@@ -1277,7 +1277,7 @@ class private c_binary_tree_iterator =
               if current_node^.right<>nil then current_node:=current_node^.right;
               elsif current_node^.left<>nil then current_node:=current_node^.left;
               else break;
-                end if;
+              end if;
               end loop;
 
           else 

@@ -12,16 +12,6 @@
   p_data_array_char32= ^t_data_array_char32 for machine_pointer use true;
   p_data_string     = ^t_data_string     for machine_pointer use true;
 
-const
-    dp_optimal_packet_size = 65536;
-
-const
-    t_dpss_invalid : t_unsigned = 0;             -- no signal
-    t_dpss_eod     : t_unsigned = 1;             -- end of data signal
-    t_dpss_flush   : t_unsigned = 2;             -- flush signal
-    t_dpss_bad_data: t_unsigned = 3;             -- invalid data signal
-    t_dpss_seek    : t_unsigned = 4;             -- seek
-
 type
   t_data_packet;
   p_data_packet  = ^t_data_packet for machine_pointer use true;
@@ -74,6 +64,24 @@ type
     signal_data    : p_data_array                for position use 8;
     end record;
 
+  t_read_options   = record
+    maximal_size    : t_offset;
+    end record;
+
+const
+    dp_optimal_packet_size = 65536;
+    dp_maximal_size = t_offset:last;
+
+const
+    t_dpss_invalid : t_unsigned = 0;             -- no signal
+    t_dpss_eod     : t_unsigned = 1;             -- end of data signal
+    t_dpss_flush   : t_unsigned = 2;             -- flush signal
+    t_dpss_bad_data: t_unsigned = 3;             -- invalid data signal
+    t_dpss_seek    : t_unsigned = 4;             -- seek
+
+const
+    t_ro_default   : t_read_options = [dp_maximal_size];
+
 
 
 ----------------------------------------------------------------------------------------------------
@@ -118,6 +126,12 @@ procedure copy_text_to_packet(
     packet         : out t_data_packet;
     text           : in ref t_char32ustr);
 ----------------------------------------------------------------------------------------------------
+procedure copy_text_offset_to_packet(
+    packet         : out t_data_packet;
+    text           : in ref t_char32ustr;
+    maxsize        : in t_offset;
+    offset         : in out t_offset);
+----------------------------------------------------------------------------------------------------
 procedure discard_packet(
     packet         : in t_data_packet);
 -- destroy packet
@@ -127,6 +141,11 @@ procedure read_packet(
     data           : out p_data_array;
     size           : out t_offset);
 -- reads packet data
+----------------------------------------------------------------------------------------------------
+procedure packet_size(
+    packet         : in ref t_data_packet)
+    return t_offset;
+-- reads packet size
 ----------------------------------------------------------------------------------------------------
 procedure read_temporary_text(
     packet         : in ref t_data_packet;
@@ -152,7 +171,7 @@ procedure realloc_packet(
     size           : out t_offset);
 ----------------------------------------------------------------------------------------------------
 procedure copy_data(
-    indata         : in  p_data_array;
+    indata         : in p_data_array;
     inoffset       : in t_offset;
     outdata        : in p_data_array;
     outoffset      : in t_offset;

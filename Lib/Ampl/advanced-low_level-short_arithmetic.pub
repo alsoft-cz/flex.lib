@@ -1,0 +1,23 @@
+﻿----------------------------------------------------------------------------------------------------
+module public short_arithmetic =
+-- Short arithmetic low-level operations.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+
+with
+  standard;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure rotate_left (x : t_mod_unsigned32; n : t_unsigned) return t_mod_unsigned32;
+-- Circular shift (rotation) of [x] by [n] positions (bits) to the left.
+----------------------------------------------------------------------------------------------------
+procedure rotate_right (x : t_mod_unsigned32; n : t_unsigned) return t_mod_unsigned32;
+-- Circular shift (rotation) of [x] by [n] positions (bits) to the right.
+----------------------------------------------------------------------------------------------------
+
+end short_arithmetic;

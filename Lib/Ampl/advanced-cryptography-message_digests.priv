@@ -1,0 +1,17 @@
+﻿----------------------------------------------------------------------------------------------------
+module private message_digests =
+-- Message digests
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+#separate private sha1;
+-- Secure Hash Signature Standard (SHS) (FIPS PUB 180-2), 
+-- see [http://csrc.nist.gov/CryptoToolkit/tkhash.html]
+----------------------------------------------------------------------------------------------------
+#separate private sha256;
+-- Secure Hash Signature Standard (SHS) (FIPS PUB 180-2), 
+-- see [http://csrc.nist.gov/CryptoToolkit/tkhash.html]
+----------------------------------------------------------------------------------------------------
+
+end message_digests;

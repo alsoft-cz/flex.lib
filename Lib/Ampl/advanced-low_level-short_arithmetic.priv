@@ -1,0 +1,50 @@
+﻿----------------------------------------------------------------------------------------------------
+module private short_arithmetic =
+-- Short arithmetic low-level operations.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure rotate_left =
+-- Circular shift (rotation) of [x] by [n] positions (bits) to the left.
+----------------------------------------------------------------------------------------------------
+begin
+  if x:size=4
+    then
+      #syntax asm;
+        mov    eax,x
+        mov    cl,<t_unsigned8>n
+        rol    eax,cl
+        mov    result,eax
+      #end asm;
+    else
+      raise feature_not_implemented;
+      end if;
+  end rotate_left;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure rotate_right =
+-- Circular shift (rotation) of [x] by [n] positions (bits) to the right.
+----------------------------------------------------------------------------------------------------
+begin
+  if x:size=4
+    then
+      #syntax asm;
+        mov    eax,x
+        mov    cl,<t_unsigned8>n
+        ror    eax,cl
+        mov    result,eax
+      #end asm;
+    else
+      raise feature_not_implemented;
+      end if;
+  end rotate_right;
+
+
+
+end short_arithmetic;

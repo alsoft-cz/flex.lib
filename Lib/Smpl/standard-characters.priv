@@ -928,23 +928,25 @@ class private c_character_encoder_ucs4 =
 
     end c_character_encoder_ucs4;
 
+
+
 ----------------------------------------------------------------------------------------------------
 class private abstract c_text_writer =
 ----------------------------------------------------------------------------------------------------
-  var
-    spaces         : static const string 256 of t_char32 := 
-    '                                                                                                                                '&
-    '                                                                                                                                ';
-
   ------------------------------------------------------------------------------------------------
   static write_fill =
   ------------------------------------------------------------------------------------------------
   var
-      buff         : p_char32ustr;
+    --%%TODO(AGGREGATE) Viz níže.
+    spaces         : static const string 256 of t_char32 := [for 1..spaces:type:last use " "];
+
+  var
+    buff           : p_char32ustr;
 
   begin
     if count>0 then
       if ch=" " then
+        --%%TODO(AGGREGATE) Použít na míru sestavený dynamický agregát!
         write_first(spaces,count);
       else
         new buff range count;
@@ -964,6 +966,7 @@ class private abstract c_text_writer =
 ----------------------------------------------------------------------------------------------------
 class private abstract c_text_reader =
 ----------------------------------------------------------------------------------------------------
+
   end c_text_reader;
 
 
@@ -971,4 +974,5 @@ class private abstract c_text_reader =
 ----------------------------------------------------------------------------------------------------
 #separate private streams;
 ----------------------------------------------------------------------------------------------------
+
 end characters;

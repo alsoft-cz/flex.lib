@@ -23,21 +23,37 @@ class private c_console_text_writer =
     end set_cursor_position;
 
 
-{
+
   --------------------------------------------------------------------------------------------------
-  virtual set_attributes =
+  virtual set_foreground_color =
   ----------------------------------------------------------------------------------------------------
   var
     packet         : t_data_packet;
-    pattr          : p_con_attributes_set;
+    pcolor         : p_console_color;
 
   begin
-    new pattr;
-    pattr^:=attr;
-    create_signal(packet,t_dpss_con_set_attr,p_data_array(pattr:unchecked));
+    new pcolor;
+    pcolor^:=color;
+    create_signal(packet,t_dpss_con_fgcolor,p_data_array(pcolor:unchecked));
     _target^.write_packet(packet);
-    end set_attributes;
-}
+    end set_foreground_color;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  virtual set_background_color =
+  ----------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+    pcolor         : p_console_color;
+
+  begin
+    new pcolor;
+    pcolor^:=color;
+    create_signal(packet,t_dpss_con_bgcolor,p_data_array(pcolor:unchecked));
+    _target^.write_packet(packet);
+    end set_background_color;
+
 
 
   --------------------------------------------------------------------------------------------------
@@ -82,7 +98,7 @@ class private c_console_text_reader =
 
   begin
     loop
-      _source^.read_packet(packet);
+      _source^.read_packet(packet,t_ro_default);
       if packet.style=t_dps_signal and then packet.signal=t_dpss_con_event then
         event:=p_console_event(packet.other:unchecked)^;
         discard_packet(packet);

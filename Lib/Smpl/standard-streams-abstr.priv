@@ -70,6 +70,39 @@ class private abstract c_abstract_stream =
 ----------------------------------------------------------------------------------------------------
 class private abstract c_input_stream = 
 ----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+
+  begin
+    -- cekam na packet
+    read_packet(packet,t_ro_default);
+
+    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+      -- jestli to byl end of data, koncim
+      if transfer_eod then
+        -- zapisu packet
+        target^.write_packet(packet);
+        end if;
+      result:=true;
+    else
+      -- zapisu packet
+      target^.write_packet(packet);
+      result:=false;
+      end if;
+    end transfer_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets =
+  ------------------------------------------------------------------------------------------------
+  begin
+    while not transfer_packet(target,transfer_eod) loop
+      end loop;
+    end transfer_all_packets;
   end c_input_stream;
 
 
@@ -77,6 +110,42 @@ class private abstract c_input_stream =
 ----------------------------------------------------------------------------------------------------
 class private abstract c_output_stream =
 ----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+
+  begin
+    -- cekam na packet
+    source^.read_packet(packet,t_ro_default);
+
+    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+      -- jestli to byl end of data, koncim
+      if transfer_eod then
+        -- zapisu packet
+        write_packet(packet);
+        end if;
+      result:=true;
+    else
+      -- zapisu packet
+      write_packet(packet);
+      result:=false;
+      end if;
+    end transfer_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets =
+  ------------------------------------------------------------------------------------------------
+  begin
+    while not transfer_packet(source,transfer_eod) loop
+      end loop;
+    end transfer_all_packets;
+
+  
+  
   ------------------------------------------------------------------------------------------------
   virtual write_eod =
   ------------------------------------------------------------------------------------------------

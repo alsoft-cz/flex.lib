@@ -63,6 +63,7 @@ class public abstract c_stream_generic_reader = extend c_stream_reader;
 -- vhodna jako predek pro skutecny formater
 ----------------------------------------------------------------------------------------------------
 protected
+  ------------------------------------------------------------------------------------------------
   static read_byte (
       data       : out t_data_byte)            -- načtený byte
       return t_logical;

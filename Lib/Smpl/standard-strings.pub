@@ -141,6 +141,16 @@ procedure str_pos_substring (
 --   This subprogram always succeeds.
 --   If there is no occurence of [substr] in [str] subprogram returns 0.
 ----------------------------------------------------------------------------------------------------
+procedure str_pos_character (
+    str            : in t_char32ustr;            -- string to searched in
+    char           : in t_char32)                -- character to be searched for
+    return t_unsigned;                           -- position
+-- Returns position of first occurence of [char] in [str].
+--
+-- Result:
+--   This subprogram always succeeds.
+--   If there is no occurence of [char] in [str], subprogram returns 0.
+----------------------------------------------------------------------------------------------------
 procedure str_count_character (
     str            : in t_char32ustr;            -- string to count from
     char           : in t_char32)                -- character to be counted

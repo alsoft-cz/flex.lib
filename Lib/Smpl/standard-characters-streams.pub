@@ -5,7 +5,8 @@ class public c_stream_text_writer = extend c_stream_generic_writer; expose c_tex
   --------------------------------------------------------------------------------------------------
   static init_text_writer(
     target         : p_output_stream;               -- vystupni stream
-    encoder        : p_character_encoder:=nil);     -- vystupni kodovani znaku
+    encoder        : p_character_encoder:=nil;      -- vystupni kodovani znaku
+    disable_bom    : t_logical:=true);
   --------------------------------------------------------------------------------------------------
   end c_stream_text_writer;
 type p_stream_text_writer = ^class c_stream_text_writer;

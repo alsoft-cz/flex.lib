@@ -37,7 +37,7 @@ class public c_null_output_stream = extend c_output_stream;
 
 type
   p_null_input_stream       = ^class c_null_input_stream;
-  --p_empty_input_stream      = ^class c_empty_input_stream;
+  p_empty_input_stream      = ^class c_empty_input_stream;
   --p_random_input_stream     = ^class c_random_input_stream;
   p_null_output_stream      = ^class c_null_output_stream;
 end terminators;

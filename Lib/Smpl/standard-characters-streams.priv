@@ -22,7 +22,7 @@ var
     init_writer(target);
     -- nastavim kodovani
     this.encoder:=encoder;
-    if encoder<>nil then
+    if encoder<>nil and not disable_bom then
       encoder^.set_endian(res);
       if res then
         loop
@@ -210,7 +210,7 @@ var
         if text:length>=count then
           break;
           end if;
-        result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
+        result:=c_text_reader:(this).read_char(text[text:length+1]);
         if result then
           --%%TODO decoder^.finalize_input;
           return;
@@ -229,7 +229,7 @@ var
   override c_text_reader.read =
   ------------------------------------------------------------------------------------------------
   begin
-    result:=(^c_text_reader:(this))^.read_first(text,text:last);
+    result:=c_text_reader:(this).read_first(text,text:last);
     end read;
 
 
@@ -246,7 +246,7 @@ var
       if text:length>=text:last then
         raise string_buffer_overflow;
         end if;
-      result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
+      result:=c_text_reader:(this).read_char(text[text:length+1]);
       if not result then
         succ text:length;
         if text[text:length]=cr then
@@ -412,6 +412,10 @@ var
   --endian control
   endian_bom       : t_logical;
 
+  --split long packet
+  longpacket       : t_data_packet;
+  longpos          : t_offset;
+
 
   --------------------------------------------------------------------------------------------------
   static init_recoder =
@@ -449,14 +453,66 @@ var
   --------------------------------------------------------------------------------------------------
   override c_input_stream.read_packet =
   --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    size           : t_offset;
+
   begin
-    _source^.read_packet(data);
-    begin
-      convert_packet(data,charbuff,charpos,endian_bom,encoder,decoder);
-    catch
-      when c_character_decoder.character_decoder_error,c_character_encoder.character_encoder_error do
-        raise stream_invalid_data;
-      end;
+    -- otestuju opravnenost pozadavku
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+
+    if longpos<>0 then
+      size:=packet_size(longpacket)-longpos;
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        end if;
+
+      new data.data range size;
+      data.style:=t_dps_heap;
+      copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      if packet_size(longpacket)=longpos then
+        discard_packet(longpacket);
+        longpos:=0;
+        end if;
+
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+    else
+
+      _source^.read_packet(longpacket,t_ro_default);
+      begin
+        convert_packet(longpacket,charbuff,charpos,endian_bom,encoder,decoder);
+      catch
+        when c_character_decoder.character_decoder_error,c_character_encoder.character_encoder_error do
+          raise stream_invalid_data;
+        end;
+
+      size:=packet_size(longpacket);
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        new data.data range size;
+        data.style:=t_dps_heap;
+        copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      else
+        data:=longpacket;
+        longpacket:=nil;
+        end if;
+
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+
+      -- zjistim jestli uz byl posledni
+      if data.style=t_dps_signal then 
+        if data.signal=t_dpss_eod then
+          eod:=true;
+          end if;
+        end if;
+      end if;
     end read_packet;
   
 

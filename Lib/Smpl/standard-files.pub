@@ -153,14 +153,14 @@ class public c_filesystem_object = extend c_trigger_container;
     -- Sets [this.res] to [res], retrieves the error code from the operating system  and executes 
     -- the [event_error] trigger.
     ------------------------------------------------------------------------------------------------
-    virtual get_datim (
+    virtual get_datetime (
         kind       : in t_file_datim_kind)       -- what datim to return
-        return t_datim;
+        return t_datetime;
     -- Returns requested date and time information. When the subprogram fails, [res] is set to 
     -- [tfe_get_info].
     ------------------------------------------------------------------------------------------------
-    virtual set_datim (
-        datim      : in t_datim;                 -- date and time
+    virtual set_datetime (
+        datim      : in t_datetime;              -- date and time
         kind       : in t_file_datim_kind_set    -- what datims to set
                    := [tfdk_last_modification]);      
     -- Sets all date and time informations of the file contained in [kind] to [datim]. When the 

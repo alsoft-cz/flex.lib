@@ -36,23 +36,26 @@ procedure memory_copy =
 -- Moves [size] of bytes from [source] to [destination].
 ----------------------------------------------------------------------------------------------------
 var
-  source_ptr       : t_machine_pointer;
-  destination_ptr  : t_machine_pointer;
+  source_addr      : t_memory_address;
+  destination_addr : t_memory_address;
 
 begin
   {%%TODO(LIB) Přepsat do assembleru, naprogramovat též MMX variantu }
+  
+  -- handle trivial situations
+  if size=0 then return end if;
 
-  -- acquire pointers do source and destination memory blocks
-  source_ptr:=^source;
-  destination_ptr:=^destination;
+  -- compute memory addresses of source and destination memory blocks
+  source_addr:=machine_pointer_to_memory_address(t_machine_pointer(^source));
+  destination_addr:=machine_pointer_to_memory_address(t_machine_pointer(^destination));
 
   -- both operands start at the same address
-  if t_unsigned32(source_ptr:unchecked)=t_unsigned32(destination_ptr:unchecked) then 
+  if source_addr=destination_addr then 
     -- do nothing
 
   -- the source operand starts before the destination operand and ends within it
-  elsif t_unsigned32(source_ptr:unchecked)+size-1>=t_unsigned32(destination_ptr:unchecked) 
-  and t_unsigned32(source_ptr:unchecked)+size<t_unsigned32(destination_ptr:unchecked)+size then
+  elsif source_addr+t_memory_address(size-1)>=destination_addr 
+  and source_addr+t_memory_address(size)<destination_addr+t_memory_address(size) then
     for i in reverse 1..size loop
       t_unsigned8array(destination)[i-1]:=t_unsigned8array(source)[i-1]
       end loop;                           
@@ -64,5 +67,16 @@ begin
       end loop;
     end if;
   end memory_copy;
+
+
+  
+----------------------------------------------------------------------------------------------------
+procedure machine_pointer_to_memory_address =
+-- Converts a pointer to some object to the corresponding linear memory address of the reference
+-- object. If [pointer] is NIL, returns zero.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=t_memory_address(pointer:unchecked);
+  end machine_pointer_to_memory_address;
 
 end unchecked_memory_access;

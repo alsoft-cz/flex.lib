@@ -20,7 +20,7 @@ var
 
 begin
   if not CryptGenRandom(provider,rnd:size,^rnd:unchecked) then
-    --raise random_generator_error;
+    raise random_generator_error;
     end if;
   result:=rnd;
   end random_unsigned;

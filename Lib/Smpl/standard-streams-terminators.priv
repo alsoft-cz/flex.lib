@@ -25,11 +25,18 @@ var
     ------------------------------------------------------------------------------------------------
     override c_input_stream.read_packet =
     ------------------------------------------------------------------------------------------------
+    var
+      size         : t_offset;
+
     begin
       if closed then
         raise stream_already_closed
         end if;
-      create_packet(data,^null_data,dp_optimal_packet_size,t_dps_immortal);
+      size:=dp_optimal_packet_size;
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        end if;
+      create_packet(data,^null_data,size,t_dps_immortal);
       end read_packet;
 
 

@@ -233,4 +233,13 @@ procedure interlocked_read =
 begin
   rtl_interlocked_read_ptr(^locked_value:unchecked,flex.t_rtl_pointer(value:unchecked));
   end interlocked_read;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure sleep =
+----------------------------------------------------------------------------------------------------
+begin
+  rtl_sleep(flex.t_rtl_timeout(milisec));
+  end sleep;
 end synchronization;

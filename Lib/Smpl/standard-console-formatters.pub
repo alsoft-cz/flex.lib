@@ -16,8 +16,11 @@ class public c_console_text_writer = extend c_stream_text_writer;
   virtual set_cursor_position (
   pos              : t_cursor_coordinates);
   --------------------------------------------------------------------------------------------------
-  --virtual set_attributes(
-  --    attr           : t_con_attributes_set);
+  virtual set_foreground_color (
+      color          : in t_console_color);
+  ----------------------------------------------------------------------------------------------------
+  virtual set_background_color (
+      color          : in t_console_color);
   ----------------------------------------------------------------------------------------------------
   virtual clear_console;
   --------------------------------------------------------------------------------------------------

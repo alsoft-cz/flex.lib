@@ -9,6 +9,9 @@ type
   -- machine pointer (address)
   t_machine_pointer = ^unchecked for machine_pointer use true;
 
+  -- linear memory address
+  t_memory_address = private mod unsigned #environment target_machine_bits;;
+
 ----------------------------------------------------------------------------------------------------
 procedure memory_fill_zero (
     x              : in out unchecked;
@@ -43,6 +46,12 @@ procedure memory_copy (
 --
 -- Result:
 --   This subprogram always succeeds.
+----------------------------------------------------------------------------------------------------
+procedure machine_pointer_to_memory_address (
+    pointer        : in t_machine_pointer)       -- a pointer referencing some object
+    return t_memory_address;                     -- linear memory address of the object referenced by [pointer]
+-- Converts a pointer to some object to the corresponding linear memory address of the reference
+-- object. If [pointer] is NIL, returns zero.
 ----------------------------------------------------------------------------------------------------
 
 end unchecked_memory_access;

@@ -1,0 +1,1586 @@
+﻿----------------------------------------------------------------------------------------------------
+module private names =
+-- Object names.
+-- Flex Standard Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- todo:
+--     - better name (etc.) for c_name.prefix_length
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.strings,
+  standard.console;
+
+-- forward declarations
+class c_namespace_list_item; type p_namespace_list_item = ^class c_namespace_list_item;
+class c_namespace_list;      type p_namespace_list      = ^class c_namespace_list;
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_namespace =
+-- Namespace, provider of parsing services for a class of names.
+----------------------------------------------------------------------------------------------------
+
+    with 
+      supervised c_name;
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    ------------------------------------------------------------------------------------------------
+    begin
+      all_namespaces^.add_namespace(^this,this:tag);
+      end entry;
+
+    {
+    ------------------------------------------------------------------------------------------------
+    exit =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- %%TODO co s tim...?
+      all_namespaces^.remove_namespace(^this);
+      end entry;
+    }
+
+    end c_namespace;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_namespace_list_item = extend c_list_item;
+-- Item of a namespace list (see [c_namespace_list]).
+----------------------------------------------------------------------------------------------------
+
+    var
+      ns           : p_namespace;                -- namespace
+      ns_tag       : t_tag;                      -- namespace tag
+
+    end c_namespace_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_namespace_list =
+-- A list of namespaces.
+----------------------------------------------------------------------------------------------------
+
+    var
+      list         : c_list;                     -- the list
+
+    ------------------------------------------------------------------------------------------------
+    static add (
+        ns         : in p_namespace;
+        ns_tag     : in t_tag) =                 -- tag of the namespace to be added to the list
+    -- Adds a namespace to the list.
+    ------------------------------------------------------------------------------------------------
+    var
+      iterator     : c_list_iterator;
+      item         : p_namespace_list_item;
+
+    begin
+      -- check if the namespace is already in the list
+      iterator.init(list);
+      while iterator.get(item) loop
+        if item^.ns_tag = ns_tag then
+          -- namespace already in the list => don't add it again
+          return;
+          end if;
+        end loop;
+
+      -- namespace not yet in the list => add it there
+      -- create a new list item
+      new item;
+      item^.ns:=ns;
+      item^.ns_tag:=ns_tag;
+
+      -- insert it to the list
+      list.insert_last(item);
+      end add;
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- empty the list
+      list.delete_all;
+      end exit;
+
+    end c_namespace_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_abstract_name_factory =
+-- Registr namespaců.
+----------------------------------------------------------------------------------------------------
+
+    end c_abstract_name_factory;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_factory =
+-- Basic name factory, chooses the first namespace able to process the given name.
+----------------------------------------------------------------------------------------------------
+
+    var
+      list         : c_namespace_list;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a text name to its [c_name] representation. The function chooses the proper namespace
+    -- that should be used to parse [text_name].
+    -- The caller is responsible for freeing the result.
+    -- If the name cannot be decomposed by any known namespace, [name_error] is raised.
+    ------------------------------------------------------------------------------------------------
+    var
+      iterator     : c_list_iterator;
+      item         : p_namespace_list_item;
+
+    begin
+      -- iterate through the namespace list
+      iterator.init(list.list);
+      while iterator.get(item) loop
+        -- try this namespace
+        if item^.ns^.check_name(text_name) then
+          -- yes, it works => use this namespace to decompose
+          item^.ns^.decompose_name(text_name, name);
+          return;
+          end if;
+        end loop;
+
+      -- no known namespace able to decompose
+      raise name_error;
+      end decompose_name;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    override check_name =
+    -- Check if [name] could be decomposed by this name factory.
+    ------------------------------------------------------------------------------------------------
+    var
+      iterator     : c_list_iterator;
+      item         : p_namespace_list_item;
+
+    begin
+      -- iterate through the namespace list
+      iterator.init(list.list);
+      while iterator.get(item) loop
+        -- try this namespace
+        if item^.ns^.check_name(name) then
+          -- yes, it is able to decompose it
+          result:=true;
+          return;
+          end if;
+        end loop;
+      end check_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override add_namespace =
+    -- Adds a namespace to the list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      { %%TODO(TAG) pouzivat jenom ns_tag }
+      list.add(ns, ns_tag);
+      end add_namespace;
+
+    end c_name_factory;
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name =
+-- A container for a single name.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static decompose_name =
+    -- Decomposes [text_name] into this instance. The decomposed name must be compatible with this
+    -- instance.
+    ------------------------------------------------------------------------------------------------
+    var
+      this_name    : p_name;                     -- pointer to this
+
+    begin
+      { %%TODO(TAG)
+      new namespace tag namespace_tag;
+      ...
+      discard namespace;
+      }
+
+      -- do we know the namespace for this name?
+      if namespace=nil then
+        -- if not, we are unable to decompose
+        raise name_error;
+        end if;
+
+      -- OK, use the namespace to do the actual work
+      this_name:=^this;
+      namespace^.decompose_name(text_name,this_name);
+      end decompose_name;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    static compose_name =
+    -- Composes a text representation of this name.
+    ------------------------------------------------------------------------------------------------
+    begin
+      { %%TODO(TAG)
+      new namespace tag namespace_tag;
+      ...
+      discard namespace;
+      }
+
+      -- do we know the namespace for this name?
+      if namespace=nil then
+        -- if not, we are unable to compose
+        raise name_error;
+        end if;
+
+      -- OK, use the namespace to do the actual work
+      namespace^.compose_name(^this,text_name);
+      end compose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static join =
+    -- Joins a prefix and a suffix into this name. 
+    ------------------------------------------------------------------------------------------------
+    var
+      prefix_name  : p_text_name;
+      suffix_name  : p_text_name;
+      full_name    : p_text_name;
+
+    begin
+      prefix.compose_name(prefix_name);
+      suffix.compose_name(suffix_name);
+      new full_name range prefix_name^:length+suffix_name^:length+1;
+      full_name^:=prefix_name^;
+      if full_name^<>'' and then full_name^[full_name^:length]<>"\" then
+        full_name^ & "\";
+        end if;
+      full_name^ & suffix_name^;    
+      decompose_name(full_name^,tnt_unspecified);
+    leave
+      discard prefix_name;
+      discard suffix_name;
+      discard full_name;
+      end join;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual join_after =
+    -- Appends [name] to the end of this name.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- Iterator through [components]
+      comp         : p_name_component;           -- Currently processed [components]
+
+    begin
+      -- The default action is just to append a clone of [name] to the list of [components].
+      iter.init(name.components);
+      while iter.get(p_list_item(comp)) loop
+        components.insert_last(comp^.clone);
+        end loop;
+      end join_after;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual join_before =
+    -- Prepends [name] before this name.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- Iterator through [components]
+      comp         : p_name_component;           -- Currently processed [components]
+
+    begin
+      -- The default action is just to append a clone of [name] to the list of [components].
+      iter.init(name.components, tlwd_backward);
+      while iter.get(p_list_item(comp)) loop
+        components.insert_first(comp^.clone);
+        end loop;
+      end join_before;
+
+
+
+    {
+    ------------------------------------------------------------------------------------------------
+    virtual assign_to =
+    -- Makes a deep copy of the given name into this name.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- Iterator through [source.components]
+      comp         : p_name_component;           -- The current name component
+
+    begin
+      -- copy the source, component by component
+      iter.init(source.components);
+      while iter.get(p_list_item(comp)) loop
+        components.insert(comp.clone);
+        end loop;
+      end assign_to;
+    }
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual clone =
+    -- Makes a deep copy of this name.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- %%TODO(ADJUST) Predelat cely tenhle system funkci clone na adjust
+      new p_name(result);
+      copy_components(result);
+      copy_basic_fields(result);
+      end clone;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static copy_basic_fields =
+    -- Copies the basic data fields.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result^.namespace_tag:=namespace_tag;
+      result^.namespace:=namespace;
+      result^.ns_data:=clone_ns_data(result);
+      result^.name_type:=name_type;
+      end copy_basic_fields;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static clone_ns_data =
+    -- Creates a new clone of the ns_data field of this name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      { %%TODO(TAG)
+      new namespace tag namespace_tag;
+      ...
+      discard namespace;
+      }
+
+      -- do we know the namespace for this name?
+      if namespace=nil then
+        -- if not, we are unable to compose
+        raise name_error;
+        end if;
+
+      -- OK, use the namespace to do the actual work
+      result:=namespace^.clone_ns_specific(cloned^, ns_data);
+      end clone_ns_data;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static copy_components =
+    -- Makes a deep copy of this name.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- iterator through [components]
+      item         : p_name_component;           -- component from [iter]
+
+    begin
+      iter.init(components);
+      while iter.get(item) loop
+        result^.components.insert(item^.clone);
+        end loop;
+      end copy_components;
+
+
+    
+    {
+    ------------------------------------------------------------------------------------------------
+    static make_canonical_name =
+    -- Makes a canonical version of this name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      { %%TODO(TAG)
+      new namespace tag namespace_tag;
+      ...
+      discard namespace;
+      }
+
+      -- do we know the namespace for this name?
+      if namespace=nil then
+        -- if not, we are unable to compose
+        raise name_error;
+        end if;
+
+      -- OK, use the namespace to do the actual work
+      return namespace^.make_canonical_name(^this);
+      end make_canonical_name;
+    }
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual prefix_length =
+    -- Compares this name to [name_2]. If this is not a prefix of [name_2], returns 0, otherwise,
+    -- returns number of identical components from the left (length of the prefix).
+    ------------------------------------------------------------------------------------------------
+    var
+      iter_1       : c_list_iterator;            -- iterator through [name_1].[components]
+      iter_2       : c_list_iterator;            -- iterator through [name_2].[components]
+      comp_1       : p_name_component;           -- a component from [name_1].[components]
+      comp_2       : p_name_component;           -- a component from [name_2].[components]
+
+    begin
+      -- the names have to have same type to be comparable
+      { %%TODO(TAG) compare if names are in the same heritage branch (i.e. one is (indirect) superclass of the other)
+      if this:tag<>name_2:tag then
+        -- types differ=>completely different
+        result:=0;
+        return;
+        end if;}
+
+      -- check equality of components
+      result:=0;
+      iter_1.init(this.components);
+      iter_2.init(name_2.components);
+      while iter_1.get(comp_1) loop
+        if not iter_2.get(comp_2) then
+          -- this name has more components=>not relative
+          result:=0;
+          return;
+          end if;
+
+        if c_name_component_operator_not_equal(comp_1^,comp_2^) then
+        --if comp_1^<>comp_2^ then
+          -- components differ here
+          result:=0;
+          return;
+          end if;
+
+        -- ok, another component is equal
+        succ result;
+        end loop;
+
+      if iter_2.get(comp_2) then
+        -- name_2 has more components
+        return;
+        end if;
+      
+      -- all tests passed=>the names are completely equal
+      end prefix_length;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure operator_equal =
+    -- Compares two names. Returns true when the names are equal.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter_1       : c_list_iterator;            -- iterator through [name_1].[components]
+      iter_2       : c_list_iterator;            -- iterator through [name_2].[components]
+      comp_1       : p_name_component;           -- a component from [name_1].[components]
+      comp_2       : p_name_component;           -- a component from [name_2].[components]
+
+    begin
+      -- the names are equal iff their types are equal and their component lists are equal
+      { %%TODO(TAG) compare if names are in the same heritage branch (i.e. one is (indirect) superclass of the other)
+      if name_1:tag<>name_2:tag then
+        -- types differ=>not equal
+        result:=false;
+        return;
+        end if;}
+
+      -- check if components are equal
+      iter_1.init(name_1.components);
+      iter_2.init(name_2.components);
+      while iter_1.get(comp_1) loop
+        if not iter_2.get(comp_2) then
+          -- name_1 has more components=>not equal
+          result:=false;
+          return;
+          end if;
+
+        if c_name_component_operator_not_equal(comp_1^, comp_2^) then
+        --if comp_1^<>comp_2^ then
+          -- components not identical=>not equal
+          result:=false;
+          return;
+          end if;
+        end loop;
+
+      if iter_2.get(comp_2) then
+        -- name_2 has more components=>not equal
+        result:=false;
+        return;
+        end if;
+      
+      -- all tests passed=>the names are equal
+      result:=true;
+      end operator_equal;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_namespace =
+    -- Set [namespace] na [namespace_tag] to the given values.
+    -- Osklivy patch kvuli nemoznosti dat "with supervised" na predka.
+    -- %%TODO(SUPERVISED) Zrusit a pristupovat primo
+    ------------------------------------------------------------------------------------------------
+    begin
+      namespace:=ns;
+      namespace_tag:=ns_tag;
+      end set_namespace;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_ns_data =
+    -- Sets [ns_data] to the given value.
+    -- Dalsi osklivy patch kvuli nemoznosti dat "with supervised" na predka.
+    -- %%TODO(SUPERVISED) Zrusit a pristupovat primo
+    ------------------------------------------------------------------------------------------------
+    begin
+      this.ns_data:=ns_data;
+      end set_ns_data;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Set up the default namespace for [c_name]
+      namespace:=namespace_system;
+      namespace_tag:=c_namespace_system:tag;
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Free memory
+      discard ns_data;
+      end exit;
+
+    end c_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_names =
+-- A collection of names.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    ------------------------------------------------------------------------------------------------
+    begin
+      init(c_name:tag, false, false);
+      end entry;
+
+    end c_names;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_name_component =
+-- A component of a name.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static copy_subcomponents =
+    -- Makes a deep copy of subcomponents.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- iterator through [subcomponents]
+      item         : p_name_subcomponent;        -- subcomponent from [iter]
+
+    begin
+      iter.init(subcomponents);
+      while iter.get(item) loop
+        result^.subcomponents.insert(item^.clone);
+        end loop;
+      end copy_subcomponents;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure operator_equal =
+    -- Compares two name components. Returns true when the components are equal.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter_1       : c_list_iterator;            -- iterator through [comp_1].[subcomponents]
+      iter_2       : c_list_iterator;            -- iterator through [comp_2].[subcomponents]
+      subc_1       : p_name_subcomponent;        -- a subcomponent from [comp_1].[subcomponents]
+      subc_2       : p_name_subcomponent;        -- a subcomponent from [comp_2].[subcomponents]
+
+    begin
+      -- the components are equal iff their types are equal and their subcomponent lists are equal
+      { %%TODO(TAG) compare if components in the same heritage branch (i.e. one is (indirect) superclass of the other)
+      if comp_1:tag<>comp_2:tag then
+        -- types differ=>not equal
+        result:=false;
+        return;
+        end if;}
+
+      -- check if components are equal
+      iter_1.init(comp_1.subcomponents);
+      iter_2.init(comp_2.subcomponents);
+      while iter_1.get(subc_1) loop
+        if not iter_2.get(subc_2) then
+          -- comp_1 has more subcomponents=>not equal
+          result:=false;
+          return;
+          end if;
+
+        if c_name_subcomponent_operator_not_equal(subc_1^, subc_2^) then
+        --if subc_1^<>subc_2^ then
+          -- subcomponents not identical=>not equal
+          result:=false;
+          return;
+          end if;
+        end loop;
+
+      if iter_2.get(subc_2) then
+        -- comp_2 has more subcomponents=>not equal
+        result:=false;
+        return;
+        end if;
+      
+      -- all tests passed=>the components are equal
+      result:=true;
+      end operator_equal;
+
+    end c_name_component;
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_name_subcomponent =
+-- A component of a component of a name.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static set_name =
+    -- Assigns a plain-text name of this subcomponent.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- discard current name if present
+      discard name;
+
+      -- make a deep copy of the name
+      new name range text_name:length;
+      name^:=text_name;
+      end set_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure operator_equal =
+    -- Compares two name subcomponents. Returns true when the subcomponents are equal.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=
+      { %%TODO(TAG) compare if names are in the same heritage branch (i.e. one is (indirect) superclass of the other)
+                (not (subc_1:tag<>subc_2:tag)) and}
+      (subc_1.name^=subc_2.name^);
+      end operator_equal;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    ------------------------------------------------------------------------------------------------
+    begin
+      discard name;
+      end exit;
+
+    end c_name_subcomponent;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_server =
+-- Name of a server.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_server(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_server;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_drive =
+-- Name of a drive (or a "share" or a "volume" in some naming conventions) within a server.
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_drive(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_drive;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_file_name =
+-- A file name, parsed by [c_system_namespace].
+----------------------------------------------------------------------------------------------------
+
+    {
+    ------------------------------------------------------------------------------------------------
+    static prefix_length
+        return t_unsigned32 =
+    -- Vrátí počet komponent v prefixu jména souboru = components.count - počet komponent typu 
+    -- c_file_or_folder_name_component
+    ------------------------------------------------------------------------------------------------
+    begin
+      case name_type
+        when fnt_unc:ord do result:=2;
+        when fnt_absolute:ord do result:=1;
+        when fnt_root:ord do result:=0;
+        when fnt_relative:ord do result:=0;
+        end case;
+      end prefix_length;
+
+
+    ------------------------------------------------------------------------------------------------
+    static append_name =
+    -- Připojí zadané jméno, pokud to nejde, vyvolá [name_error]
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+
+    begin
+      if name^.name_type<>fnt_relative:ord then
+        raise name_error;
+        end if;
+
+      add_components(name);
+      end append_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static last_name =
+    -- Vrátí poslední komponentu - jméno souboru nebo složky, pokud neexistuje, vyvolá [name_error]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- pokud je součástí jméno jméno souboru, vrátit poslední jméno souboru
+      if components.count>prefix_length then
+        result:=components.get_last;
+        end if;
+      end last_name;
+
+
+    ------------------------------------------------------------------------------------------------
+    static replace_last_extension =
+    -- Replaces the last extension of this name with the given one.
+    -- If this name does not reference a file/folder, nothing happens.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder;  -- poslední prvek components
+
+    begin
+      -- zjistit poslední prvek
+      last:=last_name;
+      if last=nil then
+        return;
+        end if;
+
+      -- změnit příponu
+      last^.change_last_extension(ext);
+      end replace_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static is_relative =
+    -- Vrátí, zda jméno souboru je relativní
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=name_type=fnt_relative:ord;
+      end is_relative;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override join_after =
+    -- Přidá [name] na konec tohoto jména
+    ------------------------------------------------------------------------------------------------
+    begin
+      append_name(name);
+      end join_after;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    ------------------------------------------------------------------------------------------------
+    begin
+      namespace:=namespace_system;
+      end entry;
+
+    }
+
+    ------------------------------------------------------------------------------------------------
+    static get_last_file_or_folder return p_name_component_file_or_folder =
+    -- Helper function, returns the last file or folder component of this name.
+    ------------------------------------------------------------------------------------------------
+    var
+      curr         : p_name_component;           -- the currently processed component
+
+    begin
+      -- walk the [components] list from back to front, stop at the first c_name_component_file_or_folder
+      curr:=p_name_component(components.last);
+      -- %%TODO(TAG) porovnat pouze, jestli je POTOMKEM c_name_component_file_or_folder
+      while curr<>nil {and then (curr^:tag<>c_name_component_file_or_folder:tag
+      and curr^:tag<>c_name_component_file:tag
+      and curr^:tag<>c_name_component_folder:tag)} loop
+        if curr^:tag=c_name_component_file_or_folder:tag then break; end if;
+        if curr^:tag=c_name_component_file:tag then break; end if;
+        if curr^:tag=c_name_component_folder:tag then break; end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+        components.set_prev(curr);
+        end loop;
+      result:=p_name_component_file_or_folder(curr);
+      end get_last_file_or_folder;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static replace_last_extension =
+    -- Replaces the last extension of this name with the given one.
+    -- If this name does not reference a file/folder, nothing happens.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder;  -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>nothing to do
+        return;
+        end if;
+
+      -- change the last extension of the last component
+      last^.replace_last_extension(new_ext);
+      end replace_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_name_without_extension =
+    -- Creates a deep copy of this name, without the last extension (if there is one).
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- clone the name including all extensions
+      name:=clone;
+
+      -- remove the last extension
+      p_file_name(name)^.remove_last_extension;
+      end get_name_without_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_name_without_all_extensions =
+    -- Creates a deep copy of this name, without the extensions (if there are any).
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- clone the name including all extensions
+      name:=clone;
+
+      -- remove the extensions
+      p_file_name(name)^.remove_all_extensions;
+      end get_name_without_all_extensions;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static get_path_name =
+    -- Creates a new name containing only the path (without the filename).
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    var
+      curr         : p_name_component;           -- the currently processed name component
+      next         : p_name_component;           -- the component that is just after [curr]
+
+    begin
+      -- prepare the result
+      new path_name;
+      copy_basic_fields(path_name);
+      path_name^.set_ns_data(clone_ns_data(path_name));
+
+      -- walk the [components] list and build the result, stopping just before the filename
+      curr:=p_name_component(components.first);
+      while curr<>nil {and then curr^:tag<>c_name_component_file:tag} loop
+        if curr^:tag=c_name_component_file:tag then break; end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+        next:=p_name_component(components.get_next(curr));
+
+        -- stop at the last file_or_folder component
+        if next=nil {or else next^:tag=c_name_component_stream:tag} then
+          break;
+          end if;
+        if next^:tag=c_name_component_stream:tag then
+          break;
+          end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te if podminky
+
+        -- add this component to the result
+        path_name^.components.insert(curr^.clone);
+
+        -- move on to the next component
+        curr:=next;
+        end loop;
+      end get_path_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_name_without_path =
+    -- Creates a new name containing only the filename (without the path).
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+
+    begin
+      -- prepare the result
+      new name;
+      copy_basic_fields(name);
+      name^.name_type:=tnt_relative;
+      name^.set_ns_data(clone_ns_data(name));
+
+      -- find the filename and copy it and everything after it
+      comp:=get_last_file_or_folder;
+      if comp=nil then
+        -- no file or folder=>the result is empty
+        return;
+        end if;
+
+      -- store the filename with the rest of the name
+      while comp<>nil loop
+        name^.components.insert(comp^.clone);
+        components.set_next(comp);
+        end loop;
+      end get_name_without_path;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_root_relative_name =
+    -- Creates a new name containing a root-relative version of this filename (without server, drive, etc.).
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+
+    begin
+      -- check if this name has anything like root
+      if name_type=tnt_drive_relative or name_type=tnt_relative then
+        -- unable to get a root-relative version when we have only a relative name
+        raise name_error;
+        end if;
+
+      -- prepare the result
+      new name;
+      copy_basic_fields(name);
+      name^.name_type:=tnt_root_relative;
+      name^.set_ns_data(clone_ns_data(name));
+      name^.name_type:=tnt_root_relative;
+
+      -- find the first file/folder component
+      components.set_first(comp);
+      while comp<>nil {and then (comp^:tag<>c_name_component_file_or_folder:tag
+      and comp^:tag<>c_name_component_file:tag and comp^:tag<>c_name_component_folder:tag
+      and comp^:tag<>c_name_component_stream:tag)} loop
+
+        if comp^:tag=c_name_component_file_or_folder:tag then break; end if;
+        if comp^:tag=c_name_component_file:tag then break; end if;
+        if comp^:tag=c_name_component_folder:tag then break; end if;
+        if comp^:tag=c_name_component_stream:tag then break; end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+        components.set_next(comp);
+        end loop;
+
+      if comp=nil then
+        -- no file or folder=>the result is empty
+        return;
+        end if;
+
+      -- store the rest of the name
+      while comp<>nil loop
+        name^.components.insert(comp^.clone);
+        components.set_next(comp);
+        end loop;
+      end get_root_relative_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_root =
+    -- Creates a new name containing only the server and drive components of this filename.
+    -- The caller is responsible for freeing the created name.
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+
+    begin
+      -- check if this name has anything like root
+      if name_type>=tnt_root_relative then
+        -- we cannot provide root, since we don't know it
+        raise name_error;
+        end if;
+
+      -- prepare the result
+      new name;
+      copy_basic_fields(name);
+      name^.set_ns_data(clone_ns_data(name));
+      name^.name_type:=tnt_absolute;
+
+      -- find the first file/folder component and store the components during the way
+      components.set_first(comp);
+      while comp<>nil {and then (comp^:tag<>c_name_component_file_or_folder:tag
+      and comp^:tag<>c_name_component_file:tag and comp^:tag<>c_name_component_folder:tag
+      and comp^:tag<>c_name_component_stream:tag)} loop
+        if comp^:tag=c_name_component_file_or_folder:tag then break; end if;
+        if comp^:tag=c_name_component_file:tag  then break; end if;
+        if comp^:tag=c_name_component_folder:tag then break; end if;
+        if comp^:tag=c_name_component_stream:tag then break; end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+
+        name^.components.insert(comp^.clone);
+        components.set_next(comp);
+        end loop;
+      end get_root;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_last_extension =
+    -- Removes the last extension of the component (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder;  -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>nothing to do
+        return;
+        end if;
+
+      -- change the last extension of the last component
+      last^.remove_last_extension;
+      end remove_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_all_extensions =
+    -- Removes all extensions of the filename (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder;  -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>nothing to do
+        return;
+        end if;
+
+      -- change the last extension of the last component
+      last^.remove_all_extensions;
+      end remove_all_extensions;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_file_name(result);
+      copy_basic_fields(result);
+      copy_components(result);
+      end clone;
+
+
+
+    {
+    ------------------------------------------------------------------------------------------------
+    entry =
+    ------------------------------------------------------------------------------------------------
+    begin
+      set_namespace(namespace_system, c_namespace_system:tag);
+      end entry;
+    }
+
+
+    end c_file_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_file_or_folder =
+-- Name of a folder or a file.
+----------------------------------------------------------------------------------------------------
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_last_extension =
+    -- Removes the last extension of the filename (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      sub          : p_name_subcomponent;
+
+    begin
+      -- if the name contains an extension, remove it
+      if subcomponents.count>=2 then
+        sub:=subcomponents.get_last;
+        subcomponents.delete(sub);
+        end if;
+      end remove_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_all_extensions =
+    -- Removes all extensions of the filename (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      sub          : p_name_subcomponent;
+
+    begin
+      -- if the name contains any extensions, remove them
+      while subcomponents.count>=2 loop
+        sub:=subcomponents.get_last;
+        subcomponents.delete(sub);
+        end loop;
+      end remove_all_extensions;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_base_name =
+    -- Retrieves the base name of a file or folder name.
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+    var
+      first_subcomponent     : p_name_subcomponent;
+      base_name_subcomponent : p_name_subcomponent_base_name;
+
+    begin
+      -- basename should be the first subcomponent
+      subcomponents.set_first(p_list_item(first_subcomponent));
+
+      -- check if it is really the base name
+      if first_subcomponent^:tag<>c_name_subcomponent_base_name:tag then
+        -- no => return empty string
+        -- %%TODO(RANGE) should be range 0
+        new base_name range 1;
+        return;
+        end if;
+
+      -- allocate result
+      base_name_subcomponent:=first_subcomponent;
+      new base_name range base_name_subcomponent^.name^:length;
+      base_name^:=base_name_subcomponent^.name^;
+      end get_base_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_last_extension =
+    -- Retrieves the last extension of a file or folder name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      last_subcomponent      : p_name_subcomponent;
+      extension_subcomponent : p_name_subcomponent_extension;
+
+    begin
+      -- the last extension should be the last subcomponent
+      subcomponents.set_last(p_list_item(last_subcomponent));
+
+      -- check if it is really an extension
+      if last_subcomponent^:tag<>c_name_subcomponent_extension:tag then
+        -- no => return empty string
+        -- %%TODO(RANGE) should be range 0
+        new extension range 1;
+        return;
+        end if;
+
+      -- allocate result
+      extension_subcomponent:=last_subcomponent;
+      new extension range extension_subcomponent^.name^:length;
+      extension^:=extension_subcomponent^.name^;
+      end get_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static replace_last_extension =
+    -- Replaces the last extension of the name with the given extension.
+    ------------------------------------------------------------------------------------------------
+    var
+      last_subcomponent      : p_name_subcomponent;
+      extension_subcomponent : p_name_subcomponent_extension;
+
+    begin
+      -- the last extension should be the last subcomponent
+      subcomponents.set_last(p_list_item(last_subcomponent));
+
+      -- check if it is really an extension
+      if last_subcomponent^:tag<>c_name_subcomponent_extension:tag then
+        -- no => add a new extension
+        append_extension(extension);
+        return;
+        end if;
+
+      -- change the extension
+      extension_subcomponent:=last_subcomponent;
+      extension_subcomponent^.set_name(extension);
+      end replace_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static append_extension =
+    -- Appends the given extension to the name.
+    ------------------------------------------------------------------------------------------------
+    var
+      extension_subcomponent : p_name_subcomponent_extension;
+
+    begin
+      -- the last extension should be the last subcomponent
+      new extension_subcomponent;
+      extension_subcomponent^.set_name(extension);
+      subcomponents.insert_last(extension_subcomponent);
+      end append_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_last_extension =
+    -- Checks if the last extension of the name is equal to the given extension.
+    ------------------------------------------------------------------------------------------------
+    var
+      buff         : p_text_name;
+
+    begin
+      get_last_extension(buff);
+      result:=buff^=extension;
+      discard buff;
+      end check_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_file_or_folder(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_file_or_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_base_name =
+-- Base of a filename (e.g. "file" for "file.txt.gz")
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_subcomponent_base_name(result);
+      result^.set_name(name^);
+      end clone;
+
+    end c_name_subcomponent_base_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_extension =
+-- An extension of a filename (e.g. "txt", or "gz" for "file.txt.gz").
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_subcomponent_base_name(result);
+      result^.set_name(name^);
+      end clone;
+
+    end c_name_subcomponent_extension;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_file =
+-- Name of a file.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_file(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_file;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_folder =
+-- Name of a folder.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_folder(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_stream =
+-- An alternate data stream (ADS) specification; used on NTFS volumes as "filename.txt:streamname".
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override clone =
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_name_component_stream(result);
+      copy_subcomponents(result);
+      end clone;
+
+    end c_name_component_stream;
+
+
+
+----- overloaded operators -------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure decompose_name =
+-- Decomposes a text name to its [c_name] representation. If [name] is nil, it will be created.
+----------------------------------------------------------------------------------------------------
+begin
+  all_namespaces^.decompose_name(text,name);
+  end decompose_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_n =
+-- name & append_name
+----------------------------------------------------------------------------------------------------
+begin
+  name.join_after(append_name);
+  end operator_c_name_concat_on_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_concat_on_s =
+-- name & append_name
+----------------------------------------------------------------------------------------------------
+var 
+  name_tmp         : c_name;                     -- temporary name
+
+begin 
+  -- parse [joined_name] and append it
+  name_tmp.decompose_name(joined_name);
+  name.join_after(name_tmp);
+  end operator_c_name_concat_on_s;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_operator_equal =
+-- left=right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=left.operator_equal(left, right);
+  end c_name_operator_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_component_operator_equal =
+-- left=right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=left.operator_equal(left, right);
+  end c_name_component_operator_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_subcomponent_operator_equal =
+-- left=right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=right.operator_equal(left, right);
+  end c_name_subcomponent_operator_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_operator_not_equal =
+-- left<>right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=not left.operator_equal(left, right);
+  end c_name_operator_not_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_component_operator_not_equal =
+-- left<>right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=not left.operator_equal(left, right);
+  end c_name_component_operator_not_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure c_name_subcomponent_operator_not_equal =
+-- left<>right
+----------------------------------------------------------------------------------------------------
+begin
+  result:=not left.operator_equal(left, right);
+  end c_name_subcomponent_operator_not_equal;
+
+
+
+----------------------------------------------------------------------------------------------------
+{procedure operator_c_name_assign_n_n =
+-- left:=right, makes a deep copy
+begin
+  -- stores a deep copy of [value] to [name]
+  left.assign_to(^right);
+  end operator_c_name_assign_n_n;}
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_n_s =
+-- name:=text_name, decomposes [text_name] into components of [name]
+begin
+  -- decompose [value] into [name]
+  name.decompose_name(text_name);
+  end operator_c_name_assign_n_s;
+
+
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_ps_n =
+-- text_name:=name, composes the text form of [name] to [text_name].
+-- The caller is responsible for freeing the memory.
+----------------------------------------------------------------------------------------------------
+begin
+  -- compose a string from the name
+  name.compose_name(text_name);
+  end operator_c_name_assign_ps_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure operator_c_name_assign_s_n =
+-- text_name:=name, composes the text form of [name] to [text_name]
+----------------------------------------------------------------------------------------------------
+var 
+  tmp               : p_text_name;               -- temporary buffer for the text form
+
+begin
+  -- compose a string from the name
+  name.compose_name(tmp);
+  text_name:=tmp^;
+
+leave
+  discard tmp;
+  end operator_c_name_assign_s_n;
+
+
+
+----------------------------------------------------------------------------------------------------
+#separate private system_namespace;
+-- This platform's default (system) namespace implementation.
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+entry =
+-- Module initialization.
+----------------------------------------------------------------------------------------------------
+begin
+  -- create the global namespace_factory
+  new all_namespaces;
+
+  -- create the default system namespace
+  new namespace_system;
+  end entry;
+
+
+
+----------------------------------------------------------------------------------------------------
+exit =
+-- Module finalization.
+----------------------------------------------------------------------------------------------------
+begin
+  -- free memory
+  discard all_namespaces;
+  end exit;
+
+
+
+end names;

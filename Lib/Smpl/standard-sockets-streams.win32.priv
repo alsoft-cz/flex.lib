@@ -162,6 +162,9 @@ var
       raise stream_end_of_data;
       end if;
     c_input_stream:(this).get_optimal_packet_size(size);
+    if size>options.maximal_size then
+      size:=options.maximal_size;
+      end if;
     new _data range size;
 
     buff.buf:unchecked:=_data;

@@ -1,0 +1,335 @@
+﻿----------------------------------------------------------------------------------------------------
+module private sha256 =
+-- Secure Hash Signature Standard (SHS) (FIPS PUB 180-2), 
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+
+with
+   advanced.low_level.short_arithmetic;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_crypto_message_digest_sha256 =
+----------------------------------------------------------------------------------------------------
+
+
+
+    type 
+      -- word as defined in FIPS 180-2 for sha256 algoritmh
+      t_fips_word = t_mod_unsigned32;
+      t_fips_hash = array 0..7 of t_fips_word;
+
+      -- 64-bit counter, see FIPS 180-2, Sec 3.1
+      t_bit_counter = record 
+        low     : t_mod_unsigned32;
+        high    : t_mod_unsigned32;
+        end record;
+
+      t_digest_context_sha256 = t_digest_context with record
+        -- intermediate hash value
+        hash           : t_fips_hash;
+        -- total number of processed bits, it'll be used as part of final padding
+        bitlen         : t_bit_counter;
+        -- number of valid bytes in first part of W buffer (message schedule)
+        size           : t_unsigned;    
+        -- message shedule
+        w              : array 0..63 of t_fips_word;
+        finalized      : boolean;
+        end record;
+
+
+
+    var
+      initial_hash : static const t_fips_hash := [
+                $6a09e667,$bb67ae85,$3c6ef372,$a54ff53a,$510e527f,$9b05688c,$1f83d9ab,$5be0cd19];
+      k : static const array 0..63 of t_fips_word := [
+                $428a2f98,$71374491,$b5c0fbcf,$e9b5dba5,$3956c25b,$59f111f1,$923f82a4,$ab1c5ed5,
+                $d807aa98,$12835b01,$243185be,$550c7dc3,$72be5d74,$80deb1fe,$9bdc06a7,$c19bf174,
+                $e49b69c1,$efbe4786,$0fc19dc6,$240ca1cc,$2de92c6f,$4a7484aa,$5cb0a9dc,$76f988da,
+                $983e5152,$a831c66d,$b00327c8,$bf597fc7,$c6e00bf3,$d5a79147,$06ca6351,$14292967,
+                $27b70a85,$2e1b2138,$4d2c6dfc,$53380d13,$650a7354,$766a0abb,$81c2c92e,$92722c85,
+                $a2bfe8a1,$a81a664b,$c24b8b70,$c76c51a3,$d192e819,$d6990624,$f40e3585,$106aa070,
+                $19a4c116,$1e376c08,$2748774c,$34b0bcb5,$391c0cb3,$4ed8aa4a,$5b9cca4f,$682e6ff3,
+                $748f82ee,$78a5636f,$84c87814,$8cc70208,$90befffa,$a4506ceb,$bef9a3f7,$c67178f2];
+
+
+
+    var
+      context : t_digest_context_sha256;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_message_digest_size =
+    -- Returns size of the message digest if bytes.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=t_fips_hash:size;
+      end get_message_digest_size;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override reset_context =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- set initial hash
+      context.hash:=initial_hash;
+
+      -- internal schedule buffer is empty
+      context.size:=0;
+      context.w:=nil;
+
+      -- we have processed no bits
+      context.bitlen:=nil;
+      context.finalized:=false;
+      end reset_context;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_ch ( x : t_fips_word; y : t_fips_word; z : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- %%TODO(not_x)
+      result:=(x and y) xor ((x xor $ffffffff) and z);
+      end function_ch;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_maj ( x : t_fips_word; y : t_fips_word; z : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=(x and y) xor (x and z) xor (y and z);
+      end function_maj;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_suma0 ( x : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=rotate_right(x,2) xor rotate_right(x,13) xor rotate_right(x,22);
+      end function_suma0;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_suma1 ( x : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=rotate_right(x,6) xor rotate_right(x,11) xor rotate_right(x,25);
+      end function_suma1;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_sigma0 ( x : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=rotate_right(x,7) xor rotate_right(x,18) xor (x shr 3);
+      end function_sigma0;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure function_sigma1 ( x : t_fips_word ) return t_fips_word =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=rotate_right(x,17) xor rotate_right(x,19) xor (x shr 10);
+      end function_sigma1;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure cleanup_scheduled_data =
+    -- Cleans up part of internal buffer for processing new message block
+    ------------------------------------------------------------------------------------------------
+    begin
+      for t in 0..15 loop
+        context.w[t]:=0;
+        end loop;
+      context.size:=0;
+      end cleanup_scheduled_data;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure process_scheduled_data =
+    -- processes single blok in [context.w], see FIPS 180-2, Sec. 6.1.2
+    ------------------------------------------------------------------------------------------------
+    var
+      a              : t_fips_word;
+      b              : t_fips_word;
+      c              : t_fips_word;
+      d              : t_fips_word;
+      e              : t_fips_word;
+      f              : t_fips_word;
+      g              : t_fips_word;
+      h              : t_fips_word;
+      t1             : t_fips_word;
+      t2             : t_fips_word;
+
+    begin
+      -- 1. prepare message shedule
+      for t in 16..63 loop
+        context.w[t]:=function_sigma1(context.w[t-2]) + context.w[t-7]
+                     +function_sigma0(context.w[t-15])+ context.w[t-16];
+        end loop;
+
+      -- 2. initialize working variables
+      a:=context.hash[0];
+      b:=context.hash[1];
+      c:=context.hash[2];
+      d:=context.hash[3];
+      e:=context.hash[4];
+      f:=context.hash[5];
+      g:=context.hash[6];
+      h:=context.hash[7];
+
+      -- 3. transform
+      for t in 0..63 loop
+        t1:=h+function_suma1(e)+function_ch(e,f,g)+k[t]+context.w[t];
+        t2:=function_suma0(a)+function_maj(a,b,c);
+        h:=g;
+        g:=f;
+        f:=e;
+        e:=d+t1;
+        d:=c;
+        c:=b;
+        b:=a;
+        a:=t1+t2;
+        end loop;
+
+      -- 4. compute intermediate hash value
+      context.hash[0]+a;
+      context.hash[1]+b;
+      context.hash[2]+c;
+      context.hash[3]+d;
+      context.hash[4]+e;
+      context.hash[5]+f;
+      context.hash[6]+g;
+      context.hash[7]+h;
+      end process_scheduled_data;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override put_data_byte =
+    -- Process signle byte and updates internal context along it
+    ------------------------------------------------------------------------------------------------
+    var
+      index  : t_unsigned;
+      offset : t_unsigned;
+
+    begin
+      -- put byte into internal buffer
+      index:=context.size div context.w:base:size;
+      offset:=8{!!}*(3{!!}-(context.size mod context.w:base:size));
+      context.w[index] or (t_fips_word(data) shl offset);
+      succ context.size;
+      context.bitlen.low+data:bits;
+      if context.bitlen.low<data:bits then
+        succ context.bitlen.high;
+        end if;
+      if context.size=(16{!!}*context.w:base:size)
+        then
+          process_scheduled_data;
+          cleanup_scheduled_data;
+          end if;
+      end put_data_byte;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override put_data_array =
+    -- Process array of bytes and updates internal context along it
+    ------------------------------------------------------------------------------------------------
+    begin
+      for i in data:range loop
+        put_data_byte(data[i]);
+        end loop;
+      end put_data_array;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override put_data_string =
+    -- Process string of bytes and updates internal context along it
+    ------------------------------------------------------------------------------------------------
+    begin
+      for i in data:range loop
+        put_data_byte(data[i]);
+        end loop;
+      end put_data_string;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure finalize =
+    ------------------------------------------------------------------------------------------------
+    var
+      index  : t_unsigned;
+      offset : t_unsigned;
+
+    begin
+      -- pad message along FIPS 180-2, Sec. 5.1.1
+
+      -- 1. first padding byte will always be $80
+      index:=context.size div context.w:base:size;
+      offset:=8{!!}*(3{!!}-(context.size mod context.w:base:size));
+      context.w[index] or (t_fips_word($80) shl offset);
+
+      succ context.size;
+
+      -- at the end of buffer we need at least 64 bits
+      if context.size>((16*4){!!}-8 {64 bits}) then
+        -- fill rest of buffer with zeroes
+        { it should be already done }
+        -- update message digest
+        process_scheduled_data;
+        cleanup_scheduled_data;
+        end if;
+
+      -- put counted message length at the end of buffer
+      context.w[14]:=context.bitlen.high;
+      context.w[15]:=context.bitlen.low;
+
+      -- finalize message digest
+      process_scheduled_data;
+      end finalize;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_message_digest =
+    ------------------------------------------------------------------------------------------------
+    var
+      index  : t_unsigned;
+      offset : t_unsigned;
+
+    begin
+      -- finalize computing
+      if not context.finalized then
+        finalize;
+        end if;
+
+      -- allocate some space for message digest
+      new digest range 32;
+
+      -- copy final digest into that space, take care of bytes order
+      for i in 0..31 loop
+        index:=i div context.hash:base:size;
+        offset:=i mod context.hash:base:size;
+        digest^[i]:=(context.hash[index] shr (8*(3-offset))) and $ff;
+        end loop;
+      end get_message_digest;
+
+    end c_crypto_message_digest_sha256;
+
+
+end sha256;

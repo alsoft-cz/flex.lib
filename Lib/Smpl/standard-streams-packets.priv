@@ -124,6 +124,23 @@ begin
 
 
 ----------------------------------------------------------------------------------------------------
+procedure packet_size =
+----------------------------------------------------------------------------------------------------
+var
+  data             : p_data_array;
+
+begin
+  case (packet.style)
+    when t_dps_other do
+      packet.other^.read^(packet,data,result);
+    when others do
+      result:=packet.size;
+    end case;
+  end packet_size;
+
+
+
+----------------------------------------------------------------------------------------------------
 procedure read_packet =
 ----------------------------------------------------------------------------------------------------
 begin
@@ -202,6 +219,29 @@ begin
   --%%TODO rez polem
   copy_data(data,0,packet.data,0,packet.size);
   end copy_text_to_packet;
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_text_offset_to_packet =
+----------------------------------------------------------------------------------------------------
+var
+  data             : p_data_array;
+
+begin
+  data:unchecked:=^text:unchecked;
+  t_unsigned(data:unchecked) + t_unsigned:size;
+  packet.size:=text:length*t_char32:size-offset;
+  if packet.size>maxsize then
+    packet.size:=maxsize;
+    end if;
+  if packet.size>0 then
+    packet.style:=t_dps_heap;
+    new packet.data range packet.size;
+    --%%TODO rez polem
+    copy_data(data,offset,packet.data,0,packet.size);
+    offset + packet.size;
+    end if;
+  end copy_text_offset_to_packet;
 
 
 ----------------------------------------------------------------------------------------------------

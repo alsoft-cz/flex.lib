@@ -8,6 +8,11 @@ var
     in_closed      : t_logical;
     out_closed     : t_logical;
 
+    --split long packet
+    longpacket       : t_data_packet;
+    longpos          : t_offset;
+
+
   --------------------------------------------------------------------------------------------------
   static drop_packets =
   --------------------------------------------------------------------------------------------------
@@ -44,10 +49,11 @@ var
   override c_input_stream.read_packet =
   --------------------------------------------------------------------------------------------------
   var
-    packet       : t_pointer;
+    packet         : t_pointer;
+    size           : t_offset;
 
   begin
-    -- testuju opravnenost pozadavku
+    -- otestuju opravnenost pozadavku
     if in_closed then
       raise stream_already_closed;
       end if;
@@ -55,19 +61,54 @@ var
       raise stream_end_of_data;
       end if;
 
-    -- cekam na data v bufferu
-    que.accept_any_msg(packet);
-    data:=p_data_packet(packet)^;
+    if longpos<>0 then
+      size:=packet_size(longpacket)-longpos;
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        end if;
 
-    --napocitam prutok
-    c_input_stream:(this).add_flow(data);
+      new data.data range size;
+      data.style:=t_dps_heap;
+      copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      if packet_size(longpacket)=longpos then
+        discard_packet(longpacket);
+        longpos:=0;
+        end if;
 
-    -- zjitim jetli to nahodou nebyl posledni packet
-    if data.style=t_dps_signal and then data.signal=t_dpss_eod then
-      eod:=true;
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+    else
+
+      -- cekam na packet
+      que.accept_any_msg(packet);
+      longpacket:=p_data_packet(packet)^;
+
+      -- uvolnim handle na packet
+      discard packet;
+   
+      size:=packet_size(longpacket);
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        new data.data range size;
+        data.style:=t_dps_heap;
+        copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      else
+        data:=longpacket;
+        longpacket:=nil;
+        end if;
+
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+
+      -- zjistim jestli uz byl posledni
+      if data.style=t_dps_signal then 
+        if data.signal=t_dpss_eod then
+          eod:=true;
+        elsif data.signal=t_dpss_bad_data then
+          raise stream_invalid_data;
+          end if;
+        end if;
       end if;
-    -- uvolnim pamet handle na packet
-    discard packet;
     end read_packet; 
 
   
@@ -140,7 +181,6 @@ var
     
     -- zapocitam prutok
     c_output_stream:(this).add_flow(data);
-    discard_packet(data);
     end write_packet; 
 
 
@@ -175,23 +215,18 @@ class private c_controlled_stream_connector =
   ------------------------------------------------------------------------------------------------
   static transfer_packet =
   ------------------------------------------------------------------------------------------------
-  var
-    packet       : t_data_packet;
-
   begin
-    -- cekam na packet
-    c_stream_reader:(this)._source^.read_packet(packet);
-
-    -- zapisu packet
-    c_stream_writer:(this)._target^.write_packet(packet);
-    
-    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
-      -- jestli to byl end of data, koncim
-      c_stream_reader:(this)._source^.close;
-      c_stream_writer:(this)._target^.close;
-      result:=true;
-      end if;
+    result:=c_stream_reader:(this)._source^.transfer_packet(c_stream_writer:(this)._target,transfer_eod);
     end transfer_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static transfer_all_packets =
+  ------------------------------------------------------------------------------------------------
+  begin
+    c_stream_reader:(this)._source^.transfer_all_packets(c_stream_writer:(this)._target,transfer_eod);
+    end transfer_all_packets;
 
   
   

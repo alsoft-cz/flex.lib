@@ -132,6 +132,34 @@ var
   eod            : t_logical;
   closed         : t_logical;
 
+  --split long packet
+  longpacket       : t_data_packet;
+  longpos          : t_offset;
+
+  --------------------------------------------------------------------------------------------------
+  static transfer_buffered_packets =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    -- dokud je neco ve fronte, zahazuju to
+    while que.try_accept_any_msg(packet,t_wait_immediate) loop
+      data:=p_data_packet(packet)^;
+      discard packet;
+      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+        if transfer_eod then
+          target^.write_packet(data);
+          end if;
+      else
+        target^.write_packet(data);
+        end if;
+      end loop;
+    end transfer_buffered_packets;
+
+  
+  
   --------------------------------------------------------------------------------------------------
   static drop_packets =
   --------------------------------------------------------------------------------------------------
@@ -190,10 +218,11 @@ var
   override c_input_stream.read_packet =
   ------------------------------------------------------------------------------------------------
   var
-    packet       : t_pointer;
+    packet         : t_pointer;
+    size           : t_offset;
 
   begin
-    -- otestuju opravn3enost pozadavku
+    -- otestuju opravnenost pozadavku
     if closed then
       raise stream_already_closed;
       end if;
@@ -201,22 +230,52 @@ var
       raise stream_end_of_data;
       end if;
 
-    -- cekam na packet
-    que.accept_any_msg(packet);
-    data:=p_data_packet(packet)^;
+    if longpos<>0 then
+      size:=packet_size(longpacket)-longpos;
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        end if;
 
-    -- uvolnim handle na packet
-    discard packet;
- 
-    -- zapocitam prutok
-    c_input_stream:(this).add_flow(data);
+      new data.data range size;
+      data.style:=t_dps_heap;
+      copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      if packet_size(longpacket)=longpos then
+        discard_packet(longpacket);
+        longpos:=0;
+        end if;
 
-    -- zjistim jestli uz byl posledni
-    if data.style=t_dps_signal then 
-      if data.signal=t_dpss_eod then
-        eod:=true;
-      elsif data.signal=t_dpss_bad_data then
-        raise stream_invalid_data;
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+    else
+
+      -- cekam na packet
+      que.accept_any_msg(packet);
+      longpacket:=p_data_packet(packet)^;
+
+      -- uvolnim handle na packet
+      discard packet;
+   
+      size:=packet_size(longpacket);
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        new data.data range size;
+        data.style:=t_dps_heap;
+        copy_from_packet(longpacket,longpos,data.data,data.size,size);
+      else
+        data:=longpacket;
+        longpacket:=nil;
+        end if;
+
+      -- zapocitam prutok
+      c_input_stream:(this).add_flow(data);
+
+      -- zjistim jestli uz byl posledni
+      if data.style=t_dps_signal then 
+        if data.signal=t_dpss_eod then
+          eod:=true;
+        elsif data.signal=t_dpss_bad_data then
+          raise stream_invalid_data;
+          end if;
         end if;
       end if;
     end read_packet;
@@ -234,7 +293,7 @@ var
     loop
       -- prectu packet ze zdroje
       begin
-        _source^.read_packet(data);
+        _source^.read_packet(data,t_ro_default);
 
         -- vytvorim handle na packet
         new packet;
@@ -461,7 +520,8 @@ class private c_input_stream_redirector =
   override c_input_stream.read_packet =
   ------------------------------------------------------------------------------------------------
   begin
-    _source^.read_packet(data);
+    _source^.read_packet(data,options);
+    c_input_stream:(this).add_flow(data);
     end read_packet;
 
 
@@ -511,6 +571,7 @@ class private c_output_stream_redirector =
   ------------------------------------------------------------------------------------------------
   begin
     _target^.write_packet(data);
+    c_output_stream:(this).add_flow(data);
     end write_packet;
 
   
@@ -543,6 +604,128 @@ class private c_output_stream_redirector =
 
 
 
+---------------------------------------------------------------------------------------------------
+class private c_input_substream =
+----------------------------------------------------------------------------------------------------
+var
+    eod            : t_logical;
+    closed         : t_logical;
+    maxlength      : t_offset;
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    closed:=true;
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    length         : t_offset;
+    _options       : t_read_options;
+
+  begin
+    c_input_stream:(this).get_flow(length);
+    if length=maxlength then
+      create_eod(data);
+    else
+      _options:=options;
+      if _options.maximal_size>maxlength-length then
+        _options.maximal_size:=maxlength-length;
+        end if;
+      _source^.read_packet(data,_options);
+      c_input_stream:(this).add_flow(data);
+      end if;
+    end read_packet;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=eod;
+    end is_eod;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_input_substream =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_reader(source);
+    this.maxlength:=max_length;
+    end init_input_substream;
+  end c_input_substream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_output_substream =
+----------------------------------------------------------------------------------------------------
+var
+    isreading      : t_logical;
+    closed         : t_logical;
+    maxlength      : t_offset;
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    closed:=true;
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    length         : t_offset;
+
+  begin
+    c_output_stream:(this).get_flow(length);
+    c_output_stream:(this).add_flow(data);
+    _target^.write_packet(data);
+    if length>maxlength then
+      raise stream_other_side;
+      isreading:=false;
+      end if;
+    if length=maxlength then
+      isreading:=false;
+      end if;
+    end write_packet;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=isreading;
+    end is_reading;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_output_substream =
+  ------------------------------------------------------------------------------------------------
+  begin
+    init_writer(target);
+    this.maxlength:=max_length;
+    isreading:=true;
+    end init_output_substream;
+  end c_output_substream;
 
 
 

@@ -14,6 +14,8 @@ with
 var 
   co_console_width  : t_unsigned := 80;
   co_console_height : t_unsigned := 25;
+  cb_console_width  : t_unsigned := 80;
+  cb_console_height : t_unsigned := 25;
 
 ----------------------------------------------------------------------------------------------------
 class private c_console_output_stream =
@@ -25,20 +27,50 @@ var
     len            : t_offset;
     handle         : winnt.t_handle;
     handle_redir   : t_logical;
+    fgcolor        : t_console_color;
+    bgcolor        : t_console_color;
 
 
   ----------------------------------------------------------------------------------------------------
-  static clear_console =
+  static set_foreground_color (
+      color          : in t_console_color)=
   ----------------------------------------------------------------------------------------------------
   var
-    crd            : COORD;
-    writen         : DWORD;
+    attr           : WORD;
 
   begin
-    if not FillConsoleOutputCharacterW(handle," ",co_console_width*co_console_height,crd,writen) then
-      raise console_error;
+    fgcolor:=color;
+    if handle_redir then
+      -- nema smysl posilat
+    else
+      attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+      if not SetConsoleTextAttribute(handle,attr) then
+        raise console_error;
+        end if;
       end if;
-    end clear_console;
+    end set_foreground_color;
+
+
+
+  ----------------------------------------------------------------------------------------------------
+  static set_background_color (
+      color          : in t_console_color)=
+  ----------------------------------------------------------------------------------------------------
+  var
+    attr           : WORD;
+
+  begin
+    bgcolor:=color;
+    if handle_redir then
+      -- nema smysl posilat
+    else
+      attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+      if not SetConsoleTextAttribute(handle,attr) then
+        raise console_error;
+        end if;
+      end if;
+    end set_background_color;
+
 
 
   ----------------------------------------------------------------------------------------------------
@@ -62,27 +94,28 @@ var
     end set_cursor_position;
 
 
-{
   ----------------------------------------------------------------------------------------------------
-  static set_attributes(
-      attr           : t_con_attributes_set) =
+  static clear_console =
   ----------------------------------------------------------------------------------------------------
   var
-    wAttributes    : WORD;
+    crd            : COORD;
+    writen         : DWORD;
+    attr           : WORD;
 
   begin
-    if handle_redir then
-      -- nema smysl posilat
-    else
-      wAttributes:unchecked:=attr:unchecked;
-      if not SetConsoleTextAttribute(handle,wAttributes) then
-        raise console_error;
-        end if;
+    set_cursor_position(0,0);
+    if not FillConsoleOutputCharacterW(handle," ",cb_console_width*cb_console_height,crd,writen) then
+      raise console_error;
       end if;
-    end set_attributes;
-}
 
-  
+    attr:=t_unsigned16(fgcolor)+(t_unsigned16(bgcolor)*16);
+
+    if not FillConsoleOutputAttribute(handle,attr,cb_console_width*cb_console_height,crd,writen) then
+      raise console_error;
+      end if;
+    end clear_console;
+
+
   ----------------------------------------------------------------------------------------------------
   procedure write(
     s              : in t_char32ustr)  =
@@ -159,7 +192,7 @@ var
     _len           : t_unsigned;
     _max           : t_unsigned;
     coord          : p_cursor_coordinates;
-    --attr           : p_con_attributes_set;
+    color          : p_console_color;
 
   begin 
     if closed then
@@ -171,9 +204,12 @@ var
       write(text^);
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_clear then
       clear_console;
-    --elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_attr then
-      --attr:unchecked:=data.other;
-      --set_attributes(attr^);
+    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_fgcolor then
+      color:unchecked:=data.other;
+      set_foreground_color(color^);
+    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_bgcolor then
+      color:unchecked:=data.other;
+      set_background_color(color^);
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_pos then
       coord:unchecked:=data.other;
       set_cursor_position(coord^.x,coord^.y);
@@ -214,6 +250,8 @@ var
   ------------------------------------------------------------------------------------------------
   static init_console =
   ------------------------------------------------------------------------------------------------
+  var
+    info    : _CONSOLE_SCREEN_BUFFER_INFO;
   begin
     if std_err then
       handle:=getstdhandle(std_error_handle);
@@ -222,6 +260,15 @@ var
       end if;
     if GetFileType(handle)<>FILE_TYPE_CHAR then
       handle_redir:=true;
+    else
+      -- get window size
+      if not GetConsoleScreenBufferInfo(handle,info) then
+        raise console_error;
+        end if;
+      co_console_width:=t_unsigned(info.srwindow.right)+1;
+      co_console_height:=t_unsigned(info.srwindow.bottom)+1;
+      cb_console_width:=t_unsigned(info.dwsize.x);
+      cb_console_height:=t_unsigned(info.dwsize.y)+1;
       end if;
     set_optimal_packet_size(co_console_width);
     end init_console;
@@ -246,14 +293,18 @@ var
     decoder        : p_character_decoder;
 
     -- buffer
-    line           : t_char32str;
+    line           : t_char32lstr;
+    read_pos       : t_offset;
     chars_out      : t_logical;
     mouse_pos      : t_cursor_coordinates;
 
     -- mode
     enable_echo    : t_logical;
-    char_mode      : t_logical;
-    event_mode     : t_logical;
+    char_in_mode   : t_logical;
+    char_out_mode  : t_logical;
+    key_mode       : t_logical;
+    mouse_mode     : t_logical;
+    peek_mode      : t_logical;
 
   ------------------------------------------------------------------------------------------------
   static init_console =
@@ -266,6 +317,7 @@ var
     handle:=getstdhandle(std_input_handle);
     if GetFileType(handle)<>FILE_TYPE_CHAR then
       handle_redir:=true;
+      --create decoder
       new p_character_decoder_utf8(decoder);
       set_mode(t_im_char_no_echo);
     else
@@ -276,7 +328,7 @@ var
       if not system.windows.wincon.SetConsoleMode(handle,mode) then
         raise console_error;
         end if;
-
+      -- create decoder
       new p_character_decoder_ucs2(decoder);
       set_mode(t_im_char_with_echo);
       end if;
@@ -295,7 +347,7 @@ var
     if handle_redir then
       -- nema smysl zjistovat
     else
-      if not GetConsoleScreenBufferInfo(handle,info) then
+      if not GetConsoleScreenBufferInfo(getstdhandle(std_output_handle),info) then
         raise console_error;
         end if;
       pos.x:=t_unsigned(info.dwCursorPosition.x);
@@ -305,30 +357,27 @@ var
 
 
 
-  ------------------------------------------------------------------------------------------------
-  static key_pressed =
-  ------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  virtual get_console_size =
+  --------------------------------------------------------------------------------------------------
+  var
+    info            : _CONSOLE_SCREEN_BUFFER_INFO;
+
   begin
-    --%%TODO check key or other event
     if handle_redir then
       -- nema smysl zjistovat
     else
-      loop
-        case (WaitForSingleObjectEx(handle,0,true))
-          when WAIT_OBJECT_0 do
-            result:=true;
-            break;
-          when WAIT_TIMEOUT do
-            result:=false;
-            break;
-          when WAIT_IO_COMPLETION do
-            --next
-          when others do
-            raise console_error;
-          end case;
-        end loop;
+      if not GetConsoleScreenBufferInfo(getstdhandle(std_output_handle),info) then
+        raise console_error;
+        end if;
+      co_console_width:=t_unsigned(info.srwindow.right)+1;
+      co_console_height:=t_unsigned(info.srwindow.bottom)+1;
+      cb_console_width:=t_unsigned(info.dwsize.x);
+      cb_console_height:=t_unsigned(info.dwsize.y)+1;
+      pos.x:=co_console_width;
+      pos.y:=co_console_height;
       end if;
-    end key_pressed;
+    end get_console_size;
 
 
 
@@ -337,26 +386,62 @@ var
   ------------------------------------------------------------------------------------------------
   begin
     case (mode)
-      when t_im_events_no_echo do
+      when t_im_test_key_no_echo do
         enable_echo:=false;
-        char_mode:=false;
-        event_mode:=true;
+        char_in_mode:=true;
+        char_out_mode:=false;
+        key_mode:=true;
+        mouse_mode:=false;
+        peek_mode:=true;
+      when t_im_all_events_no_echo do
+        enable_echo:=false;
+        char_in_mode:=false;
+        char_out_mode:=false;
+        key_mode:=true;
+        mouse_mode:=true;
+        peek_mode:=false;
+      when t_im_key_events_no_echo do
+        enable_echo:=false;
+        char_in_mode:=false;
+        char_out_mode:=false;
+        key_mode:=true;
+        mouse_mode:=false;
+        peek_mode:=false;
+      when t_im_mouse_events_no_echo do
+        enable_echo:=false;
+        char_in_mode:=false;
+        char_out_mode:=false;
+        key_mode:=false;
+        mouse_mode:=true;
+        peek_mode:=false;
       when t_im_char_no_echo do
         enable_echo:=false;
-        char_mode:=true;
-        event_mode:=false;
+        char_in_mode:=true;
+        char_out_mode:=true;
+        key_mode:=false;
+        mouse_mode:=false;
+        peek_mode:=false;
       when t_im_char_with_echo do
         enable_echo:=true;
-        char_mode:=true;
-        event_mode:=false;
+        char_in_mode:=true;
+        char_out_mode:=true;
+        key_mode:=false;
+        mouse_mode:=false;
+        peek_mode:=false;
       when t_im_line_no_echo do
         enable_echo:=false;
-        char_mode:=false;
-        event_mode:=false;
+        char_in_mode:=true;
+        char_out_mode:=false;
+        key_mode:=false;
+        mouse_mode:=false;
+        peek_mode:=false;
       when t_im_line_with_echo do
         enable_echo:=true;
-        char_mode:=false;
-        event_mode:=false;
+        char_in_mode:=true;
+        char_out_mode:=false;
+        key_mode:=false;
+        mouse_mode:=false;
+        peek_mode:=false;
       end case;
     end set_mode;
 
@@ -435,7 +520,7 @@ var
       console_event.control_keys + t_control_keys_set:[t_key_left_shift,t_key_right_shift];
       end if;
 
-    if key.bKeyDown and char:ord<>0 then
+    if key.bKeyDown and char_in_mode and char:ord<>0 then
       -- copy repeater
       for i in 1..key.wRepeatCount loop
         case (console_event.event_code)
@@ -548,39 +633,63 @@ var
   
   ------------------------------------------------------------------------------------------------
   static read_packet_con(
-      data       : out t_data_packet) =
+      data         : out t_data_packet;
+      options      : t_read_options)=
   ------------------------------------------------------------------------------------------------
   var
     input          : _INPUT_RECORD;
     readen         : dword;
     con_event_h    : p_console_event;
     con_event_l    : t_console_event;
+    timeout        : DWORD;
 
   begin
     loop
-      if chars_out or (char_mode and line:length<>0) then
-        copy_text_to_packet(data,line);
-        chars_out:=false;
-        line:length:=0;
+      if (chars_out or char_out_mode) and line:length<>0 then
+        copy_text_offset_to_packet(data,line,options.maximal_size,read_pos);
+        if read_pos=line:length*t_char32:size then
+          chars_out:=false;
+          line:length:=0;
+          read_pos:=0;
+          end if;
         return;
         end if;
+      if peek_mode then
+        timeout:=0
+      else
+        timeout:=INFINITE;
+        end if;
       loop
-        case (WaitForSingleObjectEx(handle,INFINITE,true))
+        case (WaitForSingleObjectEx(handle,timeout,true))
           when WAIT_OBJECT_0 do
             break;
+          when WAIT_TIMEOUT do
+            return;
           when WAIT_IO_COMPLETION do
             --next
           when others do
             raise console_error;
           end case;
         end loop;
+      if peek_mode then
+        if not PeekConsoleInputW(handle,input,1,readen) then
+          raise console_error;
+          end if;
+        if (input.EventType<>KEY_EVENT) then 
+          if not ReadConsoleInputW(handle,input,1,readen) then
+            raise console_error;
+            end if;
+          end if;
+        end if;
 
-      if not ReadConsoleInputW(handle,input,1,readen) then
-        raise console_error;
+      if (not peek_mode) then
+        if not ReadConsoleInputW(handle,input,1,readen) then
+          raise console_error;
+          end if;
         end if;
       case (input.EventType)
         when KEY_EVENT do
-          if event_mode then
+          if key_mode then
             new con_event_h;
             translate_key(input.event.KeyEvent,con_event_h^);
             create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
@@ -589,7 +698,7 @@ var
             translate_key(input.event.KeyEvent,con_event_l);
             end if;
         when MOUSE_EVENT do
-          if event_mode then
+          if mouse_mode then
             new con_event_h;
             translate_mouse(input.event.MouseEvent,con_event_h^);
             create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
@@ -607,7 +716,8 @@ var
   
   ------------------------------------------------------------------------------------------------
   static read_packet_file(
-      data       : out t_data_packet) =
+      data         : out t_data_packet;
+      options      : t_read_options)=
   ------------------------------------------------------------------------------------------------
   var
     size           : t_offset;
@@ -620,6 +730,9 @@ var
 
   begin
     get_optimal_packet_size(optimal_size);
+    if options.maximal_size<optimal_size then
+      optimal_size:=options.maximal_size;
+      end if;
 
     new _buff range optimal_size div t_char32:size;
     if not windows.winbase.readfile(handle,_buff^,_buff:size,readen,nil) then
@@ -653,6 +766,8 @@ var
       discard _buff;
     end read_packet_file;
 
+
+
   ------------------------------------------------------------------------------------------------
   override c_input_stream.read_packet = 
   ------------------------------------------------------------------------------------------------
@@ -665,15 +780,41 @@ var
       end if;
 
     if handle_redir then
-      read_packet_file(data);
+      read_packet_file(data,options);
     else
-      read_packet_con(data);
+      read_packet_con(data,options);
       end if;
     end read_packet;
 
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static key_pressed =
+  ------------------------------------------------------------------------------------------------
+  var
+      data         : t_data_packet;
+      event        : p_console_event;
 
-  
-  
+  begin
+    --%%TODO check key or other event
+    if handle_redir then
+      -- nema smysl zjistovat
+    else
+      set_mode(t_im_test_key_no_echo);
+      read_packet_con(data,t_ro_default);
+      result:=false;
+      if data.style=t_dps_signal and then data.signal=t_dpss_con_event then
+        event:=p_console_event(data.other:unchecked);
+        if event^.event_code<>t_ec_mouse_move then
+          result:=true;
+          end if;
+        end if;
+      discard_packet(data);
+      end if;
+    end key_pressed;
+
+
+
   ------------------------------------------------------------------------------------------------
   override c_input_stream.is_eod = 
   ------------------------------------------------------------------------------------------------

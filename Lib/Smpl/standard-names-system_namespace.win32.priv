@@ -1,0 +1,717 @@
+﻿----------------------------------------------------------------------------------------------------
+-- System namespace implementation.
+-- Flex Standard Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- This file contains implementation of [c_namespace_system], which is a namespace for the current 
+-- platform's file-name specification.
+--
+-- This is the Win32 version of the namespace. The [c_name] structure contains the following
+-- components:
+--   -- [c_name_component_server] representing a server name within an UNC name,
+--   -- [c_name_component_drive] representing a drive name,
+--   -- [c_name_component_file_or_folder] representing a file or folder name,
+--   -- [c_name_component_stream] representing a NTFS stream (e.g. ":$DATA").
+--
+-- The [c_name_component_file_or_folder] components may be repeated, the subclasses of 
+-- [c_name_component_file_or_folder] may be used instead.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_system =
+-- This platform's native namespace.
+----------------------------------------------------------------------------------------------------
+
+    with
+      supervised c_name;
+
+    type
+      -- system-namespace specific data
+      t_namespace_specific_system = t_namespace_specific with record
+          is_unc   : t_logical;                  -- is the name in UNC form (\\server\share\path) ?
+          end record;
+      p_namespace_specific_system = ^class t_namespace_specific_system;
+
+    ------------------------------------------------------------------------------------------------
+    static is_unc_name (
+        name_type  : in t_name_type;             -- allowed name type of [text_name]
+        text_name  : in t_text_name)             -- text name to be checked
+        return t_logical =
+    -- Utility function that determines whether the [text_name] is UNC, i.e. it starts with '\\'.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=name_type in t_name_type_set:[tnt_absolute,tnt_unspecified]
+              and then {%%TODO(SLICE)text_name[1..2]='\\'} text_name:length>=4
+              and then (text_name[1]="\" and text_name[2]="\");
+      end is_unc_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_drive_spec (
+        name_type  : in t_name_type;             -- allowed name type of [text_name]
+        text_name  : in t_text_name)             -- text name to be checked
+        return t_logical =
+    -- Utility function that determines whether the [text_name] has drive specification,
+    -- i.e. it starts with 'x:'.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=name_type in t_name_type_set:[tnt_absolute,tnt_drive_relative,tnt_unspecified]
+              and then text_name:length>=2 
+              and then (((text_name[1]>="a" and text_name[1]<="z") or (text_name[1]>="A" and text_name[1]<="Z"))
+              {%%TODO(SET)text_name[1] in ["a".."z","A".."Z"]}
+              and text_name[2]=":");
+      end has_drive_spec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override check_name =
+    -- Check if the given plain-text name [text_name] is a valid name in this namespace. When the
+    -- name is a valid name, [valid] is set to [true], otherwise it is set to [false].
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure check_for_valid_characters (
+            from   : in t_unsigned)              -- starting index into [text_name] from which to check
+            return t_logical =
+        -- Checks if the name contains only valid characters
+        --------------------------------------------------------------------------------------------
+        begin
+          for i in from..text_name:length loop
+            -- the invalid characters within a name are >, <, :, " and |
+            -- more precisely, \ and / are also invalid characters, but in this stage, we do not
+            -- distinguish between a full path and a file name
+            if {%%TODO(SET)text_name[i] in [">","<",""","|"]} text_name[i]=">" or text_name[i]="<" or text_name[i]=""" or text_name[i]="|" then
+              result:=false;
+              return;
+              end if;
+            end loop;
+          result:=true;
+          end check_for_valid_characters;
+
+    begin
+      -- an empty name always matches
+      if text_name='' then
+        result:=true;
+        return;
+        end if;
+
+      -- possibly a UNC name
+      if is_unc_name(name_type, text_name) then
+      {%%TODO(SLICE) %%TODO(LIB)
+        -- it could be a "long" UNC name
+        if text_name[1..8]='\\?\UNC\' then
+          ...
+          end if;
+      }
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        result:=check_for_valid_characters(3);
+
+      -- possibly a "c:\file.ext" name
+      elsif has_drive_spec(name_type, text_name) then
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        result:=check_for_valid_characters(3);
+
+      -- possibly a relative name 
+      elsif name_type in t_name_type_set:[tnt_root_relative,tnt_relative,tnt_unspecified] then
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        result:=check_for_valid_characters(1);
+
+      -- definitely an invalid name
+      else
+        result:=false;
+        end if;
+      end check_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a text name to its [c_name] representation. If [name] is nil, it will be created.
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------                 
+        procedure decompose_file_or_folder_name (                                                                        
+            text_name : in t_text_name;                                                                                     
+            f_or_f    : in p_name_component_file_or_folder) =                                                                                                          
+        --------------------------------------------------------------------------------------------                     
+                                                                                                                         
+            ----------------------------------------------------------------------------------------
+            procedure separate_subcomponent_name (                                                                       
+                start : in out t_unsigned;       -- actual position in [text_name]                                   
+                name  : out p_text_name) =       -- separated subcomponent name                                      
+            -- Separates the name of a subcomponent starting at position [start] from the [text_name].                   
+            ----------------------------------------------------------------------------------------
+            var                                                                                                          
+              stop : t_unsigned;                                                                                     
+                                                                                                                         
+            begin                                                                                                        
+              -- find the end of the name                                                                                
+              stop:=start;                                                                                               
+              while stop<=text_name:length and then text_name[stop]<>"." loop                                            
+                succ stop;                                                                                               
+                end loop;                                                                                                
+                                                                                                                         
+              -- allocate memory for the name
+              if stop-start<1
+                then new name range 1;                                                                                        
+                else new name range stop-start;                                                                               
+                end if;                                                                                                  
+
+              -- and copy it
+              for i in start..stop-1 loop                                                                                
+                name^ & text_name[i];                                                                                    
+                end loop;                                                                                                
+                                                                                                                         
+              -- update the [start] position                                                                             
+              start:=stop+1;                                                                                             
+              end separate_subcomponent_name;                                                                            
+                                                                                                                         
+        var                                                                                                              
+          base_name: p_name_subcomponent_base_name; -- base name                                                     
+          extension: p_name_subcomponent_extension; -- extension                                                     
+          name     : p_text_name;                -- plain-text name of a single subcomponent                         
+          start    : t_unsigned;                 -- actual position in [text_name]                                   
+                                                                                                                         
+        begin                                                                                                            
+          -- there are two special cases of folder names: '.' and '..' => handle them separately                         
+          if text_name='.' or text_name='..' then                                                                        
+            new base_name;                                                                                               
+            base_name^.set_name(text_name);                                                                              
+            f_or_f^.subcomponents.insert(base_name);                                                                             
+            return;                                                                                                      
+            end if;                                                                                                      
+                                                                                                                         
+          -- start from the beginning of the name                                                                        
+          start:=1;                                                                                                      
+                                                                                                                         
+          -- separate the base name                                                                                      
+          separate_subcomponent_name(start,name);                                                                        
+                                                                                                                         
+          -- create a subcomponent                                                                                       
+          new base_name;                                                                                                 
+          base_name^.set_name(name^);                                                                                    
+          f_or_f^.subcomponents.insert(base_name);                                                                               
+                                                                                                                         
+          -- free the plain-text name                                                                                    
+          discard name;                                                                                                  
+                                                                                                                         
+          -- separate all extensions                                                                                     
+          while start<=text_name:length loop                                                                             
+            -- separate one extension                                                                                    
+            separate_subcomponent_name(start,name);                                                                      
+                                                                                                                         
+            -- create a subcomponent                                                                                     
+            new extension;                                                                                               
+            extension^.set_name(name^);                                                                                  
+            f_or_f^.subcomponents.insert(extension);                                                                             
+                                                                                                                         
+            -- free the plain-text name                                                                                  
+            discard name;                                                                                                
+            end loop;                                                                                                    
+          end decompose_file_or_folder_name;                                                                                            
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure separate_component_name (
+            start  : in out t_unsigned;          -- actual position in [text_name]
+            name   : out p_text_name;            -- separated subcomponent name
+            is_folder : out t_logical;           -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+            can_have_quotes : in t_logical := false) = -- příznak, zda jméno může být v uvozovkách
+        -- Separates the name of a subcomponent starting at position [start] from the [text_name].
+        --------------------------------------------------------------------------------------------
+
+            ----------------------------------------------------------------------------------------
+            procedure allocate_result (
+                start : in t_unsigned;           -- start position of result name
+                stop  : in t_unsigned;           -- stop position of result name
+                name  : out p_text_name) =       -- result name
+            -- allocates result and copies the name into it
+            ----------------------------------------------------------------------------------------
+            begin
+              -- copy it
+              new name range 1+stop-start;{%%TODO(STRING)}
+              for i in start..stop loop
+                name^ & text_name[i];
+                end loop;
+              end allocate_result;
+
+        var
+          stop     : t_unsigned;
+
+        begin
+          -- is it a quoted component?
+          if can_have_quotes and then start<=text_name:length and then text_name[start]=""" then
+            stop:=start+1;
+
+            -- find the end of the name
+            while stop<=text_name:length and then text_name[stop]<>""" loop
+              succ stop;
+              end loop;
+
+            -- end " expected
+            if stop>text_name:length then
+              raise name_error;
+              end if;
+
+             -- skip stop over """
+            succ stop;
+            if stop>text_name:length or else text_name[stop]=":"
+              then
+                is_folder:=false;
+              else
+                -- if no backslash nor colon detected, raise error
+                if text_name[stop]<>"/" and text_name[stop]<>"\" then
+                  raise name_error;
+                  end if;
+                is_folder:=true;
+                end if;
+
+            -- allocates result
+            allocate_result(start+1,stop-2,name);
+
+          else
+            -- find the end of the name
+            stop:=start;
+            while stop<=text_name:length and then {%%TODO(SLICE)text_name[stop] not in ["\","/",":"]} (text_name[stop]<>"\" and text_name[stop]<>"/" and text_name[stop]<>":") loop
+              succ stop;
+              end loop;
+
+            -- check for degenerate cases like //
+            if start=stop
+              then
+                -- %%TODO disallow this -- check for this in check_name
+                new name range 1;
+
+              else
+                -- allocates result
+                allocate_result(start,stop-1,name);
+                end if;
+
+            -- decide if it is a folder name for sure
+            is_folder:=(stop<=text_name:length and then text_name[stop]<>":") or name^='.' or name^='..';
+            end if;
+
+          -- update the [start] position
+          start:=stop;
+          end separate_component_name;
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure parse_rest_of_name (
+            initial : in t_unsigned) =           -- initial position for parsing
+        -- Parses the rest of the name starting with position [initial].
+        --------------------------------------------------------------------------------------------
+        var
+          folder   : p_name_component_folder;    -- folder component
+          file_or_folder : p_name_component_file_or_folder; -- file or folder component
+          comp_name: p_text_name;                -- name of a single component
+          start    : t_unsigned;                 -- actual position in [text_name]
+          is_folder: t_logical;                  -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+          stream   : p_name_component_stream;    -- stream specification
+          basename : p_name_subcomponent_base_name; -- the trivial subcomponent of the stream specification
+        begin
+          start:=initial;
+          while start<=text_name:length loop
+            begin
+              -- separate the name of a folder or file
+              separate_component_name(start,comp_name,is_folder,true);
+
+              -- create a component
+              if is_folder
+
+                -- it is a folder for sure
+                then
+                  new folder;
+                  decompose_file_or_folder_name(comp_name^, folder);
+                  name^.components.insert(folder);
+
+                -- it can be either a folder or a file
+                else
+                  new file_or_folder;
+                  decompose_file_or_folder_name(comp_name^, file_or_folder);
+                  name^.components.insert(file_or_folder);
+                  end if;
+
+              if start<=text_name:length and then text_name[start]=":" then
+                -- the rest is stream specification
+                break;
+                end if;
+              succ start;
+            leave
+              -- free the plain-text name
+              discard comp_name;
+              end;
+            end loop;
+
+          -- parse the stream specification, if present
+          if start<=text_name:length then
+            begin
+              -- separate the stream specification
+              succ start;
+              -- %%TODO(RANGE) tohle je patch, ma tam byt length-start+1, ale kvuli tomu, ze range ma low bound 1, tak to nejde
+              new comp_name range text_name:length+2-start;
+              while start<=text_name:length loop
+                comp_name^ & text_name[start];
+                succ start;
+                end loop;
+
+              -- create and store the component
+              new stream;
+              name^.components.insert(stream);
+              new basename;
+              basename^.set_name(comp_name^);
+              stream^.subcomponents.insert(basename);
+            leave
+              -- free the temporary plain-text name
+              discard comp_name;
+              end;
+            end if;
+          end parse_rest_of_name;
+
+    var
+      server       : p_name_component_server;    -- server component
+      share        : p_name_component_drive;     -- share component
+      drive        : p_name_component_drive;     -- drive component
+      comp_name    : p_text_name;                -- name of a single component
+      start        : t_unsigned;                 -- actual position in [text_name]
+      is_folder    : t_logical;                  -- [true] if the subcomponent represents a folder 
+                                                 -- for sure
+      base_name    : p_name_subcomponent_base_name; -- trivial subcomponent of some components
+      ns_data      : p_namespace_specific;       -- namespace specific data
+
+    begin
+      -- create the name if not given
+      if name=nil then
+        new p_file_name(name);
+        end if;
+
+      -- prepare namespace specific data
+      new p_namespace_specific_system(ns_data);
+      name^.ns_data:=ns_data;
+
+      -- empty name - no decomposition possible
+      if text_name='' then
+        -- store that this is the namespaced used for the name
+        name^.namespace:=^this;
+        return;
+        end if;
+
+      -- possibly a UNC name
+      if is_unc_name(proposed_nt, text_name) then
+      {%%TODO(SLICE) %%TODO(LIB)
+        -- it could be a "long" UNC name
+        if text_name[1..8]='\\?\UNC\' then
+          ...
+          end if;
+      }                                                        
+        {%%TODO(DECLARE) server, drive, start, name, is_folder }
+
+        -- remember the type of the name
+        --p_namespace_specific_system(ns_data)^.name_type:=tsnt_absolute_unc;
+        p_namespace_specific_system(ns_data)^.is_unc:=true;
+
+        -- set the detected name type to an absolute name
+        name^.name_type:=tnt_absolute;
+
+        -- the first component of a name is a server
+        start:=3;
+        separate_component_name(start,comp_name,is_folder);
+        succ start;
+        new server;
+        new base_name;
+        base_name^.set_name(comp_name^);
+        server^.subcomponents.insert(base_name);
+        name^.components.insert(server);
+        discard comp_name;
+
+        -- the second component of a name is a share
+        separate_component_name(start,comp_name,is_folder);
+        succ start;
+        new share;
+        new base_name;
+        base_name^.set_name(comp_name^);
+        share^.subcomponents.insert(base_name);
+        name^.components.insert(share);
+        discard comp_name;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        parse_rest_of_name(start);
+
+      -- possibly a "c:\file.ext" name
+      elsif has_drive_spec(proposed_nt, text_name) then
+        -- if the third character is a backslash, it is absolute, otherwise, it is drive-relative
+        if text_name:length<3 or else (text_name[3]<>"\" and text_name[3]<>"/")
+          -- drive-relative
+          then
+            start:=3;
+            -- remember the type of the name
+            --p_namespace_specific_system(ns_data)^.name_type:=tsnt_drive_relative;
+
+            -- set the detected name type to an drive-relative
+            name^.name_type:=tnt_drive_relative;
+
+          -- absolute
+          else
+            start:=4;
+
+            -- remember the type of the name
+            --p_namespace_specific_system(ns_data)^.name_type:=tsnt_absolute_local;
+
+            -- set the detected name type to an absolute name
+            name^.name_type:=tnt_absolute;
+            end if;
+
+        -- the first component of a name is a drive
+        {%%TODO(DECLARE) drive, base_name }
+        new comp_name range 1;
+        comp_name^ & text_name[1];
+        new drive;
+        new base_name;
+        base_name^.set_name(comp_name^);
+        drive^.subcomponents.insert(base_name);
+        name^.components.insert(drive);
+        discard comp_name;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes
+        parse_rest_of_name(start);
+
+      -- possibly a (root-)relative name 
+      elsif proposed_nt in t_name_type_set:[tnt_root_relative,tnt_relative,tnt_unspecified] then
+        -- remember the type of the name
+        if {%%TODO(SET) text_name[1] in ["\","/"]} text_name[1]="\" or text_name[1]="/"
+          then
+            --p_namespace_specific_system(ns_data)^.name_type:=tsnt_root_relative;
+            name^.name_type:=tnt_root_relative;
+            start:=2;
+          else
+            --p_namespace_specific_system(ns_data)^.name_type:=tsnt_relative;
+            name^.name_type:=tnt_relative;
+            start:=1;
+            end if;
+
+        -- the rest of the file name shall be a list of folder/file names separated by (back)slashes       
+        parse_rest_of_name(start);
+
+      -- definitely an invalid name
+      else
+        raise name_error;
+        end if;
+
+      -- store that this is the namespaced used for the name
+      name^.namespace:=^this;
+      name^.namespace_tag:=this:tag;
+    leave
+      -- discard any unfreed memory
+      discard comp_name;
+      end decompose_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override compose_name =
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+        --------------------------------------------------------------------------------------------
+        procedure append_name_component (
+            component : in t_text_name) =
+        -- Appends the name of a component to the full plain-text name.
+        --------------------------------------------------------------------------------------------
+        var
+          _text_name : p_text_name;
+
+        begin
+          -- reallocate memory
+          if text_name=nil
+            then new text_name range component:length
+            else
+              -- %%TODO(ADJUST) adjust text_name range text_name^:length+component:length;
+              new _text_name range text_name^:length+component:length;
+              _text_name^:=text_name^;
+              discard text_name;
+              text_name:=_text_name;
+              end if;
+
+          -- append the component's name
+          text_name^ & component;
+          end append_name_component; 
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure append_file_or_folder_name (
+            file_or_folder : in p_name_component) =
+        -- Appends a composed name of a [file_or_folder] to the [text_name]
+        --------------------------------------------------------------------------------------------
+        var
+          base_name: p_name_subcomponent_base_name; -- base name of a component
+          extension: p_name_subcomponent_extension; -- extension
+
+        begin
+          -- retrieve the base name
+          file_or_folder^.subcomponents.set_first(p_list_item(base_name));
+          append_name_component(base_name^.name^);
+
+          -- append all extensions
+          extension:=file_or_folder^.subcomponents.get_next(base_name);
+          while extension<>nil loop
+            -- append the extension to the full plain-text name
+            append_name_component('.');
+            append_name_component(extension^.name^);
+        
+            -- retrieve next extension
+            file_or_folder^.subcomponents.set_next(p_list_item(extension));
+            end loop;
+          end append_file_or_folder_name;
+
+
+
+        --------------------------------------------------------------------------------------------
+        procedure append_rest_of_path (
+            first_file_or_folder : in p_name_component_file_or_folder) =
+        -- Appends the rest of the path beginning with [file_or_folder].
+        --------------------------------------------------------------------------------------------
+        var
+          component      : p_name_component;                -- the component actually being processed
+          first          : t_logical;                       -- T-this is the first component
+
+        begin
+          component:=first_file_or_folder;
+          first:=true;
+          while (component<>nil) {and then (component^:tag<>c_name_component_stream:tag)} loop
+            if component^:tag=c_name_component_stream:tag then break; end if;
+            -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+            -- add the separating backslash
+            if not first then
+              append_name_component('\');
+              end if;
+            first:=false;
+
+            -- append the name of this file or folder
+            append_file_or_folder_name(p_name_component_file_or_folder(component));
+
+            -- get next entry
+            name^.components.set_next(p_list_item(component));
+            end loop;
+
+          -- append stream specification if present
+          if (component<>nil) then
+            append_name_component(':');
+            append_name_component(p_name_subcomponent(component^.subcomponents.get_first)^.name^);
+            end if;
+          end append_rest_of_path;
+
+    var
+      server       : p_name_component_server;    -- the server component
+      share        : p_name_component_drive;     -- the share component
+      drive        : p_name_component_drive;     -- the drive component
+      component_name : p_text_name;              -- a plain-text name of a component
+
+    begin
+      case name^.name_type
+        -- an empty name
+        when tnt_unspecified do new text_name range {%%FLEX 0 => Constant out of range}1;
+
+        -- absolute path -- either UNC or local absolute
+        when tnt_absolute do
+            if p_namespace_specific_system(name^.ns_data)^.is_unc
+              -- an UNC name in the form "\\server\share\path"
+              then
+                -- append the server name
+                server:=name^.components.get_first;
+                component_name:=p_name_subcomponent(server^.subcomponents.get_first)^.name;
+                append_name_component('\\');
+                append_name_component(component_name^);
+
+                -- append the share name
+                share:=name^.components.get_next(server);
+                component_name:=p_name_subcomponent(share^.subcomponents.get_first)^.name;
+                append_name_component('\');
+                append_name_component(component_name^);
+
+                -- append the rest of the path
+                append_name_component('\');
+                append_rest_of_path(name^.components.get_next(share));
+
+              -- a local absolute name in the form "c:\path"
+              else
+                -- append the drive name
+                drive:=name^.components.get_first;
+                component_name:=p_name_subcomponent(drive^.subcomponents.get_first)^.name;
+                append_name_component(component_name^);
+                append_name_component(':\');
+
+                -- append the rest of the path
+                append_rest_of_path(name^.components.get_next(drive));
+                end if;
+
+        -- a drive-relative name in the form "c:path"
+        when tnt_drive_relative do
+            -- append the drive name
+            drive:=name^.components.get_first;
+            component_name:=p_name_subcomponent(drive^.subcomponents.get_first)^.name;
+            append_name_component(component_name^);
+            append_name_component(':');
+
+            -- append the rest of the path
+            append_rest_of_path(name^.components.get_next(drive));
+
+        -- a root-relative name in the form "\path"
+        when tnt_root_relative do
+            -- append the rest of the path
+            append_name_component('\');
+            append_rest_of_path(name^.components.get_first);
+
+        -- a relative name in the form "path"
+        when tnt_relative do
+            -- append the rest of the path
+            append_rest_of_path(name^.components.get_first);
+        end case;
+      
+      -- prepare iterator
+      --iterator.init(this,
+      end compose_name;
+
+
+
+    {
+    ------------------------------------------------------------------------------------------------
+    override make_canonical_name =
+    -- Makes a canonical version of [name].
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;            -- iterator through [name.components]
+    begin
+      -- prepare the default result
+      result:=name.clone;
+      
+      -- and now make it canonical by properly removing all \..\ and \.\ components
+      iter.init(name.components);
+      while iter.get(p_list_item(comp)) loop
+        
+        end loop;
+
+      end make_canonical_name;
+    }
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override clone_ns_specific =
+    -- Clone the p_namespace_specific_system.
+    ------------------------------------------------------------------------------------------------
+    begin
+      new p_namespace_specific_system(result);
+      p_namespace_specific_system(result)^:=p_namespace_specific_system(source_nsd)^;
+      end clone_ns_specific;
+
+    end c_namespace_system;

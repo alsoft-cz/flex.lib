@@ -3,6 +3,7 @@
 ----------------------------------------------------------------------------------------------------
 
 const  
+  t_ec_invalid        : t_event_code = $00;
   t_ec_lbutton        : t_event_code = $01;
   t_ec_rbutton        : t_event_code = $02;
   t_ec_cancel         : t_event_code = $03;

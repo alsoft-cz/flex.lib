@@ -197,6 +197,9 @@ var
       if size>optimal_size then
         size:=optimal_size;
         end if;
+      if size>options.maximal_size then
+        size:=options.maximal_size;
+        end if;
 
       new _data range size;
       pf^.read(ofs,p_data_array_long(_data:unchecked)^,size);

@@ -327,9 +327,14 @@ const
 --  typedef for ctrl-c handler routines
 -- 
 type
-PHANDLER_ROUTINE  = ^procedure (
+HANDLER_ROUTINE  = procedure (
     CtrlType        : DWORD)
-                      return BOOL for machine_pointer use true;
+                      return BOOL;
+#pragma convention(HANDLER_ROUTINE,system);
+
+
+PHANDLER_ROUTINE = ^HANDLER_ROUTINE for machine_pointer use true;
+
 const
   CTRL_C_EVENT      = 0;
 
@@ -445,12 +450,9 @@ procedure WriteConsoleInputA(
 #pragma convention(WriteConsoleInputA,system);
 #pragma import(WriteConsoleInputA,'WriteConsoleInputA','kernel32.dll');
 
-type
-t_002=^INPUT_RECORD for machine_pointer use true;
-
 procedure WriteConsoleInputW(
     hConsoleInput   : in t_HANDLE; 
-    lpBuffer        : in t_002; 
+    lpBuffer        : in out _INPUT_RECORD; 
     nLength         : in DWORD; 
     lpNumberOfEventsWritten : out DWORD )
                       return BOOL;

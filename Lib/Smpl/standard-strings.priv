@@ -341,6 +341,25 @@ begin
 
 
 ----------------------------------------------------------------------------------------------------
+procedure str_pos_character =
+-- Returns position of first occurence of [char] in [str].
+--
+-- Result:
+--   This subprogram always succeeds.
+--   If there is no occurence of [char] in [str], subprogram returns 0.
+----------------------------------------------------------------------------------------------------
+begin
+  for i in str:range loop
+    if str[i]=char then
+      result:=i;
+      return;
+      end if;
+    end loop;
+  end str_pos_character;
+
+
+
+----------------------------------------------------------------------------------------------------
 procedure str_count_substring =
 -- Counts occurences of [substr] substrings in [str]. 
 ----------------------------------------------------------------------------------------------------

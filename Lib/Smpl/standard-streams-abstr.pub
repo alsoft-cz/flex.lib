@@ -29,6 +29,10 @@ class public abstract c_abstract_stream =
     bytes          : out t_offset);
   -- vrati pocet protecenych bytu
   ------------------------------------------------------------------------------------------------
+  virtual add_flow(
+    data          : in ref t_data_packet);
+  -- zvysi pocet protecenych bytu
+  ------------------------------------------------------------------------------------------------
   virtual set_optimal_packet_size(
     bytes          : in t_offset);
   -- nastavi optimalni velikost packetu
@@ -46,12 +50,7 @@ class public abstract c_abstract_stream =
   -- precte povoleni pro zpozdeny zapis
   ------------------------------------------------------------------------------------------------
 
---%%TODO protected
-  ------------------------------------------------------------------------------------------------
-  virtual add_flow(
-    data          : in ref t_data_packet);
-  -- vrati pocet protecenych bytu
-  ------------------------------------------------------------------------------------------------
+protected
 
 var
   flow             : t_offset;
@@ -68,11 +67,23 @@ class public abstract c_input_stream = extend c_abstract_stream;
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual abstract read_packet(
-      data       : out t_data_packet);
+      data         : out t_data_packet;
+      options      : t_read_options);
   -- zapíše packet, blokuje volajícího do dokonceni nacteni
   ------------------------------------------------------------------------------------------------
   virtual abstract is_eod return t_logical;
   -- zjisti jetli jeste muzou prijit nejake data
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_packet(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false)           --F packet eod bude zahozen
+    return t_logical;
+  -- presune jeden packet
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety az do end of data
   ------------------------------------------------------------------------------------------------
   end c_input_stream;
 
@@ -93,7 +104,16 @@ class public abstract c_output_stream = extend c_abstract_stream;
   virtual abstract is_reading return t_logical;
   -- zjisti jetli jeste nekdo cte data
   ------------------------------------------------------------------------------------------------
---%%TODO protected
+  virtual transfer_packet(
+    source         : p_input_stream;
+    transfer_eod   : t_logical:=false)           --F packet eod bude zahozen
+    return t_logical;
+  -- presune jeden packet
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets(
+    source         : p_input_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety az do end of data
   ------------------------------------------------------------------------------------------------
   virtual write_eod;
   -- zapise end of data packet

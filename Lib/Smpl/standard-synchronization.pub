@@ -94,5 +94,8 @@ procedure interlocked_read(
   locked_value     : in ref t_unsigned;
   value            : out t_unsigned);
 ----------------------------------------------------------------------------------------------------
+procedure sleep(
+    milisec        : in t_wait_timeout:=t_wait_immediate);
+----------------------------------------------------------------------------------------------------
 
 end synchronization;

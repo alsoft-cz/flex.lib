@@ -14,7 +14,8 @@ const
     -- write
     t_dpss_con_set_pos   : t_unsigned = 1001;    -- set cursor position
     t_dpss_con_clear     : t_unsigned = 1002;    -- clear console
-    --t_dpss_con_set_attr  : t_unsigned = 1003;    -- set color & attrib
+    t_dpss_con_fgcolor   : t_unsigned = 1003;    -- set ink color
+    t_dpss_con_bgcolor   : t_unsigned = 1004;    -- set paper color
 
     -- read
     t_dpss_con_event     : t_unsigned = 1501;    -- console event
@@ -46,7 +47,7 @@ var
 procedure read_event =
 ----------------------------------------------------------------------------------------------------
 begin
-  stdin_stream^.set_mode(t_im_events_no_echo);
+  stdin_stream^.set_mode(t_im_all_events_no_echo);
   result:=stdin_reader^.read_event(event);
   end read_event;
 
@@ -56,7 +57,7 @@ begin
 procedure read_mouse =
 ----------------------------------------------------------------------------------------------------
 begin
-  stdin_stream^.set_mode(t_im_events_no_echo);
+  stdin_stream^.set_mode(t_im_mouse_events_no_echo);
   loop
     result:=stdin_reader^.read_event(mouse);
     until not result or mouse.event_code=t_ec_mouse_move;
@@ -68,7 +69,7 @@ begin
 procedure read_key =
 ----------------------------------------------------------------------------------------------------
 begin
-  stdin_stream^.set_mode(t_im_events_no_echo);
+  stdin_stream^.set_mode(t_im_key_events_no_echo);
   loop
     result:=stdin_reader^.read_event(key);
     until not result or key.event_code<>t_ec_mouse_move;
@@ -90,6 +91,15 @@ procedure get_cursor_position =
 begin
   stdin_stream^.get_cursor_position(pos);
   end get_cursor_position;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_console_size =
+----------------------------------------------------------------------------------------------------
+begin
+  stdin_stream^.get_console_size(pos);
+  end get_console_size;
 
 
 
@@ -120,6 +130,50 @@ begin
   stdin_stream^.set_mode(mode);
   result:=console_reader^.read_line(s);
   end read_line;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure input_char =
+----------------------------------------------------------------------------------------------------
+begin
+  if read_char(s,mode) then
+    raise stream_end_of_data;
+    end if;
+  end input_char;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure input =
+----------------------------------------------------------------------------------------------------
+begin
+  if read(s,mode) then
+    raise stream_end_of_data;
+    end if;
+  end input;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure input_line =
+----------------------------------------------------------------------------------------------------
+begin
+  if read_line(s,mode) then
+    raise stream_end_of_data;
+    end if;
+  end input_line;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure input_key =
+----------------------------------------------------------------------------------------------------
+begin
+  if read_key(key) then
+    raise stream_end_of_data;
+    end if;
+  end input_key;
 
 
 
@@ -158,14 +212,6 @@ begin
   end set_cursor_position;
 
 
-{
-----------------------------------------------------------------------------------------------------
-procedure set_attributes =
-----------------------------------------------------------------------------------------------------
-begin
-  stdout_writer^.set_attributes(attr);
-  end set_attributes;
-}
 
 ----------------------------------------------------------------------------------------------------
 procedure clear_console =
@@ -173,6 +219,24 @@ procedure clear_console =
 begin
   stdout_writer^.clear_console;
   end clear_console;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure set_foreground_color =
+----------------------------------------------------------------------------------------------------
+begin
+  stdout_writer^.set_foreground_color(color);
+  end set_foreground_color;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure set_background_color =
+----------------------------------------------------------------------------------------------------
+begin
+  stdout_writer^.set_background_color(color);
+  end set_background_color;
 
 
 

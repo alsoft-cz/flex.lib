@@ -36,6 +36,9 @@ type
 #separate public iso10646;
 -- Support for 32bit ISO 10646 character coding.
 ----------------------------------------------------------------------------------------------------
+#separate transformers;
+-- Base support for transforming characters.
+----------------------------------------------------------------------------------------------------
                  
 ----------------------------------------------------------------------------------------------------
 overload char_to_lower : ascii.ascii_char_to_lower,unicode.unicode_char_to_lower,iso10646.iso_char_to_lower;

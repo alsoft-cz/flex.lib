@@ -5,6 +5,9 @@ module public program_control =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+message
+  process_start_error;
+
 type
   -- sigle environment variable
   t_environment_variable = record
@@ -42,6 +45,18 @@ procedure get_command_line_parameters (
 --
 -- Result:
 --   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+procedure parse_command_line_parameters (
+    full_cmd_line  : in p_char32ustr;            -- the command line string
+    cmd_line       : out p_command_line_parameters;
+    ignore_first   : in t_logical := false);     -- T-ignore the first "parameter"
+-- %%TODO(DOCUMENTATION)
+----------------------------------------------------------------------------------------------------
+procedure compose_command_line_parameters (
+    full_cmd_line  : out p_char32ustr;            -- the command line string
+    cmd_line       : in p_command_line_parameters;
+    ignore_first   : in t_logical := false);     -- T-ignore the first "parameter"
+-- %%TODO(DOCUMENTATION)
 ----------------------------------------------------------------------------------------------------
 procedure get_environment_variables (
     env_vars       : out p_environment_variables;-- list of environment variables
@@ -103,6 +118,23 @@ procedure discard_command_line_parameters (
 --
 -- Result:
 --   This subprogram never fails.
+----------------------------------------------------------------------------------------------------
+procedure run_external_program(
+    cmd_line       : in p_command_line_parameters;
+    directory      : in p_char32ustr:=nil;
+    env_vars       : in p_environment_variables:=nil;
+    exitcode       : in p_unsigned:=nil);
+-- Starts new process
+-- [cmd_line] list of parameters, first parameter is name of executable file
+-- [directory] startup directyory, if nil process inherits current
+-- [env_vars] is optional list of environment variables, if nil is passed new process inherits environment
+-- [exitcode] if is not nil caller is blocked until child process finish and [exitcode^] is set to exitcode of process
+-- Result:
+--  raise process_start_error when program didn't started succesfuly
+----------------------------------------------------------------------------------------------------
+procedure set_task_exit_code(
+    exitcode       : t_unsigned);
+-- sets exitcode for current task
 ----------------------------------------------------------------------------------------------------
 
 end program_control;
