@@ -146,16 +146,4 @@ class public c_incremental_hash_table = extend c_hash_table;
 ----------------------------------------------------------------------------------------------------
 
     end c_incremental_hash_table;
-
-
-
-----------------------------------------------------------------------------------------------------
-class public c_auto_hash_table = extend c_hash_table;
--- Hash table with automatically assigned incremental item IDs.
-----------------------------------------------------------------------------------------------------
-
-    end c_auto_hash_table;
-
-
-
 end hash_tables;

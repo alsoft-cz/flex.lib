@@ -212,10 +212,13 @@ var
     c_input_stream:(this).add_flow(data);
 
     -- zjistim jestli uz byl posledni
-    if data.style=t_dps_signal and then data.signal=t_dpss_eod then
-      eod:=true;
+    if data.style=t_dps_signal then 
+      if data.signal=t_dpss_eod then
+        eod:=true;
+      elsif data.signal=t_dpss_bad_data then
+        raise stream_invalid_data;
+        end if;
       end if;
-
     end read_packet;
 
 
@@ -230,15 +233,23 @@ var
   begin
     loop
       -- prectu packet ze zdroje
-      _source^.read_packet(data);
-      -- vytvorim handle na packet
-      new packet;
-      -- zkopiruju handle pripadne i data packetu
-      if packet^.style=t_dps_temporary then
-        copy_to_packet(packet^,data.data,data.size);
-      else
-        packet^:=data;
-        end if;
+      begin
+        _source^.read_packet(data);
+
+        -- vytvorim handle na packet
+        new packet;
+      catch
+        when stream_invalid_data do
+          create_bad_data(packet^);
+      commit
+        -- zkopiruju handle pripadne i data packetu
+        if packet^.style=t_dps_temporary then
+          copy_to_packet(packet^,data.data,data.size);
+        else
+          packet^:=data;
+          end if;
+        end;
+
       -- pripojim packet nakonec fronty
       que.append_msg(packet);
       -- jestli to byl eod, koncim
@@ -267,9 +278,10 @@ var
 class private c_output_stream_buffer =
 ----------------------------------------------------------------------------------------------------
 var
-  que            : c_queue;
-  isreading      : t_logical;
-  closed         : t_logical;
+  que              : c_queue;
+  isreading        : t_logical;
+  closed           : t_logical;
+  bad_data         : t_logical;
 
   --------------------------------------------------------------------------------------------------
   static drop_packets =
@@ -345,6 +357,12 @@ var
       raise stream_other_side;
       end if;
 
+    if bad_data then --%%TODO synchronize
+      -- spatne data v nekterem z predchozich packetu
+      bad_data:=false;--%%TODO synchronize
+      raise stream_invalid_data;
+      end if;
+
     -- vytvorim handle na packet
     new packet;
 
@@ -389,7 +407,12 @@ var
       discard packet;
 
       -- tlacim packet na cil
-      _target^.write_packet(data);
+      begin
+        _target^.write_packet(data);
+      catch
+        when stream_invalid_data do
+          bad_data:=true;  -- %%TODO synchronize ?
+        end;
 
       -- jestli byl posledni koncim
       if data.style=t_dps_signal and then data.signal=t_dpss_eod then

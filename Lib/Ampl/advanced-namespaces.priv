@@ -5,4 +5,6 @@ module private namespaces =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+--#separate private uri;
+
 end namespaces;

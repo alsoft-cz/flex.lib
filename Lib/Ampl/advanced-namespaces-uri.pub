@@ -1,0 +1,346 @@
+﻿----------------------------------------------------------------------------------------------------
+module public uri =
+-- Additional namespace to standard.names, representing URIs.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Created: 2004-01-13 by Petr K
+----------------------------------------------------------------------------------------------------
+-- This module contains a namespace for parsing URIs (to be exact: "URI references", but for sake of
+-- simplicity, we use a simple "URI" here).
+-- The parsing is according to RFC 2396 (Uniform Resource Identifiers (URI): Generic Syntax).
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.names,
+  standard.characters,
+  standard.classes.lists;
+
+-- forward declarations
+class c_namespace_uri;                      type p_namespace_uri                   = ^class c_namespace_uri;
+class c_namespace_http_uri;                 type p_namespace_http_uri              = ^class c_namespace_http_uri;
+class c_namespace_ftp_uri;                  type p_namespace_ftp_uri               = ^class c_namespace_ftp_uri;
+class c_namespace_mailto_uri;               type p_namespace_mailto_uri            = ^class c_namespace_mailto_uri;
+class c_name_component_scheme;              type p_name_component_scheme           = ^class c_name_component_scheme;
+class c_name_component_userinfo;            type p_name_component_userinfo         = ^class c_name_component_userinfo;
+class c_name_component_network_address;     type p_name_component_network_address  = ^class c_name_component_network_address;
+class c_name_component_fragment;            type p_name_component_fragment         = ^class c_name_component_fragment;
+class c_name_component_variable;            type p_name_component_variable         = ^class c_name_component_variable;
+class c_name_subcomponent_domain;           type p_name_subcomponent_domain        = ^class c_name_subcomponent_domain;
+class c_name_subcomponent_fragment;         type p_name_subcomponent_fragment      = ^class c_name_subcomponent_fragment;
+class c_name_subcomponent_username;         type p_name_subcomponent_username      = ^class c_name_subcomponent_username;
+class c_name_subcomponent_password;         type p_name_subcomponent_password      = ^class c_name_subcomponent_password;
+class c_name_subcomponent_port;             type p_name_subcomponent_port          = ^class c_name_subcomponent_port;
+class c_name_subcomponent_variable_name;    type p_name_subcomponent_variable_name = ^class c_name_subcomponent_variable_name;
+class c_name_subcomponent_variable_value;   type p_name_subcomponent_variable_value= ^class c_name_subcomponent_variable_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_uri = extend c_namespace;
+-- An abstract namespace for decoding generic URI references.
+-- Its subclasses are able to decode URIs according to specific schemes.
+--
+-- URIs are decomposed to the following components (in this order):
+--            c_name_component_scheme
+--            c_name_component_userinfo
+--            c_name_component_network_address
+--      (*)   c_name_component_file_or_folder, c_name_component_variable (representing the ;param=value)
+--            c_name_component_variable
+--            c_name_fragment
+--
+--  (*) -- these components may repeat
+----------------------------------------------------------------------------------------------------
+
+    type
+      -- internal differentiation between types of names
+      t_uri_name_type = enum
+          tunt_absolute_uri;                     -- an absolute URI
+          tunt_absolute_path;                    -- a relative URI containing an absolute path
+          tunt_relative_path;                    -- a relative path
+          end enum;
+      {
+      *** Nezavání tohle náhodou potřebou zobecnění [t_name_type]? Zkus se nad tím prosím zamyslet,
+          třeba tě něco napadne. Co nějaké [tnt_root_relative] - absolutní cesta relativní vzhledem 
+          ke kořenu. Ve filesystému "\gogo\debil.txt".
+      }
+
+      -- URI-namespace specific data
+      -- %%TODO(TAG) remove everything except name_type
+      t_namespace_specific_uri = t_namespace_specific with record
+          name_type  : t_uri_name_type;           -- the type of this URI
+          scheme     : p_name_component_scheme;   -- scheme of this URI, [nil] if not present
+          userinfo   : p_name_component_userinfo; -- login info from this URI, [nil] if not present
+          server     : p_name_component_network_address; -- host part of this URI, [nil] if not present
+          path_start : p_name_component_file_or_folder;  -- the first path component
+          first_param: p_name_component_variable; -- the first param from this URI, [nil] if not present
+          first_variable  : p_name_component_variable; -- the first query variable from this URI, [nil] if not present
+          fragment   : p_name_component_fragment; -- the fragment part of this URI, [nil] if not present
+          end record;
+      p_namespace_specific_uri = ^class t_namespace_specific_uri;
+
+    protected
+    -- general utility functions used by subclasses
+
+    ----------------------------------------------------------------------------------------------
+    procedure detect_nametype (
+        proposed_nt: in t_name_type;             -- proposed type of the name
+        detected_nt: out t_name_type;            -- detected type of the name
+        text_name  : in t_text_name;             -- the name that is being decomposed
+        start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+        components : in c_list;                  -- list for the output of the decomposition
+        nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Do the required steps to detect URI type (absolute/relative) and process the scheme and
+    -- authority parts if they are present.
+    ----------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_scheme (
+        text_name  : in t_text_name;             -- the name that is being decomposed
+        start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+        scheme_len : in t_unsigned;              -- length of the scheme
+        components : in c_list;                  -- list for the output of the decomposition
+        nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Process the scheme part of the URI.
+    ----------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_authority (
+        text_name  : in t_text_name;             -- the name that is being decomposed
+        start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+        components : in c_list;                  -- list for the output of the decomposition
+        nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Process the authority (server) part of the URI, including the login and port specification.
+    ----------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_variable (
+        variable   : in c_name_component_variable; -- variable to be filled
+        str        : in t_text_name);              -- its text specification (e.g. "name=value")
+    -- Process a variable specification, i.e. split [str] and store its subcomponents into [variable].
+    ----------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_filename (
+        file       : in c_name_component_file_or_folder; -- component to be filled
+        str        : in t_text_name);                    -- its text specification (e.g. "file.txt.tar.gz")
+    -- Process a file specification, i.e. split [str] and store its subcomponents into [file].
+    ----------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure process_path (
+        text_name  : in t_text_name;             -- the name that is being decomposed
+        start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+        components : in c_list;                  -- list for the output of the decomposition
+        nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Process the path part of the URI.
+    ------------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_query (
+      text_name  : in t_text_name;             -- the name that is being decomposed
+      start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+      components : in c_list;                  -- list for the output of the decomposition
+      nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Process the query part of the URI, if present (otherwise, do nothing).
+    ----------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_fragment (
+      text_name  : in t_text_name;             -- the name that is being decomposed
+      start      : in out t_unsigned;          -- the first not yet processed character, will be updated
+      components : in c_list;                  -- list for the output of the decomposition
+      nd         : in p_namespace_specific_uri); -- namespace specific data
+    -- Process the fragment part of the URI, if present (otherwise, do nothing).
+    ----------------------------------------------------------------------------------------------
+
+    --------------------------------------------------------------------------------------------
+    procedure has_scheme (
+        text_name  : in  t_text_name;            -- the name
+        is_valid   : out t_logical;              -- if a _valid_ scheme present?
+        scheme_len : out t_unsigned)             -- if it has a scheme
+        return t_logical;
+    -- Checks whether the [text_name] begins with a scheme part and if it is valid.
+    --  - If it does not contain a scheme part, return false
+    --  - If it contains an invalid scheme, set [is_valid] to false and return true
+    --  - If it contains a valid scheme, set [is_valid] to true, set [scheme_len] to the
+    --    length of the scheme part (including the separating colon), and return true
+    --------------------------------------------------------------------------------------------
+
+    end c_namespace_uri;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_http_uri = extend c_namespace_uri;
+-- A namespace for decoding URI references that use http scheme.
+-- It uses the following syntax:
+--    http://user:password@host:port/path?query#fragment
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_http_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_ftp_uri = extend c_namespace_uri;
+-- A namespace for decoding URI references that use http scheme.
+-- It uses the following syntax:
+--    ftp://user:password@host:port/path;type=typecode
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_ftp_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_mailto_uri = extend c_namespace_uri;
+-- A namespace for decoding URI references that use mailto scheme.
+-- It uses the following syntax:
+--    mailto://rfc-822-address
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_mailto_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_namespace_news_uri = extend c_namespace_uri;
+-- A namespace for decoding URI references that use news scheme.
+-- It uses the following syntax:
+--    news:newsgroup-name
+-- or
+--    news:message-id
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_news_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_domain = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_network_address] representing one domain (e.g. "org" in "www.example.org")
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_domain;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_fragment = extend c_name_subcomponent;
+-- URI name trivial subcomponent of [c_name_component_fragment]
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_fragment;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_port = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_network_address] representing the port specification
+----------------------------------------------------------------------------------------------------
+    
+    {
+    ------------------------------------------------------------------------------------------------
+    static get_port
+        return t_unsigned16;
+    -- Retrieve the port value.
+    ------------------------------------------------------------------------------------------------
+    }
+
+    end c_name_subcomponent_port;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_variable_name = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_variable], containing the variable name (e.g. "var" for "var=value").
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_variable_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_variable_value = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_variable], containing the variable value (e.g. "value" for "var=value").
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_variable_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_variable = extend c_name_component;
+-- URI name component representing one name=value pair from params or query list
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_variable;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_scheme = extend c_name_component;
+-- URI name component representing the scheme, e.g. "http"
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_scheme;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_fragment = extend c_name_component;
+-- URI name component representing the fragment, i.e. the "#xxx" part of the URI
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_fragment;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_network_address = extend c_name_component;
+-- URI name component representing the network address (including the port specification if present).
+----------------------------------------------------------------------------------------------------
+
+    var
+      port         : p_name_subcomponent_port;   -- the port subcomponent of this address, or [nil] if not present
+
+    end c_name_component_network_address;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_username = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_userinfo] representing the username component of userinfo
+----------------------------------------------------------------------------------------------------
+
+  end c_name_subcomponent_username;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_subcomponent_password = extend c_name_subcomponent;
+-- URI name subcomponent of [c_name_component_userinfo] representing the password component of userinfo
+----------------------------------------------------------------------------------------------------
+
+  end c_name_subcomponent_password;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_name_component_userinfo = extend c_name_component;
+-- URI name component representing the user information, i.e. the "name:password" part of the URI
+-- subcomponents: one [c_name_subcomponent_username] and optionally one [c_name_subcomponent_password]
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_userinfo;
+
+
+----------------------------------------------------------------------------------------------------
+class public c_uri_decoder = extend c_character_transformer;
+----------------------------------------------------------------------------------------------------
+    ------------------------------------------------------------------------------------------------
+    static init (
+        plus_is_space : in t_logical);
+    ------------------------------------------------------------------------------------------------
+    end c_uri_decoder;
+end uri;

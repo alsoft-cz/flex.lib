@@ -1,0 +1,99 @@
+﻿#option hint(all,false);
+
+program url_test = 
+
+with
+  standard,
+  standard.console,
+  standard.conversions,
+  standard.classes,
+  standard.classes.lists,
+  standard.names,
+  advanced.namespaces.uri;
+
+----------------------------------------------------------------------------------------------------
+-- TESTS -------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+procedure test(
+    name           : in t_text_name;
+    name_type      : in t_name_type) =
+
+  --------------------------------------------------------------------------------------------------
+  procedure list_all (
+      names          : in c_list) =
+  -- Lists all name components in a collection
+  --------------------------------------------------------------------------------------------------
+var
+  iterator         : c_list_iterator;
+  name             : p_name_component;
+  text_name        : p_text_name;
+
+begin
+  -- prepare an iterator
+  iterator.init(p_list(^names)^,tlwd_forward);
+
+  -- output all names provided by the given iterator
+  while iterator.get(p_item(name)) loop
+    begin
+      -- retrieve a composed name
+      name^.compose_name(text_name);
+
+      -- output it
+      write_line(text_name^);
+
+    leave
+      -- and free the memory
+      discard text_name;
+      end;
+    end loop;
+  end list_all;
+
+var
+  ns         : c_namespace_uri;
+  valid      : t_logical;
+  comps      : c_list;
+  nsdata     : c_namespace.p_namespace_specific;
+  detected_nt: t_name_type;
+  text_name  : p_text_name;
+begin
+    write_line(name);
+    write('--- ');
+    case name_type
+      when tnt_unspecified do write('unspecified');
+      when tnt_relative do write('relative');
+      when tnt_absolute do write('absolute');
+      end case;
+    write(' ');
+    ns.check_name(name, name_type, valid);
+    if valid
+    then
+      write('--- valid ');
+      ns.decompose_name(name, name_type, detected_nt, comps, nsdata);
+      case detected_nt
+        when tnt_unspecified do write_line('unspecified');
+        when tnt_relative do write_line('relative');
+        when tnt_absolute do write_line('absolute');
+        end case;
+      list_all(comps);
+      write('--- recomposed: ');
+      begin
+        ns.compose_name(comps, nsdata, text_name);
+        write_line(text_name^);
+      leave
+        discard text_name;
+        end;
+    else
+      write_line('--- invalid');
+      end if;
+  end test;
+
+begin
+  test('abcd', tnt_unspecified);
+  test('http://www.example.com/path/somewhere.txt', tnt_unspecified);
+  test('http://user:password@www.example.com:2221/path/say%20thing?what=hello+world&lang=us#part3%F0', tnt_unspecified);
+  test('../relative/file', tnt_unspecified);
+  test('/etc/passwd', tnt_unspecified);
+  test('hey, joe, how are you?', tnt_unspecified);
+  test('c:\folder\subfolder\file.txt', tnt_unspecified);
+  end url_test;

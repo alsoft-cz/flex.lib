@@ -19,7 +19,8 @@ const
     t_dpss_invalid : t_unsigned = 0;             -- no signal
     t_dpss_eod     : t_unsigned = 1;             -- end of data signal
     t_dpss_flush   : t_unsigned = 2;             -- flush signal
-    t_dpss_seek    : t_unsigned = 3;             -- seek
+    t_dpss_bad_data: t_unsigned = 3;             -- invalid data signal
+    t_dpss_seek    : t_unsigned = 4;             -- seek
 
 type
   t_data_packet;
@@ -81,6 +82,10 @@ procedure create_flush(
 -- create flush packet
 ----------------------------------------------------------------------------------------------------
 procedure create_eod(
+    packet         : out t_data_packet);
+-- create end of data packet
+----------------------------------------------------------------------------------------------------
+procedure create_bad_data(
     packet         : out t_data_packet);
 -- create end of data packet
 ----------------------------------------------------------------------------------------------------

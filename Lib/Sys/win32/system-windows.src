@@ -96,7 +96,7 @@ module windows =
 --#separate winperf;
 #separate winsock;
 #separate winsock2;
---#separate wincrypt;
+#separate wincrypt;
 --#separate winefs;
 --#separate winscard;
 --#separate winspool;

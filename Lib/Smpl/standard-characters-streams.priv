@@ -41,7 +41,7 @@ var
   ------------------------------------------------------------------------------------------------
   begin
     if encoder<>nil then
-      encoder^.finalize_output;
+      --%%TODO encoder^.finalize_output;
       end if;
     close;
     end close;
@@ -167,7 +167,7 @@ var
   ------------------------------------------------------------------------------------------------
   begin
     if decoder<>nil then
-      decoder^.finalize_input;
+      --%%TODO decoder^.finalize_input;
       end if;
     close;
     end close;
@@ -186,7 +186,7 @@ var
       loop
         if p_stream_generic_reader(^this)^.read_byte(b) then
           result:=true;
-          decoder^.finalize_input;
+          --%%TODO decoder^.finalize_input;
           return;
           end if;
         decoder^.put_byte (t_unsigned8(b),done);
@@ -212,7 +212,7 @@ var
           end if;
         result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
         if result then
-          decoder^.finalize_input;
+          --%%TODO decoder^.finalize_input;
           return;
         else
           succ text:length;
@@ -451,7 +451,12 @@ var
   --------------------------------------------------------------------------------------------------
   begin
     _source^.read_packet(data);
-    convert_packet(data,charbuff,charpos,endian_bom,encoder,decoder);
+    begin
+      convert_packet(data,charbuff,charpos,endian_bom,encoder,decoder);
+    catch
+      when c_character_decoder.character_decoder_error,c_character_encoder.character_encoder_error do
+        raise stream_invalid_data;
+      end;
     end read_packet;
   
 
@@ -527,7 +532,12 @@ var
 
   begin
     outpacket:=data;
-    convert_packet(outpacket,charbuff,charpos,endian_bom,encoder,decoder);
+    begin
+      convert_packet(outpacket,charbuff,charpos,endian_bom,encoder,decoder);
+    catch
+      when c_character_decoder.character_decoder_error,c_character_encoder.character_encoder_error do
+        raise stream_invalid_data;
+      end;
     _target^.write_packet(outpacket);
     end write_packet;
 

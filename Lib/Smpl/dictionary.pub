@@ -72,6 +72,10 @@ class public c_dictionary =
     -- Přidá do slovníku dvojici [key,item]
     -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error]
     ------------------------------------------------------------------------------------------------
+    static replace_or_insert_row (
+        key        : in p_dictionary_key;        -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    ------------------------------------------------------------------------------------------------
     static delete_row (
         key        : in p_dictionary_key;        -- klíč
         what       : in t_dictionary_delete_mode:=ddm_both); -- co se má smazat
@@ -93,6 +97,9 @@ class public c_dictionary =
     static remove_all;
     -- Vyčistí slovník
     ------------------------------------------------------------------------------------------------
+    static temporary_get_tree return p_binary_tree;
+    -- Vrátí strom, %%TODO(XXX) zrušit
+    ------------------------------------------------------------------------------------------------
 
     end c_dictionary;
 
@@ -105,6 +112,11 @@ class public c_string_dictionary = extend c_dictionary;
 
     ------------------------------------------------------------------------------------------------
     static insert_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    -- Přidá do slovníku dvojici [key,value]
+    ------------------------------------------------------------------------------------------------
+    static replace_or_insert_value (
         key        : in t_char32ustr;            -- klíč
         value      : in p_dictionary_value);     -- hodnota
     -- Přidá do slovníku dvojici [key,value]
@@ -135,6 +147,11 @@ class public c_string_string_dictionary = extend c_string_dictionary;
         value      : in t_char32ustr);           -- hodnota
     -- Přidá do slovníku dvojici [key,item]
     ------------------------------------------------------------------------------------------------
+    static replace_or_insert (
+        key        : in t_char32ustr;            -- klíč
+        value      : in t_char32ustr);           -- hodnota
+    -- Přidá do slovníku dvojici [key,item]
+    ------------------------------------------------------------------------------------------------
     static find (
         key        : in t_char32ustr)            -- klíč
         return t_char32str;
@@ -152,5 +169,33 @@ class public c_string_string_dictionary = extend c_string_dictionary;
     ------------------------------------------------------------------------------------------------
 
     end c_string_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_string_dictionary_iterator =
+-- %%TODO(XXX) vymyslet hiearchii iterátorů, 
+-- aby se tento iterátor mohl dědit od obecnějšího iterátoru.
+-- Použití této třídy může zůstat stejné.
+-- V zásadě je tato třída pouze dočasná.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        dictionary : in c_string_string_dictionary);  -- slovník
+    -- Inicializuje iterátor
+    ------------------------------------------------------------------------------------------------
+    static get_value (
+        key        : out t_char32ustr;           -- klíč
+        value      : out t_char32ustr)           -- hotnota
+        return t_logical;
+    -- Vrátí dvojici klíč - hodnota, posune na další prvek slovníku, vrátí T, pokud byly zapsány
+    -- nějaké hodnoty do [key],[value]
+    ------------------------------------------------------------------------------------------------
+    static reset;
+    -- Vyresetuje iterátor
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_string_dictionary_iterator;
 
 end dictionary;

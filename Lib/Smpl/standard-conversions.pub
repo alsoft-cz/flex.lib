@@ -8,10 +8,10 @@ module public conversions =
 ----------------------------------------------------------------------------------------------------
 -- %%TODO Change return value to unconstrained string
 --
--- unsigned_to_string_primitive a signed_to_string_primitive p°ed∞lat na neomezenou dΘlku Φφsla,
+-- unsigned_to_string_primitive a signed_to_string_primitive p°ed?lat na neomezenou d?lku ??sla,
 -- zve°ejnit vÜechny funkce *_primitive.
 --
--- dod∞lat r∙znΘ varianty formßtovßnφ.
+-- dod?lat r•zn? varianty formßtovßn?.
 ----------------------------------------------------------------------------------------------------
 
 with standard.strings;
@@ -20,7 +20,7 @@ message
   conversion_error extend numeric_error;         -- exception
 
 type
-  t_radix          = t_unsigned range 2..36;     -- zßklad ΦφselnΘ soustavy 
+  t_radix          = t_unsigned range 2..36;     -- zßklad ??seln? soustavy 
 
   t_conversion_result = enum 
       tcres_ok;                                  -- no error                            
@@ -35,58 +35,60 @@ type
       end enum;
 
   t_oversize_mode  = enum
-      tom_error;                               -- vyhlßsφ se v²jimka
-      tom_full;                                -- Φφslo se zobrazφ na pln² poΦet platn²ch mφst
-      tom_asterisk;                            -- zobrazφ se pole hv∞zdiΦek
+      tom_error;                               -- vyhlßs? se v2jimka
+      tom_full;                                -- ??slo se zobraz? na pln2 po?et platn2ch m?st
+      tom_asterisk;                            -- zobraz? se pole hv?zdi?ek
       end enum;
 
   t_float_conversion = enum
-      tfc_sci;                                   -- exponencißlnφ formßt
-      tfc_fix;                                   -- pevn² poΦet desetinn²ch mφst
-      tfc_eng;                                   -- exponencißlnφ formßt s exponentem d∞liteln²m 3
-      tfc_prefix;                                -- s p°ipojenφm prefixu fyzikßlnφ jednotky (m, k, G, ...)
+      tfc_sci;                                   -- exponencißln? formßt
+      tfc_fix;                                   -- pevn2 po?et desetinn2ch m?st
+      tfc_eng;                                   -- exponencißln? formßt s exponentem d?liteln2m 3
+      tfc_prefix;                                -- s p°ipojen?m prefixu fyzikßln? jednotky (m, k, G, ...)
       end enum;
 
-  -- formßtovacφ zßznam pro celß Φφsla %%CZ
+  -- formßtovac? zßznam pro celß ??sla %%CZ
   t_integer_format  = record
-      width        : t_unsigned := 0;            -- poΦet mφst pro zarovnßnφ Φφsla       
-                                                 -- 0 urΦuje automatick² formßt
-      sign         : t_sign_mode := tsm_empty;   -- zp∙sob zachßzenφ s kladn²m znamΘnkem
-      aligned      : t_logical := false;         -- True = znamΘnko (je-li uvedeno) je zcela vlevo
-                                                 -- False = znamΘnko je t∞sn∞ p°ed prvnφ Φφslicφ
-      fill         : t_char32 := " ";            -- v²pl≥ov² znak 
-      oversize     : t_oversize_mode := tom_full;-- zp∙sob zobrazenφ Φφsla, kterΘ se nevejde
-      radix        : t_radix := 10;              -- zßklad Φφsla
+      width        : t_unsigned := 0;            -- po?et m?st pro zarovnßn? ??sla       
+                                                 -- 0 ur?uje automatick2 formßt
+      sign         : t_sign_mode := tsm_empty;   -- zp•sob zachßzen? s kladn2m znam?nkem
+      aligned      : t_logical := false;         -- True = znam?nko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znam?nko je t?sn? p°ed prvn? ??slic?
+      fill         : t_char32 := " ";            -- v2pl?ov2 znak 
+      oversize     : t_oversize_mode := tom_full;-- zp•sob zobrazen? ??sla, kter? se nevejde
+      radix        : t_radix := 10;              -- zßklad ??sla
       end record;
 
-  --  zßznam pro zpracovßnφ celΘho Φφsla %%CZ
+  --  zßznam pro zpracovßn? cel?ho ??sla %%CZ
   t_integer_parse  = record
-      radix        : t_radix := 10;              -- zßklad Φφsla
+      radix        : t_radix := 10;              -- zßklad ??sla
       end record;
 
-  -- formßtovacφ zßznam pro floating-point Φφsla %%CZ
+  -- formßtovac? zßznam pro floating-point ??sla %%CZ
   t_float_format   = record
-      width        : t_unsigned := 0;            -- poΦet mφst pro zarovnßnφ Φφsla       
-      decimals     : t_unsigned := 0;            -- poΦet desetinn²ch mφst
-      sign         : t_sign_mode :=tsm_empty;    -- zp∙sob zachßzenφ s kladn²m znamΘnkem
-      aligned      : t_logical := false;         -- True = znamΘnko (je-li uvedeno) je zcela vlevo
-                                                 -- False = znamΘnko je t∞sn∞ p°ed prvnφ Φφslicφ
-      oversize     : t_oversize_mode := tom_error;   -- zp∙sob zobrazenφ Φφsla, kterΘ se nevejde
+      width        : t_unsigned := 0;            -- po?et m?st pro zarovnßn? ??sla       
+      decimals     : t_unsigned := 0;            -- po?et desetinn2ch m?st
+      sign         : t_sign_mode :=tsm_empty;    -- zp•sob zachßzen? s kladn2m znam?nkem
+      aligned      : t_logical := false;         -- True = znam?nko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znam?nko je t?sn? p°ed prvn? ??slic?
+      oversize     : t_oversize_mode := tom_error;   -- zp•sob zobrazen? ??sla, kter? se nevejde
       conversion   : t_float_conversion := tfc_sci;  -- typ formatovani
       end record;
 
-  -- zßznam pro zpracovßnφ floating-point Φφsla %%CZ
+  -- zßznam pro zpracovßn? floating-point ??sla %%CZ
   t_float_parse    = record
-      min          : t_extended;                 -- zatφm nic
-      max          : t_extended;                 -- zatφm nic
+      min          : t_extended;                 -- zat?m nic
+      max          : t_extended;                 -- zat?m nic
       end record;
 
 
 const
-  -- %%TODO konstanty zruÜit a default hodnoty paramet∙ p°ed∞lat na :value
+  -- %%TODO konstanty zruÜit a default hodnoty paramet• p°ed?lat na :value
   c_integer_format_default : t_integer_format = [for radix use 10];
+  c_integer_format_hexadecimal : t_integer_format = [for radix use 16];
   c_float_format_default   : t_float_format= [];
   c_integer_parse_default : t_integer_parse = [for radix use 10];
+  c_integer_parse_hexadecimal : t_integer_parse = [for radix use 16];
   c_float_parse_default   : t_float_parse = [];
 
 
@@ -94,38 +96,38 @@ const
 ----------------------------------------------------------------------------------------------------
 procedure unsigned_to_string (
     num            : in t_unsigned;              -- number to convert
-    format         : in t_integer_format := c_integer_format_default)  -- poŘadovan² formßt Φφsla %%CZ
+    format         : in t_integer_format := c_integer_format_default)  -- poŘadovan2 formßt ??sla %%CZ
     return t_char32str;                          -- it's string representation
 ----------------------------------------------------------------------------------------------------
 procedure signed_to_string (
     num            : in t_signed;                -- number to convert
-    format         : in t_integer_format := c_integer_format_default)  -- poŘadovan² formßt Φφsla %%CZ
+    format         : in t_integer_format := c_integer_format_default)  -- poŘadovan2 formßt ??sla %%CZ
     return t_char32str;                          -- it's string representation
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string (
-    num            : in t_extended;              -- Φφslo kterΘ p°evΘst %%CZ
-    format         : in t_float_format := c_float_format_default)      -- poŘadovan² formßt Φφsla %%CZ
-    return t_char32str;                          -- °et∞zcovß reprezentace
--- P°evede zaokrouhlenou hodnotu NUM na °et∞zec v rozsahu 0 aŘ + 10e18-1.
+    num            : in t_extended;              -- ??slo kter? p°ev?st %%CZ
+    format         : in t_float_format := c_float_format_default)      -- poŘadovan2 formßt ??sla %%CZ
+    return t_char32str;                          -- °et?zcovß reprezentace
+-- P°evede zaokrouhlenou hodnotu NUM na °et?zec v rozsahu 0 aŘ + 10e18-1.
 ----------------------------------------------------------------------------------------------------
 procedure string_to_unsigned (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_integer_parse := c_integer_parse_default)  -- poŘadovan² formßt Φφsla %%CZ
+    parse          : in t_integer_parse := c_integer_parse_default)  -- poŘadovan2 formßt ??sla %%CZ
     return t_unsigned;
 ------------------------------------------------------------------------------
 procedure string_to_signed (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_integer_parse := c_integer_parse_default)  -- poŘadovan² formßt Φφsla %%CZ
+    parse          : in t_integer_parse := c_integer_parse_default)  -- poŘadovan2 formßt ??sla %%CZ
     return t_signed;
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_float_parse := c_float_parse_default)      -- poŘadovan² formßt Φφsla %%CZ
+    parse          : in t_float_parse := c_float_parse_default)      -- poŘadovan2 formßt ??sla %%CZ
     return t_extended;
--- P°evede celΘ Φφslo v rozsahu 0 aŘ + 10e18-1 na float point.
--- ╪et∞zec str 
---   - musφ mφt dΘlku v rozsahu 1 aŘ 18 znak∙,
---   - nesmφ obsahovat jinΘ znaky neŘ "0" az "9".
+-- P°evede cel? ??slo v rozsahu 0 aŘ + 10e18-1 na float point.
+-- ?et?zec str 
+--   - mus? m?t d?lku v rozsahu 1 aŘ 18 znak•,
+--   - nesm? obsahovat jin? znaky neŘ "0" az "9".
 ----------------------------------------------------------------------------------------------------
 
 
@@ -169,20 +171,20 @@ procedure string_to_signed_primitive (
 -- representation. 
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float_primitive (
-    int            : in t_char32str;             -- celß Φßst mantisy 
-    frac           : in t_char32str;             -- desetinnß Φßst mantisy
-    sign           : in t_logical;               -- znamΘnko Φφsla (TRUE = zßpornΘ)
+    int            : in t_char32str;             -- celß ?ßst mantisy 
+    frac           : in t_char32str;             -- desetinnß ?ßst mantisy
+    sign           : in t_logical;               -- znam?nko ??sla (TRUE = zßporn?)
     exp            : in t_signed;                -- exponent 
-    num            : out t_extended);            -- p°evedenΘ Φφslo
--- P°evede °et∞zec na float point.
+    num            : out t_extended);            -- p°eveden? ??slo
+-- P°evede °et?zec na float point.
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string_primitive (
-    num            : in t_extended;              -- Φφslo kterΘ p°evΘst
-    int            : out t_char32str;            -- celß Φßst mantisy 
-    frac           : out t_char32str;            -- desetinnß Φßst mantisy
-    sign           : out t_logical;              -- znamΘnko Φφsla (TRUE = zßpornΘ)
+    num            : in t_extended;              -- ??slo kter? p°ev?st
+    int            : out t_char32str;            -- celß ?ßst mantisy 
+    frac           : out t_char32str;            -- desetinnß ?ßst mantisy
+    sign           : out t_logical;              -- znam?nko ??sla (TRUE = zßporn?)
     exp            : out t_signed);              -- exponent 
--- P°evede NUM na °et∞zec.
+-- P°evede NUM na °et?zec.
 ----------------------------------------------------------------------------------------------------
 
 

@@ -134,12 +134,18 @@ type
   t_char16ustr     = string of t_char16;
   t_char32ustr     = string of t_char32;
   t_char32uarray   = array of t_char32;
+#if #environment compiler_version;='4.0.3.14' then;
   t_char8str       = t_char8ustr  range 100;
   t_char16str      = t_char16ustr range 100;
   t_char32str      = t_char32ustr range 100;
-  t_char8lstr       = t_char8ustr  range 1000;
-  t_char16lstr      = t_char16ustr range 1000;
-  t_char32lstr      = t_char32ustr range 1000;
+#else;
+  t_char8str       = t_char8ustr  range 200;
+  t_char16str      = t_char16ustr range 200;
+  t_char32str      = t_char32ustr range 200;
+#end if;                                  
+  t_char8lstr      = t_char8ustr  range 1000;
+  t_char16lstr     = t_char16ustr range 1000;
+  t_char32lstr     = t_char32ustr range 1000;
   p_char8str       = ^t_char8str;
   p_char16str      = ^t_char16str;
   p_char32str      = ^t_char32str;
@@ -258,6 +264,9 @@ class c_triggered_class = extend c_class; expose c_trigger_container;
 ----------------------------------------------------------------------------------------------------
 #separate public numerics;
 -- Mathematical computations.
+----------------------------------------------------------------------------------------------------
+#separate public random;
+-- random numers
 ----------------------------------------------------------------------------------------------------
 #separate public names;
 -- Object names.

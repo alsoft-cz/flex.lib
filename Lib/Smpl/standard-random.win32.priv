@@ -1,0 +1,55 @@
+----------------------------------------------------------------------------------------------------
+module private random =
+----------------------------------------------------------------------------------------------------
+with
+  standard.console,
+  standard.conversions,
+  system.windows.winbase,
+  system.windows.windef,
+  system.windows.windef.winnt,
+  system.windows.wincrypt;
+
+var
+  provider         : aliased t_HCRYPTPROV;
+
+----------------------------------------------------------------------------------------------------
+procedure random_unsigned =
+----------------------------------------------------------------------------------------------------
+var
+  rnd              : aliased t_unsigned;
+
+begin
+  if not CryptGenRandom(provider,rnd:size,^rnd:unchecked) then
+    --raise random_generator_error;
+    end if;
+  result:=rnd;
+  end random_unsigned;
+
+
+
+----------------------------------------------------------------------------------------------------
+entry =
+----------------------------------------------------------------------------------------------------
+var
+  err              : DWORD;
+
+begin
+  if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,0) then
+    if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,CRYPT_NEWKEYSET) then
+      --raise random_generator_error;
+      end if;
+    end if;
+  end entry;
+
+
+
+----------------------------------------------------------------------------------------------------
+exit =
+----------------------------------------------------------------------------------------------------
+begin
+  if not CryptReleaseContext(provider,0) then
+    --raise random_generator_error;
+    end if;
+  end exit;
+
+end random;

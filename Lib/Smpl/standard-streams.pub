@@ -109,6 +109,7 @@ message
   stream_end_of_data extend stream_exception;    -- výjimka - čtení přes konec dat
   stream_other_side extend stream_exception;     -- druha strana prestala cist data
   stream_already_closed extend stream_exception; -- jiz bylo zavreno
+  stream_invalid_data extend stream_exception;   -- vadne data
 
 
 ----------------------------------------------------------------------------------------------------

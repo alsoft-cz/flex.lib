@@ -1,0 +1,1620 @@
+﻿----------------------------------------------------------------------------------------------------
+module private uri =
+-- Additional namespace to standard.names, representing URIs.
+-- Advanced Multi-platform Library.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Created: 2004-01-13 by Petr K
+----------------------------------------------------------------------------------------------------
+-- %%TODO:
+--    -- encode_uri + decode_uri(_in_place) using stream transformers
+--    -- complete ;params processing in ftp
+--    -- more, more check_name checks
+--    -- mailto:
+--    -- news:
+
+--
+--    -- what to do when bad name given? (exception?)
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.console,
+
+  standard,
+  standard.names,
+  standard.strings,
+  standard.classes,
+  standard.classes.lists,
+  standard.conversions;
+
+----------------------------------------------------------------------------------------------------
+
+var
+  hex_chars     : static const string 16 of t_char32 := '0123456789ABCDEF'; -- hexadecimal characters
+  safe_or_extra : static const string 11 of t_char32 := '$-_.+!*''(),';     -- safe+extra characters from URI
+  pchar_symbols : static const string 5 of t_char32  := ':@&="';            -- permitted symbols in URI
+  -- %%TODO(SET) change strings to sets
+
+  { %%TODO(SET)
+  uri_allowed_characters    : static set of t_char32 := [                   -- characters permitted in (encoded) URI
+      "A".."Z", "a".."z", "0".."9",  "$", "-", "_",
+      ".", "+", "!", "*", "'", "(", ")", ","];
+  uri_valid_characters      : static set of t_char32 := [                   -- characters appearing in (original) URI
+      "A".."Z", "a".."z", "0".."9", "/", ";", "%",
+      "?", "#", "$", "-", "_", ".", "+", "!", "*",
+      "'", "(", ")", ",", ":", "@", "&", "=", """];
+  scheme_allowed_characters : static set of t_char32 := [                   -- characters permitted in the scheme part of URI
+      "A".."Z", "a".."z", "0".."9", "+", "-", "."];
+  }
+
+
+----------------------------------------------------------------------------------------------------
+--------- TEMPORARY SOLUTION -----------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure is_hex_digit (
+    c              : in t_char32)                -- a character to be checked
+    return t_logical =
+-- Does a character contain a hexadecimal digit?
+----------------------------------------------------------------------------------------------------
+begin
+  result := (c>="0" and c<="9") or (c>="A" and c<="F") or (c>="a" and c<="f");
+  end is_hex_digit;
+
+----------------------------------------------------------------------------------------------------
+procedure hex_to_char (
+    hex1           : in t_char32;                -- first hexadecimal character (e.g. "d" for "d3")
+    hex2           : in t_char32)                -- second hexadecimal character (e.g. "3" for "d3")
+    return t_char32 =
+-- Converts a hexadecimal character code [hex1][hex2] to a character.
+-- The code MUST really contain hexadecimal digits, or the result is undefined.
+----------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  procedure hex_digit_to_byte (
+      digit        : in t_char32)                -- hexadecimal digit (e.g. "F")
+      return t_unsigned =
+  -- Helper function to convert a single hexadecimal [digit] to its value.
+  -- The character MUST contain a hexadecimal digit, or the result is undefined.
+  --------------------------------------------------------------------------------------------------
+  begin
+    if digit>="A" and digit<="F" then result := t_unsigned(digit) - t_unsigned("A") + 10;
+    elsif digit>="a" and digit<="f" then result := t_unsigned(digit) - t_unsigned("a") + 10;
+    {if digit in "A".."F" then result := t_unsigned(digit) - t_unsigned("A") + 10;
+    elsif digit in "a".."f" then result := t_unsigned(digit) - t_unsigned("a") + 10;}
+    else result := t_unsigned(digit) - t_unsigned("0");
+    end if;
+    end hex_digit_to_byte;
+
+begin
+  result := t_char32(hex_digit_to_byte(hex1)*$10 + hex_digit_to_byte(hex2));
+  {
+  *** není něco jako procedura [hex_to_char] ve [standard.conversions]? Pro konverzi z/do %nn tvaru
+      by bylo vhodné použít standardní konverzní rutiny, přestože to nebude tak rychlé - bude to
+      modulárnější a elegantnější.
+  }
+  end hex_to_char;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure encoded_uri_str_length (
+    input          : in t_char32ustr;            -- source string (to be encoded)
+    use_plus       : in t_logical := false)      -- T-spaces are encoded to pluses,
+                                                 -- F-spaces are encoded to %20
+    return t_unsigned =
+-- Determine the length of the string that results from encoding a string to URI representation
+----------------------------------------------------------------------------------------------------
+begin
+  result := 0;
+  for i in 1..input:length loop
+    if (input[i] = " ")
+      then
+      -- space special handling, according to whether "+" means space, or not
+      if use_plus
+      then result := result+1;
+      else result := result+3;
+        end if;
+
+    -- permitted characters
+    elsif (input[i]>="A" and input[i]<="F") or (input[i]>="a" and input[i]<="z")
+    or (input[i]>="0" and input[i]<="9") or (str_count_character(safe_or_extra, input[i]) <> 0) then
+    {elsif (input[i] in "A".."F") or (input[i] in "a".."z")
+    or (input[i] in "0".."9") or (str_count_character(safe_or_extra, input[i]) <> 0) then}
+      -- %%TODO(SET) input[i] in uri_allowed_characters
+      result := result+1;
+
+    -- the rest must be hex-escaped
+    else
+      result := result+3;
+      end if;
+
+    end loop;
+  end encoded_uri_str_length;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure encode_uri_str (
+    input          : in t_char32ustr;            -- source string (to be encoded)
+    use_plus       : in t_logical := false)      -- T-spaces are encoded to pluses,
+                                                 -- F-spaces are encoded to %20
+    return p_char32ustr =
+-- Encode a string to be used in URI, i.e. replace special characters with hexadecimal escapes, etc.
+-- The caller is responsible for freeing the result.
+{*** Celý en/dekodér URL bych realizoval jako proudový trasformátor - z jedné strany cpeš znaky,
+    z druhé strany je odebíráš. Něco podobného jsou en/dekódovače různých kódování (UFT-8 a spol)
+    v [standard.characters]. Pro účely transformace znakových streamů by měly být definovány
+    interfacy pro transformátry, od kterých bys zde pouze odvodil potomky. Smyslem je nabídnout
+    en/dekodér URL uživateli jako nezávislou komponentu.}
+----------------------------------------------------------------------------------------------------
+
+var
+  code : t_mod_unsigned;
+
+begin
+  -- determine the length of the result and allocate the result
+  new result range encoded_uri_str_length(input, use_plus);
+
+  -- encode the characters one by one
+  for i in input:range loop
+    if input[i] = " "
+    -- space special handling, according to whether "+" means space, or not
+    then
+      -- encode space to either '%20' or '+', according to [use_plus]
+      if use_plus
+        then
+          result^ & "+";
+
+        else
+          code := t_mod_unsigned(input[i]);
+          result^ & '%20';
+          end if;
+
+    -- permitted characters
+    elsif (input[i]>="A" and input[i]<="Z") or (input[i]>="a" and input[i]<="z")
+    or (input[i]>="0" and input[i]<="9") or (str_count_character(safe_or_extra, input[i]) <> 0) then
+    {elsif (input[i] in "A".."Z") or (input[i] in "a".."z")
+    or (input[i] in "0".."9") or (str_count_character(safe_or_extra, input[i]) <> 0) then}
+      -- %%TODO(SET) input[i] in uri_allowed_characters
+      result^ & input[i];
+
+    -- the rest => needs hex escape
+    else
+      code := t_mod_unsigned(input[i]);
+      result^ & "%" & hex_chars[t_unsigned((code shr 4) and $F) + 1] & hex_chars[t_unsigned(code and $F) + 1];
+      end if;
+
+    end loop;
+  end encode_uri_str;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure uri_decode_in_place (
+    str            : in out t_text_name;         -- Original (encoded) string, will be decoded in place
+    plus_is_space  : in t_logical) =             -- T-"+" means space, F-"+" means just "+"
+-- Decode an encoded URI string. The procedure works by MODIFYING the original string.
+----------------------------------------------------------------------------------------------------
+var
+    i              : t_unsigned;                 -- position in original string
+    j              : t_unsigned;                 -- position in decoded string
+begin
+  -- %%TODO uri_decode_in_place using transformers
+  i := 1;
+  j := 1;
+  -- Go through the source string and decode
+  while i <= str:length loop
+    -- Hex escapes
+    if str[i] = "%" and i+2 <= str:length and is_hex_digit(str[i+1]) and is_hex_digit(str[i+2]) then
+      str[j] := hex_to_char(str[i+1], str[i+2]);
+      i + 3;
+      succ j;
+
+    -- Plus handling, only when [plus_is_space] is set to true
+    elsif str[i] = "+" and plus_is_space then
+      str[j] := " ";
+      succ i;
+      succ j;
+
+    -- Plain characters are just copied
+    else
+      str[j] := str[i];
+      succ j;
+      succ i;
+      end if;
+
+    end loop;
+
+  -- Trim to the new length
+  str:length := j-1;
+
+  end uri_decode_in_place;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure uri_str_encoded_length (
+    str            : in t_text_name;             -- Original (unencoded) string
+    use_plus       : in t_logical)               -- T-space is encoded as "+", F-space is encoded as "%20"
+    return t_unsigned = 
+-- Determine the length of the string that results from encoding [str] to URI representation.
+----------------------------------------------------------------------------------------------------
+begin
+  result := encoded_uri_str_length(str, use_plus);
+  end uri_str_encoded_length;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure append_encoded_uri_str (
+    encoded        : in out t_text_name;         -- Already encoded string
+    original       : in t_text_name;             -- Original (unencoded) string to be appended
+    use_plus       : in t_logical) =             -- T-space is encoded as "+", F-space is encoded as "%20"
+-- Encode [original] to URI representation and append it to [encoded] (which must have enough space).
+----------------------------------------------------------------------------------------------------
+var
+    tmp            : p_text_name;                -- Temporary buffer
+begin
+  -- encode to temporary buffer
+  tmp := encode_uri_str(original, use_plus);
+  -- append the encoded to the already encoded string
+  encoded & tmp^;
+  -- discard the temporary buffer
+  discard tmp;
+  end append_encoded_uri_str;
+
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_domain =
+-- URI name subcomponent of [c_name_component_network_address] representing one domain (e.g. "org" in "www.example.org")
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_domain;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_fragment =
+-- URI name trivial subcomponent of [c_name_component_fragment]
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_fragment;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_port =
+-- URI name subcomponent of [c_name_component_network_address] representing the port specification
+----------------------------------------------------------------------------------------------------
+    
+    {
+    ------------------------------------------------------------------------------------------------
+    static get_port =
+    -- Retrieve the port value.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result := string_to_unsigned(name);
+      end get_port;
+    }
+
+    end c_name_subcomponent_port;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_variable_name =
+-- URI name subcomponent of [c_name_component_variable], containing the variable name (e.g. "var" for "var=value").
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_variable_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_variable_value =
+-- URI name subcomponent of [c_name_component_variable], containing the variable value (e.g. "value" for "var=value").
+----------------------------------------------------------------------------------------------------
+
+    end c_name_subcomponent_variable_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_variable =
+-- URI name component representing one name=value pair from params or query list
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_variable;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_scheme =
+-- URI name component representing the scheme, e.g. "http"
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_scheme;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_fragment =
+-- URI name component representing the fragment, i.e. the "#xxx" part of the URI
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_fragment;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_network_address =
+-- URI name component representing the network address (including the port specification if present).
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_network_address;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_username =
+-- URI name subcomponent of [c_name_component_userinfo] representing the username component of userinfo
+----------------------------------------------------------------------------------------------------
+
+  end c_name_subcomponent_username;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_subcomponent_password =
+-- URI name subcomponent of [c_name_component_userinfo] representing the password component of userinfo
+----------------------------------------------------------------------------------------------------
+
+  end c_name_subcomponent_password;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_name_component_userinfo =
+-- URI name component representing the user information, i.e. the "name:password" part of the URI
+-- subcomponents: one [c_name_subcomponent_username] and optionally one [c_name_subcomponent_password]
+----------------------------------------------------------------------------------------------------
+
+    end c_name_component_userinfo;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_uri =
+-- An abstract namespace for decoding generic URI references.
+-- Its subclasses are able to decode URIs according to specific schemes.
+----------------------------------------------------------------------------------------------------
+
+   ------------------------------------------------------------------------------------------------
+    override check_name =
+    -- Check if the given plain-text name [text_name] is a valid name in this namespace. When the
+    -- name is a valid name, [valid] is set to [true], otherwise it is set to [false].
+    ------------------------------------------------------------------------------------------------
+
+    -- %%TODO more checks
+
+    var
+      start        : t_unsigned;                 -- position of the first unprocessed char
+      scheme_len   : t_unsigned;                 -- length of the scheme part (if present)
+      i            : t_unsigned;                 -- loop control variable
+
+    begin
+      -- empty name is not an URI
+      if text_name = '' then
+        valid := false;
+        return;
+        end if;
+
+      -- OK, process the whole URI
+      start := 1;
+
+      -- process the scheme part
+      if has_scheme(text_name, valid, scheme_len)
+        -- it has a scheme (i.e. it is an absolute URI)
+        then
+          -- if the scheme is not valid, the URI cannot be valid
+          if not valid then
+            return;
+            end if;
+
+          -- this is definitely not a relative URI
+          if name_type = tnt_relative then
+            valid := false;
+            return;
+            end if;
+
+          -- OK, skip the scheme and continue with the rest (as relative URI)
+          start := scheme_len + 1;
+
+        -- it does not have a scheme (i.e. it could be a relative URI)
+        else
+          -- this is definitely not an absolute URI
+          if name_type = tnt_absolute then
+            valid := false;
+            return;
+            end if;
+          end if;
+
+      -- the rest of the URI should be a relative URI (the scheme will be skipped, if present)
+      -- for this validity check, just check if it does not contain any invalid character
+
+      i := start;
+      while i <= text_name:length loop
+        -- check all possible valid characters (unreserved, "/", ";", "%", "?", "#", ":", "@", "&", "=")
+        if (text_name[i]>="A" and text_name[i]<="Z")
+        or (text_name[i]>="a" and text_name[i]<="z")
+        or (text_name[i]>="0" and text_name[i]<="9")
+        {if (text_name[i] in "A".."Z")
+        or (text_name[i] in "a".."z")
+        or (text_name[i] in "0".."9")}
+        or (text_name[i] = "/") or (text_name[i] = ";") or (text_name[i] = "%")
+        or (text_name[i] = "?") or (text_name[i] = "#")
+        or (str_count_character(safe_or_extra, text_name[i]) <> 0)
+        or (str_count_character(pchar_symbols, text_name[i]) <> 0) then
+        -- %%TODO(SET) text_name[i] in uri_valid_characters
+          succ i;
+
+        -- otherwise, the character is invalid
+        else
+          valid := false;
+          return;
+          end if;
+
+        end loop;
+
+      -- all checks passed => URI is valid
+      valid := true;
+
+      end check_name;
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components].
+    -- This method parses a generic Internet URI, with syntax:
+    -- http://user:password@host:port/path;params?query#fragment
+    ------------------------------------------------------------------------------------------------
+    var
+      nd           : p_namespace_specific_uri;   -- [ns_data], only with the proper type
+      start        : t_unsigned;                 -- start of the yet unprocessed part of [text_name]
+
+    begin
+      -- prepare namespace specific data
+      new nd;
+      ns_data := nd;
+
+      -- OK, process the whole URI
+      start := 1;
+
+      -- process the scheme and authority
+      detect_nametype(proposed_nt, detected_nt, text_name, start, components, nd);
+
+      -- process the path
+      process_path(text_name, start, components, nd);
+
+      -- process the query part if present
+      process_query(text_name, start, components, nd);
+
+      -- process the fragment part if present
+      process_fragment(text_name, start, components, nd);
+
+      end decompose_name;
+
+    ------------------------------------------------------------------------------------------------
+    override compose_name =
+    -- Composes a plain-text name [text_name] from a list of components [components]. 
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+
+      ----------------------------------------------------------------------------------------------
+      procedure get_segment_length (
+          segment  : in c_name_component_file_or_folder)  -- a path segment
+          return t_unsigned =
+      -- Compute length of composed text name of [segment].
+      ----------------------------------------------------------------------------------------------
+      var
+         iter      : c_list_iterator;            -- iterator through [segment.subcomponents]
+         subcomp   : p_name_subcomponent;        -- the currently processed subcomponent
+         first     : t_logical;                  -- T-we are at the base name
+
+      begin
+        result := 0;
+        iter.init(segment.subcomponents);
+        first := true;
+        while (iter.get(p_item(subcomp))) loop
+          if not first then
+            -- separator
+            succ result;
+            end if;
+          first := false;
+          
+          result+uri_str_encoded_length(subcomp^.name^, false);
+          end loop;
+        end get_segment_length;
+
+      ----------------------------------------------------------------------------------------------
+      procedure append_segment (
+          segment  : in c_name_component_file_or_folder;  -- the segment to be appended
+          text_name: in p_text_name) =                    -- the name into which should be the [segment] appended
+      -- Append composed name of [segment] to [text_name].
+      ----------------------------------------------------------------------------------------------
+      var
+         iter      : c_list_iterator;            -- iterator through [segment.subcomponents]
+         subcomp   : p_name_subcomponent;        -- the currently processed subcomponent
+         first     : t_logical;                  -- T-we are at the base name
+
+      begin
+        iter.init(segment.subcomponents);
+        first := true;
+        while (iter.get(p_item(subcomp))) loop
+          if not first then
+            -- separator
+            text_name^ & ".";
+            end if;
+          first := false;
+          
+          append_encoded_uri_str(text_name^, subcomp^.name^, false);
+          end loop;
+        end append_segment;
+
+      ----------------------------------------------------------------------------------------------
+      procedure get_variable_length (
+          variable : in c_name_component_variable)  -- a variable
+          return t_unsigned =
+      -- Compute length of composed text name of [variable].
+      ----------------------------------------------------------------------------------------------
+      var
+         subcomp   : p_name_subcomponent;        -- the currently processed subcomponent
+
+      begin
+        result := 0;
+        subcomp := p_name_subcomponent(variable.subcomponents.first);
+        result+uri_str_encoded_length(subcomp^.name^, true);
+        subcomp := p_name_subcomponent(variable.subcomponents.get_next(subcomp));
+        if subcomp<> nil then
+          result+1+uri_str_encoded_length(subcomp^.name^, true);
+          end if;
+        end get_variable_length;
+
+      ----------------------------------------------------------------------------------------------
+      procedure append_variable (
+          variable : in c_name_component_variable;  -- the segment to be appended
+          text_name: in p_text_name) =              -- the name into which should be the [segment] appended
+      -- Append composed name of [variable] to [text_name].
+      ----------------------------------------------------------------------------------------------
+      var
+         subcomp   : p_name_subcomponent;        -- the currently processed subcomponent
+
+      begin
+        subcomp := p_name_subcomponent(variable.subcomponents.first);
+        append_encoded_uri_str(text_name^, subcomp^.name^, true);
+        subcomp := p_name_subcomponent(variable.subcomponents.get_next(subcomp));
+        if subcomp<> nil then
+          text_name^ & "=";
+          append_encoded_uri_str(text_name^, subcomp^.name^, true);
+          end if;
+        end append_variable;
+    
+    var
+      nd           : p_namespace_specific_uri;   -- ns_data, only with the proper type
+      len          : t_unsigned;                 -- length of the result
+      curr_comp    : p_name_component;           -- currently processed component
+      first        : t_logical;                  -- T-we are currently the first subcomponent
+      iter         : c_list_iterator;            --
+      curr_domain  : p_name_subcomponent;        -- currently processed domain/port
+
+    begin
+      nd := p_namespace_specific_uri(ns_data);
+      curr_comp := components.first;
+      -- %%TODO(TAG) -- all testing should be changed from curr_comp=nd^.xxx to curr_comp^:tag=c_xxx:tag
+
+
+      --- phase 1. determine the length of the result
+
+      -- is there a scheme?
+      if nd^.scheme<>nil then
+        len+p_name_subcomponent(curr_comp^.subcomponents.first)^.name^:length+1;
+        -- skip to the next component
+        curr_comp := components.get_next(curr_comp);
+        end if;
+
+      -- is there userinfo and/or authority (server)?
+      if nd^.userinfo<>nil or nd^.server<>nil then
+        -- '//'
+        len+2;
+
+        -- is there a userinfo?
+        if nd^.userinfo<>nil then
+          -- skip to the next component
+          curr_comp := components.get_next(curr_comp);
+          -- is the userinfo a username only, or username:password ?
+          if nd^.userinfo^.subcomponents.count>1
+            -- username:password
+            then
+              len+p_name_subcomponent(nd^.userinfo^.subcomponents.first)^.name^:length+1;
+              len+p_name_subcomponent(nd^.userinfo^.subcomponents.get_next(nd^.userinfo^.subcomponents.first))^.name^:length+1;
+
+            -- username only
+            else
+              len+p_name_subcomponent(nd^.userinfo^.subcomponents.first)^.name^:length+1;
+              end if;
+          end if;
+
+        -- append the authority
+        first := true;
+        iter.init(nd^.server^.subcomponents);
+        while iter.get(p_item(curr_domain)) loop
+          -- separator
+          if not first then
+            len+1;
+            end if;
+          first := false;
+          len+uri_str_encoded_length(curr_domain^.name^, false);
+          end loop;
+
+        -- skip to the next component
+        curr_comp := components.get_next(curr_comp);
+        end if;
+
+      -- for non-relative names, even the first path segment has its "/"
+      first := nd^.name_type=tunt_relative_path;
+      -- append path
+      while curr_comp<>nd^.first_variable {and curr_comp<>nd^.first_param }and curr_comp<>nd^.fragment loop
+        -- separator
+        if not first then
+          len+1;
+          end if;
+        first := false;
+
+        len + get_segment_length(p_name_component_file_or_folder(curr_comp)^);
+        -- skip to the next component
+        curr_comp := components.get_next(curr_comp);
+        end loop;
+
+      -- is there a query?
+      if nd^.first_variable<>nil then
+        -- yes => will append it
+        while curr_comp<>nd^.fragment loop
+          -- separator
+          len+1;
+          -- variable contents
+          len + get_variable_length(p_name_component_variable(curr_comp)^);
+          -- skip to the next component
+          curr_comp := components.get_next(curr_comp);
+          end loop;
+        end if;
+
+      -- is there a fragment?
+      if nd^.fragment<>nil then
+        -- yes => will append it
+        len+1+uri_str_encoded_length(p_name_subcomponent(nd^.fragment^.subcomponents.get_first)^.name^, false);
+        end if;
+
+
+      --- phase 2. create the result
+      curr_comp := components.first;
+      new text_name range len;
+
+      -- is there a scheme?
+      if nd^.scheme<>nil then
+        text_name^ & p_name_subcomponent(nd^.scheme^.subcomponents.get_first)^.name^ & ":";
+        -- skip to the next component
+        curr_comp := components.get_next(curr_comp);
+        end if;
+
+      -- is there userinfo and/or authority (server)?
+      if nd^.userinfo<>nil or nd^.server<>nil then
+        -- '//'
+        text_name^ & '//';
+
+        -- is there a userinfo?
+        if nd^.userinfo<>nil then
+          -- skip to the next component
+          curr_comp := components.get_next(curr_comp);
+          -- is the userinfo a username only, or username:password ?
+          if nd^.userinfo^.subcomponents.count>1
+            -- username:password
+            then
+              text_name^ & p_name_subcomponent(nd^.userinfo^.subcomponents.first)^.name^ & ":";
+              text_name^ & p_name_subcomponent(nd^.userinfo^.subcomponents.get_next(nd^.userinfo^.subcomponents.first))^.name^ & "@";
+              
+            -- username only
+            else
+              text_name^ & p_name_subcomponent(nd^.userinfo^.subcomponents.first)^.name^ & "@";
+              end if;
+          end if;
+
+        -- append the authority (if it's there)
+        if nd^.server<> nil then
+          first := true;
+          iter.init(nd^.server^.subcomponents);
+          while iter.get(p_item(curr_domain)) loop
+            -- separator
+            if not first then
+              -- is this a domain, or a port?
+              if curr_domain = nd^.server^.port
+              then text_name^ & ":";
+              else text_name^ & ".";
+                end if;
+              end if;
+            first := false;
+            append_encoded_uri_str(text_name^, curr_domain^.name^, false);
+            end loop;
+
+          -- skip to the next component
+          curr_comp := components.get_next(curr_comp);
+          end if;
+        end if;
+
+      -- for non-relative names, even the first path segment has its "/"
+      first := nd^.name_type=tunt_relative_path;
+      -- append path
+      while curr_comp<>nd^.first_variable and curr_comp<>nd^.first_param and curr_comp<>nd^.fragment loop
+        -- separator
+        if not first then
+          text_name^ & "/";
+          end if;
+        first := false;
+
+        append_segment(p_name_component_file_or_folder(curr_comp)^, text_name);
+        -- skip to the next component
+        curr_comp := components.get_next(curr_comp);
+        end loop;
+
+      -- is there a query?
+      if nd^.first_variable<>nil then
+        -- yes => will append it
+        first := true;
+        text_name^ & "?";
+        while curr_comp<>nd^.fragment loop
+          -- separator
+          if not first then
+            text_name^ & "&";
+            end if;
+          first := false;
+
+          append_variable(p_name_component_variable(curr_comp)^, text_name);
+          -- skip to the next component
+          curr_comp := components.get_next(curr_comp);
+          end loop;
+        end if;
+
+      -- is there a fragment?
+      if nd^.fragment<>nil then
+        -- yes => append it
+        text_name^ & "#";
+        append_encoded_uri_str(text_name^, p_name_subcomponent(nd^.fragment^.subcomponents.get_first)^.name^, false);
+        end if;
+
+      end compose_name;
+
+    ----------------------------------------------------------------------------------------------
+    procedure detect_nametype =
+    -- Do the required steps to detect URI type (absolute/relative) and process the scheme and
+    -- authority parts if they are present.
+    ----------------------------------------------------------------------------------------------
+    var
+      type_ok      : t_logical;                  -- has the type of the name already been set?
+      valid        : t_logical;                  -- is the scheme part of the URI valid?
+      scheme_len   : t_unsigned;                 -- length of the scheme part of the URI
+    begin
+      type_ok := false;
+
+      -- if it is an absolute URI (it has a scheme part), check and store the scheme
+      if proposed_nt in t_name_type_set:[tnt_absolute,tnt_unspecified] and has_scheme(text_name, valid, scheme_len) then
+        -- remember the type of the name
+        nd^.name_type := tunt_absolute_uri;
+        detected_nt := tnt_absolute;
+        type_ok := true;
+
+        -- the first component of the name is the scheme
+        process_scheme(text_name, start, scheme_len, components, nd);
+
+        -- %%TODO check if it is really http URI
+        end if;
+
+      -- the rest of the URI should be a relative URI (the scheme will be already processed, if present)
+
+      -- is this net_path ('//example.com/something'), abs_path ('/path/file'), or rel_path ('path/file') ?
+      if text_name[start] = "/" then
+        -- it starts with a slash, check if there is one more:
+        if text_name:length > start and text_name[start+1] = "/" then
+          -- this is net_path, e.g. '//example.com/something'
+          -- process the authority part, leave the abs_path
+          start := start + 2;
+          process_authority(text_name, start, components, nd);
+          end if;
+
+        -- the rest is obviously abs_path, e.g. '/path/file'
+        if not type_ok then
+          -- remember the type of the name
+          nd^.name_type := tunt_absolute_path;
+          detected_nt := tnt_relative;
+          type_ok := true;
+          end if;
+
+        -- skip the slash and continue with the rel_path
+        succ start;
+        end if;
+
+      -- the rest is rel_path
+      if not type_ok then
+        -- remember the type of the name
+        nd^.name_type := tunt_relative_path;
+        detected_nt := tnt_relative;
+        type_ok := true;
+        end if;
+      end detect_nametype;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_scheme =
+    -- Process the scheme part of the URI.
+    ----------------------------------------------------------------------------------------------
+    var
+      part       : p_char32ustr;               -- temporary buffer
+      scheme     : p_name_component_scheme;    -- the scheme component of the name
+
+    begin
+      -- process the scheme
+      start := scheme_len + 1;
+      -- copy it into a temporary buffer
+      new scheme;
+      str_create_copy(text_name, part, 1, scheme_len - 1);
+      -- and store it
+      scheme^.decompose_name(part^);
+      components.insert(scheme);
+      nd^.scheme := scheme;
+      -- discard the temporary
+      discard part;
+      end process_scheme;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_authority =
+    -- Process the authority (server) part of the URI, including the login and port specification.
+    ----------------------------------------------------------------------------------------------
+
+      --------------------------------------------------------------------------------------------
+      procedure process_userinfo (
+          str      : in t_text_name) =           -- string representation of userinfo (user:password)
+      -- Process the userinfo part of URI
+      --------------------------------------------------------------------------------------------
+      var
+        colon_pos  : t_unsigned;                 -- position of ":" in [str]
+        userinfo   : p_name_component_userinfo;  -- the userinfo component
+        name       : p_name_subcomponent_username; -- the name subcomponent of [userinfo]
+        password   : p_name_subcomponent_password; -- the password subcomponent of [userinfo]
+        tmp        : p_text_name;                -- temporary buffer
+
+      begin
+        -- insert the userinfo into the components
+        new userinfo;
+        nd^.userinfo := userinfo;                -- %%TODO(TAG) remove
+        components.insert(userinfo);
+
+        colon_pos := str_pos_substring(str, ':');
+        -- is it just some opaque userinfo (e.g. username only), or username:password pair?
+        if colon_pos = 0
+          -- no ":" => opaque userinfo
+          then
+            new name;
+            new tmp range str:length;
+            tmp^ := str;
+            --uri_decode_in_place(tmp^, false);
+            name^.set_name(tmp^);
+            userinfo^.subcomponents.insert(name);
+            discard tmp;
+
+          -- ":" present => split the userinfo to username and password
+          else
+            -- extract username
+            new name;
+            new tmp range colon_pos-1;
+            tmp^ := str_copy(str, 1, colon_pos-1);
+            --uri_decode_in_place(tmp^);
+            name^.set_name(tmp^);
+            userinfo^.subcomponents.insert(name);
+
+            -- extract password
+            new password;
+            new tmp range str:length-colon_pos;
+            tmp^ := str_copy(str, colon_pos+1, str:length);
+            --uri_decode_in_place(tmp^);
+            password^.set_name(tmp^);
+            userinfo^.subcomponents.insert(password);
+            discard tmp;
+
+            end if;
+        end process_userinfo;
+
+      --------------------------------------------------------------------------------------------
+      procedure process_hostport (
+          str      : in t_text_name) =           -- string representation of hostport (host:port)
+      -- Process the hostport part of URI
+      --------------------------------------------------------------------------------------------
+      var
+        colon_pos  : t_unsigned;                 -- position of ":" in [str]
+        part       : p_text_name;                -- a temporary buffer
+        net_addr   : p_name_component_network_address;  -- a network address component
+        domain     : p_name_subcomponent_domain; -- a domain subcomponent of [net_addr]
+        port       : p_name_subcomponent_port;   -- a port specification subcomponent of [domain]
+
+      begin
+        -- create and store the result
+        new net_addr;
+        nd^.server := net_addr;                  -- %%TODO(TAG) remove
+        components.insert(net_addr);
+
+        -- create a temporary
+        new part range str:length;
+
+        -- is there a ':port' part in [str] ?
+        colon_pos := str_pos_substring(str, ':');
+        if colon_pos = 0 then
+          -- if not, presume the colon is after the end of the string
+          colon_pos := str:length+1;
+          end if;
+
+        -- process the host part
+        for i in 1..colon_pos-1 loop
+          -- split at dots
+          if str[i] = "."
+            -- dot => store one domain
+            then
+              new domain;
+              uri_decode_in_place(part^, false);
+              domain^.set_name(part^);
+              net_addr^.subcomponents.insert(domain);
+              part^ := '';
+
+            -- no dot => just add to the currently processed
+            else
+              part^ & str[i];
+              end if;
+
+          end loop;
+
+        -- store the primary domain, if present
+        if part^ <> '' then
+          new domain;
+          uri_decode_in_place(part^, false);
+          domain^.set_name(part^);
+          net_addr^.subcomponents.insert(domain);
+          end if;
+
+        -- store the port specification, if present
+        if colon_pos < str:length then
+          part^ := str_copy(str, colon_pos+1, str:length);
+          uri_decode_in_place(part^, false);
+          new port;
+          port^.set_name(part^);
+          net_addr^.port := port;    -- %%TODO(TAG) remove
+          net_addr^.subcomponents.insert(port);
+          end if;
+
+        -- discard the temporary
+        discard part;
+        end process_hostport;
+    
+    var
+      i            : t_unsigned;                 -- loop control variable
+      part         : p_char32ustr;               -- temporary for the currently processed part
+
+    begin
+      -- create a temporary
+      i := start;
+      new part range text_name:length - i + 1;
+
+      -- find the length of the network address
+      while i <= text_name:length and text_name[i] <> "/" loop
+        if text_name[i] = "@"
+          -- we have a login information here! => process and store it
+          then
+            process_userinfo(part^);
+            part^ := '';
+            succ i;
+
+          -- normal character
+          else
+            part^ & text_name[i];
+            succ i;
+            end if;
+        end loop;
+
+      -- process the hostport part of the server specification
+      process_hostport(part^);
+
+      -- discard the temporary string;
+      discard part;
+
+      -- store the network address component
+      start := i;
+      end process_authority;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_variable =
+    -- Process a variable specification, i.e. split [str] and store its subcomponents into [variable].
+    ----------------------------------------------------------------------------------------------
+    var
+      equal_sign_pos: t_unsigned;                         -- position of "=" in [str]
+      name          : p_name_subcomponent_variable_name;  -- variable name
+      value         : p_name_subcomponent_variable_value; -- variable value
+      tmp           : p_text_name;                        -- temporary
+
+    begin
+      -- create a temporary
+      new tmp range str:length;
+    
+      -- is there an equal sign?
+      equal_sign_pos := str_pos_substring(str, '=');
+      if equal_sign_pos = 0 then
+        -- if not, presume the equal sign is after the end of the string
+        equal_sign_pos := str:length+1;
+        end if;
+
+      -- process the variable name
+      tmp^ := str_copy(str, 1, equal_sign_pos-1);
+      uri_decode_in_place(tmp^, true);
+      new name;
+      name^.set_name(tmp^);
+      variable.subcomponents.insert(name);
+
+      -- process the variable value (if present)
+      if equal_sign_pos <= str:length then
+        tmp^ := str_copy(str, equal_sign_pos+1, str:length);
+        uri_decode_in_place(tmp^, true);
+        new value;
+        value^.set_name(tmp^);
+        variable.subcomponents.insert(value);
+        end if;
+
+      end process_variable;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_filename =
+    -- Process a file specification, i.e. split [str] and store its subcomponents into [file].
+    ----------------------------------------------------------------------------------------------
+    var
+      part         : p_text_name;                   -- temporary buffer
+      is_first     : t_logical;                     -- T-this is the first subcomponent (i.e. the basename)
+      basename     : p_name_subcomponent_base_name; -- the base name of the file
+      extension    : p_name_subcomponent_extension; -- an extension of the file
+    begin
+      -- create a temporary buffer
+      new part range str:length;
+
+      -- split the filename
+      is_first := true;
+      for i in str:range loop
+        -- split at dots
+        if str[i]="."
+          -- a dot => split here
+          then
+            -- is this the base name, or an extension?
+            if is_first
+              -- the first subcomponent => base name
+              then
+                new basename;
+                basename^.set_name(part^);
+                file.subcomponents.insert(basename);
+
+              -- not the first subcomponent => extension
+              else
+                new extension;
+                extension^.set_name(part^);
+                file.subcomponents.insert(extension);
+                end if;
+
+            is_first := false;
+            part^ := '';
+
+          -- just a plain char => keep going
+          else
+            part^ & str[i];
+            end if;
+        end loop;
+
+      -- append the last component
+      if is_first
+        -- the first subcomponent => base name
+        then
+          new basename;
+          basename^.set_name(part^);
+          file.subcomponents.insert(basename);
+
+        -- not the first subcomponent => extension
+        else
+          new extension;
+          extension^.set_name(part^);
+          file.subcomponents.insert(extension);
+          end if;
+
+      -- discard the temporary
+      discard part;
+      end process_filename;
+
+    ------------------------------------------------------------------------------------------------
+    procedure process_path =
+    -- Process the path part of the URI.
+    ------------------------------------------------------------------------------------------------
+
+      ----------------------------------------------------------------------------------------------
+      procedure process_path_segment (
+          str      : in out t_text_name;         -- URI substring containing the segment to be processed (can be modified)
+          inside   : in t_logical) =             -- T-this is inside the path (not a plain file)
+      -- Process one path segment.
+      ----------------------------------------------------------------------------------------------
+      var
+        param      : p_name_component_variable;         -- this segment as parameter
+        file       : p_name_component_file_or_folder;   -- this segment as file or folder identification
+
+      begin
+        -- is this a param?
+        if str:length>0 and str[1]=";"
+          -- yes => store a param
+          then
+            uri_decode_in_place(str, false);
+            new param;
+            components.insert(param);
+            process_variable(param^, str);
+            -- %%TODO(TAG) remove
+            -- store a pointer to the first param
+            if nd^.first_param = nil then
+              nd^.first_param := param;
+              end if;
+
+          -- no => store a file/folder
+          else
+            uri_decode_in_place(str, false);
+            -- could this be a plain file?
+            if inside
+              -- no, this is inside the path => this is definitely a folder
+              then
+                new p_name_component_folder(file);
+
+              -- yes, this is at the end of path => this could be either a file or folder
+              else
+                new file;
+                end if;
+
+            components.insert(file);
+            process_filename(file^, str);
+            -- %%TODO(TAG) remove
+            -- store a pointer to the first path component
+            if nd^.path_start = nil then
+              nd^.path_start := file;
+              end if;
+            end if;
+
+        end process_path_segment;
+
+    var
+      i            : t_unsigned;                 -- loop control variable
+      part         : p_char32ustr;               -- temporary buffer
+
+    begin
+      i := start;
+      -- allocate a temporary buffer
+      new part range text_name:length - i + 1;
+
+      while i <= text_name:length loop
+
+        -- what kind of character we are at now?
+        if text_name[i]="/" then
+          -- path separator => process the path segment
+          process_path_segment(part^, true);
+          part^ := '';
+          -- move on
+          succ i;
+
+        -- is this the end of the path part
+        elsif text_name[i]="?" or text_name[i]="#" then
+          -- end of path, continue with the rest of the URI
+          break;
+
+        -- the rest -- just plain characters
+        else
+          part^ & text_name[i];
+          succ i;
+          end if;
+
+        end loop;
+
+      -- if the path ends with a folder/file name, add it
+      if part^ <> '' then
+        process_path_segment(part^, false);
+      end if;
+
+      -- discard the temporary buffer
+      discard part;
+
+      -- save the position of the first unprocessed character
+      start := i;
+      end process_path;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_query =
+    -- Process the query part of the URI, if present (otherwise, do nothing).
+    ----------------------------------------------------------------------------------------------
+    var
+      i          : t_unsigned;                 -- loop control variable
+      part       : p_char32ustr;               -- temporary buffer
+      variable   : p_name_component_variable;  -- a variable in the query
+
+    begin
+      i := start;
+
+      -- does the URI have a query part?
+      if i <= text_name:length and text_name[i]="?" then
+        -- skip the "?" separator
+        succ i;
+
+        -- allocate a temporary buffer
+        new part range text_name:length - i + 1;
+
+        -- split the query text to variables
+        while i <= text_name:length and text_name[i]<>"#" loop
+          -- split at "&"
+          if text_name[i]="&"
+            -- query variable separator => process the variable
+            then
+              new variable;
+              components.insert(variable);
+              process_variable(variable^, part^);
+              part^ := '';
+
+              -- store a pointer to the first variable component
+              if nd^.first_variable = nil then
+                nd^.first_variable := variable;
+                end if;
+
+            -- plain character => keep going
+            else
+              part^ & text_name[i];
+              end if;
+
+          -- move on
+          succ i;
+          end loop;
+
+        -- store the last variable
+        new variable;
+        components.insert(variable);
+        process_variable(variable^, part^);
+        
+        -- store a pointer to the first variable component
+        if nd^.first_variable = nil then
+          nd^.first_variable := variable;
+          end if;
+
+        -- discard the temporary buffer
+        discard part;
+        end if;
+
+      -- save the position of the first unprocessed character
+      start := i;
+      end process_query;
+
+    ----------------------------------------------------------------------------------------------
+    procedure process_fragment =
+    -- Process the fragment part of the URI, if present (otherwise, do nothing).
+    ----------------------------------------------------------------------------------------------
+    var
+      i          : t_unsigned;                 -- loop control variable
+      fragment   : p_name_component_fragment;  -- this component
+      basename   : p_name_subcomponent_fragment; -- the [fragment] component is trivial
+      part       : p_char32ustr;               -- temporary buffer
+
+    begin
+      i := start;
+
+      -- does the URI have a fragment part?
+      if i <= text_name:length and text_name[i] = "#" then
+        -- skip the separating "#"
+        succ i;
+
+        -- allocate a temporary buffer to decode the fragment
+        new part range text_name:length - i + 1;
+        part^ := str_copy(text_name, i, text_name:length);
+
+        -- process and store the fragment
+        new fragment;
+        components.insert(fragment);
+        nd^.fragment := fragment;
+        -- the fragment has no further subdivision
+        uri_decode_in_place(part^, false);
+        new basename;
+        basename^.set_name(part^);
+        fragment^.subcomponents.insert(basename);
+
+        -- discard the temporary buffer
+        discard part;
+        end if;
+
+      -- no more characters to process
+      start := text_name:length+1;
+      end process_fragment;
+
+    --------------------------------------------------------------------------------------------
+    procedure has_scheme =
+    -- Checks whether the [text_name] begins with a scheme part and if it is valid.
+    --  - If it does not contain a scheme part, return false
+    --  - If it contains an invalid scheme, set [is_valid] to false and return true
+    --  - If it contains a valid scheme, set [is_valid] to true, set [scheme_len] to the
+    --    length of the scheme part (including the separating colon), and return true
+    --------------------------------------------------------------------------------------------
+    var
+      colon_pos    : t_unsigned;                 -- position of the separating ':'
+
+    begin
+      -- find a colon if present
+      scheme_len := str_pos_substring(text_name, ':');
+      if scheme_len=0 then
+        -- no colon => no scheme part
+        result := false;
+        is_valid := false;
+        return;
+        end if;
+
+      -- we have a scheme part
+      result := true;
+
+      -- if the uri is only 'scheme:', or the scheme is empty => it is considered not valid
+      if colon_pos=1 or colon_pos=text_name:length then
+        is_valid := false;
+        return;
+        end if;
+
+      -- check whether the scheme is valid
+      for i in 1..scheme_len-1 loop
+        -- scheme may contain only alpha, digit, "+", "-", "."
+        if not ((text_name[i]>="a" and text_name[i]<="z") or (text_name[i]>="A" and text_name[i]<="Z") or
+          (text_name[i]>="0" and text_name[i]<="9") or (text_name[i]="+") or (text_name[i]="-") or
+          (text_name[i]="."))
+        {if not ((text_name[i] in "a".."z") or (text_name[i] in "A".."Z") or
+          (text_name[i] in "0".."9") or (text_name[i]="+") or (text_name[i]="-") or
+          (text_name[i]="."))}
+          --%%TODO(SET) text_name[i] in scheme_allowed_characters
+        then
+          -- contains invalid character => not valid
+          is_valid := false;
+          return;
+          end if;
+        end loop;
+
+      -- ok, it is valid
+      is_valid := true;
+      end has_scheme;
+
+    end c_namespace_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_http_uri =
+-- A namespace for decoding URI references that use http scheme.
+-- It uses the following syntax:
+--    http://user:password@host:port/path?query#fragment
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components].
+    ------------------------------------------------------------------------------------------------
+    var
+      nd           : p_namespace_specific_uri;   -- [ns_data], only with the proper type
+      start        : t_unsigned;                 -- start of the yet unprocessed part of [text_name]
+
+    begin
+      -- prepare namespace specific data
+      new nd;
+      ns_data := nd;
+
+      -- OK, process the whole URI
+      start := 1;
+
+      -- process the scheme and authority
+      detect_nametype(proposed_nt, detected_nt, text_name, start, components, nd);
+
+      -- process the path
+      process_path(text_name, start, components, nd);
+
+      -- process the query part if present
+      process_query(text_name, start, components, nd);
+
+      -- process the fragment part if present
+      process_fragment(text_name, start, components, nd);
+
+      end decompose_name;
+
+    end c_namespace_http_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_ftp_uri =
+-- A namespace for decoding URI references that use ftp scheme.
+-- It uses the following syntax:
+--    ftp://user:password@host:port/path;type=typecode
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override decompose_name =
+    -- Decomposes a plain-text name [text_name] into a list of components [components].
+    ------------------------------------------------------------------------------------------------
+    var
+      nd           : p_namespace_specific_uri;   -- [ns_data], only with the proper type
+      start        : t_unsigned;                 -- start of the yet unprocessed part of [text_name]
+
+    begin
+      -- prepare namespace specific data
+      new nd;
+      ns_data := nd;
+
+      -- OK, process the whole URI
+      start := 1;
+
+      -- process the scheme and authority
+      detect_nametype(proposed_nt, detected_nt, text_name, start, components, nd);
+
+      -- process the path
+      process_path(text_name, start, components, nd);
+
+      -- process the fragment part if present (?)
+      process_fragment(text_name, start, components, nd);
+
+      end decompose_name;
+
+    end c_namespace_ftp_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_mailto_uri =
+-- A namespace for decoding URI references that use mailto scheme.
+-- It uses the following syntax:
+--    mailto://rfc-822-address
+----------------------------------------------------------------------------------------------------
+
+    -- %%TODO c_namespace_mailto_uri
+
+    end c_namespace_mailto_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_namespace_news_uri =
+-- A namespace for decoding URI references that use news scheme.
+-- It uses the following syntax:
+--    news:newsgroup-name
+-- or
+--    news:message-id
+----------------------------------------------------------------------------------------------------
+
+    end c_namespace_news_uri;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_uri_decoder =
+-- Character transformer decoding escaped URIs.
+-- Examples:
+--    "some%20long%20string%2C%20containing%20symbols" is transformed to "some long string, containing symbols"
+--    "20%%20volume" is transformed to "20% volume" (the first "%" is not a valid escape, so it is ignored)
+--    "%2p" is left untransformed, as "%2" is not a valid escape
+-- "+" characters are handled according to the [plus_is_space] variable
+-- When [plus_is_space] is true, "abc+def" is transformed to "abc def"
+-- When [plus_is_space] is false, "abc+def" is left untransformed
+----------------------------------------------------------------------------------------------------
+    type
+      t_decoder_state = enum
+          ds_normal;
+          ds_after_percent;
+          ds_after_percent_hex1;
+          end enum;
+
+    var
+      state        : t_decoder_state;
+      plus_is_space: t_logical;
+      first_digit  : t_char32;
+
+    static init =
+    begin
+      this.plus_is_space := plus_is_space;
+      this.state := ds_normal;
+      end init;
+
+    override put_character =
+
+      procedure add_nonescaped (
+          c        : in t_char32) =
+      begin
+        if c="+" and plus_is_space
+          then
+            add_to_buffer(" ");
+
+          else
+            add_to_buffer(c);
+            end if;
+
+        output_ready := true;
+        end add_nonescaped;
+
+    begin
+      case state
+        when ds_normal do
+            if c="%"
+            then state := ds_after_percent;
+            else add_nonescaped(c);
+            end if;
+
+        when ds_after_percent do
+            if is_hex_char(c) then
+              first_digit := c;
+              state := ds_after_percent_hex1;
+
+            elsif c="%" then
+              add_to_buffer("%");
+              output_ready := true;
+              state := ds_normal;
+
+            else
+              add_to_buffer("%");
+              add_nonescaped(c);
+              state := ds_normal;
+              end if;
+
+        when ds_after_percent_hex1 do
+            if is_hex_char(c) then
+              add_to_buffer(hex_to_char(first_digit, c));
+              output_ready := true;
+              state := ds_normal;
+
+            elsif c="%" then
+              add_to_buffer("%");
+              add_to_buffer(first_digit);
+              output_ready := true;
+              state := ds_after_percent;
+
+            else
+              add_to_buffer("%");
+              add_to_buffer(first_digit);
+              add_nonescaped(c);
+              state := ds_normal;
+              end if;
+
+        end case;
+      end put_character;
+
+      override finalize_input =
+      begin
+        case state
+          when ds_normal do
+              result := false;
+
+          when ds_after_percent do
+              add_to_buffer("%");
+              result := true;
+              state := ds_normal;
+
+          when ds_after_percent_hex1 do
+              add_to_buffer("%");
+              add_to_buffer(first_digit);
+              result := true;
+              state := ds_normal;
+
+          end case;
+        end finalize_input;
+
+    end c_uri_decoder;
+
+end uri;

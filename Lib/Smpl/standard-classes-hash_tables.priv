@@ -522,46 +522,4 @@ class private c_incremental_hash_table =
       succ next_id;
       end assign_hash_id;
     end c_incremental_hash_table;
-
-
-
-----------------------------------------------------------------------------------------------------
-class private c_auto_hash_table = 
--- Hash table with automatically assigned incremental item IDs.
-----------------------------------------------------------------------------------------------------
-    var
-      next_id      : t_hash_item_id := 1;        -- next ID to be assigned
-
-    ------------------------------------------------------------------------------------------------
-    override assign_hash_id =
-    -- Assigns an ID to the given [item].
-    ------------------------------------------------------------------------------------------------
-    var
-      min_id       : t_hash_item_id;             -- ID of the slot with the minimum number of items
-      min_count    : t_unsigned;                 -- minimal number of items in a slot
-
-    begin
-      -- find the slot with the least number of items
-      min_count:=min_count:last;
-      min_id:=0;
-      for i in hash_table^:range loop
-        -- check if this slot is better than the best known slot or not
-        if hash_table^[(next_id+i) mod modulus].count<min_count then
-          min_count:=hash_table^[(next_id+i) mod modulus].count;
-          min_id:=i;
-
-          -- if the slot is empty, there can't be any better slot
-          if min_count=0 then
-            break;
-            end if;
-          end if;
-        end loop;
-
-      -- assign an ID to the item
-      item^.item_id:=next_id+min_id;
-
-      -- calucate the least next item ID
-      next_id+min_id+1;
-      end assign_hash_id;
-    end c_auto_hash_table;
 end hash_tables;

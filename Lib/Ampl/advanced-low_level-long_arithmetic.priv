@@ -380,8 +380,10 @@ type
   tmpointer        = ^unchecked for machine_pointer use true;
   tupointer        = record
       ptr          : tmpointer;
-      rta_tag      : tag;
+    #if #environment compiler_version;='4.0.3.14' then;
       rta_last     : unsigned 32;
+    #end if;
+      rta_tag      : tag;
       end record;
 
 var
@@ -393,13 +395,19 @@ begin
   -- %%TODO(SLICE)
   tupointer(unsigned_a:unchecked).ptr:=^a[1]:unchecked;
   tupointer(unsigned_a:unchecked).rta_tag:=t_long_unsigned:tag;
+#if #environment compiler_version;='4.0.3.14' then;
   tupointer(unsigned_a:unchecked).rta_last:=a:last-1;
+#end if;
   tupointer(unsigned_b:unchecked).ptr:=^b[1]:unchecked;
   tupointer(unsigned_b:unchecked).rta_tag:=t_long_unsigned:tag;
+#if #environment compiler_version;='4.0.3.14' then;
   tupointer(unsigned_b:unchecked).rta_last:=b:last-1;
+#end if;
   tupointer(unsigned_c:unchecked).ptr:=^c[1]:unchecked;
   tupointer(unsigned_c:unchecked).rta_tag:=t_long_unsigned:tag;
+#if #environment compiler_version;='4.0.3.14' then;
   tupointer(unsigned_c:unchecked).rta_last:=c:last-1;
+#end if;
 
   case a[0]
     when long_signed_neutral do

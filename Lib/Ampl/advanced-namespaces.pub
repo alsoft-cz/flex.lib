@@ -8,8 +8,9 @@ module public namespaces =
 with
   standard.names;
 
+{
 ----------------------------------------------------------------------------------------------------
-class public c_namespace_windows = extend #if os_windows then; c_namespace_system #else; c_namespace #end if;;
+class public c_namespace_windows = extend #if os_win32 then; c_namespace_system #else; c_namespace #end if;;
 -- Windows-like namespace
 ----------------------------------------------------------------------------------------------------
 
@@ -19,13 +20,15 @@ class public c_namespace_windows = extend #if os_windows then; c_namespace_syste
         return t_logical =
     -- Returns True, if the given [name] is an UNC name.
     ------------------------------------------------------------------------------------------------
+    begin
+      end is_unc_name;
 
     end c_namespace_windows;
 
 
 
 ----------------------------------------------------------------------------------------------------
-class c_namespace_unix = extend #if os_unix then; c_namespace_system #else; c_namespace #end if;;
+class c_namespace_unix = extend #if os_linux then; c_namespace_system #else; c_namespace #end if;;
 -- Unix-like namespace.
 ----------------------------------------------------------------------------------------------------
 
@@ -66,7 +69,8 @@ class c_namespace_file = extend c_namespace;
 ----------------------------------------------------------------------------------------------------
 
     end c_namespace_file;
+}
 
-
+--#separate public uri;
 
 end namespaces;

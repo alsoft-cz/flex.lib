@@ -306,6 +306,33 @@ var
 
 
   ------------------------------------------------------------------------------------------------
+  static key_pressed =
+  ------------------------------------------------------------------------------------------------
+  begin
+    --%%TODO check key or other event
+    if handle_redir then
+      -- nema smysl zjistovat
+    else
+      loop
+        case (WaitForSingleObjectEx(handle,0,true))
+          when WAIT_OBJECT_0 do
+            result:=true;
+            break;
+          when WAIT_TIMEOUT do
+            result:=false;
+            break;
+          when WAIT_IO_COMPLETION do
+            --next
+          when others do
+            raise console_error;
+          end case;
+        end loop;
+      end if;
+    end key_pressed;
+
+
+
+  ------------------------------------------------------------------------------------------------
   static set_mode =
   ------------------------------------------------------------------------------------------------
   begin
@@ -538,15 +565,15 @@ var
         return;
         end if;
       loop
-      case (WaitForSingleObjectEx(handle,INFINITE,true))
-        when WAIT_OBJECT_0 do
-          break;
-        when WAIT_IO_COMPLETION do
-          --next
-        when others do
-          raise console_error;
-        end case;
-      end loop;
+        case (WaitForSingleObjectEx(handle,INFINITE,true))
+          when WAIT_OBJECT_0 do
+            break;
+          when WAIT_IO_COMPLETION do
+            --next
+          when others do
+            raise console_error;
+          end case;
+        end loop;
 
       if not ReadConsoleInputW(handle,input,1,readen) then
         raise console_error;

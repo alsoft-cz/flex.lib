@@ -109,7 +109,16 @@ class private c_dictionary =
 ----------------------------------------------------------------------------------------------------
 
     var
-      tree         : c_dictionary_tree;          -- binární vyhledávací strom
+      tree         : aliased c_dictionary_tree;  -- binární vyhledávací strom
+
+
+    ------------------------------------------------------------------------------------------------
+    static temporary_get_tree =
+    -- Vrátí strom, %%TODO(XXX) zrušit
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=^tree;
+      end temporary_get_tree;
 
     ------------------------------------------------------------------------------------------------
     static delete_all =
@@ -164,6 +173,30 @@ class private c_dictionary =
       -- vložit uzel
       tree.insert(node);
       end insert_row;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static replace_or_insert_row =
+    -- Přidá do slovníku dvojici [key,item]
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error]
+    ------------------------------------------------------------------------------------------------
+    var
+      node         : p_dictionary_tree_node;     -- vkládaný uzel stromu
+
+    begin
+      -- pokud už klíč ve stromě existuje, smazat ho
+      if find_row(key)<>nil then
+        delete_row(key);
+        end if;
+
+      -- vyvořit a inicializovat uzel
+      new node;
+      node^.init(key,value);
+
+      -- vložit uzel
+      tree.insert(node);
+      end replace_or_insert_row;
 
 
 
@@ -335,6 +368,26 @@ class private c_string_dictionary =
 
 
     ------------------------------------------------------------------------------------------------
+    static replace_or_insert_value =
+    -- Přidá do slovníku dvojici [key,value]
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- vložit
+      replace_or_insert_row(sk,value);
+
+      -- vložením přejde zopovědnost za zrušení klíče na slovník, proto žádné discard
+      end replace_or_insert_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
     static delete_value =
     -- Vymaže klíč a jeho hodnotu ze slovníku
     ------------------------------------------------------------------------------------------------
@@ -452,6 +505,25 @@ class private c_string_string_dictionary =
 
 
     ------------------------------------------------------------------------------------------------
+    static replace_or_insert =
+    ------------------------------------------------------------------------------------------------
+    var
+      val          : p_string_dictionary_value;  -- hodnota
+
+    begin
+      -- vytvořit pomocnou instanci
+      new val;
+  
+      -- inicializovat hodnotu
+      val^.init(value);
+
+      -- vložit hodnotu
+      replace_or_insert_value(key,val);
+      end replace_or_insert;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
     static find =
     -- Najde hodnotu klíče ve slovníku
     ------------------------------------------------------------------------------------------------
@@ -514,5 +586,54 @@ class private c_string_string_dictionary =
       end exit;
 
     end c_string_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_string_string_dictionary_iterator =
+-- %%TODO(XXX) vymyslet hiearchii iterátorů, 
+-- aby se tento iterátor mohl dědit od obecnějšího iterátoru.
+-- Použití této třídy může zůstat stejné.
+-- V zásadě je tato třída pouze dočasná.
+----------------------------------------------------------------------------------------------------
+
+    var
+      iterator     : c_binary_tree_iterator;
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje iterátor
+    ------------------------------------------------------------------------------------------------
+    begin
+      iterator.init(dictionary.temporary_get_tree^);
+      end init;
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_value =
+    -- Vrátí dvojici klíč - hodnota
+    ------------------------------------------------------------------------------------------------
+    var 
+      node         : p_dictionary_tree_node;
+    begin
+      result:=iterator.get(node);
+      if not result then
+        return;
+        end if;
+
+      key:=p_string_dictionary_key(node^.key)^.value^;
+      value:=p_string_dictionary_value(node^.value)^.value^;
+      end get_value;
+
+
+    ------------------------------------------------------------------------------------------------
+    static reset =
+    -- Vyresetuje iterátor
+    ------------------------------------------------------------------------------------------------
+    begin
+      iterator.reset;
+      end reset;
+
+    end c_string_string_dictionary_iterator;
 
 end dictionary;
