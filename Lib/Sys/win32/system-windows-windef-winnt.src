@@ -2601,6 +2601,11 @@ const
 const
   THREAD_BASE_PRIORITY_MAX= 2;
 
+const
+  THREAD_BASE_PRIORITY_MIN = -2;
+  THREAD_BASE_PRIORITY_IDLE = -15;
+
+
 type
   _QUOTA_LIMITS     = record
 PagedPoolLimit  : basetsd.SIZE_T;
@@ -6733,7 +6738,8 @@ procedure VerSetConditionMask(
 #pragma import(VerSetConditionMask,'VerSetConditionMask','kernel32.dll');
 
 -- 
-type  _RTL_CRITICAL_SECTION;
+type
+  _RTL_CRITICAL_SECTION;
 
 type
   _RTL_CRITICAL_SECTION_DEBUG = record

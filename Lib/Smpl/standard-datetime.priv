@@ -669,6 +669,64 @@ class private c_common_calendar =
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
+    virtual set_daylight_shift =
+    -- Nastaví interní proměnnou [daylight_shift] udávající posun (v minutách) mezi letním a zimním
+    -- časem.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavíme posun
+      daylight_shift:=shift;
+      end set_daylight_shift;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual is_daylight_time =
+    -- Vrací [true] v případě, že datum [datim] odpovídá letnímu času. V opačném případě vrací [false].
+    ------------------------------------------------------------------------------------------------
+    var
+      start        : t_datetime;                 -- komponovaný datum a čas začátku letního času
+      stop         : t_datetime;                 -- komponovaný datum a čas konce letního času
+      start_decomp : t_decomposed_datetime;      -- dekomponovaný datum a čas začátku letního času
+      stop_decomp  : t_decomposed_datetime;      -- dekomponovaný datum a čas konce letního času
+      decomp_datim : t_decomposed_datetime;      -- dekomponovaný vstupní datum [datim]
+
+    begin
+      -- dekomponujeme vstupní datum
+      decompose_datetime(datim,decomp_datim);
+
+      -- podle datumu [decomp_datim] vyplníme éru a rok začáteku a konce datumu letního času
+      start_decomp.era:=decomp_datim.era;
+      start_decomp.year:=decomp_datim.year;
+      stop_decomp.era:=decomp_datim.era;
+      stop_decomp.year:=decomp_datim.year;
+
+      -- nastavíme zbývající složky datumů [start_decomp] a [stop_decomp]
+      start_decomp.month:=4;
+      start_decomp.day:=1;
+      stop_decomp.month:=11;
+      stop_decomp.day:=1;
+
+      -- komponujeme datumy [start_decomp] a [stop_decomp]
+      compose_datetime(start_decomp,start);
+      compose_datetime(stop_decomp,stop);
+
+      {%%TODO(komentar)}
+      start:=find_day_of_week(start,t_dw_sun,t_dtf_prev);
+      start+(2*t_dtl_hour);
+
+      stop:=find_day_of_week(stop,t_dw_sun,t_dtf_prev);
+      stop+(2*t_dtl_hour);
+
+      if datim>=start and datim<stop then
+        result:=true;
+        end if;
+      end is_daylight_time;
+
+
+
+
+    ------------------------------------------------------------------------------------------------
     static get_signed_year =
     -- Vrací znamínkový rok. Jestliže je vstupní rok [datim.year] po Kristu, vrací tutéž hodnotu.
     -- Jestliže je před Kristem, vrací zápornou hodnotu, kde roku 1 p.n.l. odpovídá 0, roku
@@ -1080,14 +1138,21 @@ class private c_common_calendar =
     ------------------------------------------------------------------------------------------------
     virtual decompose_datetime =
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že požadujeme dekomponovaný datum
-    -- s ohledem na časovou zónu, které je menší než minimální nebo maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že:
+    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
+    --    maximální datum.
+    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
     --   31.12. 1969 22:02:10.0, což je nepřípustný datum.
     -- Př.: v případě 64b architektury: Minimální datum je 1.1. 4713 před. n.l. 00:00:00:0. Poža-
     --   dujeme převést čas 1300000000 (1.1. 4713 p.n.l. 00:02:10.0) na středoatlantický čas
-    --   (-2 hod.). Výsledkem je datum 31.12. 4714 p.n.l. 22:02:10.00, což je nepřípustný datum.
+    --   (-2 hod.). Výsledkem je datum 31.12. 4714 p.n.l. 22:02:10.00, což je nepřípustný datum.}
+    --
+    -- Princip: Datum nejprve určíme za předpokladu, že každá minuta obsahuje 60 sekund - viz metoda
+    -- [normal_decompose_datetime] (s ohledem na časovou zónu a letní čas) a dále je zapotřebí datum
+    -- opravit o počet přidaných/odebraných přestupných sekund - viz metoda [leap_sec_correction].
     ------------------------------------------------------------------------------------------------
     begin
       -- vlastní kód ve všech odvozených třídách
@@ -1097,11 +1162,14 @@ class private c_common_calendar =
 
     ------------------------------------------------------------------------------------------------
     virtual compose_datetime =
-    -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out]
-    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
-    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
-    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
-    -- tj. např. 30.2. nebo 31.4., atd...
+    -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out], přičemž zohled-
+    -- ňujeme časovou zónu udanou parametrem [time_zone].
+    -- Metoda generuje výjimku [calendar_error] v případě že:
+    --  * vstupní datum [datim_in] obsahuje rok, který je menší než počáteční rok 
+    --  * vstupní datum je větší než horní hranice datumu
+    --  * den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti, tj. např. 30.2. nebo 31.4., atd...
+    --  * vstupní dekomponovaný datum [datim_in] nelze s ohledem na časovou zónu komponovat
+    --  * vstupní dekomponovaný datum [datim_in] obsahuje letní čas a nelze ho komponovat
     ------------------------------------------------------------------------------------------------
     begin
       -- vlastní kód ve všech odvozených třídách
@@ -1204,6 +1272,17 @@ class private c_common_calendar =
         result & unsigned_to_string((time_shift div t_unsigned32(t_sec_in_min)) mod t_unsigned32(t_sec_in_min),format) & ')';
         end if;
       end decomposed_datim_to_string;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - provede setup interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- implicitní nastavení posunu (v minutách) mezi letním a zimním časem
+      daylight_shift:=60;
+      end entry;
 
     end c_common_calendar;
 

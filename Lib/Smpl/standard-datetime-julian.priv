@@ -162,8 +162,11 @@ class private c_julian_calendar =
     ------------------------------------------------------------------------------------------------
     override decompose_datetime =
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že požadujeme dekomponovaný datum
-    -- s ohledem na časovou zónu, které je menší než minimální nebo maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že:
+    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
+    --    maximální datum.
+    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
     --   31.12. 1969 22:02:10.0, což je nepřípustný datum.
@@ -189,6 +192,17 @@ class private c_julian_calendar =
     begin
       -- provedeme převod do časové zóny [time_zone]
       datim_h:=utc_to_time_zone(datim_in,time_zone);
+
+      -- má být dekomponovaný datum v letním čase? ano => posuneme [datim_h] o časový rozdíl mezi
+      -- letním a zimním časem. Je-li výsledek větší než maximální hodnota, generujeme výjimku
+      -- [calendar_error]
+      if daylight then
+        begin
+          datim_h+t_datetime(daylight_shift)*t_dtl_minute;
+        catch
+          when constraint_error do raise calendar_error;
+          end;
+        end if;
 
       -- Určíme počet dnů od počátku
       days:=datim_h div t_dtl_day;
@@ -229,6 +243,12 @@ class private c_julian_calendar =
       time mod t_dtl_minute;
       datim_out.second:=time div t_dtl_second;
       datim_out.tick:=time mod t_dtl_second;
+
+      -- nastavíme časovou zónu
+      datim_out.time_zone:=time_zone;
+
+      -- nastavíme indikátor letního času
+      datim_out.daylight:=true;
       end decompose_datetime;
 
 
@@ -301,8 +321,12 @@ class private c_julian_calendar =
       -- datum udáváme v UTC => převodeme do UTC pomocí [time_zone_to_utc]
       datim_out:=time_zone_to_utc(datim_out,datim_in.time_zone);
 
+      -- pokud je čas [datim] letní, pak výslednému datumu odebereme posun mezi letním a zimním časem
+      if datim_in.daylight then
+        datim_out-(t_datetime(daylight_shift)*t_dtl_minute);
+        end if;
+
     catch
-    
       when constraint_error do raise calendar_error;
       end compose_datetime;
 

@@ -676,6 +676,8 @@ class private c_gregorian_calendar =
       return t_datetime =
     -- Vrací nedekomponovaný datum vstupního dekomponovaného datumu [datim] za předpokaldu, že
     -- každá minuta obsahuje 60 sekund. Přitom je brán ohled na časovou zónu.
+    -- Metoda generuje výjimku [callender_error] v případě, že vstupní datum [datim] obsahuje letní
+    -- čas, který nelze převést na UTC.
     --
     -- Princip:
     -- Pracujeme s pomocnou proměnnou [year], do níž ukládáme rok. Tato proměnná je se znaménkem a
@@ -732,6 +734,14 @@ class private c_gregorian_calendar =
       -- vstupní datum [datim_in] je v časové zóně [datim_in.time_zone] => výsledný komponovaný
       -- datum udáváme v UTC => převodeme do UTC pomocí [time_zone_to_utc]
       result:=time_zone_to_utc(result,datim.time_zone);
+
+      -- pokud je čas [datim] letní, pak výslednému datumu odebereme posun mezi letním a zimním časem
+      if datim.daylight then
+        if result>=t_datetime(daylight_shift)*t_dtl_minute
+          then result-(t_datetime(daylight_shift)*t_dtl_minute);
+          else raise calendar_error;
+            end if;
+        end if;
       end normal_compose_datetime;
 
 
@@ -858,7 +868,7 @@ class private c_gregorian_calendar =
     --
     -- Princip: K datumu [datim] nalezneme nejbližší vyšší limitní datum. Přičteme k [datim] požadovaný
     -- počet sekund [sec]. Je-li výsledek menší než kritický datum, je vše OK, pokud je větší než
-    -- kritický a menší než limitní datum, jde o poslední sekundu v minutě a musíme rozhodnou o jakou
+    -- kritický a menší než limitní datum, jde o poslední sekundu v minutě a musíme rozhodnout o jakou
     -- sekundu se jedná (60. resp. 59. resp. 58). Pokud je výsledek sčítání větší nebo roven
     -- limitnímu datumu, musíme k výsledku přičíst resp. odečíst jednu sekundu (v závislosti na
     -- přidání resp. odebrání přestupné sekundy).
@@ -971,9 +981,9 @@ class private c_gregorian_calendar =
     --                        30.06. 23:59:59.0 nebo 31.12. 23:59:59.0 v případě standardní délky minuty
     --                        30.06. 23:59:58.0 nebo 31.12. 23:59:58.0 v případě odebrání přestupné sekundy
     --
-    -- Princip: K datumu [datim] nalezneme nejbližší nižší limitní datum. Odečteme ok [datim] požadovaný
+    -- Princip: K datumu [datim] nalezneme nejbližší nižší limitní datum. Odečteme od [datim] požadovaný
     -- počet sekund [sec]. Je-li výsledek větší nebo roven kritickému datumu, je vše OK, pokud je větší než
-    -- kritický a menší než limitní datum, jde o poslední sekundu v minutě a musíme rozhodnou o jakou
+    -- kritický a menší než limitní datum, jde o poslední sekundu v minutě a musíme rozhodnout o jakou
     -- sekundu se jedná (60. resp. 59. resp. 58). Pokud je výsledek odečítání menší než
     -- kritický datum, musíme k výsledku přičíst resp. odečíst jednu sekundu (v závislosti na
     -- přidání resp. odebrání přestupné sekundy).
@@ -1133,8 +1143,11 @@ class private c_gregorian_calendar =
     ------------------------------------------------------------------------------------------------
     override decompose_datetime =
     -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
-    -- Metoda generuje výjimku [calendar_error] v případě, že požadujeme dekomponovaný datum
-    -- s ohledem na časovou zónu, které je menší než minimální nebo maximální datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, že:
+    --  * požadujeme dekomponovaný datum s ohledem na časovou zónu, které je menší než minimální nebo
+    --    maximální datum.
+    --  * požadujeme dekomponovaný datum v letním čase a výsledný datum by byl větší než maximální datum.
+    -- Parametr [daylight] indikuje letní čas (je-li [true], pak se jedná o letní čas).
     -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
     --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
     --   31.12. 1969 22:02:10.0, což je nepřípustný datum.
@@ -1143,20 +1156,24 @@ class private c_gregorian_calendar =
     --   (-2 hod.). Výsledkem je datum 31.12. 4714 p.n.l. 22:02:10.00, což je nepřípustný datum.
     --
     -- Princip: Datum nejprve určíme za předpokladu, že každá minuta obsahuje 60 sekund - viz metoda
-    -- [normal_decompose_datetime] a dále je zapotřebí datum opravit o počet přidaných/odebraných
-    -- přestupných sekund - viz metoda [leap_sec_correction].
+    -- [normal_decompose_datetime] (s ohledem na časovou zónu a letní čas) a dále je zapotřebí datum
+    -- opravit o počet přidaných/odebraných přestupných sekund - viz metoda [leap_sec_correction].
     ------------------------------------------------------------------------------------------------
     begin
       -- zjistíme datum za předpokladu, že každá minuta obsahuje 60 sekund, přičemž provedeme převod
-      -- do časové zóny [time_zone]
-      datim_out:=normal_decompose_datetime(utc_to_time_zone(datim_in,time_zone));
-
-      -- uložíme časovou zónu
-      datim_out.time_zone:=time_zone;
+      -- do časové zóny [time_zone] a zohledníme posun v případě, že datum [datim_in] obsahuje letní
+      -- čas
+      if daylight
+        then datim_out:=normal_decompose_datetime(utc_to_time_zone(datim_in,time_zone)+t_datetime(daylight_shift)*t_dtl_minute);
+        else datim_out:=normal_decompose_datetime(utc_to_time_zone(datim_in,time_zone));
+          end if;
 
       -- provedeme korekci vzhledem k přestupným sekundám:
       leap_sec_correction(datim_out);
 
+      -- uložíme časovou zónu a indikátor letního času
+      datim_out.time_zone:=time_zone;
+      datim_out.daylight:=daylight;
       end decompose_datetime;
 
 
@@ -1165,10 +1182,12 @@ class private c_gregorian_calendar =
     override compose_datetime =
     -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out], přičemž zohled-
     -- ňujeme časovou zónu udanou parametrem [time_zone].
-    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
-    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
-    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
-    -- tj. např. 30.2. nebo 31.4., atd...
+    -- Metoda generuje výjimku [calendar_error] v případě že:
+    --  * vstupní datum [datim_in] obsahuje rok, který je menší než počáteční rok 
+    --  * vstupní datum je větší než horní hranice datumu
+    --  * den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti, tj. např. 30.2. nebo 31.4., atd...
+    --  * vstupní dekomponovaný datum [datim_in] nelze s ohledem na časovou zónu komponovat
+    --  * vstupní dekomponovaný datum [datim_in] obsahuje letní čas a nelze ho komponovat
     --
     -- Nejprve určíme komponovaný datum za předpokladu, že každá minuta obsahuje 60 sekund - viz
     -- metoda [normal_compose_datetime]. Poté u komponovaného datumu provedeme korekci vhledem k

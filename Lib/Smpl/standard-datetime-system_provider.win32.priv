@@ -9,6 +9,10 @@
 class private c_system_datetime_provider =
 -- Systémový provider času a datumu využívající WIN32 API
 ----------------------------------------------------------------------------------------------------
+    with
+      system.windows.windef,
+      system.windows.windef.winnt,
+      system.windows.winbase;
 
     ------------------------------------------------------------------------------------------------
     -- Vyhodit v případě použití 64b architektury
@@ -50,11 +54,6 @@ class private c_system_datetime_provider =
     -- Pozn.: pro 32b architekturu je použito volání WIN32 API [GetTickCount], která vrací počet
     -- milisekund od startu systému (32b hodnota). K jejímu přetečení dojde jednou za 49.7 dní.
     ------------------------------------------------------------------------------------------------
-    with
-      system.windows.windef,
-      system.windows.windef.winnt,
-      system.windows.winbase;
-
       -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
       {"%%TODO(64b architektura) - odkomentovat"}
 {    var
@@ -87,6 +86,22 @@ class private c_system_datetime_provider =
       result:unchecked:=GetTickCount;
 
       end get_machine_uptime;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual is_system_daylight =
+    -- Vrací [true] v případě, kdy lokální čas sytému počítače je letní. V opačném případě vrací [false].
+    ------------------------------------------------------------------------------------------------
+    var
+      tzi          : _TIME_ZONE_INFORMATION;     -- struktura obsahující informace o časové zóně
+
+    begin
+      -- je letní čas? ano => vracíme [true]
+      if GetTimeZoneInformation(tzi)=TIME_ZONE_ID_DAYLIGHT then
+        result:=true;
+        end if;
+      end is_system_daylight;
 
 
 
