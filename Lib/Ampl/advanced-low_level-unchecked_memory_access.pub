@@ -53,5 +53,11 @@ procedure machine_pointer_to_memory_address (
 -- Converts a pointer to some object to the corresponding linear memory address of the reference
 -- object. If [pointer] is NIL, returns zero.
 ----------------------------------------------------------------------------------------------------
+procedure memory_address_to_machine_pointer (
+    address        : in t_memory_address)        -- linear memory address of an object
+    return t_machine_pointer;                    -- corresponding machine pointer referencing the object
+-- Converts a memory address of some object to the corresponding machine pointer refencing the 
+-- object. If [address] is zero, returns NIL.
+----------------------------------------------------------------------------------------------------
 
 end unchecked_memory_access;

@@ -211,7 +211,7 @@ type
   _CHAR_INFO        = record
 Char             : record
       UnicodeChar   : WCHAR for position use 0;
-      AsciiChar     : CHAR for position use 0;
+      AsciiChar     : winnt.CHAR for position use 0;
     end record;
 Attributes      : WORD;
   end record;

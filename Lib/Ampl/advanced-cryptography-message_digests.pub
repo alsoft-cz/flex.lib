@@ -38,15 +38,15 @@ class abstract c_crypto_message_digest =
     virtual abstract get_message_digest_size return t_unsigned;
     -- Returns size of the message digest if bytes.
     ------------------------------------------------------------------------------------------------
---  virtual abstract get_context (context : out p_digest_context);
+--  virtual abstract get_context (_context : out p_digest_context);
     -- Allocates new memory, makes copy of current context and returns pointer to than new one copy.
     -- See [set_context] method.
     ------------------------------------------------------------------------------------------------
---  virtual abstract set_context (context : in p_digest_context);
+--  virtual abstract set_context (_context : in p_digest_context);
     -- Makes copy of provided context into internal one. Using [get_context] and [set_context]
     -- methods it is possible to deffer digest computing to later.
     ------------------------------------------------------------------------------------------------
---  virtual abstract new_context (context : out p_digest_context);
+    virtual abstract new_context (_context : out p_digest_context);
     -- Create (allocate) new initialized context and return pointer to it.
     ------------------------------------------------------------------------------------------------
     virtual abstract reset_context;

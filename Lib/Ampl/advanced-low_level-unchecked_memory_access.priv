@@ -79,4 +79,17 @@ begin
   result:=t_memory_address(pointer:unchecked);
   end machine_pointer_to_memory_address;
 
+
+
+----------------------------------------------------------------------------------------------------
+procedure memory_address_to_machine_pointer =
+-- Converts a memory address of some object to the corresponding machine pointer refencing the 
+-- object. If [address] is zero, returns NIL.
+----------------------------------------------------------------------------------------------------
+begin
+  result:=t_machine_pointer(address:unchecked);
+  end memory_address_to_machine_pointer;
+
+
+
 end unchecked_memory_access;

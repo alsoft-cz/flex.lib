@@ -744,6 +744,7 @@ class private c_namespace_uri =
 
     var
       start        : t_unsigned;                 -- position of the first unprocessed char
+      with_scheme  : t_logical;                  -- is there a scheme part?
       scheme_len   : t_unsigned;                 -- length of the scheme part (if present)
       i            : t_unsigned;                 -- loop control variable
 
@@ -764,7 +765,8 @@ class private c_namespace_uri =
       start:=1;
 
       -- process the scheme part
-      if has_scheme(text_name, result, scheme_len)
+      has_scheme(text_name, with_scheme, result, scheme_len);
+      if with_scheme
         -- it has a scheme (i.e. it is an absolute URI)
         then
           -- if the scheme is not valid, the URI cannot be valid
@@ -1200,39 +1202,37 @@ class private c_namespace_uri =
       -- and now clone the rest
       iter.init(cloned.components);
       while iter.get(p_list_item(comp)) loop
-{
---        -- store this component to the proper class
---        if comp^:tag>=c_name_component_scheme:tag then
---          if result_uri^.scheme=nil then
---            result_uri^.scheme:=p_name_component_scheme(comp);
---            end if;
---          
---        elsif comp^:tag>=c_name_component_userinfo:tag then
---          if result_uri^.userinfo=nil then
---            result_uri^.userinfo:=p_name_component_userinfo(comp);
---            end if;
---
---        elsif comp^:tag>=c_name_component_network_address:tag then
---          if result_uri^.server=nil then
---            result_uri^.server:=p_name_component_network_address(comp);
---            end if;
---          
---        elsif comp^:tag>=c_name_component_file_or_folder:tag then
---          if result_uri^.path_start=nil then
---            result_uri^.path_start:=p_name_component_file_or_folder(comp);
---            end if;
---          
---        elsif comp^:tag>=c_name_component_variable:tag then
---          if result_uri^.first_variable=nil then
---            result_uri^.first_variable:=p_name_component_variable(comp);
---            end if;
---          
---        elsif comp^:tag>=c_name_component_fragment:tag then
---          if result_uri^.fragment=nil then
---            result_uri^.path_start:=p_name_component_file_or_folder(comp);
---            end if;
---          end if;
-}
+        -- store this component to the proper class
+        if comp^:tag>=c_name_component_scheme:tag then
+          if result_uri^.scheme=nil then
+            result_uri^.scheme:=p_name_component_scheme(comp);
+            end if;
+          
+        elsif comp^:tag>=c_name_component_userinfo:tag then
+          if result_uri^.userinfo=nil then
+            result_uri^.userinfo:=p_name_component_userinfo(comp);
+            end if;
+
+        elsif comp^:tag>=c_name_component_network_address:tag then
+          if result_uri^.server=nil then
+            result_uri^.server:=p_name_component_network_address(comp);
+            end if;
+          
+        elsif comp^:tag>=c_name_component_file_or_folder:tag then
+          if result_uri^.path_start=nil then
+            result_uri^.path_start:=p_name_component_file_or_folder(comp);
+            end if;
+          
+        elsif comp^:tag>=c_name_component_variable:tag then
+          if result_uri^.first_variable=nil then
+            result_uri^.first_variable:=p_name_component_variable(comp);
+            end if;
+          
+        elsif comp^:tag>=c_name_component_fragment:tag then
+          if result_uri^.fragment=nil then
+            result_uri^.path_start:=p_name_component_file_or_folder(comp);
+            end if;
+          end if;
         end loop;
       end clone_ns_specific;
 
@@ -1245,6 +1245,7 @@ class private c_namespace_uri =
     ----------------------------------------------------------------------------------------------
     var
       type_ok      : t_logical;                  -- has the type of the name already been set?
+      with_scheme  : t_logical;                  -- is there a scheme part?
       valid        : t_logical;                  -- is the scheme part of the URI valid?
       scheme_len   : t_unsigned;                 -- length of the scheme part of the URI
 
@@ -1252,7 +1253,8 @@ class private c_namespace_uri =
       type_ok:=false;
 
       -- if it is an absolute URI (it has a scheme part), check and store the scheme
-      if proposed_nt in t_name_type_set:[tnt_absolute,tnt_unspecified] and then has_scheme(text_name, valid, scheme_len) then
+      has_scheme(text_name, with_scheme, valid, scheme_len);
+      if proposed_nt in t_name_type_set:[tnt_absolute,tnt_unspecified] and with_scheme then
         -- remember the type of the name
         nd^.name_type:=tnt_absolute;
         type_ok:=true;
@@ -1812,10 +1814,10 @@ class private c_namespace_uri =
     --------------------------------------------------------------------------------------------
     static has_scheme =
     -- Checks whether the [text_name] begins with a scheme part and if it is valid.
-    --  - If it does not contain a scheme part, return false
-    --  - If it contains an invalid scheme, set [is_valid] to false and return true
+    --  - If it does not contain a scheme part, [has_scheme] is set to false
+    --  - If it contains an invalid scheme, set [is_valid] to false and [has_scheme] to true
     --  - If it contains a valid scheme, set [is_valid] to true, set [scheme_len] to the
-    --    length of the scheme part (including the separating colon), and return true
+    --    length of the scheme part (including the separating colon), and [has_scheme] to true
     --------------------------------------------------------------------------------------------
     var
       colon_pos    : t_unsigned;                 -- position of the separating ':'
@@ -1825,13 +1827,13 @@ class private c_namespace_uri =
       scheme_len:=str_pos_substring(text_name, ':');
       if scheme_len=0 then
         -- no colon => no scheme part
-        result:=false;
+        has_scheme:=false;
         is_valid:=false;
         return;
         end if;
 
       -- we have a scheme part
-      result:=true;
+      has_scheme:=true;
 
       -- if the uri is only 'scheme:', or the scheme is empty => it is considered not valid
       if colon_pos=1 or colon_pos=text_name:length then
@@ -1993,6 +1995,23 @@ class private c_namespace_news_uri =
 class private c_uri_name =
 -- A name that represents a generic URI, parsed by [c_namespace_uri].
 ----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static delete_variables =
+    -- Delete all variables (and fragment information) from the name's component list.
+    ------------------------------------------------------------------------------------------------
+    begin
+      while components.count>0 loop
+        -- %%TODO az se opravi chyba kolem internal error 96, prepsat do normalni podoby
+        if components.last^:tag=c_name_component_fragment:tag then
+        elsif components.last^:tag=c_name_component_variable:tag then
+        else
+          break;
+          end if;
+        components.delete_last;
+        end loop;
+      end delete_variables;
+
 
     ------------------------------------------------------------------------------------------------
     entry =

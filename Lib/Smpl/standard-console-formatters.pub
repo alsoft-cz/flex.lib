@@ -37,8 +37,8 @@ class public c_console_text_reader = extend c_stream_text_reader;
     source         : p_input_stream);             -- zdrojovy stream
   --------------------------------------------------------------------------------------------------
   virtual read_event(
-    event          : out t_console_event)
-    return t_logical;
+    event          : out t_console_event;
+    eod            : out t_logical);
   --------------------------------------------------------------------------------------------------
   end c_console_text_reader;
 type p_console_text_reader = ^class c_console_text_reader;

@@ -320,8 +320,8 @@ class public abstract c_text_reader =
   virtual abstract close;
   ------------------------------------------------------------------------------------------------
   virtual abstract read_char(
-      text         : out t_char32)               -- čtený znak
-      return t_logical;
+      text         : out t_char32;               -- čtený znak
+      eod          : out t_logical);             
   -- cte znak
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
@@ -337,23 +337,23 @@ class public abstract c_text_reader =
   }
   ------------------------------------------------------------------------------------------------
   virtual abstract read(
-      text         : out t_char32ustr)           -- načtený řetězec
-      return t_logical;
+      text         : out t_char32ustr;           -- načtený řetězec
+      eod          : out t_logical);             
   -- cte text
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   virtual abstract read_first(
       text         : out t_char32ustr;           -- načtený řetězec
-      count        : in t_unsigned)
-      return t_logical;
+      count        : in t_unsigned;
+      eod          : out t_logical);             
   -- cte text
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   virtual abstract read_line(
-      text         : out t_char32ustr)           -- načtený řetězec
-      return t_logical;
+      text         : out t_char32ustr;           -- načtený řetězec
+      eod          : out t_logical);             
   -- cte radek do konce (LF)
   -- zahazuje znaky CR a LF
   -- pri kratkem bufferu vyhodi vyjimku string_buffer_overflow

@@ -184,8 +184,8 @@ var
   begin
     if decoder<>nil then
       loop
-        if p_stream_generic_reader(^this)^.read_byte(b) then
-          result:=true;
+        p_stream_generic_reader(^this)^.read_byte(b,eod);
+        if eod then
           --%%TODO decoder^.finalize_input;
           return;
           end if;
@@ -194,7 +194,7 @@ var
       text:=decoder^.get_character();
     else
       -- kodovani netreba ctu nativne
-      result:=p_stream_generic_reader(^this)^.read_char32(text);
+      p_stream_generic_reader(^this)^.read_char32(text,eod);
       end if;
     end read_char;
 
@@ -203,6 +203,9 @@ var
   ------------------------------------------------------------------------------------------------
   override c_text_reader.read_first =
   ------------------------------------------------------------------------------------------------
+  var
+    c              : t_char32;
+
   begin
     if decoder<>nil then
       -- ctu po znaku do konce bufferu
@@ -210,16 +213,16 @@ var
         if text:length>=count then
           break;
           end if;
-        result:=c_text_reader:(this).read_char(text[text:length+1]);
-        if result then
+        c_text_reader:(this).read_char(c,eod);
+        if eod then
           --%%TODO decoder^.finalize_input;
           return;
         else
-          succ text:length;
+          text & c;
           end if;
         end loop;
     else
-      result:=read_text(text);
+      read_text(text,eod);
       end if;
     end read_first;
 
@@ -229,7 +232,7 @@ var
   override c_text_reader.read =
   ------------------------------------------------------------------------------------------------
   begin
-    result:=c_text_reader:(this).read_first(text,text:last);
+    c_text_reader:(this).read_first(text,text:last,eod);
     end read;
 
 
@@ -238,22 +241,21 @@ var
   override c_text_reader.read_line =
   ------------------------------------------------------------------------------------------------
   var
-    readbytes    : t_offset;
+    readbytes      : t_offset;
+    c              : t_char32;
 
   begin
     -- ctu po znaku do konce radku nebo bufferu
     loop
-      if text:length>=text:last then
-        raise string_buffer_overflow;
-        end if;
-      result:=c_text_reader:(this).read_char(text[text:length+1]);
-      if not result then
-        succ text:length;
-        if text[text:length]=cr then
-          text:length - 1;
-        elsif text[text:length]=lf then
-          text:length - 1;
+      c_text_reader:(this).read_char(c,eod);
+      if not eod then
+        if c=cr then
+          -- preskocit
+        elsif c=lf then
+          -- preskocit a ukoncit cteni
           break;
+        else
+          text & c;
           end if;
       else
         break;

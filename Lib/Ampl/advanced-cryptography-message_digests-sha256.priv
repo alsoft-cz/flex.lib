@@ -73,6 +73,20 @@ class private c_crypto_message_digest_sha256 =
 
 
     ------------------------------------------------------------------------------------------------
+    override new_context =
+    -- Create (allocate) new initialized context and return pointer to it.
+    ------------------------------------------------------------------------------------------------
+    var
+      xcontext : ^t_digest_context_sha256;
+
+    begin
+      new xcontext;
+      context:unchecked:=xcontext;
+      end new_context;
+
+
+
+    ------------------------------------------------------------------------------------------------
     override reset_context =
     ------------------------------------------------------------------------------------------------
     begin

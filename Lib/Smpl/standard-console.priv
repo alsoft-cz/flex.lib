@@ -48,7 +48,7 @@ procedure read_event =
 ----------------------------------------------------------------------------------------------------
 begin
   stdin_stream^.set_mode(t_im_all_events_no_echo);
-  result:=stdin_reader^.read_event(event);
+  stdin_reader^.read_event(event,eod);
   end read_event;
 
 
@@ -59,8 +59,8 @@ procedure read_mouse =
 begin
   stdin_stream^.set_mode(t_im_mouse_events_no_echo);
   loop
-    result:=stdin_reader^.read_event(mouse);
-    until not result or mouse.event_code=t_ec_mouse_move;
+    stdin_reader^.read_event(mouse,eod);
+    until not eod or mouse.event_code=t_ec_mouse_move;
   end read_mouse;
 
 
@@ -71,8 +71,8 @@ procedure read_key =
 begin
   stdin_stream^.set_mode(t_im_key_events_no_echo);
   loop
-    result:=stdin_reader^.read_event(key);
-    until not result or key.event_code<>t_ec_mouse_move;
+    stdin_reader^.read_event(key,eod);
+    until not eod or key.event_code<>t_ec_mouse_move;
   end read_key;
 
 
@@ -108,7 +108,7 @@ procedure read_char =
 ----------------------------------------------------------------------------------------------------
 begin
   stdin_stream^.set_mode(mode);
-  result:=console_reader^.read_char(s);
+  console_reader^.read_char(s,eod);
   end read_char;
 
 
@@ -118,7 +118,7 @@ procedure read =
 ----------------------------------------------------------------------------------------------------
 begin
   stdin_stream^.set_mode(mode);
-  result:=console_reader^.read(s);
+  console_reader^.read(s,eod);
   end read;
 
 
@@ -128,7 +128,7 @@ procedure read_line =
 ----------------------------------------------------------------------------------------------------
 begin
   stdin_stream^.set_mode(mode);
-  result:=console_reader^.read_line(s);
+  console_reader^.read_line(s,eod);
   end read_line;
 
 
@@ -136,8 +136,12 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure input_char =
 ----------------------------------------------------------------------------------------------------
+var
+    eod            : t_logical;
+
 begin
-  if read_char(s,mode) then
+  read_char(s,eod,mode);
+  if eod then
     raise stream_end_of_data;
     end if;
   end input_char;
@@ -147,8 +151,12 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure input =
 ----------------------------------------------------------------------------------------------------
+var
+    eod            : t_logical;
+
 begin
-  if read(s,mode) then
+  read(s,eod,mode);
+  if eod then
     raise stream_end_of_data;
     end if;
   end input;
@@ -158,8 +166,12 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure input_line =
 ----------------------------------------------------------------------------------------------------
+var
+    eod            : t_logical;
+
 begin
-  if read_line(s,mode) then
+  read_line(s,eod,mode);
+  if eod then
     raise stream_end_of_data;
     end if;
   end input_line;
@@ -169,8 +181,12 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure input_key =
 ----------------------------------------------------------------------------------------------------
+var
+    eod            : t_logical;
+
 begin
-  if read_key(key) then
+  read_key(key,eod);
+  if eod then
     raise stream_end_of_data;
     end if;
   end input_key;

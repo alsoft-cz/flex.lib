@@ -2006,6 +2006,10 @@ class private c_tree_iterator =
               break;
               end if;
             end loop;
+
+        when others do raise feature_not_implemented;
+        -- %%TODO(LIB) ttwd_infix;                                -- levý -> uzel -> pravý, jen pro binární strom
+        -- %%TODO(LIB) ttwd_inv_infix;                            -- pravý -> uzel -> levý, jen pro binární strom
         end case;
       end reset;
 
@@ -2099,7 +2103,10 @@ class private c_tree_iterator =
             -- nahoru
             current_node:=current_node^.up;
             end if;
-          end case;
+
+        -- %%TODO(LIB)
+        when others do raise feature_not_implemented;
+        end case;
       end find_next;
 
 

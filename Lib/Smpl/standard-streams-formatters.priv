@@ -316,10 +316,10 @@ var
 
   ------------------------------------------------------------------------------------------------
   static read_unchecked_internal (
-      data       : out unchecked;              -- přečtená data
-      sizebytes  : in static t_offset;                -- velikost dat, která se mají přečíst
-      readbytes  : out t_offset)               -- velikost ktera byla prectena
-      return t_logical =
+      data         : out unchecked;              -- přečtená data
+      sizebytes    : in static t_offset;         -- velikost dat, která se mají přečíst
+      readbytes    : out t_offset;               -- velikost ktera byla prectena
+      eod          : out t_logical) =
   ------------------------------------------------------------------------------------------------
   var
     _data          : p_data_array;
@@ -347,7 +347,7 @@ var
           end if;
       else
         if packet.signal=t_dpss_eod then
-          result:=true;
+          eod:=true;
           return;
         else
           discard_packet(packet);
@@ -366,7 +366,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data,data:size,readbytes);
+    read_unchecked_internal(data,data:size,readbytes,eod);
     end read_byte;
 
 
@@ -378,7 +378,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data,data:size,readbytes);
+    read_unchecked_internal(data,data:size,readbytes,eod);
     end read_char32;
 
   
@@ -390,7 +390,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data,data:size,readbytes);
+    read_unchecked_internal(data,data:size,readbytes,eod);
     end read_unsigned32;
 
 
@@ -400,7 +400,7 @@ var
   static read_unchecked_out =
   ------------------------------------------------------------------------------------------------
   begin
-    result:=read_unchecked_internal(data,size,size);
+    read_unchecked_internal(data,size,size,eod);
     end read_unchecked_out;
 
   
@@ -412,7 +412,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data,size,readbytes);
+    read_unchecked_internal(data,size,readbytes,eod);
     end read_unchecked;
   
   
@@ -424,7 +424,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data,data:size,readbytes);
+    read_unchecked_internal(data,data:size,readbytes,eod);
     end read_array;
 
 
@@ -436,7 +436,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data[1],data:last,readbytes);
+    read_unchecked_internal(data[1],data:last,readbytes,eod);
     data:length:=readbytes;
     end read_string;
 
@@ -449,7 +449,7 @@ var
     readbytes    : t_offset;
 
   begin
-    result:=read_unchecked_internal(data[1],data:last*t_char32:size,readbytes);
+    read_unchecked_internal(data[1],data:last*t_char32:size,readbytes,eod);
     data:length:=readbytes div t_char32:size;
     end read_text;
 
@@ -507,8 +507,12 @@ class private c_stream_binary_reader =
   ------------------------------------------------------------------------------------------------
   static read_unchecked =
   ------------------------------------------------------------------------------------------------
+  var
+    eod            : t_logical;
+
   begin
-    if p_stream_generic_reader(^this)^.read_unchecked(data,size) then
+    p_stream_generic_reader(^this)^.read_unchecked(data,size,eod);
+    if eod then
       raise stream_end_of_data;
       end if;
     end read_unchecked;

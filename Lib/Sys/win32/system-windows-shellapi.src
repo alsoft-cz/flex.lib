@@ -810,7 +810,7 @@ procedure ShellExecuteExW(
   ShellExecuteExA 
 #end ShellExecuteEx;
 #end if;
-
+{
 type
 t_013=signed 32;
 
@@ -820,7 +820,7 @@ procedure WinExecErrorA(
     lpstrFileName   : LPCSTR; 
     lpstrTitle      : LPCSTR);
 #pragma convention(WinExecErrorA,system);
-#pragma import(WinExecErrorA,'WinExecErrorA','');
+#pragma import(WinExecErrorA,'WinExecErrorA','shell32.dll');
 
 type
 t_014=signed 32;
@@ -831,7 +831,7 @@ procedure WinExecErrorW(
     lpstrFileName   : LPCWSTR; 
     lpstrTitle      : LPCWSTR);
 #pragma convention(WinExecErrorW,system);
-#pragma import(WinExecErrorW,'WinExecErrorW','');
+#pragma import(WinExecErrorW,'WinExecErrorW','shell32.dll');
 
 #if #declared UNICODE; then;
 #template WinExecError;
@@ -842,6 +842,7 @@ procedure WinExecErrorW(
   WinExecErrorA 
 #end WinExecError;
 #end if;
+}
 
 -- 
 --  SHCreateProcessAsUser()

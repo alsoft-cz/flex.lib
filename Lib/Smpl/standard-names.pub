@@ -465,6 +465,12 @@ class public c_name_component_file_or_folder = extend c_name_component;
     static remove_all_extensions;
     -- Removes all extensions of the filename (if present).
     ------------------------------------------------------------------------------------------------
+    static remove_specified_extension (
+        extension  : in t_text_name;             -- plain-text extension to be removed (case-insensitive)
+        last_only  : t_logical := true);         -- T-only remove the extension if it is the last one
+    -- If this name contains the specified [extension], it is removed. If [last_only] is true, only
+    -- the last extension is checked.
+    ------------------------------------------------------------------------------------------------
 
     end c_name_component_file_or_folder;
 
@@ -502,9 +508,12 @@ class public c_file_name = extend c_name;
 -- A file name, parsed by [c_system_namespace].
 ----------------------------------------------------------------------------------------------------
 
-    var
-      name_type    : protected t_name_type;      -- the type of this name
-
+    ------------------------------------------------------------------------------------------------
+    static remove_drive;
+    -- Removes the last extension of the component (if present).
+    ------------------------------------------------------------------------------------------------
+    static remove_path;
+    -- Removes the last extension of the component (if present).
     ------------------------------------------------------------------------------------------------
     static remove_last_extension;
     -- Removes the last extension of the component (if present).
@@ -518,35 +527,66 @@ class public c_file_name = extend c_name;
     -- If this name does not reference a file/folder, nothing happens.
     ------------------------------------------------------------------------------------------------
     static get_name_without_extension (
-        name       : out p_name);                -- variable to be filled with the created name
+        name       : out p_file_name);           -- variable to be filled with the created name
     -- Creates a deep copy of this name, without the last extension (if there is one).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
     static get_name_without_all_extensions (
-        name       : out p_name);                -- variable to be filled with the created name
+        name       : out p_file_name);           -- variable to be filled with the created name
     -- Creates a deep copy of this name, without the extensions (if there are any).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
     static get_path_name (
-        path_name  : out p_name);                -- variable to be filled with the created name
+        path_name  : out p_file_name);           -- variable to be filled with the created name
     -- Creates a new name containing only the path (without the filename).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
     static get_name_without_path (
-        name  : out p_name);                     -- variable to be filled with the created name
+        name  : out p_file_name);                -- variable to be filled with the created name
     -- Creates a new name containing only the filename (without the path).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
+    static get_base_name_only (
+        base_name  : out p_file_name);           -- the base name
+    -- Retrieves the base name of a file or folder name.
+    --  The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
     static get_root_relative_name (
-        name  : out p_name);                     -- variable to be filled with the created name
+        name  : out p_file_name);                -- variable to be filled with the created name
     -- Creates a new name containing a root-relative version of this filename (without server, drive, etc.).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
     static get_root (
-        name  : out p_name);                     -- variable to be filled with the created name
+        name  : out p_file_name);                -- variable to be filled with the created name
     -- Creates a new name containing only the server and drive components of this filename.
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
+    static get_base_name (
+        base_name  : out p_text_name);           -- the base name
+    -- Retrieves the base name of a file or folder name.
+    --  The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    static get_last_extension (
+        extension  : out p_text_name);           -- the extension
+    -- Retrieves the last extension of a file or folder name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    static append_extension (
+        extension  : in t_text_name);            -- plain-text extension
+    -- Appends the given extension to the name.
+    ------------------------------------------------------------------------------------------------
+    static check_last_extension (
+        extension  : in t_text_name)             -- plain-text extension
+        return t_logical;                        -- [true] if the extension matches
+    -- Checks if the last extension of the name is equal to the given extension.
+    ------------------------------------------------------------------------------------------------
+    static remove_specified_extension (
+        extension  : in t_text_name;             -- plain-text extension to be removed (case-insensitive)
+        last_only  : t_logical := true);         -- T-only remove the extension if it is the last one
+    -- If this name contains the specified [extension], it is removed. If [last_only] is true, only
+    -- the last extension is checked.
+    ------------------------------------------------------------------------------------------------
+
 
     end c_file_name;
 

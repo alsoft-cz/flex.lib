@@ -65,59 +65,59 @@ class public abstract c_stream_generic_reader = extend c_stream_reader;
 protected
   ------------------------------------------------------------------------------------------------
   static read_byte (
-      data       : out t_data_byte)            -- načtený byte
-      return t_logical;
+      data         : out t_data_byte;              -- načtený byte
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
-  -- returns eod - false  - valid data
+  -- eod           false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_unsigned32 (
-      data       : out t_unsigned32)
-      return t_logical;
+      data         : out t_unsigned32;
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_char32 (
-      data       : out t_char32)          -- načtený řetězec
-      return t_logical;
+      data         : out t_char32;               -- načtený řetězec
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_unchecked (
-      data       : out unchecked;              -- přečtená data
-      size       : in t_offset)                -- velikost dat, která se mají přečíst
-      return t_logical;
+      data         : out unchecked;              -- přečtená data
+      size         : in t_offset;                -- velikost dat, která se mají přečíst
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_unchecked_out (
-      data       : out unchecked;              -- přečtená data
-      size       : in out t_offset)            -- velikost dat, která se mají přečíst, prectena velikost
-      return t_logical;
+      data         : out unchecked;              -- přečtená data
+      size         : in out t_offset;            -- velikost dat, která se mají přečíst, prectena velikost
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_array (
-      data       : out t_data_array)           -- načtené pole
-      return t_logical;
+      data         : out t_data_array;           -- načtené pole
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_string (
-      data       : out t_data_string)          -- načtený řetězec
-      return t_logical;
+      data         : out t_data_string;          -- načtený řetězec
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_text (
-      data       : out t_char32ustr)          -- načtený řetězec
-      return t_logical;
+      data         : out t_char32ustr;           -- načtený řetězec
+      eod          : out t_logical);
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data

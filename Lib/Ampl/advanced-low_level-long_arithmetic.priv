@@ -259,9 +259,10 @@ procedure long_signed_neg =
 ----------------------------------------------------------------------------------------------------
 begin
   case a[0]
+    when long_signed_neutral  do -- nic nedělat
     when long_signed_positive do a[0]:=long_signed_negative;
     when long_signed_negative do a[0]:=long_signed_positive;
-    when others do;
+    when others do raise numeric_error;
     end case;
   end long_signed_neg;
 
@@ -410,39 +411,41 @@ begin
 #end if;
 
   case a[0]
-    when long_signed_neutral do
-      -- A=0, výsledkem součtu je B
-      long_signed_assign(c,b);
+    -- A=0 => výsledkem součtu je B
+    when long_signed_neutral  do long_signed_assign(c,b);
 
     -- A>0
-    when long_signed_positive do
-      case b[0]
-        when long_signed_neutral do
-          -- B=0, výsledkem součtu je A
-          long_signed_assign(c,a);
+    when long_signed_positive do case b[0]
+        -- B=0, výsledkem součtu je A
+        when long_signed_neutral  do long_signed_assign(c,a);
 
-        when long_signed_positive do
-          -- A>0, B>0, výsledkem součtu je A+B, výsledek bude kladný
-          long_unsigned_add(unsigned_c^,unsigned_a^,unsigned_b^);
-          #if #declared kamil; #and then; kamil then;
-          #end if;
-        when others do
-          -- A>0, B<0, výsledkem součtu je A-ABS(B), znaménko výsledku musíme zjistit
+        -- A>0, B>0 => výsledkem součtu je A+B, výsledek bude kladný
+        when long_signed_positive do long_unsigned_add(unsigned_c^,unsigned_a^,unsigned_b^);
+
+        -- A>0, B<0 => výsledkem součtu je A-ABS(B), znaménko výsledku musíme zjistit 
+        when long_signed_negative do raise feature_not_implemented;
+
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
 
     -- A<0
-    when others do
-      case b[0]
-        when long_signed_neutral do
-          -- B=0, výsledkem součtu je A
-          long_signed_assign(c,b);
+    when long_signed_negative do case b[0]
+        -- B=0, výsledkem součtu je A
+        when long_signed_neutral  do long_signed_assign(c,b);
 
-        when long_signed_positive do
-          -- A<0, B>0, výsledkem součtu je B-ABS(A), znaménko výsledku musíme zjistit
+        -- A<0, B>0, výsledkem součtu je B-ABS(A), znaménko výsledku musíme zjistit 
+        when long_signed_positive do raise feature_not_implemented;
+          
+        -- A<0, B<0, výsledkem součtu je -(ABS(A)+ABS(B)), výsledek bude záporný
+        when long_signed_negative do raise feature_not_implemented;
 
-        when others do
-          -- A<0, B<0, výsledkem součtu je -(ABS(A)+ABS(B)), výsledek bude záporný
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
+
+    -- A's signature mark is invalid
+    when others do raise numeric_error;
     end case;
   end long_signed_add;
 
@@ -795,40 +798,44 @@ procedure long_signed_sub =
 ----------------------------------------------------------------------------------------------------
 begin
   case a[0]
+    -- A = 0
     when long_signed_neutral do
-      -- A=0, výsledkem rozdílu je -B
-      long_signed_assign(c,b);
-      long_signed_neg(c);
+        -- výsledkem rozdílu je -B
+        long_signed_assign(c,b);
+        long_signed_neg(c);
 
     -- A>0
-    when long_signed_positive do
-      case b[0]
-        when long_signed_neutral do
-          -- B=0, výsledkem rozdílu je A
-          long_signed_assign(c,a);
+    when long_signed_positive do case b[0]
+        -- A>0, B=0 => výsledkem rozdílu je A
+        when long_signed_neutral  do long_signed_assign(c,a);
 
-        when long_signed_positive do
-          -- A>0, B>0, výsledkem rozdílu je A-B, znaménko výsledku musíme zjistit
-
-        when others do
-          -- A>0, B<0, výsledkem rozdílu je A+ABS(B), výsledek bude kladný
-
+        -- A>0, B>0 => výsledkem rozdílu je A-B, znaménko výsledku musíme zjistit
+        when long_signed_positive do raise feature_not_implemented;
+        
+        -- A>0, B<0 => výsledkem rozdílu je A+ABS(B), výsledek bude kladný
+        when long_signed_negative do raise feature_not_implemented;
+        
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
 
-    -- A<0
-    when others do
-      case b[0]
-        when long_signed_neutral do
-          -- B=0, výsledkem rozdílu je A
-          long_signed_assign(c,b);
+    -- A < 0
+    when long_signed_negative do case b[0]
+        -- B=0 => výsledkem rozdílu je A
+        when long_signed_neutral  do long_signed_assign(c,b);
 
-        when long_signed_positive do
-          -- A<0, B>0, výsledkem rozdílu je -(ABS(A)+ABS(B)), výsledek bude záporný
+        -- A<0, B>0 => výsledkem rozdílu je -(ABS(A)+ABS(B)), výsledek bude záporný  
+        when long_signed_positive do raise feature_not_implemented;
+          
+        -- A<0, B<0 => výsledkem rozdílu je B-ABS(A), znaménko výsledku musíme zjistit
+        when long_signed_negative do raise feature_not_implemented;
 
-        when others do
-          -- A<0, B<0, výsledkem rozdílu je           B-ABS(A), znaménko výsledku musíme zjistit
-
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
+    
+    -- A's signature mark is invalid
+    when others do raise numeric_error;
     end case;
   end long_signed_sub;
 
@@ -864,19 +871,17 @@ begin
   long_unsigned_load(c,0);
 
   -- maximální délka prvního operandu, kterou má smysl se zabývat
-  if a:size<c:size then
-    alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1;
-  else
-    alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1;
+  if a:size<c:size 
+    then alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1;
+    else alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1;
     end if;
 
   -- provést vlastní výpočet
   for i in 0..alimit loop
     -- maximální délka druhého operandu, kterou má smysl se zabývat
-    if t_signed(b:size) < t_signed(c:size)-i then
-      blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1;
-    else
-      blimit:=t_signed(c:size)-i-1;
+    if t_signed(b:size) < t_signed(c:size)-i 
+      then blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1;
+      else blimit:=t_signed(c:size)-i-1;
       end if;
 
     for j in 0..i loop
@@ -915,19 +920,17 @@ begin
     end if;
 
   -- maximální délka prvního operandu, kterou má smysl se zabývat
-  if a:size<c:size then
-    alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1-1;
-  else
-    alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1-1;
+  if a:size<c:size 
+    then alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1-1;
+    else alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1-1;
     end if;
 
   -- provést vlastní výpočet
   for i in 0..alimit loop
     -- maximální délka druhého operandu, kterou má smysl se zabývat
-    if t_signed(b:size) < t_signed(c:size)-i then
-      blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1-1;
-    else
-      blimit:=t_signed(c:size)-i-1-1;
+    if t_signed(b:size) < t_signed(c:size)-i 
+      then blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1-1;
+      else blimit:=t_signed(c:size)-i-1-1;
       end if;
 
     for j in 0..i loop
@@ -944,6 +947,7 @@ begin
 procedure long_unsigned_div =
 ----------------------------------------------------------------------------------------------------
 begin
+  raise feature_not_implemented;
   end long_unsigned_div;
 
 
@@ -954,12 +958,21 @@ procedure long_signed_div =
 begin
   if b[0]=long_signed_neutral then
     -- dělení nulou
+    raise numeric_error;
+    
   elsif a[0]=long_signed_neutral then
     -- nulový čitatel, nulový výsledek
+    
+    -- %%X A co znaménko B? To má vliv na znaménko výsledku, ne? => feature not implemented
+    raise feature_not_implemented;
+    
   elsif a[0]=b[0] then
     -- čitatel a jmenovatel mají stejné znaménko, výsledek bude kladný
+    raise feature_not_implemented;
+  
   else
     -- čitatel a jmenovatel mají rozdílné znaménko, výsledek bude záporný
+    raise feature_not_implemented;
     end if;
   end long_signed_div;
 
@@ -969,6 +982,7 @@ begin
 procedure long_unsigned_mod =
 ----------------------------------------------------------------------------------------------------
 begin
+  raise feature_not_implemented;
   end long_unsigned_mod;
 
 
@@ -977,6 +991,7 @@ begin
 procedure long_signed_mod =
 ----------------------------------------------------------------------------------------------------
 begin
+  raise feature_not_implemented;
   end long_signed_mod;
 
 
@@ -1173,44 +1188,53 @@ procedure long_signed_cmp (
 ----------------------------------------------------------------------------------------------------
 begin
   case a[0]
-    when long_signed_neutral do ;
-      case b[0]
-        when long_signed_neutral do 
-          -- A=0, B=0 -> A=B
-          result:=cmp_res_equal;
-        when long_signed_positive do
-          -- A=0, B>0 -> A<B
-          result:=cmp_res_smaller;
-        when long_signed_negative do
-          -- A=0, B<0 -> A>B
-          result:=cmp_res_greater;
+    -- A = 0
+    when long_signed_neutral do case b[0]
+        -- A=0, B=0 => A=B
+        when long_signed_neutral  do result:=cmp_res_equal;
+
+        -- A=0, B>0 => A<B
+        when long_signed_positive do result:=cmp_res_smaller;
+        
+        -- A=0, B<0 => A>B
+        when long_signed_negative do result:=cmp_res_greater;
+        
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
-    when long_signed_positive do ;
-      case b[0]
-        when long_signed_neutral do 
-          -- A>0, B=0 -> A>B
-          result:=cmp_res_greater;
-        when long_signed_positive do
-          -- A>0, B>0 -> ?
-          begin
-            end;
-        when long_signed_negative do
-          -- A>0, B<0 -> A>B
-          result:=cmp_res_greater;
+    
+    -- A > 0
+    when long_signed_positive do case b[0]
+        -- A>0, B=0 => A>B
+        when long_signed_neutral  do result:=cmp_res_greater;
+        
+        -- A>0, B>0 => ?
+        when long_signed_positive do raise feature_not_implemented;
+        
+        -- A>0, B<0 => A>B
+        when long_signed_negative do result:=cmp_res_greater;
+        
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
-    when long_signed_negative do ;
-      case b[0]
-        when long_signed_neutral do 
-          -- A<0, B=0 -> A<B
-          result:=cmp_res_smaller;
-        when long_signed_positive do
-          -- A<0, B>0 -> A<B
-          result:=cmp_res_smaller;
-        when long_signed_negative do
-          -- A<0, B<0 -> ?
-          begin
-            end;
+        
+    -- A < 0    
+    when long_signed_negative do case b[0]
+        -- A<0, B=0 => A<B
+        when long_signed_neutral  do result:=cmp_res_smaller;
+        
+        -- A<0, B>0 => A<B  
+        when long_signed_positive do result:=cmp_res_smaller;
+        
+        -- A<0, B<0 => ?            
+        when long_signed_negative do  raise feature_not_implemented;
+        
+        -- B's signature mark is invalid
+        when others do raise numeric_error;
         end case;
+        
+    -- A's signature mark is invalid    
+    when others do raise numeric_error;
     end case;
   end long_signed_cmp;
 

@@ -6,7 +6,9 @@ module private strings =
 ----------------------------------------------------------------------------------------------------
 
 with
-  characters,characters.iso10646;
+  standard.characters,
+  standard.characters.iso10646,
+  standard.numerics;
 
 ----------------------------------------------------------------------------------------------------
 procedure str_fill_character (
@@ -401,38 +403,51 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure str_separate =
--- Separates string [str] separated by character [separator] to an array [_array] of substrings .
+-- Separates string [str] separated by character [separator] to string [_string] of strings .
+-- Caller is responsible for freeing the allocated string [_string].
 ----------------------------------------------------------------------------------------------------
 var 
-  j                : t_char32str_array:range;
+  j                : t_char32str_string:range;
+  count            : t_unsigned;
 
 begin 
+  -- count the substrings
+  count:=str_count_character(str,separator);
+
+  -- allocate [_string] to hold the resulting number of substrings
+  new _string range count+1;
+  _string^:length:=count+1;
+
+  -- separate the original string into a list of substrings     
+  j:=1;
   for i in str:range loop
     if str[i]<>separator 
-      -- character is not separator
-      then
-        -- apend to actual the string of the array
-        _array[j] & str[i];
+      -- character is not a separator => append to the actual substring
+      then 
+        _string^[j] & str[i];
 
-      -- charcter is a separator
+      -- character is a separator => move to next substring
       else
         -- increment index of the array
         succ j;
-      end if;
+        end if;
     end loop;
+    
+rollback
+  discard _string;
   end str_separate;
 
 
 
 ----------------------------------------------------------------------------------------------------
-procedure array_to_str =
+procedure str_combine =
 -- Joins strings of an array [_array] into a string separated by character [separator].
 ----------------------------------------------------------------------------------------------------
 begin 
-  for i in _array:range loop
-    result & _array[i] & separator; 
+  for i in _string:range loop
+    result & _string[i] & separator; 
     end loop;
-  end array_to_str;
+  end str_combine;
 
 
 
@@ -538,12 +553,13 @@ begin
   end str_to_title;
 
 
+
 ----------------------------------------------------------------------------------------------------
 procedure str_copy =
 -- Returns a substring of string [str] from position [_start] to position [_stop].
 ----------------------------------------------------------------------------------------------------
 begin
-  for i in _start.._end loop
+  for i in _start..min_unsigned(_end,str:length) loop
     result & str[i];
     end loop;
   end str_copy;       
@@ -559,7 +575,7 @@ procedure str_create_copy =
 ----------------------------------------------------------------------------------------------------
 begin
   new dest range _end-_start+1;
-  for i in _start.._end loop
+  for i in _start..min_unsigned(_end,src:length) loop
     dest^ & src[i];
     end loop;
   end str_create_copy;       

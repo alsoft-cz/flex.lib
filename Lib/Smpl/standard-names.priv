@@ -336,7 +336,7 @@ class private c_name =
     ------------------------------------------------------------------------------------------------
     begin
       -- %%TODO(ADJUST) Predelat cely tenhle system funkci clone na adjust
-      new p_name(result);
+      new p_name(result) tag this:tag;
       copy_components(result);
       copy_basic_fields(result);
       end clone;
@@ -917,8 +917,8 @@ class private c_file_name =
       p_file_name(name)^.remove_all_extensions;
       end get_name_without_all_extensions;
 
-    
-    
+
+
     ------------------------------------------------------------------------------------------------
     static get_path_name =
     -- Creates a new name containing only the path (without the filename).
@@ -966,29 +966,41 @@ class private c_file_name =
     -- Creates a new name containing only the filename (without the path).
     -- The caller is responsible for freeing the created name.
     ------------------------------------------------------------------------------------------------
+    begin
+      -- create a complete clone
+      name:=clone;
+
+      -- and strip the path off it
+      name^.remove_path;
+      end get_name_without_path;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_base_name_only =
+    -- Retrieves the base name of a file or folder name.
+    --  The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
     var
-      comp         : p_name_component;
+      last         : p_name_component;
 
     begin
-      -- prepare the result
-      new name;
-      copy_basic_fields(name);
-      name^.name_type:=tnt_relative;
-      name^.set_ns_data(clone_ns_data(name));
+      -- prepare the name
+      new base_name;
+      copy_basic_fields(base_name);
+      base_name^.set_ns_data(clone_ns_data(base_name));
+      base_name^.name_type:=tnt_relative;
 
-      -- find the filename and copy it and everything after it
-      comp:=get_last_file_or_folder;
-      if comp=nil then
-        -- no file or folder=>the result is empty
-        return;
+      -- find the base name
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>we cannot provide any base name
+        raise name_error;
         end if;
 
-      -- store the filename with the rest of the name
-      while comp<>nil loop
-        name^.components.insert(comp^.clone);
-        components.set_next(comp);
-        end loop;
-      end get_name_without_path;
+      -- and copy it
+      base_name^.components.insert(last^.clone);
+      end get_base_name_only;
 
 
 
@@ -1001,44 +1013,11 @@ class private c_file_name =
       comp         : p_name_component;
 
     begin
-      -- check if this name has anything like root
-      if name_type=tnt_drive_relative or name_type=tnt_relative then
-        -- unable to get a root-relative version when we have only a relative name
-        raise name_error;
-        end if;
+      -- create a complete clone
+      name:=clone;
 
-      -- prepare the result
-      new name;
-      copy_basic_fields(name);
-      name^.name_type:=tnt_root_relative;
-      name^.set_ns_data(clone_ns_data(name));
-      name^.name_type:=tnt_root_relative;
-
-      -- find the first file/folder component
-      components.set_first(comp);
-      while comp<>nil {and then (comp^:tag<>c_name_component_file_or_folder:tag
-      and comp^:tag<>c_name_component_file:tag and comp^:tag<>c_name_component_folder:tag
-      and comp^:tag<>c_name_component_stream:tag)} loop
-
-        if comp^:tag=c_name_component_file_or_folder:tag then break; end if;
-        if comp^:tag=c_name_component_file:tag then break; end if;
-        if comp^:tag=c_name_component_folder:tag then break; end if;
-        if comp^:tag=c_name_component_stream:tag then break; end if;
-        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
-
-        components.set_next(comp);
-        end loop;
-
-      if comp=nil then
-        -- no file or folder=>the result is empty
-        return;
-        end if;
-
-      -- store the rest of the name
-      while comp<>nil loop
-        name^.components.insert(comp^.clone);
-        components.set_next(comp);
-        end loop;
+      -- and strip the server+drive off it
+      name^.remove_drive;
       end get_root_relative_name;
 
 
@@ -1084,6 +1063,66 @@ class private c_file_name =
 
 
     ------------------------------------------------------------------------------------------------
+    static remove_drive =
+    -- Removes the server and drive portions the component (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+
+    begin
+      -- this will be a root-relative filename now
+      name_type:=tnt_root_relative;
+
+      -- delete components until the first file/folder component
+      components.set_first(comp);
+      while comp<>nil {and then (comp^:tag<>c_name_component_file_or_folder:tag
+      and comp^:tag<>c_name_component_file:tag and comp^:tag<>c_name_component_folder:tag
+      and comp^:tag<>c_name_component_stream:tag)} loop
+
+        if comp^:tag=c_name_component_file_or_folder:tag then break; end if;
+        if comp^:tag=c_name_component_file:tag then break; end if;
+        if comp^:tag=c_name_component_folder:tag then break; end if;
+        if comp^:tag=c_name_component_stream:tag then break; end if;
+        -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
+
+        components.delete_first;
+        components.set_first(comp);
+        end loop;
+      end remove_drive;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static remove_path =
+    -- Removes the server, drive, and path portions of the component (if present).
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_component;
+      last         : p_name_component_file_or_folder;  -- the last file/folder component of the name
+
+    begin
+      -- this will be a relative filename now
+      name_type:=tnt_relative;
+
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>what should we do with the name??
+        raise name_error;
+        --%%TODO or what??
+        end if;
+
+      -- delete all components until the [last]
+      components.set_first(comp);
+      while comp<>nil and comp<>last loop
+        components.delete_first;
+        components.set_first(comp);
+        end loop;
+      end remove_path;
+
+
+
+    ------------------------------------------------------------------------------------------------
     static remove_last_extension =
     -- Removes the last extension of the component (if present).
     ------------------------------------------------------------------------------------------------
@@ -1098,7 +1137,7 @@ class private c_file_name =
         return;
         end if;
 
-      -- change the last extension of the last component
+      -- remove the last extension of the last component
       last^.remove_last_extension;
       end remove_last_extension;
 
@@ -1119,9 +1158,117 @@ class private c_file_name =
         return;
         end if;
 
-      -- change the last extension of the last component
+      -- remove the extensions of the last component
       last^.remove_all_extensions;
       end remove_all_extensions;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_base_name =
+    -- Retrieves the base name of a file or folder name.
+    --  The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder; -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>cannot get the base name
+        raise name_error;
+        end if;
+
+      -- get its base name
+      last^.get_base_name(base_name);
+      end get_base_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_last_extension =
+    -- Retrieves the last extension of a file or folder name.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder; -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>cannot get the extension
+        raise name_error;
+        end if;
+
+      -- get its last extension
+      last^.get_last_extension(extension);
+      end get_last_extension;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static append_extension =
+    -- Appends the given extension to the name.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder; -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>cannot append the extension
+        raise name_error;
+        end if;
+
+      -- append the extension to it
+      last^.append_extension(extension);
+      end append_extension;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    static check_last_extension =
+    -- Checks if the last extension of the name is equal to the given extension.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder; -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>failed
+        return;
+        end if;
+
+      -- check the extension
+      result:=last^.check_last_extension(extension);
+      end check_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_specified_extension =
+    -- If this name contains the specified [extension], it is removed. If [last_only] is true, only
+    -- the last extension is checked.
+    ------------------------------------------------------------------------------------------------
+    var
+      last         : p_name_component_file_or_folder;  -- the last file/folder component of the name
+
+    begin
+      -- get the last component
+      last:=p_name_component_file_or_folder(get_last_file_or_folder);
+      if last=nil then
+        -- no file or folder component=>nothing to do
+        return;
+        end if;
+
+      -- remove the specified extension of the last component
+      last^.remove_specified_extension(extension, last_only);
+      end remove_specified_extension;
 
 
 
@@ -1300,9 +1447,47 @@ class private c_name_component_file_or_folder =
 
     begin
       get_last_extension(buff);
-      result:=buff^=extension;
+      result:=str_compare_case_insensitive(buff^, extension);
       discard buff;
       end check_last_extension;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_specified_extension =
+    -- If this name contains the specified [extension], it is removed. If [last_only] is true, only
+    -- the last extension is checked.
+    ------------------------------------------------------------------------------------------------
+    var
+      comp         : p_name_subcomponent;
+    
+    begin
+      -- check if we should consider only the last extension
+      if last_only then
+        if check_last_extension(extension) then
+          remove_last_extension;
+          end if;
+        return;
+        end if;
+
+      -- otherwise, look at all extensions
+      subcomponents.set_first(comp);
+
+      -- skip the basename
+      subcomponents.set_next(comp);
+
+      -- go through the extensions
+      while comp<>nil loop
+        if str_compare_case_insensitive(comp^.name^, extension) then
+          -- extension found=>remove it
+          subcomponents.delete(comp);
+          return;
+          end if;
+
+        -- not found, continue with the next extension
+        subcomponents.set_next(comp);
+        end loop;
+      end remove_specified_extension;
 
 
 
@@ -1344,7 +1529,7 @@ class private c_name_subcomponent_extension =
     override clone =
     ------------------------------------------------------------------------------------------------
     begin
-      new p_name_subcomponent_base_name(result);
+      new p_name_subcomponent_extension(result);
       result^.set_name(name^);
       end clone;
 

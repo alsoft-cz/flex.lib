@@ -147,14 +147,14 @@ class public c_namespace_uri = extend c_namespace;
     -----------------------------------------------------------------------------------------------
     static has_scheme (
         text_name  : in  t_text_name;            -- the name
-        is_valid   : out t_logical;              -- if a _valid_ scheme present?
-        scheme_len : out t_unsigned)             -- if it has a scheme
-        return t_logical;
+        has_scheme : out t_logical;              -- is a scheme present?
+        is_valid   : out t_logical;              -- is a _valid_ scheme present?
+        scheme_len : out t_unsigned);            -- length of the scheme part
     -- Checks whether the [text_name] begins with a scheme part and if it is valid.
-    --  - If it does not contain a scheme part, return false
-    --  - If it contains an invalid scheme, set [is_valid] to false and return true
+    --  - If it does not contain a scheme part, [has_scheme] is set to false
+    --  - If it contains an invalid scheme, set [is_valid] to false and [has_scheme] to true
     --  - If it contains a valid scheme, set [is_valid] to true, set [scheme_len] to the
-    --    length of the scheme part (including the separating colon), and return true
+    --    length of the scheme part (including the separating colon), and [has_scheme] to true
     ------------------------------------------------------------------------------------------------
 
     end c_namespace_uri;
@@ -210,6 +210,11 @@ class public c_namespace_news_uri = extend c_namespace_uri;
 class public c_uri_name = extend c_name;
 -- A name that represents a generic URI, parsed by [c_namespace_uri].
 ----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static delete_variables;
+    -- Delete all variables (and fragment information) from the name's component list.
+    ------------------------------------------------------------------------------------------------
 
     end c_uri_name;
 

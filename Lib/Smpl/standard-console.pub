@@ -149,18 +149,18 @@ procedure write_line (
 ----------------------------------------------------------------------------------------------------
 procedure read_char (
     s              : out t_char32;               -- character to write
-    mode           : in t_input_mode:=t_im_char_with_echo)
-    return t_logical;
+    eod            : out t_logical;
+    mode           : in t_input_mode:=t_im_char_with_echo);
 ----------------------------------------------------------------------------------------------------
 procedure read (
     s              : out t_char32ustr;           -- string to read into
-    mode           : in t_input_mode:=t_im_char_with_echo)
-    return t_logical;
+    eod            : out t_logical;
+    mode           : in t_input_mode:=t_im_char_with_echo);
 ----------------------------------------------------------------------------------------------------
 procedure read_line (
     s              : out t_char32ustr;           -- string to read into
-    mode           : in t_input_mode:=t_im_line_with_echo)
-    return t_logical;
+    eod            : out t_logical;
+    mode           : in t_input_mode:=t_im_line_with_echo);
 ----------------------------------------------------------------------------------------------------
 procedure input_char (
     s              : out t_char32;               -- character to write
@@ -181,16 +181,16 @@ procedure input_key(
     key            : out t_console_event);
 ----------------------------------------------------------------------------------------------------
 procedure read_key(
-    key            : out t_console_event)
-    return t_logical;
+    key            : out t_console_event;
+    eod            : out t_logical);
 ----------------------------------------------------------------------------------------------------
 procedure read_mouse(
-    mouse          : out t_console_event)
-    return t_logical;
+    mouse          : out t_console_event;
+    eod            : out t_logical);
 ----------------------------------------------------------------------------------------------------
 procedure read_event(
-    event          : out t_console_event)
-    return t_logical;
+    event          : out t_console_event;
+    eod            : out t_logical);
 ----------------------------------------------------------------------------------------------------
 procedure key_pressed return t_logical;
 ----------------------------------------------------------------------------------------------------

@@ -78,8 +78,8 @@ type
 
   -- záznam pro zpracování floating-point čísla %%CZ
   t_float_parse    = record
-      min          : t_extended;                 -- zatím nic
-      max          : t_extended;                 -- zatím nic
+      min          : t_extended := nil;          -- zatím nic
+      max          : t_extended := nil;          -- zatím nic
       end record;
 
 

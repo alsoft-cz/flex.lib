@@ -274,6 +274,31 @@ var
     end init_console;
   end c_console_output_stream;
 
+----------------------------------------------------------------------------------------------------
+procedure console_handler : system.windows.wincon.HANDLER_ROUTINE = 
+----------------------------------------------------------------------------------------------------
+var
+    input          : aliased _INPUT_RECORD;
+    writen         : dword;
+
+begin
+  case (CtrlType)
+    when CTRL_C_EVENT,CTRL_BREAK_EVENT,CTRL_CLOSE_EVENT,CTRL_LOGOFF_EVENT,CTRL_SHUTDOWN_EVENT do
+      input.EventType:=KEY_EVENT;
+      input.event.KeyEvent.bKeyDown:=true;
+      input.event.KeyEvent.wRepeatCount:=1;
+      input.event.KeyEvent.wVirtualKeyCode:=t_ec_c;
+      input.event.KeyEvent.dwControlKeyState:=system.windows.wincon.RIGHT_CTRL_PRESSED+system.windows.wincon.LEFT_CTRL_PRESSED;
+      result:=true;
+    when others do
+      result:=false;
+    end case;
+  if result then 
+    if not WriteConsoleInputW(getstdhandle(std_input_handle),input,1,writen) or else writen<>1 then
+      result:=false;
+      end if;
+    end if;
+  end console_handler;
 
 
 ----------------------------------------------------------------------------------------------------
@@ -305,6 +330,7 @@ var
     key_mode       : t_logical;
     mouse_mode     : t_logical;
     peek_mode      : t_logical;
+    handler_mode   : t_logical;
 
   ------------------------------------------------------------------------------------------------
   static init_console =
@@ -330,7 +356,7 @@ var
         end if;
       -- create decoder
       new p_character_decoder_ucs2(decoder);
-      set_mode(t_im_char_with_echo);
+      set_mode(t_im_line_with_echo);
       end if;
     set_optimal_packet_size(co_console_width);
     end init_console;
@@ -382,6 +408,22 @@ var
 
 
   ------------------------------------------------------------------------------------------------
+  static change_handler (
+    newvalue       : t_logical)=
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- redirect ctrl+c ctrl+break events
+    if newvalue<>handler_mode then
+      if not handle_redir and then not SetConsoleCtrlHandler(^console_handler,newvalue) then
+        raise console_error;
+        end if;
+      handler_mode:=newvalue;
+      end if;
+    end change_handler;
+
+
+
+  ------------------------------------------------------------------------------------------------
   static set_mode =
   ------------------------------------------------------------------------------------------------
   begin
@@ -393,6 +435,7 @@ var
         key_mode:=true;
         mouse_mode:=false;
         peek_mode:=true;
+        change_handler(true);
       when t_im_all_events_no_echo do
         enable_echo:=false;
         char_in_mode:=false;
@@ -400,6 +443,7 @@ var
         key_mode:=true;
         mouse_mode:=true;
         peek_mode:=false;
+        change_handler(true);
       when t_im_key_events_no_echo do
         enable_echo:=false;
         char_in_mode:=false;
@@ -407,6 +451,7 @@ var
         key_mode:=true;
         mouse_mode:=false;
         peek_mode:=false;
+        change_handler(true);
       when t_im_mouse_events_no_echo do
         enable_echo:=false;
         char_in_mode:=false;
@@ -414,6 +459,7 @@ var
         key_mode:=false;
         mouse_mode:=true;
         peek_mode:=false;
+        change_handler(true);
       when t_im_char_no_echo do
         enable_echo:=false;
         char_in_mode:=true;
@@ -421,6 +467,7 @@ var
         key_mode:=false;
         mouse_mode:=false;
         peek_mode:=false;
+        change_handler(true);
       when t_im_char_with_echo do
         enable_echo:=true;
         char_in_mode:=true;
@@ -428,6 +475,7 @@ var
         key_mode:=false;
         mouse_mode:=false;
         peek_mode:=false;
+        change_handler(true);
       when t_im_line_no_echo do
         enable_echo:=false;
         char_in_mode:=true;
@@ -435,6 +483,7 @@ var
         key_mode:=false;
         mouse_mode:=false;
         peek_mode:=false;
+        change_handler(false);
       when t_im_line_with_echo do
         enable_echo:=true;
         char_in_mode:=true;
@@ -442,6 +491,7 @@ var
         key_mode:=false;
         mouse_mode:=false;
         peek_mode:=false;
+        change_handler(false);
       end case;
     end set_mode;
 
@@ -709,6 +759,7 @@ var
           co_console_height:=t_unsigned(input.event.WindowBufferSizeEvent.dwSize.y);
         when MENU_EVENT do
         when FOCUS_EVENT do
+        when others do
         end case;
       end loop;
     end read_packet_con;
@@ -831,6 +882,7 @@ var
   exit =
   ------------------------------------------------------------------------------------------------
   begin
+    change_handler(false);
     discard decoder;
     end exit;
   end c_console_input_stream;

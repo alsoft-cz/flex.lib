@@ -5461,7 +5461,7 @@ procedure DeviceCapabilitiesA(
     _005            : in t_090)
                       return t_091;
 #pragma convention(DeviceCapabilitiesA,system);
-#pragma import(DeviceCapabilitiesA,'DeviceCapabilitiesA','winspool.dll');
+#pragma import(DeviceCapabilitiesA,'DeviceCapabilitiesA','winspool.drv');
 
 type
 t_092=^DEVMODEW for machine_pointer use true;
@@ -5476,7 +5476,7 @@ procedure DeviceCapabilitiesW(
     _005            : in t_092)
                       return t_093;
 #pragma convention(DeviceCapabilitiesW,system);
-#pragma import(DeviceCapabilitiesW,'DeviceCapabilitiesW','winspool.dll');
+#pragma import(DeviceCapabilitiesW,'DeviceCapabilitiesW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeviceCapabilities;

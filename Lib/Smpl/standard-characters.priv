@@ -20,6 +20,7 @@ module private characters =
 class private abstract c_character_decoder =
 -- Character decored.
 ----------------------------------------------------------------------------------------------------
+
     ------------------------------------------------------------------------------------------------
     static finalize_input =
     -- Informs the decoder, that there will be no more input character. The decored checks if 

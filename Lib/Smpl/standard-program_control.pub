@@ -119,11 +119,11 @@ procedure discard_command_line_parameters (
 -- Result:
 --   This subprogram never fails.
 ----------------------------------------------------------------------------------------------------
-procedure run_external_program(
+procedure run_external_program (
     cmd_line       : in p_command_line_parameters;
-    directory      : in p_char32ustr:=nil;
-    env_vars       : in p_environment_variables:=nil;
-    exitcode       : in p_unsigned:=nil);
+    directory      : in p_char32ustr := nil;
+    env_vars       : in p_environment_variables := nil;
+    exitcode       : in p_unsigned := nil);
 -- Starts new process
 -- [cmd_line] list of parameters, first parameter is name of executable file
 -- [directory] startup directyory, if nil process inherits current
@@ -132,7 +132,7 @@ procedure run_external_program(
 -- Result:
 --  raise process_start_error when program didn't started succesfuly
 ----------------------------------------------------------------------------------------------------
-procedure set_task_exit_code(
+procedure set_task_exit_code (
     exitcode       : t_unsigned);
 -- sets exitcode for current task
 ----------------------------------------------------------------------------------------------------

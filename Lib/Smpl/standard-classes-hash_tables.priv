@@ -522,4 +522,7 @@ class private c_incremental_hash_table =
       succ next_id;
       end assign_hash_id;
     end c_incremental_hash_table;
+
+
+
 end hash_tables;

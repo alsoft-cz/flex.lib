@@ -166,51 +166,51 @@ class private c_namespace_system =
                                                                                                                          
               -- update the [start] position                                                                             
               start:=stop+1;                                                                                             
-              end separate_subcomponent_name;                                                                            
-                                                                                                                         
-        var                                                                                                              
-          base_name: p_name_subcomponent_base_name; -- base name                                                     
-          extension: p_name_subcomponent_extension; -- extension                                                     
-          name     : p_text_name;                -- plain-text name of a single subcomponent                         
-          start    : t_unsigned;                 -- actual position in [text_name]                                   
-                                                                                                                         
-        begin                                                                                                            
-          -- there are two special cases of folder names: '.' and '..' => handle them separately                         
-          if text_name='.' or text_name='..' then                                                                        
-            new base_name;                                                                                               
-            base_name^.set_name(text_name);                                                                              
-            f_or_f^.subcomponents.insert(base_name);                                                                             
-            return;                                                                                                      
-            end if;                                                                                                      
-                                                                                                                         
-          -- start from the beginning of the name                                                                        
-          start:=1;                                                                                                      
-                                                                                                                         
-          -- separate the base name                                                                                      
-          separate_subcomponent_name(start,name);                                                                        
-                                                                                                                         
-          -- create a subcomponent                                                                                       
-          new base_name;                                                                                                 
-          base_name^.set_name(name^);                                                                                    
-          f_or_f^.subcomponents.insert(base_name);                                                                               
-                                                                                                                         
+              end separate_subcomponent_name;
+
+        var
+          base_name: p_name_subcomponent_base_name; -- base name
+          extension: p_name_subcomponent_extension; -- extension
+          name     : p_text_name;                -- plain-text name of a single subcomponent
+          start    : t_unsigned;                 -- actual position in [text_name]
+
+        begin
+          -- there are two special cases of folder names: '.' and '..' => handle them separately
+          if text_name='.' or text_name='..' then
+            new base_name;
+            base_name^.set_name(text_name);
+            f_or_f^.subcomponents.insert(base_name);
+            return;
+            end if;
+
+          -- start from the beginning of the name
+          start:=1;
+
+          -- separate the base name
+          separate_subcomponent_name(start,name);
+
+          -- create a subcomponent
+          new base_name;
+          base_name^.set_name(name^);
+          f_or_f^.subcomponents.insert(base_name);
+
           -- free the plain-text name                                                                                    
-          discard name;                                                                                                  
-                                                                                                                         
-          -- separate all extensions                                                                                     
-          while start<=text_name:length loop                                                                             
-            -- separate one extension                                                                                    
-            separate_subcomponent_name(start,name);                                                                      
-                                                                                                                         
-            -- create a subcomponent                                                                                     
-            new extension;                                                                                               
-            extension^.set_name(name^);                                                                                  
-            f_or_f^.subcomponents.insert(extension);                                                                             
-                                                                                                                         
-            -- free the plain-text name                                                                                  
-            discard name;                                                                                                
-            end loop;                                                                                                    
-          end decompose_file_or_folder_name;                                                                                            
+          discard name;
+
+          -- separate all extensions
+          while start<=text_name:length loop
+            -- separate one extension
+            separate_subcomponent_name(start,name);
+
+            -- create a subcomponent
+            new extension;
+            extension^.set_name(name^);
+            f_or_f^.subcomponents.insert(extension);
+
+            -- free the plain-text name
+            discard name;
+            end loop;
+          end decompose_file_or_folder_name;
 
 
 
@@ -386,12 +386,14 @@ class private c_namespace_system =
       ns_data      : p_namespace_specific;       -- namespace specific data
 
     begin
-      -- create the name if not given
-      if name=nil then
-        new p_file_name(name);
+      -- create the name if not given, otherwise, clear the name
+      if name=nil
+      then new p_file_name(name);
+      else name^.components.delete_all;
         end if;
 
       -- prepare namespace specific data
+      discard name^.ns_data;
       new p_namespace_specific_system(ns_data);
       name^.ns_data:=ns_data;
 
@@ -533,7 +535,7 @@ class private c_namespace_system =
             then new text_name range component:length
             else
               -- %%TODO(ADJUST) adjust text_name range text_name^:length+component:length;
-              new _text_name range text_name^:length+component:length;
+              new _text_name range text_name^:length+component:length+1;
               _text_name^:=text_name^;
               discard text_name;
               text_name:=_text_name;
@@ -616,9 +618,11 @@ class private c_namespace_system =
       component_name : p_text_name;              -- a plain-text name of a component
 
     begin
+      -- allocate a default (empty) name
+      new text_name range {%%FLEX 0 => Constant out of range}1;
       case name^.name_type
         -- an empty name
-        when tnt_unspecified do new text_name range {%%FLEX 0 => Constant out of range}1;
+        when tnt_unspecified do ;--new text_name range {%%FLEX 0 => Constant out of range}1;
 
         -- absolute path -- either UNC or local absolute
         when tnt_absolute do

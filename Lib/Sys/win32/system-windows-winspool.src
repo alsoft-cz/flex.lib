@@ -1617,7 +1617,7 @@ procedure EnumPrintersA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintersA,system);
-#pragma import(EnumPrintersA,'EnumPrintersA','winspool.dll');
+#pragma import(EnumPrintersA,'EnumPrintersA','winspool.drv');
 
 procedure EnumPrintersW(
     Flags           : in DWORD; 
@@ -1629,7 +1629,7 @@ procedure EnumPrintersW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintersW,system);
-#pragma import(EnumPrintersW,'EnumPrintersW','winspool.dll');
+#pragma import(EnumPrintersW,'EnumPrintersW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrinters;
@@ -1713,7 +1713,7 @@ procedure OpenPrinterA(
     pDefault        : in LPPRINTER_DEFAULTSA)
                       return BOOL;
 #pragma convention(OpenPrinterA,system);
-#pragma import(OpenPrinterA,'OpenPrinterA','winspool.dll');
+#pragma import(OpenPrinterA,'OpenPrinterA','winspool.drv');
 
 procedure OpenPrinterW(
     pPrinterName    : in LPWSTR; 
@@ -1721,7 +1721,7 @@ procedure OpenPrinterW(
     pDefault        : in LPPRINTER_DEFAULTSW)
                       return BOOL;
 #pragma convention(OpenPrinterW,system);
-#pragma import(OpenPrinterW,'OpenPrinterW','winspool.dll');
+#pragma import(OpenPrinterW,'OpenPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template OpenPrinter;
@@ -1738,14 +1738,14 @@ procedure ResetPrinterA(
     pDefault        : in LPPRINTER_DEFAULTSA)
                       return BOOL;
 #pragma convention(ResetPrinterA,system);
-#pragma import(ResetPrinterA,'ResetPrinterA','winspool.dll');
+#pragma import(ResetPrinterA,'ResetPrinterA','winspool.drv');
 
 procedure ResetPrinterW(
     hPrinter        : in t_HANDLE; 
     pDefault        : in LPPRINTER_DEFAULTSW)
                       return BOOL;
 #pragma convention(ResetPrinterW,system);
-#pragma import(ResetPrinterW,'ResetPrinterW','winspool.dll');
+#pragma import(ResetPrinterW,'ResetPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template ResetPrinter;
@@ -1765,7 +1765,7 @@ procedure SetJobA(
     Command         : in DWORD)
                       return BOOL;
 #pragma convention(SetJobA,system);
-#pragma import(SetJobA,'SetJobA','winspool.dll');
+#pragma import(SetJobA,'SetJobA','winspool.drv');
 
 procedure SetJobW(
     hPrinter        : in t_HANDLE; 
@@ -1775,7 +1775,7 @@ procedure SetJobW(
     Command         : in DWORD)
                       return BOOL;
 #pragma convention(SetJobW,system);
-#pragma import(SetJobW,'SetJobW','winspool.dll');
+#pragma import(SetJobW,'SetJobW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetJob;
@@ -1796,7 +1796,7 @@ procedure GetJobA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetJobA,system);
-#pragma import(GetJobA,'GetJobA','winspool.dll');
+#pragma import(GetJobA,'GetJobA','winspool.drv');
 
 procedure GetJobW(
     hPrinter        : in t_HANDLE; 
@@ -1807,7 +1807,7 @@ procedure GetJobW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetJobW,system);
-#pragma import(GetJobW,'GetJobW','winspool.dll');
+#pragma import(GetJobW,'GetJobW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetJob;
@@ -1830,7 +1830,7 @@ procedure EnumJobsA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumJobsA,system);
-#pragma import(EnumJobsA,'EnumJobsA','winspool.dll');
+#pragma import(EnumJobsA,'EnumJobsA','winspool.drv');
 
 procedure EnumJobsW(
     hPrinter        : in t_HANDLE; 
@@ -1843,7 +1843,7 @@ procedure EnumJobsW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumJobsW,system);
-#pragma import(EnumJobsW,'EnumJobsW','winspool.dll');
+#pragma import(EnumJobsW,'EnumJobsW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumJobs;
@@ -1861,7 +1861,7 @@ procedure AddPrinterA(
     pPrinter        : in LPBYTE)
                       return t_HANDLE;
 #pragma convention(AddPrinterA,system);
-#pragma import(AddPrinterA,'AddPrinterA','winspool.dll');
+#pragma import(AddPrinterA,'AddPrinterA','winspool.drv');
 
 procedure AddPrinterW(
     pName           : in LPWSTR; 
@@ -1869,7 +1869,7 @@ procedure AddPrinterW(
     pPrinter        : in LPBYTE)
                       return t_HANDLE;
 #pragma convention(AddPrinterW,system);
-#pragma import(AddPrinterW,'AddPrinterW','winspool.dll');
+#pragma import(AddPrinterW,'AddPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrinter;
@@ -1885,7 +1885,7 @@ procedure DeletePrinter(
     hPrinter        : in out {!}t_HANDLE)
                       return BOOL;
 #pragma convention(DeletePrinter,system);
-#pragma import(DeletePrinter,'DeletePrinter','winspool.dll');
+#pragma import(DeletePrinter,'DeletePrinter','winspool.drv');
 
 procedure SetPrinterA(
     hPrinter        : in t_HANDLE; 
@@ -1894,7 +1894,7 @@ procedure SetPrinterA(
     Command         : in DWORD)
                       return BOOL;
 #pragma convention(SetPrinterA,system);
-#pragma import(SetPrinterA,'SetPrinterA','winspool.dll');
+#pragma import(SetPrinterA,'SetPrinterA','winspool.drv');
 
 procedure SetPrinterW(
     hPrinter        : in t_HANDLE; 
@@ -1903,7 +1903,7 @@ procedure SetPrinterW(
     Command         : in DWORD)
                       return BOOL;
 #pragma convention(SetPrinterW,system);
-#pragma import(SetPrinterW,'SetPrinterW','winspool.dll');
+#pragma import(SetPrinterW,'SetPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetPrinter;
@@ -1923,7 +1923,7 @@ procedure GetPrinterA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterA,system);
-#pragma import(GetPrinterA,'GetPrinterA','winspool.dll');
+#pragma import(GetPrinterA,'GetPrinterA','winspool.drv');
 
 procedure GetPrinterW(
     hPrinter        : in t_HANDLE; 
@@ -1933,7 +1933,7 @@ procedure GetPrinterW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterW,system);
-#pragma import(GetPrinterW,'GetPrinterW','winspool.dll');
+#pragma import(GetPrinterW,'GetPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrinter;
@@ -1951,7 +1951,7 @@ procedure AddPrinterDriverA(
     pDriverInfo     : out BYTE )
                       return BOOL;
 #pragma convention(AddPrinterDriverA,system);
-#pragma import(AddPrinterDriverA,'AddPrinterDriverA','winspool.dll');
+#pragma import(AddPrinterDriverA,'AddPrinterDriverA','winspool.drv');
 
 procedure AddPrinterDriverW(
     pName           : in LPWSTR; 
@@ -1959,7 +1959,7 @@ procedure AddPrinterDriverW(
     pDriverInfo     : out BYTE )
                       return BOOL;
 #pragma convention(AddPrinterDriverW,system);
-#pragma import(AddPrinterDriverW,'AddPrinterDriverW','winspool.dll');
+#pragma import(AddPrinterDriverW,'AddPrinterDriverW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrinterDriver;
@@ -1978,7 +1978,7 @@ procedure AddPrinterDriverExA(
     dwFileCopyFlags : in DWORD)
                       return BOOL;
 #pragma convention(AddPrinterDriverExA,system);
-#pragma import(AddPrinterDriverExA,'AddPrinterDriverExA','winspool.dll');
+#pragma import(AddPrinterDriverExA,'AddPrinterDriverExA','winspool.drv');
 
 procedure AddPrinterDriverExW(
     pName           : in LPWSTR; 
@@ -1987,7 +1987,7 @@ procedure AddPrinterDriverExW(
     dwFileCopyFlags : in DWORD)
                       return BOOL;
 #pragma convention(AddPrinterDriverExW,system);
-#pragma import(AddPrinterDriverExW,'AddPrinterDriverExW','winspool.dll');
+#pragma import(AddPrinterDriverExW,'AddPrinterDriverExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrinterDriverEx;
@@ -2009,7 +2009,7 @@ procedure EnumPrinterDriversA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrinterDriversA,system);
-#pragma import(EnumPrinterDriversA,'EnumPrinterDriversA','winspool.dll');
+#pragma import(EnumPrinterDriversA,'EnumPrinterDriversA','winspool.drv');
 
 procedure EnumPrinterDriversW(
     pName           : in LPWSTR; 
@@ -2021,7 +2021,7 @@ procedure EnumPrinterDriversW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrinterDriversW,system);
-#pragma import(EnumPrinterDriversW,'EnumPrinterDriversW','winspool.dll');
+#pragma import(EnumPrinterDriversW,'EnumPrinterDriversW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrinterDrivers;
@@ -2042,7 +2042,7 @@ procedure GetPrinterDriverA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterDriverA,system);
-#pragma import(GetPrinterDriverA,'GetPrinterDriverA','winspool.dll');
+#pragma import(GetPrinterDriverA,'GetPrinterDriverA','winspool.drv');
 
 procedure GetPrinterDriverW(
     hPrinter        : in t_HANDLE; 
@@ -2053,7 +2053,7 @@ procedure GetPrinterDriverW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterDriverW,system);
-#pragma import(GetPrinterDriverW,'GetPrinterDriverW','winspool.dll');
+#pragma import(GetPrinterDriverW,'GetPrinterDriverW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrinterDriver;
@@ -2074,7 +2074,7 @@ procedure GetPrinterDriverDirectoryA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterDriverDirectoryA,system);
-#pragma import(GetPrinterDriverDirectoryA,'GetPrinterDriverDirectoryA','winspool.dll');
+#pragma import(GetPrinterDriverDirectoryA,'GetPrinterDriverDirectoryA','winspool.drv');
 
 procedure GetPrinterDriverDirectoryW(
     pName           : in LPWSTR; 
@@ -2085,7 +2085,7 @@ procedure GetPrinterDriverDirectoryW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrinterDriverDirectoryW,system);
-#pragma import(GetPrinterDriverDirectoryW,'GetPrinterDriverDirectoryW','winspool.dll');
+#pragma import(GetPrinterDriverDirectoryW,'GetPrinterDriverDirectoryW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrinterDriverDirectory;
@@ -2103,7 +2103,7 @@ procedure DeletePrinterDriverA(
     pDriverName     : in LPSTR)
                       return BOOL;
 #pragma convention(DeletePrinterDriverA,system);
-#pragma import(DeletePrinterDriverA,'DeletePrinterDriverA','winspool.dll');
+#pragma import(DeletePrinterDriverA,'DeletePrinterDriverA','winspool.drv');
 
 procedure DeletePrinterDriverW(
     pName           : in LPWSTR; 
@@ -2111,7 +2111,7 @@ procedure DeletePrinterDriverW(
     pDriverName     : in LPWSTR)
                       return BOOL;
 #pragma convention(DeletePrinterDriverW,system);
-#pragma import(DeletePrinterDriverW,'DeletePrinterDriverW','winspool.dll');
+#pragma import(DeletePrinterDriverW,'DeletePrinterDriverW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterDriver;
@@ -2131,7 +2131,7 @@ procedure DeletePrinterDriverExA(
     dwVersionFlag   : in DWORD)
                       return BOOL;
 #pragma convention(DeletePrinterDriverExA,system);
-#pragma import(DeletePrinterDriverExA,'DeletePrinterDriverExA','winspool.dll');
+#pragma import(DeletePrinterDriverExA,'DeletePrinterDriverExA','winspool.drv');
 
 procedure DeletePrinterDriverExW(
     pName           : in LPWSTR; 
@@ -2141,7 +2141,7 @@ procedure DeletePrinterDriverExW(
     dwVersionFlag   : in DWORD)
                       return BOOL;
 #pragma convention(DeletePrinterDriverExW,system);
-#pragma import(DeletePrinterDriverExW,'DeletePrinterDriverExW','winspool.dll');
+#pragma import(DeletePrinterDriverExW,'DeletePrinterDriverExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterDriverEx;
@@ -2160,7 +2160,7 @@ procedure AddPrintProcessorA(
     pPrintProcessorName : in LPSTR)
                       return BOOL;
 #pragma convention(AddPrintProcessorA,system);
-#pragma import(AddPrintProcessorA,'AddPrintProcessorA','winspool.dll');
+#pragma import(AddPrintProcessorA,'AddPrintProcessorA','winspool.drv');
 
 procedure AddPrintProcessorW(
     pName           : in LPWSTR; 
@@ -2169,7 +2169,7 @@ procedure AddPrintProcessorW(
     pPrintProcessorName : in LPWSTR)
                       return BOOL;
 #pragma convention(AddPrintProcessorW,system);
-#pragma import(AddPrintProcessorW,'AddPrintProcessorW','winspool.dll');
+#pragma import(AddPrintProcessorW,'AddPrintProcessorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrintProcessor;
@@ -2191,7 +2191,7 @@ procedure EnumPrintProcessorsA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintProcessorsA,system);
-#pragma import(EnumPrintProcessorsA,'EnumPrintProcessorsA','winspool.dll');
+#pragma import(EnumPrintProcessorsA,'EnumPrintProcessorsA','winspool.drv');
 
 procedure EnumPrintProcessorsW(
     pName           : in LPWSTR; 
@@ -2203,7 +2203,7 @@ procedure EnumPrintProcessorsW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintProcessorsW,system);
-#pragma import(EnumPrintProcessorsW,'EnumPrintProcessorsW','winspool.dll');
+#pragma import(EnumPrintProcessorsW,'EnumPrintProcessorsW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrintProcessors;
@@ -2224,7 +2224,7 @@ procedure GetPrintProcessorDirectoryA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrintProcessorDirectoryA,system);
-#pragma import(GetPrintProcessorDirectoryA,'GetPrintProcessorDirectoryA','winspool.dll');
+#pragma import(GetPrintProcessorDirectoryA,'GetPrintProcessorDirectoryA','winspool.drv');
 
 procedure GetPrintProcessorDirectoryW(
     pName           : in LPWSTR; 
@@ -2235,7 +2235,7 @@ procedure GetPrintProcessorDirectoryW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetPrintProcessorDirectoryW,system);
-#pragma import(GetPrintProcessorDirectoryW,'GetPrintProcessorDirectoryW','winspool.dll');
+#pragma import(GetPrintProcessorDirectoryW,'GetPrintProcessorDirectoryW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrintProcessorDirectory;
@@ -2257,7 +2257,7 @@ procedure EnumPrintProcessorDatatypesA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintProcessorDatatypesA,system);
-#pragma import(EnumPrintProcessorDatatypesA,'EnumPrintProcessorDatatypesA','winspool.dll');
+#pragma import(EnumPrintProcessorDatatypesA,'EnumPrintProcessorDatatypesA','winspool.drv');
 
 procedure EnumPrintProcessorDatatypesW(
     pName           : in LPWSTR; 
@@ -2269,7 +2269,7 @@ procedure EnumPrintProcessorDatatypesW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPrintProcessorDatatypesW,system);
-#pragma import(EnumPrintProcessorDatatypesW,'EnumPrintProcessorDatatypesW','winspool.dll');
+#pragma import(EnumPrintProcessorDatatypesW,'EnumPrintProcessorDatatypesW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrintProcessorDatatypes;
@@ -2287,7 +2287,7 @@ procedure DeletePrintProcessorA(
     pPrintProcessorName : in LPSTR)
                       return BOOL;
 #pragma convention(DeletePrintProcessorA,system);
-#pragma import(DeletePrintProcessorA,'DeletePrintProcessorA','winspool.dll');
+#pragma import(DeletePrintProcessorA,'DeletePrintProcessorA','winspool.drv');
 
 procedure DeletePrintProcessorW(
     pName           : in LPWSTR; 
@@ -2295,7 +2295,7 @@ procedure DeletePrintProcessorW(
     pPrintProcessorName : in LPWSTR)
                       return BOOL;
 #pragma convention(DeletePrintProcessorW,system);
-#pragma import(DeletePrintProcessorW,'DeletePrintProcessorW','winspool.dll');
+#pragma import(DeletePrintProcessorW,'DeletePrintProcessorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrintProcessor;
@@ -2313,7 +2313,7 @@ procedure StartDocPrinterA(
     pDocInfo        : in LPBYTE)
                       return DWORD;
 #pragma convention(StartDocPrinterA,system);
-#pragma import(StartDocPrinterA,'StartDocPrinterA','winspool.dll');
+#pragma import(StartDocPrinterA,'StartDocPrinterA','winspool.drv');
 
 procedure StartDocPrinterW(
     hPrinter        : in t_HANDLE; 
@@ -2321,7 +2321,7 @@ procedure StartDocPrinterW(
     pDocInfo        : in LPBYTE)
                       return DWORD;
 #pragma convention(StartDocPrinterW,system);
-#pragma import(StartDocPrinterW,'StartDocPrinterW','winspool.dll');
+#pragma import(StartDocPrinterW,'StartDocPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template StartDocPrinter;
@@ -2337,7 +2337,7 @@ procedure StartPagePrinter(
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(StartPagePrinter,system);
-#pragma import(StartPagePrinter,'StartPagePrinter','winspool.dll');
+#pragma import(StartPagePrinter,'StartPagePrinter','winspool.drv');
 
 procedure WritePrinter(
     hPrinter        : in t_HANDLE; 
@@ -2346,7 +2346,7 @@ procedure WritePrinter(
     pcWritten       : out DWORD )
                       return BOOL;
 #pragma convention(WritePrinter,system);
-#pragma import(WritePrinter,'WritePrinter','winspool.dll');
+#pragma import(WritePrinter,'WritePrinter','winspool.drv');
 
 procedure FlushPrinter(
     hPrinter        : in t_HANDLE; 
@@ -2356,19 +2356,19 @@ procedure FlushPrinter(
     cSleep          : in DWORD)
                       return BOOL;
 #pragma convention(FlushPrinter,system);
-#pragma import(FlushPrinter,'FlushPrinter','winspool.dll');
+#pragma import(FlushPrinter,'FlushPrinter','winspool.drv');
 
 procedure EndPagePrinter(
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(EndPagePrinter,system);
-#pragma import(EndPagePrinter,'EndPagePrinter','winspool.dll');
+#pragma import(EndPagePrinter,'EndPagePrinter','winspool.drv');
 
 procedure AbortPrinter(
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(AbortPrinter,system);
-#pragma import(AbortPrinter,'AbortPrinter','winspool.dll');
+#pragma import(AbortPrinter,'AbortPrinter','winspool.drv');
 
 procedure ReadPrinter(
     hPrinter        : in t_HANDLE; 
@@ -2377,13 +2377,13 @@ procedure ReadPrinter(
     pNoBytesRead    : out DWORD )
                       return BOOL;
 #pragma convention(ReadPrinter,system);
-#pragma import(ReadPrinter,'ReadPrinter','winspool.dll');
+#pragma import(ReadPrinter,'ReadPrinter','winspool.drv');
 
 procedure EndDocPrinter(
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(EndDocPrinter,system);
-#pragma import(EndDocPrinter,'EndDocPrinter','winspool.dll');
+#pragma import(EndDocPrinter,'EndDocPrinter','winspool.drv');
 
 procedure AddJobA(
     hPrinter        : in t_HANDLE; 
@@ -2393,7 +2393,7 @@ procedure AddJobA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(AddJobA,system);
-#pragma import(AddJobA,'AddJobA','winspool.dll');
+#pragma import(AddJobA,'AddJobA','winspool.drv');
 
 procedure AddJobW(
     hPrinter        : in t_HANDLE; 
@@ -2403,7 +2403,7 @@ procedure AddJobW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(AddJobW,system);
-#pragma import(AddJobW,'AddJobW','winspool.dll');
+#pragma import(AddJobW,'AddJobW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddJob;
@@ -2420,14 +2420,14 @@ procedure ScheduleJob(
     JobId           : in DWORD)
                       return BOOL;
 #pragma convention(ScheduleJob,system);
-#pragma import(ScheduleJob,'ScheduleJob','winspool.dll');
+#pragma import(ScheduleJob,'ScheduleJob','winspool.drv');
 
 procedure PrinterProperties(
     hWnd            : in t_HWND; 
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(PrinterProperties,system);
-#pragma import(PrinterProperties,'PrinterProperties','winspool.dll');
+#pragma import(PrinterProperties,'PrinterProperties','winspool.drv');
 
 procedure DocumentPropertiesA(
     hWnd            : in t_HWND; 
@@ -2438,7 +2438,7 @@ procedure DocumentPropertiesA(
     fMode           : in DWORD)
                       return LONG;
 #pragma convention(DocumentPropertiesA,system);
-#pragma import(DocumentPropertiesA,'DocumentPropertiesA','winspool.dll');
+#pragma import(DocumentPropertiesA,'DocumentPropertiesA','winspool.drv');
 
 procedure DocumentPropertiesW(
     hWnd            : in t_HWND; 
@@ -2449,7 +2449,7 @@ procedure DocumentPropertiesW(
     fMode           : in DWORD)
                       return LONG;
 #pragma convention(DocumentPropertiesW,system);
-#pragma import(DocumentPropertiesW,'DocumentPropertiesW','winspool.dll');
+#pragma import(DocumentPropertiesW,'DocumentPropertiesW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DocumentProperties;
@@ -2469,7 +2469,7 @@ procedure AdvancedDocumentPropertiesA(
     pDevModeInput   : in PDEVMODEA)
                       return LONG;
 #pragma convention(AdvancedDocumentPropertiesA,system);
-#pragma import(AdvancedDocumentPropertiesA,'AdvancedDocumentPropertiesA','winspool.dll');
+#pragma import(AdvancedDocumentPropertiesA,'AdvancedDocumentPropertiesA','winspool.drv');
 
 procedure AdvancedDocumentPropertiesW(
     hWnd            : in t_HWND; 
@@ -2479,7 +2479,7 @@ procedure AdvancedDocumentPropertiesW(
     pDevModeInput   : in PDEVMODEW)
                       return LONG;
 #pragma convention(AdvancedDocumentPropertiesW,system);
-#pragma import(AdvancedDocumentPropertiesW,'AdvancedDocumentPropertiesW','winspool.dll');
+#pragma import(AdvancedDocumentPropertiesW,'AdvancedDocumentPropertiesW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AdvancedDocumentProperties;
@@ -2501,7 +2501,7 @@ procedure ExtDeviceMode(
     pProfile        : in LPSTR; 
     fMode           : in DWORD)
                       return LONG;
-#pragma import(ExtDeviceMode,'ExtDeviceMode','winspool.dll');
+#pragma import(ExtDeviceMode,'ExtDeviceMode','winspool.drv');
 
 procedure GetPrinterDataA(
     hPrinter        : in t_HANDLE; 
@@ -2512,7 +2512,7 @@ procedure GetPrinterDataA(
     pcbNeeded       : out DWORD )
                       return DWORD;
 #pragma convention(GetPrinterDataA,system);
-#pragma import(GetPrinterDataA,'GetPrinterDataA','winspool.dll');
+#pragma import(GetPrinterDataA,'GetPrinterDataA','winspool.drv');
 
 procedure GetPrinterDataW(
     hPrinter        : in t_HANDLE; 
@@ -2523,7 +2523,7 @@ procedure GetPrinterDataW(
     pcbNeeded       : out DWORD )
                       return DWORD;
 #pragma convention(GetPrinterDataW,system);
-#pragma import(GetPrinterDataW,'GetPrinterDataW','winspool.dll');
+#pragma import(GetPrinterDataW,'GetPrinterDataW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrinterData;
@@ -2545,7 +2545,7 @@ procedure GetPrinterDataExA(
     pcbNeeded       : out DWORD )
                       return DWORD;
 #pragma convention(GetPrinterDataExA,system);
-#pragma import(GetPrinterDataExA,'GetPrinterDataExA','winspool.dll');
+#pragma import(GetPrinterDataExA,'GetPrinterDataExA','winspool.drv');
 
 procedure GetPrinterDataExW(
     hPrinter        : in t_HANDLE; 
@@ -2557,7 +2557,7 @@ procedure GetPrinterDataExW(
     pcbNeeded       : out DWORD )
                       return DWORD;
 #pragma convention(GetPrinterDataExW,system);
-#pragma import(GetPrinterDataExW,'GetPrinterDataExW','winspool.dll');
+#pragma import(GetPrinterDataExW,'GetPrinterDataExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetPrinterDataEx;
@@ -2581,7 +2581,7 @@ procedure EnumPrinterDataA(
     pcbData         : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterDataA,system);
-#pragma import(EnumPrinterDataA,'EnumPrinterDataA','winspool.dll');
+#pragma import(EnumPrinterDataA,'EnumPrinterDataA','winspool.drv');
 
 procedure EnumPrinterDataW(
     hPrinter        : in t_HANDLE; 
@@ -2595,7 +2595,7 @@ procedure EnumPrinterDataW(
     pcbData         : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterDataW,system);
-#pragma import(EnumPrinterDataW,'EnumPrinterDataW','winspool.dll');
+#pragma import(EnumPrinterDataW,'EnumPrinterDataW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrinterData;
@@ -2616,7 +2616,7 @@ procedure EnumPrinterDataExA(
     pnEnumValues    : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterDataExA,system);
-#pragma import(EnumPrinterDataExA,'EnumPrinterDataExA','winspool.dll');
+#pragma import(EnumPrinterDataExA,'EnumPrinterDataExA','winspool.drv');
 
 procedure EnumPrinterDataExW(
     hPrinter        : in t_HANDLE; 
@@ -2627,7 +2627,7 @@ procedure EnumPrinterDataExW(
     pnEnumValues    : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterDataExW,system);
-#pragma import(EnumPrinterDataExW,'EnumPrinterDataExW','winspool.dll');
+#pragma import(EnumPrinterDataExW,'EnumPrinterDataExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrinterDataEx;
@@ -2647,7 +2647,7 @@ procedure EnumPrinterKeyA(
     pcbSubkey       : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterKeyA,system);
-#pragma import(EnumPrinterKeyA,'EnumPrinterKeyA','winspool.dll');
+#pragma import(EnumPrinterKeyA,'EnumPrinterKeyA','winspool.drv');
 
 procedure EnumPrinterKeyW(
     hPrinter        : in t_HANDLE; 
@@ -2657,7 +2657,7 @@ procedure EnumPrinterKeyW(
     pcbSubkey       : out DWORD )
                       return DWORD;
 #pragma convention(EnumPrinterKeyW,system);
-#pragma import(EnumPrinterKeyW,'EnumPrinterKeyW','winspool.dll');
+#pragma import(EnumPrinterKeyW,'EnumPrinterKeyW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPrinterKey;
@@ -2677,7 +2677,7 @@ procedure SetPrinterDataA(
     cbData          : in DWORD)
                       return DWORD;
 #pragma convention(SetPrinterDataA,system);
-#pragma import(SetPrinterDataA,'SetPrinterDataA','winspool.dll');
+#pragma import(SetPrinterDataA,'SetPrinterDataA','winspool.drv');
 
 procedure SetPrinterDataW(
     hPrinter        : in t_HANDLE; 
@@ -2687,7 +2687,7 @@ procedure SetPrinterDataW(
     cbData          : in DWORD)
                       return DWORD;
 #pragma convention(SetPrinterDataW,system);
-#pragma import(SetPrinterDataW,'SetPrinterDataW','winspool.dll');
+#pragma import(SetPrinterDataW,'SetPrinterDataW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetPrinterData;
@@ -2708,7 +2708,7 @@ procedure SetPrinterDataExA(
     cbData          : in DWORD)
                       return DWORD;
 #pragma convention(SetPrinterDataExA,system);
-#pragma import(SetPrinterDataExA,'SetPrinterDataExA','winspool.dll');
+#pragma import(SetPrinterDataExA,'SetPrinterDataExA','winspool.drv');
 
 procedure SetPrinterDataExW(
     hPrinter        : in t_HANDLE; 
@@ -2719,7 +2719,7 @@ procedure SetPrinterDataExW(
     cbData          : in DWORD)
                       return DWORD;
 #pragma convention(SetPrinterDataExW,system);
-#pragma import(SetPrinterDataExW,'SetPrinterDataExW','winspool.dll');
+#pragma import(SetPrinterDataExW,'SetPrinterDataExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetPrinterDataEx;
@@ -2736,14 +2736,14 @@ procedure DeletePrinterDataA(
     pValueName      : in LPSTR)
                       return DWORD;
 #pragma convention(DeletePrinterDataA,system);
-#pragma import(DeletePrinterDataA,'DeletePrinterDataA','winspool.dll');
+#pragma import(DeletePrinterDataA,'DeletePrinterDataA','winspool.drv');
 
 procedure DeletePrinterDataW(
     hPrinter        : in t_HANDLE; 
     pValueName      : in LPWSTR)
                       return DWORD;
 #pragma convention(DeletePrinterDataW,system);
-#pragma import(DeletePrinterDataW,'DeletePrinterDataW','winspool.dll');
+#pragma import(DeletePrinterDataW,'DeletePrinterDataW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterData;
@@ -2761,7 +2761,7 @@ procedure DeletePrinterDataExA(
     pValueName      : in LPCSTR)
                       return DWORD;
 #pragma convention(DeletePrinterDataExA,system);
-#pragma import(DeletePrinterDataExA,'DeletePrinterDataExA','winspool.dll');
+#pragma import(DeletePrinterDataExA,'DeletePrinterDataExA','winspool.drv');
 
 procedure DeletePrinterDataExW(
     hPrinter        : in t_HANDLE; 
@@ -2769,7 +2769,7 @@ procedure DeletePrinterDataExW(
     pValueName      : in LPCWSTR)
                       return DWORD;
 #pragma convention(DeletePrinterDataExW,system);
-#pragma import(DeletePrinterDataExW,'DeletePrinterDataExW','winspool.dll');
+#pragma import(DeletePrinterDataExW,'DeletePrinterDataExW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterDataEx;
@@ -2786,14 +2786,14 @@ procedure DeletePrinterKeyA(
     pKeyName        : in LPCSTR)
                       return DWORD;
 #pragma convention(DeletePrinterKeyA,system);
-#pragma import(DeletePrinterKeyA,'DeletePrinterKeyA','winspool.dll');
+#pragma import(DeletePrinterKeyA,'DeletePrinterKeyA','winspool.drv');
 
 procedure DeletePrinterKeyW(
     hPrinter        : in t_HANDLE; 
     pKeyName        : in LPCWSTR)
                       return DWORD;
 #pragma convention(DeletePrinterKeyW,system);
-#pragma import(DeletePrinterKeyW,'DeletePrinterKeyW','winspool.dll');
+#pragma import(DeletePrinterKeyW,'DeletePrinterKeyW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterKey;
@@ -3120,7 +3120,7 @@ procedure WaitForPrinterChange(
     Flags           : in DWORD)
                       return DWORD;
 #pragma convention(WaitForPrinterChange,system);
-#pragma import(WaitForPrinterChange,'WaitForPrinterChange','winspool.dll');
+#pragma import(WaitForPrinterChange,'WaitForPrinterChange','winspool.drv');
 
 procedure FindFirstPrinterChangeNotification(
     hPrinter        : in t_HANDLE; 
@@ -3129,7 +3129,7 @@ procedure FindFirstPrinterChangeNotification(
     pPrinterNotifyOptions : in LPVOID)
                       return t_HANDLE;
 #pragma convention(FindFirstPrinterChangeNotification,system);
-#pragma import(FindFirstPrinterChangeNotification,'FindFirstPrinterChangeNotification','winspool.dll');
+#pragma import(FindFirstPrinterChangeNotification,'FindFirstPrinterChangeNotification','winspool.drv');
 
 procedure FindNextPrinterChangeNotification(
     hChange         : in t_HANDLE; 
@@ -3138,19 +3138,19 @@ procedure FindNextPrinterChangeNotification(
     ppPrinterNotifyInfo : out LPVOID)
                       return BOOL;
 #pragma convention(FindNextPrinterChangeNotification,system);
-#pragma import(FindNextPrinterChangeNotification,'FindNextPrinterChangeNotification','winspool.dll');
+#pragma import(FindNextPrinterChangeNotification,'FindNextPrinterChangeNotification','winspool.drv');
 
 procedure FreePrinterNotifyInfo(
     pPrinterNotifyInfo : in PPRINTER_NOTIFY_INFO)
                       return BOOL;
 #pragma convention(FreePrinterNotifyInfo,system);
-#pragma import(FreePrinterNotifyInfo,'FreePrinterNotifyInfo','winspool.dll');
+#pragma import(FreePrinterNotifyInfo,'FreePrinterNotifyInfo','winspool.drv');
 
 procedure FindClosePrinterChangeNotification(
     hChange         : in t_HANDLE)
                       return BOOL;
 #pragma convention(FindClosePrinterChangeNotification,system);
-#pragma import(FindClosePrinterChangeNotification,'FindClosePrinterChangeNotification','winspool.dll');
+#pragma import(FindClosePrinterChangeNotification,'FindClosePrinterChangeNotification','winspool.drv');
 
 const
   PRINTER_CHANGE_ADD_PRINTER= $01;
@@ -3242,7 +3242,7 @@ procedure PrinterMessageBoxA(
     dwType          : in DWORD)
                       return DWORD;
 #pragma convention(PrinterMessageBoxA,system);
-#pragma import(PrinterMessageBoxA,'PrinterMessageBoxA','winspool.dll');
+#pragma import(PrinterMessageBoxA,'PrinterMessageBoxA','winspool.drv');
 
 procedure PrinterMessageBoxW(
     hPrinter        : in t_HANDLE; 
@@ -3253,7 +3253,7 @@ procedure PrinterMessageBoxW(
     dwType          : in DWORD)
                       return DWORD;
 #pragma convention(PrinterMessageBoxW,system);
-#pragma import(PrinterMessageBoxW,'PrinterMessageBoxW','winspool.dll');
+#pragma import(PrinterMessageBoxW,'PrinterMessageBoxW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template PrinterMessageBox;
@@ -3287,7 +3287,7 @@ procedure ClosePrinter(
     hPrinter        : in t_HANDLE)
                       return BOOL;
 #pragma convention(ClosePrinter,system);
-#pragma import(ClosePrinter,'ClosePrinter','winspool.dll');
+#pragma import(ClosePrinter,'ClosePrinter','winspool.drv');
 
 procedure AddFormA(
     hPrinter        : in t_HANDLE; 
@@ -3295,7 +3295,7 @@ procedure AddFormA(
     pForm           : in LPBYTE)
                       return BOOL;
 #pragma convention(AddFormA,system);
-#pragma import(AddFormA,'AddFormA','winspool.dll');
+#pragma import(AddFormA,'AddFormA','winspool.drv');
 
 procedure AddFormW(
     hPrinter        : in t_HANDLE; 
@@ -3303,7 +3303,7 @@ procedure AddFormW(
     pForm           : in LPBYTE)
                       return BOOL;
 #pragma convention(AddFormW,system);
-#pragma import(AddFormW,'AddFormW','winspool.dll');
+#pragma import(AddFormW,'AddFormW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddForm;
@@ -3320,14 +3320,14 @@ procedure DeleteFormA(
     pFormName       : in LPSTR)
                       return BOOL;
 #pragma convention(DeleteFormA,system);
-#pragma import(DeleteFormA,'DeleteFormA','winspool.dll');
+#pragma import(DeleteFormA,'DeleteFormA','winspool.drv');
 
 procedure DeleteFormW(
     hPrinter        : in t_HANDLE; 
     pFormName       : in LPWSTR)
                       return BOOL;
 #pragma convention(DeleteFormW,system);
-#pragma import(DeleteFormW,'DeleteFormW','winspool.dll');
+#pragma import(DeleteFormW,'DeleteFormW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeleteForm;
@@ -3348,7 +3348,7 @@ procedure GetFormA(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetFormA,system);
-#pragma import(GetFormA,'GetFormA','winspool.dll');
+#pragma import(GetFormA,'GetFormA','winspool.drv');
 
 procedure GetFormW(
     hPrinter        : in t_HANDLE; 
@@ -3359,7 +3359,7 @@ procedure GetFormW(
     pcbNeeded       : out DWORD )
                       return BOOL;
 #pragma convention(GetFormW,system);
-#pragma import(GetFormW,'GetFormW','winspool.dll');
+#pragma import(GetFormW,'GetFormW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetForm;
@@ -3378,7 +3378,7 @@ procedure SetFormA(
     pForm           : in LPBYTE)
                       return BOOL;
 #pragma convention(SetFormA,system);
-#pragma import(SetFormA,'SetFormA','winspool.dll');
+#pragma import(SetFormA,'SetFormA','winspool.drv');
 
 procedure SetFormW(
     hPrinter        : in t_HANDLE; 
@@ -3387,7 +3387,7 @@ procedure SetFormW(
     pForm           : in LPBYTE)
                       return BOOL;
 #pragma convention(SetFormW,system);
-#pragma import(SetFormW,'SetFormW','winspool.dll');
+#pragma import(SetFormW,'SetFormW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetForm;
@@ -3408,7 +3408,7 @@ procedure EnumFormsA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumFormsA,system);
-#pragma import(EnumFormsA,'EnumFormsA','winspool.dll');
+#pragma import(EnumFormsA,'EnumFormsA','winspool.drv');
 
 procedure EnumFormsW(
     hPrinter        : in t_HANDLE; 
@@ -3419,7 +3419,7 @@ procedure EnumFormsW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumFormsW,system);
-#pragma import(EnumFormsW,'EnumFormsW','winspool.dll');
+#pragma import(EnumFormsW,'EnumFormsW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumForms;
@@ -3440,7 +3440,7 @@ procedure EnumMonitorsA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumMonitorsA,system);
-#pragma import(EnumMonitorsA,'EnumMonitorsA','winspool.dll');
+#pragma import(EnumMonitorsA,'EnumMonitorsA','winspool.drv');
 
 procedure EnumMonitorsW(
     pName           : in LPWSTR; 
@@ -3451,7 +3451,7 @@ procedure EnumMonitorsW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumMonitorsW,system);
-#pragma import(EnumMonitorsW,'EnumMonitorsW','winspool.dll');
+#pragma import(EnumMonitorsW,'EnumMonitorsW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumMonitors;
@@ -3469,7 +3469,7 @@ procedure AddMonitorA(
     pMonitors       : in LPBYTE)
                       return BOOL;
 #pragma convention(AddMonitorA,system);
-#pragma import(AddMonitorA,'AddMonitorA','winspool.dll');
+#pragma import(AddMonitorA,'AddMonitorA','winspool.drv');
 
 procedure AddMonitorW(
     pName           : in LPWSTR; 
@@ -3477,7 +3477,7 @@ procedure AddMonitorW(
     pMonitors       : in LPBYTE)
                       return BOOL;
 #pragma convention(AddMonitorW,system);
-#pragma import(AddMonitorW,'AddMonitorW','winspool.dll');
+#pragma import(AddMonitorW,'AddMonitorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddMonitor;
@@ -3495,7 +3495,7 @@ procedure DeleteMonitorA(
     pMonitorName    : in LPSTR)
                       return BOOL;
 #pragma convention(DeleteMonitorA,system);
-#pragma import(DeleteMonitorA,'DeleteMonitorA','winspool.dll');
+#pragma import(DeleteMonitorA,'DeleteMonitorA','winspool.drv');
 
 procedure DeleteMonitorW(
     pName           : in LPWSTR; 
@@ -3503,7 +3503,7 @@ procedure DeleteMonitorW(
     pMonitorName    : in LPWSTR)
                       return BOOL;
 #pragma convention(DeleteMonitorW,system);
-#pragma import(DeleteMonitorW,'DeleteMonitorW','winspool.dll');
+#pragma import(DeleteMonitorW,'DeleteMonitorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeleteMonitor;
@@ -3524,7 +3524,7 @@ procedure EnumPortsA(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPortsA,system);
-#pragma import(EnumPortsA,'EnumPortsA','winspool.dll');
+#pragma import(EnumPortsA,'EnumPortsA','winspool.drv');
 
 procedure EnumPortsW(
     pName           : in LPWSTR; 
@@ -3535,7 +3535,7 @@ procedure EnumPortsW(
     pcReturned      : out DWORD )
                       return BOOL;
 #pragma convention(EnumPortsW,system);
-#pragma import(EnumPortsW,'EnumPortsW','winspool.dll');
+#pragma import(EnumPortsW,'EnumPortsW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template EnumPorts;
@@ -3553,7 +3553,7 @@ procedure AddPortA(
     pMonitorName    : in LPSTR)
                       return BOOL;
 #pragma convention(AddPortA,system);
-#pragma import(AddPortA,'AddPortA','winspool.dll');
+#pragma import(AddPortA,'AddPortA','winspool.drv');
 
 procedure AddPortW(
     pName           : in LPWSTR; 
@@ -3561,7 +3561,7 @@ procedure AddPortW(
     pMonitorName    : in LPWSTR)
                       return BOOL;
 #pragma convention(AddPortW,system);
-#pragma import(AddPortW,'AddPortW','winspool.dll');
+#pragma import(AddPortW,'AddPortW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPort;
@@ -3579,7 +3579,7 @@ procedure ConfigurePortA(
     pPortName       : in LPSTR)
                       return BOOL;
 #pragma convention(ConfigurePortA,system);
-#pragma import(ConfigurePortA,'ConfigurePortA','winspool.dll');
+#pragma import(ConfigurePortA,'ConfigurePortA','winspool.drv');
 
 procedure ConfigurePortW(
     pName           : in LPWSTR; 
@@ -3587,7 +3587,7 @@ procedure ConfigurePortW(
     pPortName       : in LPWSTR)
                       return BOOL;
 #pragma convention(ConfigurePortW,system);
-#pragma import(ConfigurePortW,'ConfigurePortW','winspool.dll');
+#pragma import(ConfigurePortW,'ConfigurePortW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template ConfigurePort;
@@ -3605,7 +3605,7 @@ procedure DeletePortA(
     pPortName       : in LPSTR)
                       return BOOL;
 #pragma convention(DeletePortA,system);
-#pragma import(DeletePortA,'DeletePortA','winspool.dll');
+#pragma import(DeletePortA,'DeletePortA','winspool.drv');
 
 procedure DeletePortW(
     pName           : in LPWSTR; 
@@ -3613,7 +3613,7 @@ procedure DeletePortW(
     pPortName       : in LPWSTR)
                       return BOOL;
 #pragma convention(DeletePortW,system);
-#pragma import(DeletePortW,'DeletePortW','winspool.dll');
+#pragma import(DeletePortW,'DeletePortW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePort;
@@ -3636,21 +3636,21 @@ procedure XcvDataW(
     pdwStatus       : out DWORD )
                       return BOOL;
 #pragma convention(XcvDataW,system);
-#pragma import(XcvDataW,'XcvDataW','winspool.dll');
+#pragma import(XcvDataW,'XcvDataW','winspool.drv');
 
 procedure GetDefaultPrinterA(
     pszBuffer       : in LPSTR; 
     pcchBuffer      : in LPDWORD)
                       return BOOL;
 #pragma convention(GetDefaultPrinterA,system);
-#pragma import(GetDefaultPrinterA,'GetDefaultPrinterA','winspool.dll');
+#pragma import(GetDefaultPrinterA,'GetDefaultPrinterA','winspool.drv');
 
 procedure GetDefaultPrinterW(
     pszBuffer       : in LPWSTR; 
     pcchBuffer      : in LPDWORD)
                       return BOOL;
 #pragma convention(GetDefaultPrinterW,system);
-#pragma import(GetDefaultPrinterW,'GetDefaultPrinterW','winspool.dll');
+#pragma import(GetDefaultPrinterW,'GetDefaultPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template GetDefaultPrinter;
@@ -3666,13 +3666,13 @@ procedure SetDefaultPrinterA(
     pszPrinter      : in LPCSTR)
                       return BOOL;
 #pragma convention(SetDefaultPrinterA,system);
-#pragma import(SetDefaultPrinterA,'SetDefaultPrinterA','winspool.dll');
+#pragma import(SetDefaultPrinterA,'SetDefaultPrinterA','winspool.drv');
 
 procedure SetDefaultPrinterW(
     pszPrinter      : in LPCWSTR)
                       return BOOL;
 #pragma convention(SetDefaultPrinterW,system);
-#pragma import(SetDefaultPrinterW,'SetDefaultPrinterW','winspool.dll');
+#pragma import(SetDefaultPrinterW,'SetDefaultPrinterW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetDefaultPrinter;
@@ -3691,7 +3691,7 @@ procedure SetPortA(
     pPortInfo       : in LPBYTE)
                       return BOOL;
 #pragma convention(SetPortA,system);
-#pragma import(SetPortA,'SetPortA','winspool.dll');
+#pragma import(SetPortA,'SetPortA','winspool.drv');
 
 procedure SetPortW(
     pName           : in LPWSTR; 
@@ -3700,7 +3700,7 @@ procedure SetPortW(
     pPortInfo       : in LPBYTE)
                       return BOOL;
 #pragma convention(SetPortW,system);
-#pragma import(SetPortW,'SetPortW','winspool.dll');
+#pragma import(SetPortW,'SetPortW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template SetPort;
@@ -3716,13 +3716,13 @@ procedure AddPrinterConnectionA(
     pName           : in LPSTR)
                       return BOOL;
 #pragma convention(AddPrinterConnectionA,system);
-#pragma import(AddPrinterConnectionA,'AddPrinterConnectionA','winspool.dll');
+#pragma import(AddPrinterConnectionA,'AddPrinterConnectionA','winspool.drv');
 
 procedure AddPrinterConnectionW(
     pName           : in LPWSTR)
                       return BOOL;
 #pragma convention(AddPrinterConnectionW,system);
-#pragma import(AddPrinterConnectionW,'AddPrinterConnectionW','winspool.dll');
+#pragma import(AddPrinterConnectionW,'AddPrinterConnectionW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrinterConnection;
@@ -3738,13 +3738,13 @@ procedure DeletePrinterConnectionA(
     pName           : in LPSTR)
                       return BOOL;
 #pragma convention(DeletePrinterConnectionA,system);
-#pragma import(DeletePrinterConnectionA,'DeletePrinterConnectionA','winspool.dll');
+#pragma import(DeletePrinterConnectionA,'DeletePrinterConnectionA','winspool.drv');
 
 procedure DeletePrinterConnectionW(
     pName           : in LPWSTR)
                       return BOOL;
 #pragma convention(DeletePrinterConnectionW,system);
-#pragma import(DeletePrinterConnectionW,'DeletePrinterConnectionW','winspool.dll');
+#pragma import(DeletePrinterConnectionW,'DeletePrinterConnectionW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrinterConnection;
@@ -3761,7 +3761,7 @@ procedure ConnectToPrinterDlg(
     Flags           : in DWORD)
                       return t_HANDLE;
 #pragma convention(ConnectToPrinterDlg,system);
-#pragma import(ConnectToPrinterDlg,'ConnectToPrinterDlg','winspool.dll');
+#pragma import(ConnectToPrinterDlg,'ConnectToPrinterDlg','winspool.drv');
 
 type
   _PROVIDOR_INFO_1A = record
@@ -3837,7 +3837,7 @@ procedure AddPrintProvidorA(
     pProvidorInfo   : in LPBYTE)
                       return BOOL;
 #pragma convention(AddPrintProvidorA,system);
-#pragma import(AddPrintProvidorA,'AddPrintProvidorA','winspool.dll');
+#pragma import(AddPrintProvidorA,'AddPrintProvidorA','winspool.drv');
 
 procedure AddPrintProvidorW(
     pName           : in LPWSTR; 
@@ -3845,7 +3845,7 @@ procedure AddPrintProvidorW(
     pProvidorInfo   : in LPBYTE)
                       return BOOL;
 #pragma convention(AddPrintProvidorW,system);
-#pragma import(AddPrintProvidorW,'AddPrintProvidorW','winspool.dll');
+#pragma import(AddPrintProvidorW,'AddPrintProvidorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template AddPrintProvidor;
@@ -3863,7 +3863,7 @@ procedure DeletePrintProvidorA(
     pPrintProvidorName : in LPSTR)
                       return BOOL;
 #pragma convention(DeletePrintProvidorA,system);
-#pragma import(DeletePrintProvidorA,'DeletePrintProvidorA','winspool.dll');
+#pragma import(DeletePrintProvidorA,'DeletePrintProvidorA','winspool.drv');
 
 procedure DeletePrintProvidorW(
     pName           : in LPWSTR; 
@@ -3871,7 +3871,7 @@ procedure DeletePrintProvidorW(
     pPrintProvidorName : in LPWSTR)
                       return BOOL;
 #pragma convention(DeletePrintProvidorW,system);
-#pragma import(DeletePrintProvidorW,'DeletePrintProvidorW','winspool.dll');
+#pragma import(DeletePrintProvidorW,'DeletePrintProvidorW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template DeletePrintProvidor;
@@ -3888,14 +3888,14 @@ procedure IsValidDevmodeA(
     DevmodeSize     : in size_t)
                       return BOOL;
 #pragma convention(IsValidDevmodeA,system);
-#pragma import(IsValidDevmodeA,'IsValidDevmodeA','winspool.dll');
+#pragma import(IsValidDevmodeA,'IsValidDevmodeA','winspool.drv');
 
 procedure IsValidDevmodeW(
     pDevmode        : in PDEVMODEW; 
     DevmodeSize     : in size_t)
                       return BOOL;
 #pragma convention(IsValidDevmodeW,system);
-#pragma import(IsValidDevmodeW,'IsValidDevmodeW','winspool.dll');
+#pragma import(IsValidDevmodeW,'IsValidDevmodeW','winspool.drv');
 
 #if #declared UNICODE; then;
 #template IsValidDevmode;

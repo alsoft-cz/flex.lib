@@ -5,6 +5,124 @@ module private xml_tokenizer =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+
+
+type
+  -- special character
+  t_special_char_id = enum
+    sch_none;      -- not a special character
+    sch_lt;        -- "<"
+    sch_amp;       -- "&"
+    sch_quot;      -- """
+    sch_apos;      -- "'"
+    end enum;
+
+
+  -- special character set
+  t_special_char_set = set of t_special_char_id;
+
+
+const
+  -- predefined special character sets
+  attribute_value_special_chars : t_special_char_set = [sch_lt,sch_amp,sch_quot,sch_apos];
+  tag_value_special_chars       : t_special_char_set = [sch_lt,sch_amp];
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_special_char_id (
+    char           : in t_char32)
+    return t_special_char_id =
+-- retrieves a special character identification for a given character
+----------------------------------------------------------------------------------------------------
+begin
+  case char
+    when "<" do result:=sch_lt;
+    when "&" do result:=sch_amp;
+    when """ do result:=sch_quot;
+    when "'" do result:=sch_apos;
+    when others do result:=sch_none;
+    end case;
+  end get_special_char_id;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure convert_special_char (
+    special_char   : in t_special_char_id)
+    return t_char32str =
+-- converts a special character to a coresponding sequence escape
+----------------------------------------------------------------------------------------------------
+var
+  special_char_conversion_table : array t_special_char_id of t_char32str := 
+    ['','&lt;','&amp;','&quot;','&apos;'];
+
+begin
+  result:=special_char_conversion_table[special_char];
+  end convert_special_char;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure convert_value (
+    value          : in t_char32ustr;            -- text value 
+    special_chars  : in t_special_char_set;      -- set of special character to account for
+    res            : out p_char32ustr) =         -- resulting value
+-- converts every occurence of a special character, denoted by the set [special_chars], in [value] 
+-- to a corresponding escape sequence
+-- caller is reponsible for freeing the return value
+----------------------------------------------------------------------------------------------------
+var
+  length           : t_unsigned;
+  special_char     : t_special_char_id;
+  escape_seq       : t_char32str;
+
+begin
+  -- length of new value
+  for i in value:range loop
+    -- idetify a special char
+    special_char:=get_special_char_id(value[i]);
+    
+    -- is a special char?
+    if special_char in special_chars
+      -- yes - increase length by converted corresponding escape sequence length
+      then
+        escape_seq:=convert_special_char(special_char);
+        length + escape_seq:length;
+      
+      -- no - increase length by one character
+      else
+        succ length;
+        end if;
+    end loop;
+
+  -- allocate resulting value
+  new res range length;
+
+  -- convert
+  for i in value:range loop
+    -- idetify a special char
+    special_char:=get_special_char_id(value[i]);
+    
+    -- is a special char?
+    if special_char in special_chars 
+      -- yes - concatenate the result with the corresponding escape sequence
+      then
+        escape_seq:=convert_special_char(special_char);
+        res^ & escape_seq;
+      
+      -- no - concatenate the result with one character
+      else
+        res^ & value[i];
+      end if;
+    end loop;
+
+rollback
+  discard res;
+  end convert_value;
+
+
+
 ----------------------------------------------------------------------------------------------------
 class private c_xml_token_reader =
 -- XML token reader.
@@ -108,7 +226,6 @@ class private c_xml_token_writer =
       end init;
 
 
-
     ------------------------------------------------------------------------------------------------
     static put_token =
     -- Writes a token to the output.
@@ -170,11 +287,19 @@ class private c_xml_token_writer =
     -- It is automatically detected wether to use apostrophees (') or quotes ("). If both are used 
     -- in the value, [xml_token_output_error] exception is raised.
     ------------------------------------------------------------------------------------------------
+    var
+      s            : p_char32ustr;
+
     begin
       put_character(" ");
       put_name(name);
       put_token(xtok_eq);
-      put_string(value);
+      
+      convert_value(value,attribute_value_special_chars,s);
+      put_string(s^);
+
+    leave 
+      discard s;
       end put_attribute;
 
 
@@ -187,7 +312,7 @@ class private c_xml_token_writer =
     ------------------------------------------------------------------------------------------------ 
     var
       quotes_present       : t_logical;          -- True when quotes are present in the string
-      apostrophees_present : t_logical;          -- False when apostrophees are present in the string
+      apostrophees_present : t_logical;          -- True when apostrophees are present in the string
 
     begin
       -- check for " or ' in the string
@@ -240,7 +365,7 @@ class private c_xml_token_writer =
     begin
       -- %%TODO(STRING)
       s & value;
-      stream^.write(s);
+      put_characters(s);
       end put_character;
 
 
@@ -249,8 +374,15 @@ class private c_xml_token_writer =
     static put_characters =
     -- Writes a string of characters to the output.
     ------------------------------------------------------------------------------------------------ 
+    var
+      s            : p_char32ustr;
+
     begin
-      stream^.write(value);
+      convert_value(value,tag_value_special_chars,s);
+      stream^.write(s^);
+
+    leave
+      discard s;
       end put_characters;
 
     end c_xml_token_writer;

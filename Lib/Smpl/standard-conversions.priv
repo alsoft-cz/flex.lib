@@ -153,7 +153,7 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure is_zero (
-    bin            : in out unchecked;           -- binary number
+    bin            : in unchecked;               -- binary number
     lbin           : in t_unsigned)              -- length of the number in bytes
     return t_logical =
 -- Test if a long unsigned integer is zero.
@@ -177,7 +177,7 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure is_negative (
-    bin            : in out unchecked;           -- binary number
+    bin            : in unchecked;               -- binary number
     lbin           : in t_unsigned)              -- length of the number in bytes
     return t_logical =
 -- Test if a long signed integer is < 0.

@@ -31,9 +31,10 @@ type
       st_error;                                  -- raise {Parameter_Error} when trimmig
       end enum;
 
-  -- array of strings
+  -- string of strings
   -- this needs to be changed !!!
-  t_char32str_array= string of t_char32str;
+  t_char32str_string = string of t_char32str;
+  p_char32str_string = ^t_char32str_string;
 
 ----------------------------------------------------------------------------------------------------
 procedure str_adjust (
@@ -180,20 +181,18 @@ procedure str_count_substring (
 procedure str_separate (
     str            : in t_char32ustr;            -- string to split
     separator      : in t_char32;                -- separator of substrings
-    _array         : out t_char32str_array);     -- resulting array
--- Separates string [str] separated by character [separator] to an array [_array] of substrings .
+    _string        : out p_char32str_string);    -- resulting string
+-- Separates string [str] separated by character [separator] to string [_string] of strings .
+-- Caller is responsible for freeing the allocated string [_string].
 --
 -- Result:
-{
---   Tenhle podprogram bude určitě muset nějak vyřešit velikost vráceného pole
-}
 --   This subprogram always succeeds.
 ----------------------------------------------------------------------------------------------------
-procedure array_to_str (
-    _array         : in t_char32str_array;       -- array of strings
+procedure str_combine (
+    _string        : in t_char32str_string;      -- string of strings
     separator      : in t_char32)                -- separator of substrings
     return t_char32str;                          -- resulting string
--- Joins strings of an array [_array] into a string separated by character [separator].
+-- Combines strings of a string [_string] to form a string separated by character [separator].
 --
 -- Result:
 --   This subprogram always succeeds.

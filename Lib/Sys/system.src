@@ -4,9 +4,19 @@ module system =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+
+
+----------------------------------------------------------------------------------------------------
+-- Disable specific warnings for this module to silence the compiler in case of low-level bad
+-- practices found in foreign APIs.
+#option warning(strange_design,false);
+----------------------------------------------------------------------------------------------------
+
+
+
 #if #environment target_os_family;='WIN32' then;
 ----------------------------------------------------------------------------------------------------
-  #include 'win32\system-windows.src';
+#separate windows;
 -- Win32 APIs.
 ----------------------------------------------------------------------------------------------------
 #elsif #environment target_os_family;='UNIX' then;
