@@ -23,6 +23,12 @@ class public c_console_input_stream = extend c_input_stream;
   ------------------------------------------------------------------------------------------------
   static init_console;
   ------------------------------------------------------------------------------------------------
+  static set_mode(
+    mode           : in t_input_mode);
+  ------------------------------------------------------------------------------------------------
+  virtual get_cursor_position (
+  pos              : out t_cursor_coordinates);
+  --------------------------------------------------------------------------------------------------
   end c_console_input_stream;
 type p_console_input_stream = ^class c_console_input_stream;
 

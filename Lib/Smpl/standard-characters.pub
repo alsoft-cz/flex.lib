@@ -72,7 +72,7 @@ class public abstract c_character_decoder =
       character_decoder_error : exception;
 
     ------------------------------------------------------------------------------------------------
-    virtual {%%TODO(ABSTRACT)} put_byte (
+    virtual abstract put_byte (
         b          : in t_unsigned8;             -- single byte of input
         char_done  : out t_logical);             -- T-character prepared, F-input more bytes
     -- Feeds in a single byte of input. 
@@ -87,7 +87,7 @@ class public abstract c_character_decoder =
     -- raised, otherwise no action is taken.
     ------------------------------------------------------------------------------------------------
     static set_endian (
-        new_endian : t_endian);                  -- typ endianu
+        new_endian : t_endian:=te_big_endian);   -- typ endianu
     -- sets byte order of input bytes
     ------------------------------------------------------------------------------------------------
     static get_character
@@ -182,12 +182,13 @@ class public abstract c_character_encoder =
       character_encoder_error : exception;
 
     ------------------------------------------------------------------------------------------------
-    virtual {%%TODO(ABSTRACT)} put_character (
+    virtual abstract put_character (
         c          : in t_char32);               -- single output character
     -- Feeds in a single character. 
     ------------------------------------------------------------------------------------------------
     virtual set_endian (
-        new_endian : t_endian);                  -- typ endianu
+        bytes_ready: out t_logical;
+        new_endian : in t_endian:=te_big_endian);   -- typ endianu
     -- Sets byte order of output bytes and puts character $feff at the begining of output where
     -- applicable.
     ------------------------------------------------------------------------------------------------
@@ -280,6 +281,8 @@ class public abstract c_text_writer =
 -- abstraktni predek zapisovace textu
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
+  virtual abstract close;
+  ------------------------------------------------------------------------------------------------
   virtual abstract write_char(
       text         : in t_char32);             -- zapisovan˜ znak
   -- zapisuje text
@@ -311,12 +314,24 @@ class public abstract c_text_reader =
 -- abstraktni predek ctenare textu
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
+  virtual abstract close;
+  ------------------------------------------------------------------------------------------------
   virtual abstract read_char(
       text         : out t_char32)               -- ‡ten˜ znak
       return t_logical;
   -- cte znak
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  { %%TODO
+  virtual abstract read_array(
+      text         : out t_char32uarray;               -- ‡ten˜ znaky
+      size         : in out t_unsigned);
+      return t_logical;
+  -- cte znaky
+  -- returns eod - false  - valid data
+  --               true   - valid data, end of data
+  }
   ------------------------------------------------------------------------------------------------
   virtual abstract read(
       text         : out t_char32ustr)           -- na‡ten˜ ©etˆzec

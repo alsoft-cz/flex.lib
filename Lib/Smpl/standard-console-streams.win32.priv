@@ -2,8 +2,18 @@
 module private streams =
 ----------------------------------------------------------------------------------------------------
 
-use
+with
+  system.windows.windef,
+  system.windows.windef.winnt,
+  system.windows.winbase,
+  system.windows.winbase.winerror,
+  --system.windows.winuser,
   system.windows.wincon;
+
+
+var 
+  co_console_width  : t_unsigned := 80;
+  co_console_height : t_unsigned := 25;
 
 ----------------------------------------------------------------------------------------------------
 class private c_console_output_stream =
@@ -13,8 +23,22 @@ var
     closed         : t_logical;
     buff           : array 0..3 of t_data_byte;  -- protoze packety muzou byt ruzne rozstrihane po bytech
     len            : t_offset;
-    handle         : system.windows.windef.winnt.t_handle;
+    handle         : winnt.t_handle;
     handle_redir   : t_logical;
+
+
+  ----------------------------------------------------------------------------------------------------
+  static clear_console =
+  ----------------------------------------------------------------------------------------------------
+  var
+    crd            : COORD;
+    writen         : DWORD;
+
+  begin
+    if not FillConsoleOutputCharacterW(handle," ",co_console_width*co_console_height,crd,writen) then
+      raise console_error;
+      end if;
+    end clear_console;
 
 
   ----------------------------------------------------------------------------------------------------
@@ -23,22 +47,42 @@ var
     y              : in t_cursor_position_y) =   -- vertical position
   ----------------------------------------------------------------------------------------------------
   var
-    crd            : system.windows.wincon.COORD;
+    crd            : COORD;
 
   begin
     if handle_redir then
       -- nema smysl posilat
     else
-      crd.x:=system.windows.windef.winnt.SHORT(x);
-      crd.y:=system.windows.windef.winnt.SHORT(y);
-      if not system.windows.wincon.SetConsoleCursorPosition(handle,crd) then
-        raise program_error;
+      crd.x:=winnt.SHORT(x);
+      crd.y:=winnt.SHORT(y);
+      if not SetConsoleCursorPosition(handle,crd) then
+        raise console_error;
         end if;
       end if;
     end set_cursor_position;
 
 
+{
+  ----------------------------------------------------------------------------------------------------
+  static set_attributes(
+      attr           : t_con_attributes_set) =
+  ----------------------------------------------------------------------------------------------------
+  var
+    wAttributes    : WORD;
 
+  begin
+    if handle_redir then
+      -- nema smysl posilat
+    else
+      wAttributes:unchecked:=attr:unchecked;
+      if not SetConsoleTextAttribute(handle,wAttributes) then
+        raise console_error;
+        end if;
+      end if;
+    end set_attributes;
+}
+
+  
   ----------------------------------------------------------------------------------------------------
   procedure write(
     s              : in t_char32ustr)  =
@@ -46,7 +90,7 @@ var
   var
     wstr         : windows.windef.winnt.pwstr;
     astr         : windows.windef.winnt.lpstr;
-    written      : system.windows.windef.dword;
+    written      : dword;
 
   begin
     -- [writeconsole] cannot handle redirected output, so the application must
@@ -58,7 +102,7 @@ var
         begin
           to_ascii_string(s,astr);
           if not windows.winbase.writefile(handle,{windows.windef.lpcvoid(}astr{)},s:length,written,nil) then
-            -- %%TODO(HANDLEERROR)
+            raise console_error;
             end if;
         leave
           discard astr;
@@ -68,8 +112,8 @@ var
       else 
         begin
           to_system_string(s,wstr);
-          if system.windows.wincon.writeconsolew(handle,wstr,s:length,written,nil) then
-            -- %%TODO(HANDLEERROR)
+          if not writeconsolew(handle,wstr,s:length,written,nil) then
+            raise console_error;
             end if;
         leave
           discard wstr;
@@ -115,6 +159,7 @@ var
     _len           : t_unsigned;
     _max           : t_unsigned;
     coord          : p_cursor_coordinates;
+    --attr           : p_con_attributes_set;
 
   begin 
     if closed then
@@ -124,7 +169,12 @@ var
     if data.style=t_dps_temporary and then data.phint=t_dph_flex_string then
       read_temporary_text(data,text);
       write(text^);
-    elsif data.style=t_dps_signal and then data.signal=t_dpss_set_pos then
+    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_clear then
+      clear_console;
+    --elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_attr then
+      --attr:unchecked:=data.other;
+      --set_attributes(attr^);
+    elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_pos then
       coord:unchecked:=data.other;
       set_cursor_position(coord^.x,coord^.y);
     else
@@ -147,6 +197,7 @@ var
             end if;
           end loop;
         len:=_size+len-_max;
+        text^:length:=_len;
         write(text^);
         discard text;
       else
@@ -163,24 +214,16 @@ var
   ------------------------------------------------------------------------------------------------
   static init_console =
   ------------------------------------------------------------------------------------------------
-  var
-    info           : system.windows.winbase._STARTUPINFOW;
-    flags          : t_mod_unsigned32;
-    flag           : t_mod_unsigned32;
-
   begin
-    --%%TODO MSDN redirection
-    --system.windows.winbase.GetStartupInfoW(info);
-    --flags:unchecked:=info.dwFlags;
-    --flag:=system.windows.winbase.STARTF_USESTDHANDLES;
-    --if (flags and flag)<>0 then
-      handle_redir:=true;
-      --end if;
     if std_err then
-      handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_error_handle);
+      handle:=getstdhandle(std_error_handle);
     else
-      handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_output_handle);
+      handle:=getstdhandle(std_output_handle);
       end if;
+    if GetFileType(handle)<>FILE_TYPE_CHAR then
+      handle_redir:=true;
+      end if;
+    set_optimal_packet_size(co_console_width);
     end init_console;
   end c_console_output_stream;
 
@@ -191,27 +234,436 @@ class private c_console_input_stream =
 -- Console input text stream.
 ----------------------------------------------------------------------------------------------------
 var
-    handle         : system.windows.windef.winnt.t_handle;
+    -- stream
+    closed         : t_logical;
+    eod            : t_logical;
+
+    -- handles
+    handle         : winnt.t_handle;
     handle_redir   : t_logical;
+
+    -- code page
+    decoder        : p_character_decoder;
+
+    -- buffer
+    line           : t_char32str;
+    chars_out      : t_logical;
+    mouse_pos      : t_cursor_coordinates;
+
+    -- mode
+    enable_echo    : t_logical;
+    char_mode      : t_logical;
+    event_mode     : t_logical;
 
   ------------------------------------------------------------------------------------------------
   static init_console =
   ------------------------------------------------------------------------------------------------
-  var
-    info           : system.windows.winbase._STARTUPINFOW;
-    flags          : t_mod_unsigned32;
-    flag           : t_mod_unsigned32;
+  var 
+    mode    : system.windows.windef.DWORD;
+    modemod : t_mod_unsigned32;
 
   begin
-    --%%TODO MSDN redirection
-    --system.windows.winbase.GetStartupInfoW(info);
-    --flags:unchecked:=info.dwFlags;
-    --flag:=system.windows.winbase.STARTF_USESTDHANDLES;
-    --if (flags and flag)<>0 then
+    handle:=getstdhandle(std_input_handle);
+    if GetFileType(handle)<>FILE_TYPE_CHAR then
       handle_redir:=true;
-      --end if;
-    handle:=system.windows.winbase.getstdhandle(system.windows.winbase.std_input_handle);
-    end init_console;
-  end c_console_input_stream;
+      new p_character_decoder_utf8(decoder);
+      set_mode(t_im_char_no_echo);
+    else
+      -- enable mouse and window events
+      modemod or (system.windows.wincon.ENABLE_WINDOW_INPUT);
+      modemod or (system.windows.wincon.ENABLE_MOUSE_INPUT);
+      mode:=system.windows.windef.DWORD(modemod);
+      if not system.windows.wincon.SetConsoleMode(handle,mode) then
+        raise console_error;
+        end if;
 
+      new p_character_decoder_ucs2(decoder);
+      set_mode(t_im_char_with_echo);
+      end if;
+    set_optimal_packet_size(co_console_width);
+    end init_console;
+
+
+  
+  --------------------------------------------------------------------------------------------------
+  virtual get_cursor_position =
+  --------------------------------------------------------------------------------------------------
+  var
+    info            : _CONSOLE_SCREEN_BUFFER_INFO;
+
+  begin
+    if handle_redir then
+      -- nema smysl zjistovat
+    else
+      if not GetConsoleScreenBufferInfo(handle,info) then
+        raise console_error;
+        end if;
+      pos.x:=t_unsigned(info.dwCursorPosition.x);
+      pos.y:=t_unsigned(info.dwCursorPosition.y);
+      end if;
+    end get_cursor_position;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static set_mode =
+  ------------------------------------------------------------------------------------------------
+  begin
+    case (mode)
+      when t_im_events_no_echo do
+        enable_echo:=false;
+        char_mode:=false;
+        event_mode:=true;
+      when t_im_char_no_echo do
+        enable_echo:=false;
+        char_mode:=true;
+        event_mode:=false;
+      when t_im_char_with_echo do
+        enable_echo:=true;
+        char_mode:=true;
+        event_mode:=false;
+      when t_im_line_no_echo do
+        enable_echo:=false;
+        char_mode:=false;
+        event_mode:=false;
+      when t_im_line_with_echo do
+        enable_echo:=true;
+        char_mode:=false;
+        event_mode:=false;
+      end case;
+    end set_mode;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    --%%TODO ?
+    closed:=true;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static translate_key(
+    key            : in KEY_EVENT_RECORD;
+    console_event  : out t_console_event) =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data          : p_data_array;
+    _text          : p_data_array_char32;
+    char           : t_char32;
+    char_out       : t_logical;
+    mm             : t_mod_unsigned32;
+
+  begin
+    -- translate character
+    decoder^.put_byte(t_unsigned8(t_data_array(key.uChar.UnicodeChar:unchecked)[0]),char_out);
+    decoder^.put_byte(t_unsigned8(t_data_array(key.uChar.UnicodeChar:unchecked)[1]),char_out);
+    char:=decoder^.get_character;
+    if char:ord=$d then
+      char:ord:=$a;
+      if key.bKeyDown then
+        chars_out:=true;
+        end if;
+      end if;
+    console_event.char:=char;
+
+
+    console_event.mouse_pos:=mouse_pos;
+
+    -- translate key
+    console_event.event_code:=key.wVirtualKeyCode;
+    console_event.down:=key.bKeyDown;
+    mm:unchecked:=key.dwControlKeyState;
+    if (mm and CAPSLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_caps_lock];
+      end if;
+
+    if (mm and SCROLLLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_scroll_lock];
+      end if;
+
+    if (mm and NUMLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_num_lock];
+      end if;
+
+    if (mm and LEFT_ALT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_alt];
+      end if;
+
+    if (mm and RIGHT_ALT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_right_alt];
+      end if;
+
+    if (mm and LEFT_CTRL_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_ctrl];
+      end if;
+
+    if (mm and SHIFT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_shift,t_key_right_shift];
+      end if;
+
+    if key.bKeyDown and char:ord<>0 then
+      -- copy repeater
+      for i in 1..key.wRepeatCount loop
+        case (console_event.event_code)
+          when t_ec_back do
+            if line:length>0 then
+              line:length - 1;
+              if enable_echo then
+                console_writer^.write_char(char);
+                end if;
+              end if;
+          when others do
+            succ line:length;
+            line[line:length]:=char;
+            if enable_echo then
+              console_writer^.write_char(char);
+              end if;
+          end case;
+        end loop;
+
+      if line:length=line:last then
+        chars_out:=true;
+        end if;
+      end if;
+    end translate_key;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static translate_mouse(
+    mouse          : in MOUSE_EVENT_RECORD;
+    console_event  : out t_console_event) =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data          : p_data_array;
+    _text          : p_data_array_char32;
+    char           : t_char32;
+    char_out       : t_logical;
+    mm             : t_mod_unsigned32;
+    mb             : t_mod_unsigned32;
+
+  begin
+    -- translate pos
+    mouse_pos.x:=t_unsigned(mouse.dwMousePosition.x);
+    mouse_pos.y:=t_unsigned(mouse.dwMousePosition.y);
+    console_event.mouse_pos:=mouse_pos;
+
+
+    -- translate buttons
+    mb:unchecked:=mouse.dwButtonState;
+
+    if (mb and FROM_LEFT_1ST_BUTTON_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_mouse];
+      console_event.down:=true;
+      end if;
+
+    if (mb and FROM_LEFT_2ND_BUTTON_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_second_mouse];
+      console_event.down:=true;
+      end if;
+
+    if (mb and FROM_LEFT_3RD_BUTTON_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_third_mouse];
+      console_event.down:=true;
+      end if;
+
+    if (mb and FROM_LEFT_4TH_BUTTON_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_fourth_mouse];
+      console_event.down:=true;
+      end if;
+
+    if (mb and RIGHTMOST_BUTTON_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_right_mouse];
+      console_event.down:=true;
+      end if;
+
+    -- translate key
+    console_event.event_code:=t_ec_mouse_move;
+    mm:unchecked:=mouse.dwControlKeyState;
+    if (mm and CAPSLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_caps_lock];
+      end if;
+
+    if (mm and SCROLLLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_scroll_lock];
+      end if;
+
+    if (mm and NUMLOCK_ON)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_num_lock];
+      end if;
+
+    if (mm and LEFT_ALT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_alt];
+      end if;
+
+    if (mm and RIGHT_ALT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_right_alt];
+      end if;
+
+    if (mm and LEFT_CTRL_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_ctrl];
+      end if;
+
+    if (mm and SHIFT_PRESSED)<>0 then
+      console_event.control_keys + t_control_keys_set:[t_key_left_shift,t_key_right_shift];
+      end if;
+
+    end translate_mouse;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static read_packet_con(
+      data       : out t_data_packet) =
+  ------------------------------------------------------------------------------------------------
+  var
+    input          : _INPUT_RECORD;
+    readen         : dword;
+    con_event_h    : p_console_event;
+    con_event_l    : t_console_event;
+
+  begin
+    loop
+      if chars_out or (char_mode and line:length<>0) then
+        copy_text_to_packet(data,line);
+        chars_out:=false;
+        line:length:=0;
+        return;
+        end if;
+      loop
+      case (WaitForSingleObjectEx(handle,INFINITE,true))
+        when WAIT_OBJECT_0 do
+          break;
+        when WAIT_IO_COMPLETION do
+          --next
+        when others do
+          raise console_error;
+        end case;
+      end loop;
+
+      if not ReadConsoleInputW(handle,input,1,readen) then
+        raise console_error;
+        end if;
+      case (input.EventType)
+        when KEY_EVENT do
+          if event_mode then
+            new con_event_h;
+            translate_key(input.event.KeyEvent,con_event_h^);
+            create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
+            break;
+          else
+            translate_key(input.event.KeyEvent,con_event_l);
+            end if;
+        when MOUSE_EVENT do
+          if event_mode then
+            new con_event_h;
+            translate_mouse(input.event.MouseEvent,con_event_h^);
+            create_signal(data,t_dpss_con_event,p_data_array(con_event_h:unchecked));
+            break;
+            end if;
+        when WINDOW_BUFFER_SIZE_EVENT do
+          co_console_width:=t_unsigned(input.event.WindowBufferSizeEvent.dwSize.x);
+          co_console_height:=t_unsigned(input.event.WindowBufferSizeEvent.dwSize.y);
+        when MENU_EVENT do
+        when FOCUS_EVENT do
+        end case;
+      end loop;
+    end read_packet_con;
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static read_packet_file(
+      data       : out t_data_packet) =
+  ------------------------------------------------------------------------------------------------
+  var
+    size           : t_offset;
+    _data          : p_data_array;
+    _buff          : p_data_array;
+    _text          : p_data_array_char32;
+    optimal_size   : t_offset;
+    readen         : dword;
+    char_done      : t_logical;
+
+  begin
+    get_optimal_packet_size(optimal_size);
+
+    new _buff range optimal_size div t_char32:size;
+    if not windows.winbase.readfile(handle,_buff^,_buff:size,readen,nil) then
+      if readen<>0 or else GetLastError()<>ERROR_HANDLE_EOF then
+        raise console_error;
+        end if;
+      end if;
+    size:=readen*t_char32:size;
+    if readen>0 then
+      new _data range size;
+      size:=0;
+      _text:unchecked:=_data;
+      for i in 1..readen loop
+       decoder^.put_byte(t_unsigned8(_buff^[i-1]),char_done);
+       if char_done then
+         _text^[size]:=decoder^.get_character;
+         succ size;
+         end if;
+       end loop;
+      if size>0 then
+        size * t_char32:size;
+        create_packet(data,_data,size,t_dps_heap);
+        add_flow(data);
+      else
+        discard _data;
+        end if;
+    else
+      create_eod(data);
+      eod:=true;
+      end if;
+      discard _buff;
+    end read_packet_file;
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    if eod then
+      raise stream_end_of_data;
+      end if;
+
+    if handle_redir then
+      read_packet_file(data);
+    else
+      read_packet_con(data);
+      end if;
+    end read_packet;
+
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=eod;
+    end is_eod;
+
+  
+
+  ------------------------------------------------------------------------------------------------
+  exit =
+  ------------------------------------------------------------------------------------------------
+  begin
+    discard decoder;
+    end exit;
+  end c_console_input_stream;
 end streams;

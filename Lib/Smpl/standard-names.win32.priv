@@ -1194,6 +1194,22 @@ class private c_name_component_file_or_folder =
 
 
     ------------------------------------------------------------------------------------------------
+    static check_base_name =
+    -- Retrieves the base name of a file or folder name.
+    --   The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      base         : p_name_subcomponent_base_name;
+
+    begin
+      subcomponents.set_first(p_list_item(base));
+
+      result:=str_compare_case_insensitive(base^.name^,base_name);
+      end check_base_name;
+
+
+
+    ------------------------------------------------------------------------------------------------
     static check_last_extension =
     -- Checks if the last extension of the name is equal to the given extension.
     ------------------------------------------------------------------------------------------------

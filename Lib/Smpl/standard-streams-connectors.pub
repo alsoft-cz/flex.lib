@@ -8,11 +8,27 @@ type p_passive_buffered_stream_connector = ^class c_passive_buffered_stream_conn
 
 
 ----------------------------------------------------------------------------------------------------
-class public c_active_stream_connector = expose c_stream_reader,c_stream_writer,c_task;
+class public c_controlled_stream_connector = expose c_stream_reader,c_stream_writer;
+-- implementace streamoveho cerpadla, pouzivajiciho stream interfacy obou typu
+----------------------------------------------------------------------------------------------------
+  static transfer_packet return t_logical;
+  ------------------------------------------------------------------------------------------------
+  static init_connector(
+      source       : in p_input_stream;          -- odkaz na vstupn¡ stream
+      target       : in p_output_stream);        -- odkaz na v˜stupn¡ stream
+  ------------------------------------------------------------------------------------------------
+  end c_controlled_stream_connector;
+type p_controlled_stream_connector = ^class c_controlled_stream_connector;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_active_stream_connector = extend c_controlled_stream_connector; expose c_task;
 -- implementace streamoveho cerpadla, pouzivajiciho stream interfacy obou typu
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
-  static init_connector(
+  static start_connector(
       source       : in p_input_stream;          -- odkaz na vstupn¡ stream
       target       : in p_output_stream);        -- odkaz na v˜stupn¡ stream
   ------------------------------------------------------------------------------------------------

@@ -519,7 +519,7 @@ class private c_incremental_hash_table =
       item^.item_id:=next_id;
 
       -- calucate the least next item ID
-      next_id + 1;
+      succ next_id;
       end assign_hash_id;
     end c_incremental_hash_table;
 

@@ -58,9 +58,19 @@ class private c_filesystem_object =
 
     var 
       sys_error    : protected windows.windef.dword;  -- system error code
+      disable_exceptions : t_logical;
 
     
 
+    ------------------------------------------------------------------------------------------------
+    virtual set_exception_mode =
+    ------------------------------------------------------------------------------------------------
+    begin
+      disable_exceptions:=disable;
+      end set_exception_mode;
+    
+
+    
     ------------------------------------------------------------------------------------------------
     virtual set_ok =
     -- Clears [this.res] error flag.
@@ -86,6 +96,9 @@ class private c_filesystem_object =
 
       -- trigger the error event
       execute(event_error);
+      if not disable_exceptions then
+        raise file_error;
+        end if;
       end set_error;
 
 
@@ -1054,7 +1067,7 @@ class private c_folder =
           set_error(tfe_create);
           end if;
     {
-      -- %%TODO mo‘n  by open nemusel b˜t sou‡ st¡ create, ale to by zase neodpov¡dalo koncepci soubor–
+      -- %%TODO mon by open nemusel bt soust create, ale to by zase neodpovdalo koncepci soubor
       -- open the created directory
       if res<>tfe_ok then open(mode); end if;
     }
@@ -1182,7 +1195,7 @@ class private c_drive =
     static unmount = 
     -- Unmounts the drive. On system which does not support unmounting it simulates the unmount and 
     -- then the drive will behave as unmounted for our application.
-    -- %%TODO to je ale nˆjak˜ divn˜
+    -- %%TODO to je ale njak divn
     ------------------------------------------------------------------------------------------------
     begin
       -- trigger the 'before' event
@@ -1242,8 +1255,29 @@ class private c_file_manager =
     --   If program has no rigths to perform such opration subprogram fails.
     --   If subprogram fails [fm_error] flag will be set to [tfme_move].
     ------------------------------------------------------------------------------------------------
+    var
+      ssys_name     : windows.windef.winnt.pwstr; -- system name
+      stext_name    : p_text_name;                -- plain-text name of a file
+      dsys_name     : windows.windef.winnt.pwstr; -- system name
+      dtext_name    : p_text_name;                -- plain-text name of a file
+
     begin
-      raise feature_not_implemented;
+      begin
+        srcname.compose_name(stext_name);
+        to_system_string(stext_name^,ssys_name);
+        destname.compose_name(dtext_name);
+        to_system_string(dtext_name^,dsys_name);
+      leave
+        discard stext_name;
+        discard dtext_name;
+        end;
+      
+      if not windows.winbase.MoveFileW(ssys_name,dsys_name) then
+        raise file_error;
+        end if;
+      leave   
+        discard dsys_name;
+        discard ssys_name;
       end move_file;
 
 

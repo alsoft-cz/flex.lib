@@ -20,17 +20,6 @@ module private characters =
 class private abstract c_character_decoder =
 -- Character decored.
 ----------------------------------------------------------------------------------------------------
-
-    ------------------------------------------------------------------------------------------------
-    virtual put_byte =
-    -- Feeds in a single byte of input. 
-    ------------------------------------------------------------------------------------------------
-    begin 
-      raise character_decoder_error;
-      end put_byte;
-
-
-
     ------------------------------------------------------------------------------------------------
     static finalize_input =
     -- Informs the decoder, that there will be no more input character. The decored checks if 
@@ -204,6 +193,10 @@ class private c_character_decoder_utf8 =
             add_c($3F,0);
             char_prepared:=true;
             n:=0;
+            if c=\$0000feff then
+              -- byte order mark, eat it
+              char_prepared:=false;
+              end if;  
 
           -- the one before last byte
           elsif n=2 then
@@ -389,14 +382,14 @@ class private c_character_decoder_ucs2 =
         then
           {if endian=te_little_endian 
             then c:ord:=b;
-            else} t_mod_unsigned32(c:ord):=t_mod_unsigned32(b) shl 8;
+            else} t_mod_unsigned32(c:ord) := t_mod_unsigned32(b);
               {end if;}
           first:=false;
 
         -- this is for second of two 8bit bytes
         else 
           {if endian=te_big_endian 
-            then} t_mod_unsigned32(c:ord) + t_mod_unsigned32(b);
+            then} t_mod_unsigned32(c:ord) + t_mod_unsigned32(b) shl 8;
             {else c:ord + (b shl 8);
               end if;}
          
@@ -503,17 +496,6 @@ class private abstract c_character_encoder =
 
     var 
       n            : t_unsigned8;                -- output bytes counter
-
-    ------------------------------------------------------------------------------------------------
-    virtual put_character =
-    -- Feeds in a single character. 
-    ------------------------------------------------------------------------------------------------
-    begin 
-      raise character_encoder_error;
-      end put_character;
-
-
-
 
     ------------------------------------------------------------------------------------------------
     virtual set_endian =
@@ -676,6 +658,23 @@ class private c_character_encoder_utf8 =
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
+    override set_endian =
+    -- Sets byte order of output bytes and puts character $feff at the begining of output where
+    -- applicable.
+    ------------------------------------------------------------------------------------------------
+    begin 
+      endian:=new_endian;
+      finalize_output;
+      if endian=te_little_endian 
+        then output_bytes & $ef & $bb & $bf;
+        else output_bytes & $ef & $bb & $bf;
+        end if;
+      bytes_ready:=true;
+      end set_endian;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
     override put_character =
     -- Feeds in a single character.
     ------------------------------------------------------------------------------------------------
@@ -753,6 +752,7 @@ class private c_character_encoder_utf16 =
         then output_bytes & $ff & $fe;
         else output_bytes & $fe & $ff;
         end if;
+      bytes_ready:=true;
       end set_endian;
 
 
@@ -843,6 +843,7 @@ class private c_character_encoder_ucs2 =
         then output_bytes & $FF & $FE;
         else output_bytes & $FE & $FF;
         end if;
+      bytes_ready:=true;
       end set_endian;
 
 
@@ -894,6 +895,7 @@ class private c_character_encoder_ucs4 =
         then output_bytes & $FF & $FE & $00 & $00;
         else output_bytes & $00 & $00 & $FE & $FF;
         end if;
+      bytes_ready:=true;
       end set_endian;
 
 

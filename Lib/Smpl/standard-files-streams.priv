@@ -24,7 +24,7 @@ var
   begin
     new pf;
     pf^.init_text_name(name);
-    pf^.create([tfm_write],tfa_sequential,sharing,always);
+    pf^.create(tfms_write,tfa_sequential,sharing,always);
     autoclose:=true;
     end create;
 
@@ -36,12 +36,21 @@ var
   begin
     new pf;
     pf^.init_text_name(name);
-    pf^.open([tfm_write],tfa_sequential,sharing,always);
+    pf^.open(tfms_write,tfa_sequential,sharing,always);
     autoclose:=true;
     end open;
 
 
   
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    file:=pf;
+    end get_file;
+
+
+
   ------------------------------------------------------------------------------------------------
   override c_output_stream.close = 
   ------------------------------------------------------------------------------------------------
@@ -134,12 +143,21 @@ var
   begin
     new pf;
     pf^.init_text_name(name);
-    pf^.open([tfm_read],tfa_sequential,sharing,always);
+    pf^.open(tfms_read,tfa_sequential,sharing,always);
     autoclose:=true;
     end open;
 
 
   
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    file:=pf;
+    end get_file;
+
+
+
   ------------------------------------------------------------------------------------------------
   override c_input_stream.close = 
   ------------------------------------------------------------------------------------------------
@@ -240,6 +258,15 @@ var
     filestream.create(name,sharing,always);
     init_output_buffer(^filestream);
     end create;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.get_file(file);
+    end get_file;
   end c_buffered_file_output_stream;
 
 
@@ -267,6 +294,15 @@ var
     filestream.open(name,sharing,always);
     init_input_buffer(^filestream);
     end open;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.get_file(file);
+    end get_file;
   end c_buffered_file_input_stream;
 
 
@@ -295,6 +331,15 @@ var
     filestream.open(name,sharing,always);
     this.init_text_reader(p_input_stream(^filestream),decoder);
     end open;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.get_file(file);
+    end get_file;
   end c_text_file_reader;
 
 
@@ -333,4 +378,13 @@ var
     filestream.create(name,sharing,always);
     this.init_text_writer(p_output_stream(^filestream),encoder);
     end create;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static get_file =
+  ------------------------------------------------------------------------------------------------
+  begin
+    filestream.get_file(file);
+    end get_file;
   end c_text_file_writer;

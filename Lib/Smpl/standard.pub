@@ -133,15 +133,20 @@ type
   t_char8ustr      = string of t_char8;
   t_char16ustr     = string of t_char16;
   t_char32ustr     = string of t_char32;
+  t_char32uarray   = array of t_char32;
   t_char8str       = t_char8ustr  range 100;
   t_char16str      = t_char16ustr range 100;
   t_char32str      = t_char32ustr range 100;
+  t_char8lstr       = t_char8ustr  range 1000;
+  t_char16lstr      = t_char16ustr range 1000;
+  t_char32lstr      = t_char32ustr range 1000;
   p_char8str       = ^t_char8str;
   p_char16str      = ^t_char16str;
   p_char32str      = ^t_char32str;
   p_char8ustr      = ^t_char8ustr;
   p_char16ustr     = ^t_char16ustr;
   p_char32ustr     = ^t_char32ustr;
+  p_char32uarray   = ^t_char32uarray;
 
   -- logical types
   t_logical8       = logical 8;
@@ -244,6 +249,9 @@ class c_triggered_class = extend c_class; expose c_trigger_container;
 ----------------------------------------------------------------------------------------------------
 #separate public console;
 -- Console I/O.
+----------------------------------------------------------------------------------------------------
+#separate public sockets;
+-- Network I/O.
 ----------------------------------------------------------------------------------------------------
 #separate public conversions;
 -- Miscellaneous conversion routines.

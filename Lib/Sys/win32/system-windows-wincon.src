@@ -177,6 +177,7 @@ bSetFocus       : BOOL;
 type
   _INPUT_RECORD     = record
 EventType       : WORD;
+align           : WORD;
 Event            : record
       KeyEvent      : KEY_EVENT_RECORD for position use 0;
       MouseEvent    : MOUSE_EVENT_RECORD for position use 0;

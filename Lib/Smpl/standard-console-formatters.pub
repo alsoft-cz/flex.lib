@@ -14,8 +14,12 @@ class public c_console_text_writer = extend c_stream_text_writer;
     target         : p_output_stream);           -- vystupni stream
   --------------------------------------------------------------------------------------------------
   virtual set_cursor_position (
-    x              : in t_cursor_position_x;     -- horizontal position
-    y              : in t_cursor_position_y);    -- vertical position
+  pos              : t_cursor_coordinates);
+  --------------------------------------------------------------------------------------------------
+  --virtual set_attributes(
+  --    attr           : t_con_attributes_set);
+  ----------------------------------------------------------------------------------------------------
+  virtual clear_console;
   --------------------------------------------------------------------------------------------------
   end c_console_text_writer;
 type p_console_text_writer = ^class c_console_text_writer;
@@ -28,6 +32,10 @@ class public c_console_text_reader = extend c_stream_text_reader;
   --------------------------------------------------------------------------------------------------
   static init_console_reader(
     source         : p_input_stream);             -- zdrojovy stream
+  --------------------------------------------------------------------------------------------------
+  virtual read_event(
+    event          : out t_console_event)
+    return t_logical;
   --------------------------------------------------------------------------------------------------
   end c_console_text_reader;
 type p_console_text_reader = ^class c_console_text_reader;

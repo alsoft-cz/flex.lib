@@ -100,7 +100,11 @@ begin
 
   -- convert from ISO to UNICODE
   for i in str:range loop
-    sysstr^[i-1]:=str[i];
+    if str[i]:ord>256 then
+      sysstr^[i-1]:=" ";
+    else
+      sysstr^[i-1]:=str[i];
+      end if;
     end loop;
 
   -- append zero
@@ -213,6 +217,9 @@ begin
 ----------------------------------------------------------------------------------------------------
 #separate private console;
 -- Console I/O.
+----------------------------------------------------------------------------------------------------
+#separate private sockets;
+-- Network I/O.
 ----------------------------------------------------------------------------------------------------
 #separate private conversions;
 -- Miscellaneous conversion routines.

@@ -60,11 +60,29 @@ begin
   packet.size:=size;
   new packet.data range size;
   --%%TODO rez polem
-  -- fuj
-  for i in 0..(size-1) loop
-    packet.data^[i]:=data^[i];
-    end loop;
+  copy_data(data,0,packet.data,0,size);
   end copy_to_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure deep_copy =
+----------------------------------------------------------------------------------------------------
+var
+    data           : p_data_array;
+    size           : t_offset;
+
+begin
+  outpacket:=inpacket;
+  case (inpacket.style)
+    when t_dps_signal do
+    when t_dps_other do
+      inpacket.other^.copy^(inpacket,outpacket);
+    when others do
+      read_packet(inpacket,data,size);
+      copy_to_packet(outpacket,data,size);
+    end case;
+  end deep_copy;
 
 
 
@@ -86,6 +104,8 @@ begin
         end if;
     when t_dps_other do
       packet.other^.dispose^(packet);
+    when others do
+      -- nothing
     end case;
   --packet:=nil;
   end discard_packet;
@@ -134,25 +154,79 @@ var
   psize            : t_offset;
 
 begin
-  case (packet.style)
+  case (inpacket.style)
     when t_dps_other do
-      packet.other^.read^(packet,pdata,psize);
+      inpacket.other^.read^(inpacket,pdata,psize);
     when others do
-      pdata:=packet.data;
-      psize:=packet.size;
+      pdata:=inpacket.data;
+      psize:=inpacket.size;
     end case;
 
-  read:=psize-poffset;
+  read:=psize-inoffset;
   if read>size then
     read:=size;
     end if;
 
   --%%TODO rez polem
-  -- fuj
-  for i in 0..(read-1) loop
-    data^[doffset+i]:=pdata^[poffset+i];
-    end loop;
+  copy_data(pdata,inoffset,outdata,outoffset,read);
 
-  doffset + read;
-  poffset + read;
+  outoffset + read;
+  inoffset + read;
   end copy_from_packet;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_text_to_packet =
+----------------------------------------------------------------------------------------------------
+var
+  data             : p_data_array;
+
+begin
+  data:unchecked:=^text:unchecked;
+  t_unsigned(data:unchecked) + t_unsigned:size;
+  packet.style:=t_dps_heap;
+  packet.size:=text:length*t_char32:size;
+  new packet.data range packet.size;
+  --%%TODO rez polem
+  copy_data(data,0,packet.data,0,packet.size);
+  end copy_text_to_packet;
+
+
+----------------------------------------------------------------------------------------------------
+procedure realloc_packet =
+----------------------------------------------------------------------------------------------------
+var
+    _data          : p_data_array;
+    _size          : t_offset;
+    _new           : p_data_array;
+    _out           : t_data_packet;
+
+begin
+  read_packet(packet,_data,_size);
+  size:=_size+newbytes;
+  _out.style:=t_dps_heap;
+  _out.size:=size;
+  --%%TODO realoc by flex adjust
+  new _out.data range size;
+  --%%TODO rez polem
+  copy_data(_data,0,_out.data,0,_size);
+  --end %%TODO realoc by flex adjust
+  data:=_out.data;
+  discard_packet(packet);
+  packet:=_out;
+  end realloc_packet;
+
+
+----------------------------------------------------------------------------------------------------
+procedure copy_data =
+----------------------------------------------------------------------------------------------------
+begin
+  --%%TODO rez polem
+  -- fuj
+  if size>0 then
+    for i in 0..(size-1) loop
+      outdata^[i+outoffset]:=indata^[i+inoffset];
+      end loop;
+    end if;
+  end copy_data;

@@ -5,9 +5,8 @@ module public cp1250 =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-
 var
-  cp1250_to_ascii  : const t_codepage := [
+  cp1250_to_ascii  : const aliased t_code_page := [
     \$0000, 
     \$0001,
     \$0002,

@@ -77,8 +77,8 @@ module windows =
 #separate stdarg;
 #separate windef;
 #separate winbase;
---#separate wingdi;
---#separate winuser;
+#separate wingdi;
+#separate winuser;
 --#separate winnls;
 #separate wincon;
 --#separate winver;
@@ -94,7 +94,8 @@ module windows =
 -- ignored #include <rpc.h>
 --#separate shellapi;
 --#separate winperf;
---#separate winsock;
+#separate winsock;
+#separate winsock2;
 --#separate wincrypt;
 --#separate winefs;
 --#separate winscard;

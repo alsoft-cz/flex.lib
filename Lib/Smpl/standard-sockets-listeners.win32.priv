@@ -1,0 +1,113 @@
+----------------------------------------------------------------------------------------------------
+module private listeners =
+-- Socket I/O.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  system.windows.windef,
+  system.windows.winbase.winerror,
+  system.windows.winsock;
+
+use
+  system.windows.winsock2;
+
+
+----------------------------------------------------------------------------------------------------
+class private c_socket_listener =
+-- socket stream.
+----------------------------------------------------------------------------------------------------
+var
+  listen_handle     : t_socket;
+  addr             : aliased t_sockaddr_in;
+
+  --------------------------------------------------------------------------------------------------
+  static listen =
+  --------------------------------------------------------------------------------------------------
+  var
+      potr_exch1   : t_win_port;
+      potr_exch2   : t_win_port;
+      addrptr      : LPSOCKADDR;
+
+  begin
+    listen_handle:=system.windows.winsock2.socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    if listen_handle=INVALID_SOCKET then
+      raise socket_initialization_error;
+      end if;
+
+    addr.sin_family:=AF_INET;
+    potr_exch1:unchecked:=port;
+    potr_exch2.high:=potr_exch1.low;
+    potr_exch2.low:=potr_exch1.high;
+    addr.sin_port:unchecked:=potr_exch2;
+    addr.sin_addr.S_un.S_un_b.s_b1:=u_char(address.a);
+    addr.sin_addr.S_un.S_un_b.s_b2:=u_char(address.b);
+    addr.sin_addr.S_un.S_un_b.s_b3:=u_char(address.c);
+    addr.sin_addr.S_un.S_un_b.s_b4:=u_char(address.d);
+    addrptr:unchecked:=^addr;
+
+    -- bind address and port
+    if system.windows.winsock2.bind(listen_handle,addrptr,addr:size)<>0 then
+      raise socket_connection_error;
+      end if;
+
+    -- start listning
+    if system.windows.winsock2.listen(listen_handle,s_long(waiting_count))<>0 then
+      raise socket_connection_error;
+      end if;
+
+    end listen;
+
+  --------------------------------------------------------------------------------------------------
+  static accept_connection =
+  --------------------------------------------------------------------------------------------------
+  var
+    potr_exch1     : t_win_port;
+    potr_exch2     : t_win_port;
+    addr           : SOCKADDR;
+    len            : s_long;
+
+  begin
+    len:=t_sockaddr_in:size;
+    socket_handle:=system.windows.winsock2._accept(listen_handle,addr,len);
+    if socket_handle=INVALID_SOCKET then
+      raise socket_connection_error;
+      end if;
+
+    -- get port
+    potr_exch1:unchecked:=t_sockaddr_in(addr:unchecked).sin_port;
+    potr_exch2.high:=potr_exch1.low;
+    potr_exch2.low:=potr_exch1.high;
+    other_side.port:unchecked:=potr_exch2;
+
+    -- get IP
+    other_side.address.a:=t_unsigned8(t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b1);
+    other_side.address.b:=t_unsigned8(t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b2);
+    other_side.address.c:=t_unsigned8(t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b3);
+    other_side.address.d:=t_unsigned8(t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b4);
+    end accept_connection;
+
+
+  ------------------------------------------------------------------------------------------------
+  static close =
+  ------------------------------------------------------------------------------------------------
+  begin
+   if system.windows.winsock2.closesocket(listen_handle)<>0 then
+      raise socket_shutdown_error;
+      end if;
+    end close;
+
+  ------------------------------------------------------------------------------------------------
+  entry =
+  ------------------------------------------------------------------------------------------------
+  var
+      start        : WSADATA;
+
+  begin
+    if system.windows.winsock2.WSAStartup($0202,start)<>0 then
+      raise socket_initialization_error;
+      end if;
+    end entry;
+  end c_socket_listener;
+end listeners;

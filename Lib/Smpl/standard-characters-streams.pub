@@ -14,6 +14,8 @@ type p_stream_text_writer = ^class c_stream_text_writer;
 message
   -- short buffer
   string_buffer_overflow : exception;
+
+
 ----------------------------------------------------------------------------------------------------
 class public c_stream_text_reader = extend c_stream_generic_reader; expose c_text_reader;
 -- implementace ctenare textu ze streamu
@@ -38,6 +40,8 @@ class public c_input_stream_text_recoder = extend c_stream_reader_filter;
     decoder        : p_character_decoder:=nil;
     encoder        : p_character_encoder:=nil);
   --------------------------------------------------------------------------------------------------
+  static disable_byte_order_mark;
+  --------------------------------------------------------------------------------------------------
   end c_input_stream_text_recoder;
 type p_input_stream_text_recoder = ^class c_input_stream_text_recoder;
 
@@ -50,8 +54,10 @@ class public c_output_stream_text_recoder = extend c_stream_writer_filter;
   --------------------------------------------------------------------------------------------------
   static init_recoder(
     target         : p_output_stream;
-    encoder        : p_character_encoder:=nil;
-    decoder        : p_character_decoder:=nil);
+    decoder        : p_character_decoder:=nil;
+    encoder        : p_character_encoder:=nil);
+  --------------------------------------------------------------------------------------------------
+  static disable_byte_order_mark;
   --------------------------------------------------------------------------------------------------
   end c_output_stream_text_recoder;
 type p_output_stream_text_recoder = ^class c_output_stream_text_recoder;

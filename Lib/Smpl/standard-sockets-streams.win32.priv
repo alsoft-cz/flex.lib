@@ -1,0 +1,265 @@
+----------------------------------------------------------------------------------------------------
+module private streams =
+-- Socket I/O.
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  system.windows.windef,
+  system.windows.winbase.winerror,
+  system.windows.winsock;
+
+use
+  system.windows.winsock2;
+
+
+----------------------------------------------------------------------------------------------------
+class private c_socket_stream = 
+----------------------------------------------------------------------------------------------------
+var
+  in_closed        : t_logical;
+  in_eod           : t_logical;
+  out_closed       : t_logical;
+  out_eod          : t_logical;
+  autoclose        : t_logical;
+
+  --winsock
+  addr             : SOCKADDR;
+  sockethandle     : t_SOCKET;
+
+
+  ------------------------------------------------------------------------------------------------
+  static open =
+  ------------------------------------------------------------------------------------------------
+  begin
+    this.autoclose:=autoclose;
+    sockethandle:=socket_handle;
+    end open;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static connect =
+  ------------------------------------------------------------------------------------------------
+  var
+      potr_exch1   : t_win_port;
+      potr_exch2   : t_win_port;
+      addrptr      : SOCKADDR;
+
+  begin
+    autoclose:=true;
+    sockethandle:=system.windows.winsock2.socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+    if sockethandle=INVALID_SOCKET then
+      raise socket_initialization_error;
+      end if;
+
+    -- set adr family
+    t_sockaddr_in(addr:unchecked).sin_family:=AF_INET;
+    -- set port
+    potr_exch1:unchecked:=port;
+    potr_exch2.high:=potr_exch1.low;
+    potr_exch2.low:=potr_exch1.high;
+    t_sockaddr_in(addr:unchecked).sin_port:unchecked:=potr_exch2;
+    -- set IP
+    t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b1:=u_char(address.a);
+    t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b2:=u_char(address.b);
+    t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b3:=u_char(address.c);
+    t_sockaddr_in(addr:unchecked).sin_addr.S_un.S_un_b.s_b4:=u_char(address.d);
+
+    -- connect
+    if system.windows.winsock2.WSAConnect(sockethandle,addr,addr:size,nil,nil,nil,nil)<>0 then
+      raise socket_connection_error;
+      end if;
+    end connect;
+
+
+  
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.close = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    if autoclose then
+      if system.windows.winsock2.shutdown(sockethandle,system.windows.winsock2.SD_RECEIVE)<>0 then
+        raise socket_shutdown_error;
+        end if;
+      if out_closed then
+        if system.windows.winsock2.closesocket(sockethandle)<>0 then
+          raise socket_shutdown_error;
+          end if;
+        end if;
+      end if;
+    in_closed:=true;
+    end close;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    if autoclose then
+      if system.windows.winsock2.shutdown(sockethandle,system.windows.winsock2.SD_SEND)<>0 then
+        raise socket_shutdown_error;
+        end if;
+      if in_closed then
+        if system.windows.winsock2.closesocket(sockethandle)<>0 then
+          raise socket_shutdown_error;
+          end if;
+        end if;
+      end if;
+    out_closed:=true;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.is_eod = 
+  ------------------------------------------------------------------------------------------------
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    --%%TODO jak zjistit ?
+    result:=in_eod;
+    end is_eod;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    result:=true;  --%%TODO jak zjistit ?
+    end is_reading;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_input_stream.read_packet = 
+  ------------------------------------------------------------------------------------------------
+  var
+    size           : t_offset;
+    _data          : p_data_array;
+    buff           : aliased system.windows.winsock2.WSABUF;
+    flags          : DWORD;
+    readen         : DWORD;
+
+  begin
+    if in_closed then
+      raise stream_already_closed;
+      end if;
+    if in_eod then
+      raise stream_end_of_data;
+      end if;
+    c_input_stream:(this).get_optimal_packet_size(size);
+    new _data range size;
+
+    buff.buf:unchecked:=_data;
+    buff.len:=u_long(size);
+
+    if system.windows.winsock2.WSARecv(sockethandle,buff,1,readen,flags,nil,nil)=SOCKET_ERROR then
+      case (system.windows.winsock2.WSAGetLastError())
+        when WSAENETRESET,WSAESHUTDOWN,WSAECONNABORTED,WSAETIMEDOUT,WSAECONNRESET do
+          discard _data;
+          raise stream_other_side;
+        when WSAEMSGSIZE do
+          discard _data;
+          raise socket_data_lost;
+        when others do
+          discard _data;
+          raise socket_exception;
+        end case;
+    else
+      size:=readen;
+      if size>0 then
+        create_packet(data,_data,size,t_dps_heap);
+        c_input_stream:(this).add_flow(data);
+      else
+        discard _data;
+        in_eod:=true;
+        create_eod(data);
+        end if;
+      end if;
+    end read_packet;
+
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    _data           : p_data_array;
+    _size           : t_offset;
+    buff           : aliased system.windows.winsock2.WSABUF;
+    flags          : DWORD;
+    writen         : DWORD;
+
+  begin
+    if out_closed then
+      raise stream_already_closed;
+      end if;
+    if out_eod then
+      raise stream_end_of_data;
+      end if;
+
+    if data.style=t_dps_signal then 
+      {
+      --%%TODO ?
+      -- flush packet
+      if data.signal=t_dpss_flush then
+        end if;
+      }
+      -- eod
+      if data.signal=t_dpss_eod then
+        if system.windows.winsock2.shutdown(sockethandle,system.windows.winsock2.SD_SEND)<>0 then
+          raise socket_shutdown_error;
+          end if;
+        out_eod:=true;
+        end if;
+    else
+      read_packet(data,_data,_size);
+      if _size>0 then
+        buff.buf:unchecked:=_data;
+        buff.len:=_size;
+        if system.windows.winsock2.WSASend(sockethandle,^buff,1,writen,flags,nil,nil)= SOCKET_ERROR then
+          case (system.windows.winsock2.WSAGetLastError())
+            when WSAENETRESET,WSAESHUTDOWN,WSAECONNABORTED,WSAECONNRESET  do
+              raise stream_other_side;
+            when WSAEMSGSIZE do
+              raise socket_data_lost;
+            when others do
+              raise socket_exception;
+            end case;
+          end if;
+        end if;
+      end if;
+    c_output_stream:(this).add_flow(data);
+    discard_packet(data);
+    end write_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  entry =
+  ------------------------------------------------------------------------------------------------
+  var
+      start        : WSADATA;
+
+  begin
+    if system.windows.winsock2.WSAStartup($0202,start)<>0 then
+      raise socket_initialization_error;
+      end if;
+    end entry;
+  end c_socket_stream;
+end streams;

@@ -444,6 +444,11 @@ class public c_name_component_file_or_folder = extend c_name_component;
     ------------------------------------------------------------------------------------------------
     static get_base_name (
         base_name  : out p_text_name);           -- the base name
+    -- Checks if the base of the name is equal to the given name.
+    ------------------------------------------------------------------------------------------------
+    static check_base_name (
+        base_name  : in t_text_name)             -- the base name
+        return t_logical;                        -- [true] if the base matches
     -- Retrieves the base name of a file or folder name.
     --   The caller is responsible for freeing the memory.
     ------------------------------------------------------------------------------------------------

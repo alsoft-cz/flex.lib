@@ -134,7 +134,7 @@ var
         -- fuj
         for i in 0..(size-1) loop
           buffer^[bpos]:=_data^[i];
-          bpos + 1;
+          succ bpos;
           end loop;
         if style=t_dps_heap then
           discard _data;
@@ -296,25 +296,25 @@ var
 class private abstract c_stream_generic_reader =
 ----------------------------------------------------------------------------------------------------
 var
-  packet         : t_data_packet;
-  position       : t_offset;
+  packet           : t_data_packet;
+  position         : t_offset;
 
   ------------------------------------------------------------------------------------------------
   static read_unchecked_internal (
       data       : out unchecked;              -- p©e‡ten  data
-      sizebytes  : in t_offset;                -- velikost dat, kter  se maj¡ p©e‡¡st
+      sizebytes  : in static t_offset;                -- velikost dat, kter  se maj¡ p©e‡¡st
       readbytes  : out t_offset)               -- velikost ktera byla prectena
       return t_logical =
   ------------------------------------------------------------------------------------------------
   var
-    _data        : p_data_array;
+    _data          : p_data_array;
 
   begin
     _data:unchecked:=^data;
-    loop
-      if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
-        raise stream_end_of_data;
-        end if;
+    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+      raise stream_end_of_data;
+      end if;
+    while (sizebytes>readbytes) loop
       if packet.style=t_dps_invalid then
         _source^.read_packet(packet);
         end if;
@@ -329,11 +329,10 @@ var
         if packet.signal=t_dpss_eod then
           result:=true;
           return;
+        else
+          discard_packet(packet);
+          packet:=nil;
           end if;
-        end if;
-      if sizebytes=readbytes then
-        result:=false;
-        break;
         end if;
       end loop;
     end read_unchecked_internal;
@@ -376,6 +375,15 @@ var
 
 
 
+  
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked_out =
+  ------------------------------------------------------------------------------------------------
+  begin
+    result:=read_unchecked_internal(data,size,size);
+    end read_unchecked_out;
+
+  
   
   ------------------------------------------------------------------------------------------------
   static read_unchecked =
@@ -424,6 +432,15 @@ var
     result:=read_unchecked_internal(data[1],data:last*t_char32:size,readbytes);
     data:length:=readbytes div t_char32:size;
     end read_text;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  exit =
+  ------------------------------------------------------------------------------------------------
+  begin
+    discard_packet(packet);
+    end exit;
   end c_stream_generic_reader;
 
 

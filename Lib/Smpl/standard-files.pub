@@ -23,6 +23,9 @@ with
   standard.streams,
   standard.characters;  
   
+message
+    file_error;                                  --%%TODO extend message types
+
 -- forward declarations
 class c_filesystem_object; type p_filesystem_object = ^class c_filesystem_object;
 class c_file;              type p_file              = ^class c_file;
@@ -138,6 +141,9 @@ class public c_filesystem_object = extend c_trigger_container;
       mode         : protected t_fs_object_mode_set; -- file(object) opening mode
       res          : protected t_fs_object_error;-- result of the last operation
   
+    ------------------------------------------------------------------------------------------------
+    virtual set_exception_mode(
+      disable      : t_logical); 
     ------------------------------------------------------------------------------------------------
     virtual set_ok; 
     -- Clears [this.res] error flag.

@@ -16,11 +16,40 @@ class private c_console_text_writer =
 
   begin
     new coord;
-    coord^.x:=x;
-    coord^.y:=y;
-    create_signal(packet,t_dpss_set_pos,p_data_array(coord:unchecked));
+    coord^.x:=pos.x;
+    coord^.y:=pos.y;
+    create_signal(packet,t_dpss_con_set_pos,p_data_array(coord:unchecked));
     _target^.write_packet(packet);
     end set_cursor_position;
+
+
+{
+  --------------------------------------------------------------------------------------------------
+  virtual set_attributes =
+  ----------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+    pattr          : p_con_attributes_set;
+
+  begin
+    new pattr;
+    pattr^:=attr;
+    create_signal(packet,t_dpss_con_set_attr,p_data_array(pattr:unchecked));
+    _target^.write_packet(packet);
+    end set_attributes;
+}
+
+
+  --------------------------------------------------------------------------------------------------
+  virtual clear_console =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+
+  begin
+    create_signal(packet,t_dpss_con_clear,nil);
+    _target^.write_packet(packet);
+    end clear_console;
 
 
 
@@ -44,5 +73,24 @@ class private c_console_text_reader =
   begin
     init_text_reader(source,nil);
     end init_console_reader;
+
+  --------------------------------------------------------------------------------------------------
+  virtual read_event =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_data_packet;
+
+  begin
+    loop
+      _source^.read_packet(packet);
+      if packet.style=t_dps_signal and then packet.signal=t_dpss_con_event then
+        event:=p_console_event(packet.other:unchecked)^;
+        discard_packet(packet);
+        break;
+      else
+        discard_packet(packet);
+        end if;
+      end loop;
+    end read_event;
   end c_console_text_reader;
 end formatters;

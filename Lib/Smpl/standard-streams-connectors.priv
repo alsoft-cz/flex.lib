@@ -169,26 +169,55 @@ var
 
 
 ----------------------------------------------------------------------------------------------------
+class private c_controlled_stream_connector =
+----------------------------------------------------------------------------------------------------
+
+  ------------------------------------------------------------------------------------------------
+  static transfer_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : t_data_packet;
+
+  begin
+    -- cekam na packet
+    c_stream_reader:(this)._source^.read_packet(packet);
+
+    -- zapisu packet
+    c_stream_writer:(this)._target^.write_packet(packet);
+    
+    if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
+      -- jestli to byl end of data, koncim
+      c_stream_reader:(this)._source^.close;
+      c_stream_writer:(this)._target^.close;
+      result:=true;
+      end if;
+    end transfer_packet;
+
+  
+  
+  ------------------------------------------------------------------------------------------------
+  static init_connector =
+  ------------------------------------------------------------------------------------------------
+  begin
+    -- inicializace obou stran spojeni
+    c_stream_writer:(this).init_writer(target);
+    c_stream_reader:(this).init_reader(source);
+    end init_connector;
+  end c_controlled_stream_connector;
+
+
+
+----------------------------------------------------------------------------------------------------
 class private c_active_stream_connector =
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   override c_task.run =
   -- cerpadlo
   ------------------------------------------------------------------------------------------------
-  var
-    packet       : t_data_packet;
-
   begin
     loop
-      -- cekam na packet
-      c_stream_reader:(this)._source^.read_packet(packet);
       begin
-        -- zapisu packet
-        c_stream_writer:(this)._target^.write_packet(packet);
-        if packet.style=t_dps_signal and then packet.signal=t_dpss_eod then
-          -- jestli to byl end of data, koncim
-          c_stream_reader:(this)._source^.close;
-          c_stream_writer:(this)._target^.close;
+        if transfer_packet then
           break;
           end if;
       catch
@@ -210,14 +239,12 @@ class private c_active_stream_connector =
   
   
   ------------------------------------------------------------------------------------------------
-  static init_connector =
+  static start_connector =
   ------------------------------------------------------------------------------------------------
   begin
-    -- inicializace obou stran spojeni
-    c_stream_writer:(this).init_writer(target);
-    c_stream_reader:(this).init_reader(source);
+    init_connector(source,target);
     c_task:(this).start;
-    end init_connector;
+    end start_connector;
 
 
 
@@ -229,3 +256,4 @@ class private c_active_stream_connector =
     c_task:(this).kill;
     end exit;
   end c_active_stream_connector;
+

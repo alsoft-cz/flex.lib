@@ -16,6 +16,9 @@
 --
 -- 3. umistit dumpbin.exe, link.exe a mspdb60.dll do adresare config:program_files
 --
+-- 4. editovat config:program_files/windows.h a za #include <winsock.h> 
+--    pridat #include <winsock2.h> (Zamboch)
+--
 ----------------------------------------------------------------------------------------------------
 --
 -- Zname problemy:

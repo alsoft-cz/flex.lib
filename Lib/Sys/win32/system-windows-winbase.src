@@ -59,6 +59,11 @@ const
 const
   WAIT_ABANDONED_0 : DWORD = $80 + $0;
 
+const
+  WAIT_IO_COMPLETION : DWORD = $c0 + $0;
+
+
+
 -- 
 --  File creation flags must start at the high end since they
 --  are combined with the attributes

@@ -13,6 +13,9 @@ with
   standard.characters,
   standard.streams;
 
+message
+  console_error;
+
 type
   -- position of the cursor on the console
   t_cursor_position_x = protected t_unsigned;
@@ -23,6 +26,52 @@ type
     end record;
   p_cursor_coordinates = ^t_cursor_coordinates;
 
+  t_control_keys = enum
+    t_key_caps_lock;
+    t_key_num_lock;
+    t_key_scroll_lock;
+
+    t_key_left_alt;
+    t_key_right_alt;
+
+    t_key_left_ctrl;
+    t_key_right_ctrl;
+
+    t_key_left_shift;
+    t_key_right_shift;
+
+    t_key_left_mouse;
+    t_key_second_mouse;
+    t_key_third_mouse;
+    t_key_fourth_mouse;
+    t_key_right_mouse;
+    end enum;
+
+  t_control_keys_set = set of t_control_keys;
+
+  t_event_code  = protected t_unsigned;
+
+  t_console_event = record
+    event_code     : t_event_code;
+    control_keys   : t_control_keys_set;
+    down           : t_logical;
+    char           : t_char32;
+    mouse_pos      : t_cursor_coordinates;
+    end record;
+  p_console_event = ^t_console_event;
+
+
+  t_input_mode = enum
+    t_im_events_no_echo;
+    t_im_char_no_echo;
+    t_im_char_with_echo;
+    t_im_line_no_echo;
+    t_im_line_with_echo;
+    end enum;
+
+
+----------------------------------------------------------------------------------------------------
+#separate events;
 ----------------------------------------------------------------------------------------------------
 #separate public streams;
 ----------------------------------------------------------------------------------------------------
@@ -41,7 +90,20 @@ var
   console_reader           : p_text_reader;
 
 
-
+----------------------------------------------------------------------------------------------------
+procedure clear_console;
+----------------------------------------------------------------------------------------------------
+procedure get_cursor_position (
+    pos            : out t_cursor_coordinates);
+----------------------------------------------------------------------------------------------------
+procedure set_cursor_position (
+    pos            : in t_cursor_coordinates);
+----------------------------------------------------------------------------------------------------
+-- procedure set_attributes(
+--    attr           : t_con_attributes_set);
+----------------------------------------------------------------------------------------------------
+procedure write_char (
+    s              : in t_char32);               -- character to write
 ----------------------------------------------------------------------------------------------------
 procedure write (
     s              : in t_char32ustr);           -- string to write
@@ -56,8 +118,32 @@ procedure write_line (
 -- following the end of the text. When the output ends on the last line of the console, the 
 -- console's content is scrolled by one line up.
 ----------------------------------------------------------------------------------------------------
-procedure set_cursor_position (
-  x              : in t_cursor_position_x;       -- horizontal position
-  y              : in t_cursor_position_y);      -- vertical position
+procedure read_char (
+    s              : out t_char32;               -- character to write
+    mode           : in t_input_mode:=t_im_char_with_echo)
+    return t_logical;
 ----------------------------------------------------------------------------------------------------
+procedure read (
+    s              : out t_char32ustr;           -- string to read into
+    mode           : in t_input_mode:=t_im_char_with_echo)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure read_line (
+    s              : out t_char32ustr;           -- string to read into
+    mode           : in t_input_mode:=t_im_line_with_echo)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure read_key(
+    key            : out t_console_event)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure read_mouse(
+    mouse          : out t_console_event)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+procedure read_event(
+    event          : out t_console_event)
+    return t_logical;
+----------------------------------------------------------------------------------------------------
+
 end console;

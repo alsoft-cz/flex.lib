@@ -1,0 +1,2479 @@
+----------------------------------------------------------------------------------------------------
+module winsock2 =
+-- Windows header [converted by h2flex]
+--
+-- Flex Standard Library
+-- Copyright (C) 1999-2003 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    windef,winnt,basetsd,winbase,winsock,guiddef;
+
+-- /* Winsock2.h -- definitions to be used with the WinSock 2 DLL and
+--  *               WinSock 2 applications.
+--  *
+--  * This header file corresponds to version 2.2.x of the WinSock API
+--  * specification.
+--  *
+--  * This file includes parts which are Copyright (c) 1982-1986 Regents
+--  * of the University of California.  All rights reserved.  The
+--  * Berkeley Software License Agreement specifies the terms and
+--  * conditions for redistribution.
+--  */
+-- /*
+--  * Ensure structures are packed consistently.
+--  * Not necessary for WIN32, it is already packed >=4 and there are
+--  * no structures in this header that have alignment requirement 
+--  * higher than 4.
+--  * For WIN64 we do not have compatibility requirement because it is
+--  * not possible to mix 32/16 bit code with 64 bit code in the same
+--  * process.
+--  */
+-- ignored #include <pshpack4.h>
+-- /*
+--  * Default: include function prototypes, don't include function typedefs.
+--  */
+const
+  INCL_WINSOCK_API_TYPEDEFS= 0;
+
+-- /*
+--  * Pull in WINDOWS.H if necessary
+--  */
+-- /*
+--  * Define the current Winsock version. To build an earlier Winsock version
+--  * application redefine this value prior to including Winsock2.h.
+--  */
+-- /*
+--  * Establish DLL function linkage if supported by the current build
+--  * environment and not previously defined.
+--  */
+-- /*
+--  * Basic system type definitions, taken from the BSD file sys/types.h.
+--  */
+
+-- /*
+--  * The new type to be used in all
+--  * instances which refer to sockets.
+--  */
+
+-- /*
+--  * Select uses arrays of SOCKETs.  These macros manipulate such
+--  * arrays.  FD_SETSIZE may be defined by the user before including
+--  * this file, but the default here should be >= 64.
+--  *
+--  * CAVEAT IMPLEMENTOR and USER: THESE MACROS AND TYPES MUST BE
+--  * INCLUDED IN WINSOCK2.H EXACTLY AS SHOWN HERE.
+--  */
+
+-- /*
+--  * Structure used in select() call, taken from the BSD file sys/time.h.
+--  */
+
+
+-- /*
+--  * Operations on timevals.
+--  *
+--  * NB: timercmp does not work for >= or <=.
+--  */
+-- /*
+--  * Commands for ioctlsocket(),  taken from the BSD file fcntl.h.
+--  *
+--  *
+--  * Ioctl's have the command encoded in the lower word,
+--  * and the size of any in or out parameters in the upper
+--  * word.  The high 2 bits of the upper word are used
+--  * to encode the in/out status of the parameter; for now
+--  * we restrict parameters to at most 128 bytes.
+--  */
+-- /* 0x20000000 distinguishes new &
+--                                            old ioctl's */
+-- /* Socket I/O Controls 
+-- /*
+--  * Structures returned by network data base library, taken from the
+--  * BSD file netdb.h.  All addresses are supplied in host order, and
+--  * returned in network order (suitable for use in system calls).
+--  */
+-- /*
+--  * It is assumed here that a network number
+--  * fits in 32 bits.
+--  */
+
+
+-- /*
+--  * Constants and structures defined by the internet system,
+--  * Per RFC 790, September 1981, taken from the BSD file netinet/in.h.
+--  * IPv6 additions per RFC 2292.
+--  */
+-- /*
+--  * Protocols
+--  */
+const
+  IPPROTO_HOPOPTS   = 0;
+
+const
+  IPPROTO_IPV4      = 4;
+
+const
+  IPPROTO_IPV6      = 41;
+
+const
+  IPPROTO_ROUTING   = 43;
+
+const
+  IPPROTO_FRAGMENT  = 44;
+
+const
+  IPPROTO_ESP       = 50;
+
+const
+  IPPROTO_AH        = 51;
+
+const
+  IPPROTO_ICMPV6    = 58;
+
+const
+  IPPROTO_NONE      = 59;
+
+const
+  IPPROTO_DSTOPTS   = 60;
+
+const
+  IPPROTO_ICLFXBM   = 78;
+
+-- /*
+--  * Port/socket numbers: network standard functions
+--  */
+-- /*
+--  * Port/socket numbers: host specific functions
+--  */
+-- /*
+--  * UNIX TCP sockets
+--  */
+-- /*
+--  * UNIX UDP sockets
+--  */
+-- /* 520+1 also used 
+-- /*
+--  * Ports < IPPORT_RESERVED are reserved for
+--  * privileged processes (e.g. root).
+--  */
+-- /*
+--  * Link numbers
+--  */
+-- /*
+--  * Definitions of bits in internet address integers.
+--  * On subnets, the decomposition of addresses to host and net parts
+--  * is done according to subnet mask, not the masks here.
+--  */
+const
+  IN_CLASSD_NET     = $F0000000;
+
+const
+  IN_CLASSD_NSHIFT  = 28;
+
+const
+  IN_CLASSD_HOST    = $FFFFFFF;
+
+-- /*
+--  * Socket address, internet style.
+--  */
+
+-- /*
+--  * Definitions related to sockets: types, address families, options,
+--  * taken from the BSD file sys/socket.h.
+--  */
+-- /*
+--  * This is used instead of -1, since the
+--  * SOCKET type is unsigned.
+--  */
+-- /*
+--  * The  following  may  be used in place of the address family, socket type, or
+--  * protocol  in  a  call  to WSASocket to indicate that the corresponding value
+--  * should  be taken from the supplied WSAPROTOCOL_INFO structure instead of the
+--  * parameter itself.
+--  */
+-- /*
+--  * Types
+--  */
+-- /*
+--  * Option flags per-socket.
+--  */
+-- /*
+--  * Additional options.
+--  */
+-- /*
+--  * WinSock 2 extension -- new options
+--  */
+const
+  SO_GROUP_ID       = $2001;
+
+const
+  SO_GROUP_PRIORITY = $2002;
+
+const
+  SO_MAX_MSG_SIZE   = $2003;
+
+const
+  SO_PROTOCOL_INFOA = $2004;
+
+const
+  SO_PROTOCOL_INFOW = $2005;
+
+#if #declared UNICODE; then;
+#template SO_PROTOCOL_INFO;
+  SO_PROTOCOL_INFOW 
+#end SO_PROTOCOL_INFO;
+#else;
+#template SO_PROTOCOL_INFO;
+  SO_PROTOCOL_INFOA 
+#end SO_PROTOCOL_INFO;
+#end if;
+
+const
+  PVD_CONFIG        = $3001;
+
+const
+  SO_CONDITIONAL_ACCEPT= $3002;
+
+-- /*  connection is not ack-ed to the 
+-- /*  other side until conditional 
+-- /*  function returns CF_ACCEPT 
+-- /*
+--  * TCP options.
+--  */
+-- /*
+--  * Address families.
+--  */
+-- /*
+--  * Although  AF_UNSPEC  is  defined for backwards compatibility, using
+--  * AF_UNSPEC for the "af" parameter when creating a socket is STRONGLY
+--  * DISCOURAGED.    The  interpretation  of  the  "protocol"  parameter
+--  * depends  on the actual address family chosen.  As environments grow
+--  * to  include  more  and  more  address families that use overlapping
+--  * protocol  values  there  is  more  and  more  chance of choosing an
+--  * undesired address family when AF_UNSPEC is used.
+--  */
+const
+  AF_ATM            = 22;
+
+const
+  AF_INET6          = 23;
+
+const
+  AF_CLUSTER        = 24;
+
+const
+  AF_12844          = 25;
+
+const
+  AF_IRDA           = 26;
+
+const
+  AF_NETDES         = 28;
+
+const
+  AF_TCNPROCESS     = 29;
+
+const
+  AF_TCNMESSAGE     = 30;
+
+const
+  AF_ICLFXBM        = 31;
+
+-- /*
+--  * Structure used by kernel to store most
+--  * addresses.
+--  */
+
+-- /*
+--  * Portable socket structure (RFC 2553).
+--  */
+-- /*
+--  * Desired design of maximum size and alignment.
+--  * These are implementation specific.
+--  */
+const
+  _SS_MAXSIZE       = 128;
+
+-- /*
+--  * Definitions used for sockaddr_storage structure paddings design.
+--  */
+-- /*
+-- #define _SS_PAD1SIZE (_SS_ALIGNSIZE - sizeof (short))
+-- #define _SS_PAD2SIZE (_SS_MAXSIZE - (sizeof (short) + _SS_PAD1SIZE \
+--                                                     + _SS_ALIGNSIZE))
+-- */
+type
+  sockaddr_storage  = record
+ss_family       : signed 16;
+__ss_pad1       : array 0..5 of character 8;
+__ss_align      : signed 64;
+__ss_pad2       : array 0..111 of character 8;
+  end record;
+
+-- /*
+--  * Structure used by kernel to pass protocol
+--  * information in raw sockets.
+--  */
+type
+  sockproto         = record
+sp_family       : u_short;
+sp_protocol     : u_short;
+  end record;
+
+-- /*
+--  * Protocol families, same as address families for now.
+--  */
+-- /*
+--  * Structure used for manipulating linger option.
+--  */
+type
+  t_linger          = record
+l_onoff         : u_short;
+l_linger        : u_short;
+  end record;
+
+-- /*
+--  * Level number for (get/set)sockopt() to apply to socket itself.
+--  */
+-- /*
+--  * Maximum queue length specifiable by listen.
+--  */
+-- /*
+--  * WinSock 2 extension -- new flags for WSASend(), WSASendTo(), WSARecv() and
+--  *                          WSARecvFrom()
+--  */
+const
+  MSG_INTERRUPT     = $10;
+
+-- /*
+--  * Define constant based on rfc883, used by gethostbyxxxx() calls.
+--  */
+-- /*
+--  * WinSock 2 extension -- bit values and indices for FD_XXX network events
+--  */
+const
+  FD_READ_BIT       = 0;
+
+const
+  FD_WRITE_BIT      = 1;
+
+const
+  FD_OOB_BIT        = 2;
+
+const
+  FD_ACCEPT_BIT     = 3;
+
+const
+  FD_CONNECT_BIT    = 4;
+
+const
+  FD_CLOSE_BIT      = 5;
+
+const
+  FD_QOS_BIT        = 6;
+
+const
+  FD_GROUP_QOS_BIT  = 7;
+
+const
+  FD_ROUTING_INTERFACE_CHANGE_BIT= 8;
+
+const
+  FD_ADDRESS_LIST_CHANGE_BIT= 9;
+
+const
+  FD_MAX_EVENTS     = 10;
+
+-- /*
+--  * WinSock error codes are also defined in winerror.h
+--  * Hence the IFDEF.
+--  */
+-- /*
+--  * All Windows Sockets error constants are biased by WSABASEERR from
+--  * the "normal"
+--  */
+-- /*
+--  * Windows Sockets definitions of regular Microsoft C error constants
+--  */
+-- /*
+--  * Windows Sockets definitions of regular Berkeley error constants
+--  */
+-- /*
+--  * Extended Windows Sockets error constant definitions
+--  */
+-- /*
+--  * Error return codes from gethostbyname() and gethostbyaddr()
+--  * (when using the resolver). Note that these errors are
+--  * retrieved via WSAGetLastError() and must therefore follow
+--  * the rules for avoiding clashes with error numbers from
+--  * specific implementations or language run-time systems.
+--  * For this reason the codes are based at WSABASEERR+1001.
+--  * Note also that [WSA]NO_ADDRESS is defined only for
+--  * compatibility purposes.
+--  */
+-- /* Authoritative Answer: Host not found 
+-- /* Non-Authoritative: Host not found, or SERVERFAIL 
+-- /* Non-recoverable errors, FORMERR, REFUSED, NOTIMP 
+-- /* Valid name, no data record of requested type 
+-- /*
+--  * Define QOS related error return codes
+--  *
+--  */
+-- /* at least one Reserve has arrived 
+-- /* at least one Path has arrived 
+-- /* there are no senders 
+-- /* there are no receivers 
+-- /* Reserve has been confirmed 
+-- /* error due to lack of resources 
+-- /* rejected for administrative reasons - bad credentials 
+-- /* unknown or conflicting style 
+-- /* problem with some part of the filterspec or providerspecific
+--           * buffer in general */
+-- /* problem with some part of the flowspec 
+-- /* general error 
+-- /* invalid service type in flowspec 
+-- /* invalid flowspec 
+-- /* invalid provider specific buffer 
+-- /* invalid filter style 
+-- /* invalid filter type 
+-- /* incorrect number of filters 
+-- /* invalid object length 
+-- /* incorrect number of flows 
+-- /* unknown object in provider specific buffer 
+-- /* invalid policy object in provider specific buffer 
+-- /* invalid flow descriptor in the list 
+-- /* inconsistent flow spec in provider specific buffer 
+-- /* invalid filter spec in provider specific buffer 
+-- /* invalid shape discard mode object in provider specific buffer 
+-- /* invalid shaping rate object in provider specific buffer 
+-- /* reserved policy element in provider specific buffer 
+-- /*
+--  * WinSock error codes are also defined in winerror.h
+--  * Hence the IFDEF.
+--  */
+-- /*
+--  * Compatibility macros.
+--  */
+-- /* no address, look for MX record 
+-- /*
+--  * Windows Sockets errors redefined as regular Berkeley error constants.
+--  * These are commented out in Windows NT to avoid conflicts with errno.h.
+--  * Use the WSA constants instead.
+--  */
+-- /*
+--  * WinSock 2 extension -- new error codes and type definition
+--  */
+type
+WSAEVENT          = DWORD;
+LPWSAEVENT        = ^DWORD for machine_pointer use true;
+type
+  WSAOVERLAPPED    = record
+Internal        : DWORD;
+InternalHigh    : DWORD;
+Offset          : DWORD;
+OffsetHigh      : DWORD;
+hEvent          : WSAEVENT;
+  end record;
+  LPWSAOVERLAPPED   = ^WSAOVERLAPPED for machine_pointer use true;
+
+-- /*
+--  * WinSock 2 extension -- WSABUF and QOS struct, include qos.h
+--  * to pull in FLOWSPEC and related definitions
+--  */
+type
+  WSABUF           = record
+  len             : u_long;
+  buf             : LPSTR;
+  end record;
+  LPWSABUF          = ^WSABUF for machine_pointer use true;
+
+#separate qos;
+type
+  _QualityOfService = record
+  SendingFlowspec   : qos.FLOWSPEC;
+  ReceivingFlowspec : qos.FLOWSPEC;
+  ProviderSpecific  : WSABUF;
+  end record;
+  t_QOS               = _QualityOfService;
+  LPQOS             = ^_QualityOfService for machine_pointer use true;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for return values of the condition function
+--  */
+const
+  CF_ACCEPT         = $00;
+
+const
+  CF_REJECT         = $01;
+
+const
+  CF_DEFER          = $02;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for shutdown()
+--  */
+const
+  SD_RECEIVE        = $00;
+  SD_SEND           = $01;
+  SD_BOTH           = $02;
+
+-- /*
+--  * WinSock 2 extension -- data type and manifest constants for socket groups
+--  */
+type
+GROUP             = u_long;
+const
+  SG_UNCONSTRAINED_GROUP= $01;
+
+const
+  SG_CONSTRAINED_GROUP= $02;
+
+-- /*
+--  * WinSock 2 extension -- data type for WSAEnumNetworkEvents()
+--  */
+type
+  _WSANETWORKEVENTS = record
+lNetworkEvents  : s_long;
+iErrorCode      : array 0..FD_MAX_EVENTS-1 of s_long;
+  end record;
+  WSANETWORKEVENTS  = _WSANETWORKEVENTS;
+  LPWSANETWORKEVENTS = ^_WSANETWORKEVENTS for machine_pointer use true;
+
+-- /*
+--  * WinSock 2 extension -- WSAPROTOCOL_INFO structure and associated
+--  * manifest constants
+--  */
+const
+  MAX_PROTOCOL_CHAIN= 7;
+
+const
+  BASE_PROTOCOL     = 1;
+
+const
+  LAYERED_PROTOCOL  = 0;
+
+type
+  _WSAPROTOCOLCHAIN = record
+ChainLen        : s_long;
+ChainEntries    : array 0..MAX_PROTOCOL_CHAIN-1 of u_long;
+  end record;
+  WSAPROTOCOLCHAIN  = _WSAPROTOCOLCHAIN;
+  LPWSAPROTOCOLCHAIN = ^_WSAPROTOCOLCHAIN for machine_pointer use true;
+
+const
+  WSAPROTOCOL_LEN   = 255;
+
+type
+  _WSAPROTOCOL_INFOA = record
+dwServiceFlags1 : DWORD;
+dwServiceFlags2 : DWORD;
+dwServiceFlags3 : DWORD;
+dwServiceFlags4 : DWORD;
+dwProviderFlags : DWORD;
+ProviderId      : t_GUID;
+dwCatalogEntryId : DWORD;
+ProtocolChain   : WSAPROTOCOLCHAIN;
+iVersion        : s_long;
+iAddressFamily  : s_long;
+iMaxSockAddr    : s_long;
+iMinSockAddr    : s_long;
+iSocketType     : s_long;
+iProtocol       : s_long;
+iProtocolMaxOffset : s_long;
+iNetworkByteOrder : s_long;
+iSecurityScheme : s_long;
+dwMessageSize   : DWORD;
+dwProviderReserved : DWORD;
+szProtocol      : array 0..0 of CHAR;
+  end record;
+  WSAPROTOCOL_INFOA = _WSAPROTOCOL_INFOA;
+  LPWSAPROTOCOL_INFOA = ^_WSAPROTOCOL_INFOA for machine_pointer use true;
+
+type
+  _WSAPROTOCOL_INFOW = record
+dwServiceFlags1 : DWORD;
+dwServiceFlags2 : DWORD;
+dwServiceFlags3 : DWORD;
+dwServiceFlags4 : DWORD;
+dwProviderFlags : DWORD;
+ProviderId      : t_GUID;
+dwCatalogEntryId : DWORD;
+ProtocolChain   : WSAPROTOCOLCHAIN;
+iVersion        : s_long;
+iAddressFamily  : s_long;
+iMaxSockAddr    : s_long;
+iMinSockAddr    : s_long;
+iSocketType     : s_long;
+iProtocol       : s_long;
+iProtocolMaxOffset : s_long;
+iNetworkByteOrder : s_long;
+iSecurityScheme : s_long;
+dwMessageSize   : DWORD;
+dwProviderReserved : DWORD;
+szProtocol      : array 0..0 of WCHAR;
+  end record;
+  WSAPROTOCOL_INFOW = _WSAPROTOCOL_INFOW;
+  LPWSAPROTOCOL_INFOW = ^_WSAPROTOCOL_INFOW for machine_pointer use true;
+
+#if #declared UNICODE; then;
+type
+WSAPROTOCOL_INFO  = WSAPROTOCOL_INFOW;
+type
+LPWSAPROTOCOL_INFO = LPWSAPROTOCOL_INFOW;
+#else;
+type
+WSAPROTOCOL_INFO  = WSAPROTOCOL_INFOA;
+type
+LPWSAPROTOCOL_INFO = LPWSAPROTOCOL_INFOA;
+#end if;
+
+-- /* Flag bit definitions for dwProviderFlags 
+const
+  PFL_MULTIPLE_PROTO_ENTRIES= $01;
+
+const
+  PFL_RECOMMENDED_PROTO_ENTRY= $02;
+
+const
+  PFL_HIDDEN        = $04;
+
+const
+  PFL_MATCHES_PROTOCOL_ZERO= $08;
+
+-- /* Flag bit definitions for dwServiceFlags1 
+const
+  XP1_CONNECTIONLESS= $01;
+
+const
+  XP1_GUARANTEED_DELIVERY= $02;
+
+const
+  XP1_GUARANTEED_ORDER= $04;
+
+const
+  XP1_MESSAGE_ORIENTED= $08;
+
+const
+  XP1_PSEUDO_STREAM = $10;
+
+const
+  XP1_GRACEFUL_CLOSE= $20;
+
+const
+  XP1_EXPEDITED_DATA= $40;
+
+const
+  XP1_CONNECT_DATA  = $80;
+
+const
+  XP1_DISCONNECT_DATA= $0100;
+
+const
+  XP1_SUPPORT_BROADCAST= $0200;
+
+const
+  XP1_SUPPORT_MULTIPOINT= $0400;
+
+const
+  XP1_MULTIPOINT_CONTROL_PLANE= $0800;
+
+const
+  XP1_MULTIPOINT_DATA_PLANE= $1000;
+
+const
+  XP1_QOS_SUPPORTED = $2000;
+
+const
+  XP1_INTERRUPT     = $4000;
+
+const
+  XP1_UNI_SEND      = $8000;
+
+const
+  XP1_UNI_RECV      = $10000;
+
+const
+  XP1_IFS_HANDLES   = $20000;
+
+const
+  XP1_PARTIAL_MESSAGE= $40000;
+
+const
+  BIGENDIAN         = $00;
+
+const
+  LITTLEENDIAN      = $01;
+
+const
+  SECURITY_PROTOCOL_NONE= $00;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for WSAJoinLeaf()
+--  */
+const
+  JL_SENDER_ONLY    = $01;
+
+const
+  JL_RECEIVER_ONLY  = $02;
+
+const
+  JL_BOTH           = $04;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for WSASocket()
+--  */
+const
+  WSA_FLAG_OVERLAPPED= $01;
+
+const
+  WSA_FLAG_MULTIPOINT_C_ROOT= $02;
+
+const
+  WSA_FLAG_MULTIPOINT_C_LEAF= $04;
+
+const
+  WSA_FLAG_MULTIPOINT_D_ROOT= $08;
+
+const
+  WSA_FLAG_MULTIPOINT_D_LEAF= $10;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for WSAIoctl()
+--  */
+const
+  IOC_UNIX          = $00;
+
+const
+  IOC_WS2           = $8000000;
+
+const
+  IOC_PROTOCOL      = $10000000;
+
+const
+  IOC_VENDOR        = $18000000;
+
+-- /*
+--  * WinSock 2 extensions -- data types for the condition function in
+--  * WSAAccept() and overlapped I/O completion routine.
+--  */
+type
+
+LPCONDITIONPROC   = ^procedure (
+    lpCallerId      : in LPWSABUF;
+    lpCallerData    : in LPWSABUF;
+    lpSQOS          : in out _QualityOfService;
+    lpGQOS          : in out _QualityOfService;
+    lpCalleeId      : in LPWSABUF;
+    lpCalleeData    : in LPWSABUF;
+    g               : out GROUP;
+    dwCallbackData  : in DWORD_PTR)
+                      return s_long for machine_pointer use true;
+type
+LPWSAOVERLAPPED_COMPLETION_ROUTINE = ^procedure (
+    dwError         : in DWORD;
+    cbTransferred   : in DWORD;
+    lpOverlapped    : in LPWSAOVERLAPPED;
+    dwFlags         : in DWORD) for machine_pointer use true;
+-- /*
+--  * WinSock 2 extension -- manifest constants and associated structures
+--  * for WSANSPIoctl()
+--  */
+type
+_WSACOMPLETIONTYPE= enum
+    NSP_NOTIFY_IMMEDIATELY for ord use 0;
+    NSP_NOTIFY_HWND;
+    NSP_NOTIFY_EVENT;
+    NSP_NOTIFY_PORT;
+    NSP_NOTIFY_APC;
+  end enum for size use 4;
+  WSACOMPLETIONTYPE = _WSACOMPLETIONTYPE;
+  PWSACOMPLETIONTYPE = ^_WSACOMPLETIONTYPE for machine_pointer use true;
+  LPWSACOMPLETIONTYPE = ^_WSACOMPLETIONTYPE for machine_pointer use true;
+type
+  _WSACOMPLETION    = record
+_Type           : WSACOMPLETIONTYPE;
+Parameters       : record
+  WindowMessage     : record
+hWnd            : t_HWND;
+uMsg            : UINT;
+context         : t_WPARAM;
+  end record for position use 0;
+  Event             : record
+lpOverlapped    : LPWSAOVERLAPPED;
+  end record for position use 0;
+  Apc               : record
+lpOverlapped    : LPWSAOVERLAPPED;
+lpfnCompletionProc : LPWSAOVERLAPPED_COMPLETION_ROUTINE;
+  end record for position use 0;
+  Port              : record
+lpOverlapped    : LPWSAOVERLAPPED;
+hPort           : t_HANDLE;
+Key             : ULONG_PTR;
+  end record for position use 0;
+    end record;
+  end record;
+  WSACOMPLETION     = _WSACOMPLETION;
+  PWSACOMPLETION    = ^_WSACOMPLETION for machine_pointer use true;
+  LPWSACOMPLETION   = ^_WSACOMPLETION for machine_pointer use true;
+
+-- /*
+--  * WinSock 2 extension -- manifest constants for SIO_TRANSLATE_HANDLE ioctl
+--  */
+const
+  TH_NETDEV         = $01;
+
+const
+  TH_TAPI           = $02;
+
+-- /*
+--  * Microsoft Windows Extended data types required for the functions to
+--  * convert   back  and  forth  between  binary  and  string  forms  of
+--  * addresses.
+--  */
+
+-- /*
+--  * Manifest constants and type definitions related to name resolution and
+--  * registration (RNR) API
+--  */
+type
+  _BLOB             = record
+  cbSize          : ULONG;
+  pBlobData       : LPSTR;
+  end record;
+  BLOB              = _BLOB;
+  LPBLOB            = ^_BLOB for machine_pointer use true;
+
+-- /*
+--  * Service Install Flags
+--  */
+-- /*
+--  *& Name Spaces
+--  */
+-- /*
+--  * Resolution flags for WSAGetAddressByName().
+--  * Note these are also used by the 1.1 API GetAddressByName, so
+--  * leave them around.
+--  */
+-- /*
+--  * Well known value names for Service Types
+--  */
+#if #declared UNICODE; then;
+#template SERVICE_TYPE_VALUE_SAPID;
+  L 'SapId'
+#end SERVICE_TYPE_VALUE_SAPID;
+#template SERVICE_TYPE_VALUE_TCPPORT;
+  L 'TcpPort'
+#end SERVICE_TYPE_VALUE_TCPPORT;
+#template SERVICE_TYPE_VALUE_UDPPORT;
+  L 'UdpPort'
+#end SERVICE_TYPE_VALUE_UDPPORT;
+#template SERVICE_TYPE_VALUE_OBJECTID;
+  L 'ObjectId'
+#end SERVICE_TYPE_VALUE_OBJECTID;
+#else;
+#template SERVICE_TYPE_VALUE_SAPID;
+  'SapId'
+#end SERVICE_TYPE_VALUE_SAPID;
+#template SERVICE_TYPE_VALUE_TCPPORT;
+  'TcpPort'
+#end SERVICE_TYPE_VALUE_TCPPORT;
+#template SERVICE_TYPE_VALUE_UDPPORT;
+  'UdpPort'
+#end SERVICE_TYPE_VALUE_UDPPORT;
+#template SERVICE_TYPE_VALUE_OBJECTID;
+  'ObjectId'
+#end SERVICE_TYPE_VALUE_OBJECTID;
+#end if;
+
+-- /*
+--  * SockAddr Information
+--  */
+type
+  _SOCKET_ADDRESS   = record
+    pSockaddr      : LPSOCKADDR;
+    iSockaddrLength : INT;
+    end record;
+  SOCKET_ADDRESS    = _SOCKET_ADDRESS;
+  PSOCKET_ADDRESS   = ^_SOCKET_ADDRESS for machine_pointer use true;
+  LPSOCKET_ADDRESS  = ^_SOCKET_ADDRESS for machine_pointer use true;
+
+-- /*
+--  * CSAddr Information
+--  */
+type
+  _CSADDR_INFO      = record
+LocalAddr       : SOCKET_ADDRESS;
+RemoteAddr      : SOCKET_ADDRESS;
+iSocketType     : INT;
+iProtocol       : INT;
+  end record;
+  CSADDR_INFO       = _CSADDR_INFO;
+  PCSADDR_INFO      = ^_CSADDR_INFO for machine_pointer use true;
+  LPCSADDR_INFO     = ^_CSADDR_INFO for machine_pointer use true;
+
+-- /*
+--  * Address list returned via SIO_ADDRESS_LIST_QUERY
+--  */
+type
+  _SOCKET_ADDRESS_LIST = record
+iAddressCount   : INT;
+Address         : array 0..0 of SOCKET_ADDRESS;
+  end record;
+  SOCKET_ADDRESS_LIST = _SOCKET_ADDRESS_LIST;
+  LPSOCKET_ADDRESS_LIST = ^_SOCKET_ADDRESS_LIST for machine_pointer use true;
+
+-- /*
+--  *  Address Family/Protocol Tuples
+--  */
+type
+  _AFPROTOCOLS      = record
+iAddressFamily  : INT;
+iProtocol       : INT;
+  end record;
+  AFPROTOCOLS       = _AFPROTOCOLS;
+  PAFPROTOCOLS      = ^_AFPROTOCOLS for machine_pointer use true;
+  LPAFPROTOCOLS     = ^_AFPROTOCOLS for machine_pointer use true;
+
+-- /*
+--  * Client Query API Typedefs
+--  */
+-- /*
+--  * The comparators
+--  */
+type
+_WSAEcomparator   = enum
+    COMP_EQUAL      for ord use 0;
+    COMP_NOTLESS;
+  end enum for size use 4;
+  WSAECOMPARATOR    = _WSAEcomparator;
+  PWSAECOMPARATOR   = ^_WSAEcomparator for machine_pointer use true;
+  LPWSAECOMPARATOR  = ^_WSAEcomparator for machine_pointer use true;
+type
+  _WSAVersion       = record
+dwVersion       : DWORD;
+ecHow           : WSAECOMPARATOR;
+  end record;
+  WSAVERSION        = _WSAVersion;
+  PWSAVERSION       = ^_WSAVersion for machine_pointer use true;
+  LPWSAVERSION      = ^_WSAVersion for machine_pointer use true;
+
+type
+  _WSAQuerySetA     = record
+dwSize          : DWORD;
+lpszServiceInstanceName : LPSTR;
+lpServiceClassId : LPGUID;
+lpVersion       : LPWSAVERSION;
+lpszComment     : LPSTR;
+dwNameSpace     : DWORD;
+lpNSProviderId  : LPGUID;
+lpszContext     : LPSTR;
+dwNumberOfProtocols : DWORD;
+pafpProtocols  : LPAFPROTOCOLS;
+lpszQueryString : LPSTR;
+dwNumberOfCsAddrs : DWORD;
+lpcsaBuffer     : LPCSADDR_INFO;
+dwOutputFlags   : DWORD;
+pBlob          : LPBLOB;
+  end record;
+  WSAQUERYSETA      = _WSAQuerySetA;
+  PWSAQUERYSETA     = ^_WSAQuerySetA for machine_pointer use true;
+  LPWSAQUERYSETA    = ^_WSAQuerySetA for machine_pointer use true;
+
+type
+  _WSAQuerySetW     = record
+dwSize          : DWORD;
+lpszServiceInstanceName : LPWSTR;
+lpServiceClassId : LPGUID;
+lpVersion       : LPWSAVERSION;
+lpszComment     : LPWSTR;
+dwNameSpace     : DWORD;
+lpNSProviderId  : LPGUID;
+lpszContext     : LPWSTR;
+dwNumberOfProtocols : DWORD;
+pafpProtocols  : LPAFPROTOCOLS;
+lpszQueryString : LPWSTR;
+dwNumberOfCsAddrs : DWORD;
+lpcsaBuffer     : LPCSADDR_INFO;
+dwOutputFlags   : DWORD;
+pBlob          : LPBLOB;
+  end record;
+  WSAQUERYSETW      = _WSAQuerySetW;
+  PWSAQUERYSETW     = ^_WSAQuerySetW for machine_pointer use true;
+  LPWSAQUERYSETW    = ^_WSAQuerySetW for machine_pointer use true;
+
+#if #declared UNICODE; then;
+type
+WSAQUERYSET       = WSAQUERYSETW;
+type
+PWSAQUERYSET      = PWSAQUERYSETW;
+type
+LPWSAQUERYSET     = LPWSAQUERYSETW;
+#else;
+type
+WSAQUERYSET       = WSAQUERYSETA;
+type
+PWSAQUERYSET      = PWSAQUERYSETA;
+type
+LPWSAQUERYSET     = LPWSAQUERYSETA;
+#end if;
+
+const
+  LUP_DEEP          = $01;
+
+const
+  LUP_CONTAINERS    = $02;
+
+const
+  LUP_NOCONTAINERS  = $04;
+
+const
+  LUP_NEAREST       = $08;
+
+const
+  LUP_RETURN_NAME   = $10;
+
+const
+  LUP_RETURN_TYPE   = $20;
+
+const
+  LUP_RETURN_VERSION= $40;
+
+const
+  LUP_RETURN_COMMENT= $80;
+
+const
+  LUP_RETURN_ADDR   = $0100;
+
+const
+  LUP_RETURN_BLOB   = $0200;
+
+const
+  LUP_RETURN_ALIASES= $0400;
+
+const
+  LUP_RETURN_QUERY_STRING= $0800;
+
+const
+  LUP_RETURN_ALL    = $0FF0;
+
+const
+  LUP_RES_SERVICE   = $8000;
+
+const
+  LUP_FLUSHCACHE    = $1000;
+
+const
+  LUP_FLUSHPREVIOUS = $2000;
+
+-- /*
+--  * Return flags
+--  */
+const
+  RESULT_IS_ALIAS   = $01;
+
+const
+  RESULT_IS_ADDED   = $10;
+
+const
+  RESULT_IS_CHANGED = $20;
+
+const
+  RESULT_IS_DELETED = $40;
+
+-- /*
+--  * Service Address Registration and Deregistration Data Types.
+--  */
+type
+_WSAESETSERVICEOP = enum
+    RNRSERVICE_REGISTER for ord use 0;
+    RNRSERVICE_DEREGISTER;
+    RNRSERVICE_DELETE;
+  end enum for size use 4;
+  WSAESETSERVICEOP  = _WSAESETSERVICEOP;
+  PWSAESETSERVICEOP = ^_WSAESETSERVICEOP for machine_pointer use true;
+  LPWSAESETSERVICEOP = ^_WSAESETSERVICEOP for machine_pointer use true;
+-- /*
+--  * Service Installation/Removal Data Types.
+--  */
+type
+  _WSANSClassInfoA  = record
+lpszName        : LPSTR;
+dwNameSpace     : DWORD;
+dwValueType     : DWORD;
+dwValueSize     : DWORD;
+lpValue         : LPVOID;
+  end record;
+  WSANSCLASSINFOA   = _WSANSClassInfoA;
+  PWSANSCLASSINFOA  = ^_WSANSClassInfoA for machine_pointer use true;
+  LPWSANSCLASSINFOA = ^_WSANSClassInfoA for machine_pointer use true;
+
+type
+  _WSANSClassInfoW  = record
+lpszName        : LPWSTR;
+dwNameSpace     : DWORD;
+dwValueType     : DWORD;
+dwValueSize     : DWORD;
+lpValue         : LPVOID;
+  end record;
+  WSANSCLASSINFOW   = _WSANSClassInfoW;
+  PWSANSCLASSINFOW  = ^_WSANSClassInfoW for machine_pointer use true;
+  LPWSANSCLASSINFOW = ^_WSANSClassInfoW for machine_pointer use true;
+
+#if #declared UNICODE; then;
+type
+WSANSCLASSINFO    = WSANSCLASSINFOW;
+type
+PWSANSCLASSINFO   = PWSANSCLASSINFOW;
+type
+LPWSANSCLASSINFO  = LPWSANSCLASSINFOW;
+#else;
+type
+WSANSCLASSINFO    = WSANSCLASSINFOA;
+type
+PWSANSCLASSINFO   = PWSANSCLASSINFOA;
+type
+LPWSANSCLASSINFO  = LPWSANSCLASSINFOA;
+#end if;
+
+type
+  _WSAServiceClassInfoA = record
+lpServiceClassId : LPGUID;
+lpszServiceClassName : LPSTR;
+dwCount         : DWORD;
+lpClassInfos    : LPWSANSCLASSINFOA;
+  end record;
+  WSASERVICECLASSINFOA = _WSAServiceClassInfoA;
+  PWSASERVICECLASSINFOA = ^_WSAServiceClassInfoA for machine_pointer use true;
+  LPWSASERVICECLASSINFOA = ^_WSAServiceClassInfoA for machine_pointer use true;
+
+type
+  _WSAServiceClassInfoW = record
+lpServiceClassId : LPGUID;
+lpszServiceClassName : LPWSTR;
+dwCount         : DWORD;
+lpClassInfos    : LPWSANSCLASSINFOW;
+  end record;
+  WSASERVICECLASSINFOW = _WSAServiceClassInfoW;
+  PWSASERVICECLASSINFOW = ^_WSAServiceClassInfoW for machine_pointer use true;
+  LPWSASERVICECLASSINFOW = ^_WSAServiceClassInfoW for machine_pointer use true;
+
+#if #declared UNICODE; then;
+type
+WSASERVICECLASSINFO = WSASERVICECLASSINFOW;
+type
+PWSASERVICECLASSINFO = PWSASERVICECLASSINFOW;
+type
+LPWSASERVICECLASSINFO = LPWSASERVICECLASSINFOW;
+#else;
+type
+WSASERVICECLASSINFO = WSASERVICECLASSINFOA;
+type
+PWSASERVICECLASSINFO = PWSASERVICECLASSINFOA;
+type
+LPWSASERVICECLASSINFO = LPWSASERVICECLASSINFOA;
+#end if;
+
+type
+  _WSANAMESPACE_INFOA = record
+NSProviderId    : t_GUID;
+dwNameSpace     : DWORD;
+fActive         : BOOL;
+dwVersion       : DWORD;
+lpszIdentifier  : LPSTR;
+  end record;
+  WSANAMESPACE_INFOA = _WSANAMESPACE_INFOA;
+  PWSANAMESPACE_INFOA = ^_WSANAMESPACE_INFOA for machine_pointer use true;
+  LPWSANAMESPACE_INFOA = ^_WSANAMESPACE_INFOA for machine_pointer use true;
+
+type
+  _WSANAMESPACE_INFOW = record
+NSProviderId    : t_GUID;
+dwNameSpace     : DWORD;
+fActive         : BOOL;
+dwVersion       : DWORD;
+lpszIdentifier  : LPWSTR;
+  end record;
+  WSANAMESPACE_INFOW = _WSANAMESPACE_INFOW;
+  PWSANAMESPACE_INFOW = ^_WSANAMESPACE_INFOW for machine_pointer use true;
+  LPWSANAMESPACE_INFOW = ^_WSANAMESPACE_INFOW for machine_pointer use true;
+
+#if #declared UNICODE; then;
+type
+WSANAMESPACE_INFO = WSANAMESPACE_INFOW;
+type
+PWSANAMESPACE_INFO = PWSANAMESPACE_INFOW;
+type
+LPWSANAMESPACE_INFO = LPWSANAMESPACE_INFOW;
+#else;
+type
+WSANAMESPACE_INFO = WSANAMESPACE_INFOA;
+type
+PWSANAMESPACE_INFO = PWSANAMESPACE_INFOA;
+type
+LPWSANAMESPACE_INFO = LPWSANAMESPACE_INFOA;
+#end if;
+
+-- /* Socket function prototypes 
+procedure _accept(
+    s               : in t_SOCKET; 
+    addr            : out SOCKADDR; 
+    addrlen         : in out s_long)
+                      return t_SOCKET;
+#pragma convention(_accept,system);
+#pragma import(_accept,'accept','Ws2_32.dll');
+
+procedure bind(
+    s               : in t_SOCKET; 
+    name            : in psockaddr; 
+    namelen         : in s_long)
+                      return s_long;
+#pragma convention(bind,system);
+#pragma import(bind,'bind','Ws2_32.dll');
+
+procedure closesocket(
+    s               : in t_SOCKET)
+                      return s_long;
+#pragma convention(closesocket,system);
+#pragma import(closesocket,'closesocket','Ws2_32.dll');
+
+procedure connect(
+    s               : in t_SOCKET; 
+    name            : in psockaddr; 
+    namelen         : in s_long)
+                      return s_long;
+#pragma convention(connect,system);
+#pragma import(connect,'connect','Ws2_32.dll');
+
+procedure ioctlsocket(
+    s               : in t_SOCKET; 
+    cmd             : in s_long; 
+    argp            : in out u_long)
+                      return s_long;
+#pragma convention(ioctlsocket,system);
+#pragma import(ioctlsocket,'ioctlsocket','Ws2_32.dll');
+
+procedure getpeername(
+    s               : in t_SOCKET; 
+    name            : out t_sockaddr; 
+    namelen         : in out s_long)
+                      return s_long;
+#pragma convention(getpeername,system);
+#pragma import(getpeername,'getpeername','Ws2_32.dll');
+
+procedure getsockname(
+    s               : in t_SOCKET; 
+    name            : out t_sockaddr; 
+    namelen         : in out s_long)
+                      return s_long;
+#pragma convention(getsockname,system);
+#pragma import(getsockname,'getsockname','Ws2_32.dll');
+
+
+procedure getsockopt(
+    s               : in t_SOCKET; 
+    level           : in s_long; 
+    optname         : in s_long; 
+    optval          : out PCHAR; 
+    optlen          : in out s_long)
+                      return s_long;
+#pragma convention(getsockopt,system);
+#pragma import(getsockopt,'getsockopt','Ws2_32.dll');
+
+procedure htonl(
+    hostlong        : in u_long)
+                      return u_long;
+#pragma convention(htonl,system);
+#pragma import(htonl,'htonl','Ws2_32.dll');
+
+procedure htons(
+    hostshort       : in u_short)
+                      return u_short;
+#pragma convention(htons,system);
+#pragma import(htons,'htons','Ws2_32.dll');
+
+type
+t_023=LPSTR;
+
+  t_024 = u_long;
+
+procedure inet_addr(
+    cp              : in t_023)
+                      return t_024;
+#pragma convention(inet_addr,system);
+#pragma import(inet_addr,'inet_addr','Ws2_32.dll');
+
+type
+  t_025 = LPSTR;
+
+procedure inet_ntoa(
+    _001            : in t_in_addr)
+                      return t_025;
+#pragma convention(inet_ntoa,system);
+#pragma import(inet_ntoa,'inet_ntoa','Ws2_32.dll');
+
+procedure listen(
+    s               : in t_SOCKET; 
+    backlog         : in s_long)
+                      return s_long;
+#pragma convention(listen,system);
+#pragma import(listen,'listen','Ws2_32.dll');
+
+procedure ntohl(
+    netlong         : in u_long)
+                      return u_long;
+#pragma convention(ntohl,system);
+#pragma import(ntohl,'ntohl','Ws2_32.dll');
+
+procedure ntohs(
+    netshort        : in u_short)
+                      return u_short;
+#pragma convention(ntohs,system);
+#pragma import(ntohs,'ntohs','Ws2_32.dll');
+
+type
+t_028=character 8;
+
+t_029=s_long;
+
+t_030=s_long;
+
+  t_031 = s_long;
+
+procedure recv(
+    s               : in t_SOCKET; 
+    buf             : out t_028; 
+    len             : in t_029; 
+    flags           : in t_030)
+                      return t_031;
+#pragma convention(recv,system);
+#pragma import(recv,'recv','Ws2_32.dll');
+
+type
+t_032=character 8;
+
+t_033=s_long;
+
+t_034=s_long;
+
+t_035=s_long;
+
+  t_036 = s_long;
+
+procedure recvfrom(
+    s               : in t_SOCKET; 
+    buf             : out t_032; 
+    len             : in t_033; 
+    flags           : in t_034; 
+    from            : out t_sockaddr; 
+    fromlen         : in out t_035)
+                      return t_036;
+#pragma convention(recvfrom,system);
+#pragma import(recvfrom,'recvfrom','Ws2_32.dll');
+
+type
+t_037=s_long;
+
+t_038=^t_timeval for machine_pointer use true;
+
+  t_039 = s_long;
+
+procedure select(
+    nfds            : in t_037; 
+    readfds         : in out t_fd_set; 
+    writefds        : in out t_fd_set; 
+    exceptfds       : in out t_fd_set; 
+    timeout         : in t_038)
+                      return t_039;
+#pragma convention(select,system);
+#pragma import(select,'select','Ws2_32.dll');
+
+type
+t_040=LPSTR;
+
+t_041=s_long;
+
+t_042=s_long;
+
+  t_043 = s_long;
+
+procedure _send(
+    s               : in t_SOCKET; 
+    buf             : in t_040; 
+    len             : in t_041; 
+    flags           : in t_042)
+                      return t_043;
+#pragma convention(_send,system);
+#pragma import(_send,'send','Ws2_32.dll');
+
+type
+t_044=LPSTR;
+
+t_045=s_long;
+
+t_046=s_long;
+
+t_047=^t_sockaddr for machine_pointer use true;
+
+t_048=s_long;
+
+  t_049 = s_long;
+
+procedure sendto(
+    s               : in t_SOCKET; 
+    buf             : in t_044; 
+    len             : in t_045; 
+    flags           : in t_046; 
+    _to             : in t_047; 
+    tolen           : in t_048)
+                      return t_049;
+#pragma convention(sendto,system);
+#pragma import(sendto,'sendto','Ws2_32.dll');
+
+type
+t_050=s_long;
+
+t_051=s_long;
+
+t_052=LPSTR;
+
+t_053=s_long;
+
+  t_054 = s_long;
+
+procedure setsockopt(
+    s               : in t_SOCKET; 
+    level           : in t_050; 
+    optname         : in t_051; 
+    optval          : in t_052; 
+    optlen          : in t_053)
+                      return t_054;
+#pragma convention(setsockopt,system);
+#pragma import(setsockopt,'setsockopt','Ws2_32.dll');
+
+type
+t_055=s_long;
+
+  t_056 = s_long;
+
+procedure shutdown(
+    s               : in t_SOCKET; 
+    how             : in t_055)
+                      return t_056;
+#pragma convention(shutdown,system);
+#pragma import(shutdown,'shutdown','Ws2_32.dll');
+
+type
+t_057=s_long;
+
+t_058=s_long;
+
+t_059=s_long;
+
+procedure socket(
+    af              : in t_057; 
+    _type           : in t_058; 
+    protocol        : in t_059)
+                      return t_SOCKET;
+#pragma convention(socket,system);
+#pragma import(socket,'socket','Ws2_32.dll');
+
+-- /* Database function prototypes 
+type
+t_060=LPSTR;
+
+t_061=s_long;
+
+t_062=s_long;
+
+  t_063 = ^t_hostent for machine_pointer use true;
+
+procedure gethostbyaddr(
+    addr            : in t_060; 
+    len             : in t_061; 
+    _type           : in t_062)
+                      return t_063;
+#pragma convention(gethostbyaddr,system);
+#pragma import(gethostbyaddr,'gethostbyaddr','Ws2_32.dll');
+
+type
+t_064=LPSTR;
+
+  t_065 = ^t_hostent for machine_pointer use true;
+
+procedure gethostbyname(
+    name            : in t_064)
+                      return t_065;
+#pragma convention(gethostbyname,system);
+#pragma import(gethostbyname,'gethostbyname','Ws2_32.dll');
+
+type
+t_066=character 8;
+
+t_067=s_long;
+
+  t_068 = s_long;
+
+procedure gethostname(
+    name            : out t_066; 
+    namelen         : in t_067)
+                      return t_068;
+#pragma convention(gethostname,system);
+#pragma import(gethostname,'gethostname','Ws2_32.dll');
+
+type
+t_069=s_long;
+
+t_070=LPSTR;
+
+  t_071 = ^t_servent for machine_pointer use true;
+
+procedure getservbyport(
+    port            : in t_069; 
+    proto           : in t_070)
+                      return t_071;
+#pragma convention(getservbyport,system);
+#pragma import(getservbyport,'getservbyport','Ws2_32.dll');
+
+type
+t_072=LPSTR;
+
+t_073=LPSTR;
+
+  t_074 = ^t_servent for machine_pointer use true;
+
+procedure getservbyname(
+    name            : in t_072; 
+    proto           : in t_073)
+                      return t_074;
+#pragma convention(getservbyname,system);
+#pragma import(getservbyname,'getservbyname','Ws2_32.dll');
+
+type
+t_075=s_long;
+
+  t_076 = ^t_protoent for machine_pointer use true;
+
+procedure getprotobynumber(
+    number          : in t_075)
+                      return t_076;
+#pragma convention(getprotobynumber,system);
+#pragma import(getprotobynumber,'getprotobynumber','Ws2_32.dll');
+
+type
+t_077=LPSTR;
+
+  t_078 = ^t_protoent for machine_pointer use true;
+
+procedure getprotobyname(
+    name            : in t_077)
+                      return t_078;
+#pragma convention(getprotobyname,system);
+#pragma import(getprotobyname,'getprotobyname','Ws2_32.dll');
+
+-- /* Microsoft Windows Extension function prototypes 
+procedure WSAStartup(
+    wVersionRequested : in WORD; 
+    lpWSAData       : out WSAData)
+                      return s_long;
+#pragma convention(WSAStartup,system);
+#pragma import(WSAStartup,'WSAStartup','Ws2_32.dll');
+
+type
+  t_080 = s_long;
+
+procedure WSACleanup
+                      return t_080;
+#pragma convention(WSACleanup,system);
+#pragma import(WSACleanup,'WSACleanup','Ws2_32.dll');
+
+type
+t_081=s_long;
+
+procedure WSASetLastError(
+    iError          : in t_081);
+#pragma convention(WSASetLastError,system);
+#pragma import(WSASetLastError,'WSASetLastError','Ws2_32.dll');
+
+type
+  t_082 = s_long;
+
+procedure WSAGetLastError
+                      return t_082;
+#pragma convention(WSAGetLastError,system);
+#pragma import(WSAGetLastError,'WSAGetLastError','Ws2_32.dll');
+
+procedure WSAIsBlocking
+                      return BOOL;
+#pragma convention(WSAIsBlocking,system);
+#pragma import(WSAIsBlocking,'WSAIsBlocking','Ws2_32.dll');
+
+type
+  t_083 = s_long;
+
+procedure WSAUnhookBlockingHook
+                      return t_083;
+#pragma convention(WSAUnhookBlockingHook,system);
+#pragma import(WSAUnhookBlockingHook,'WSAUnhookBlockingHook','Ws2_32.dll');
+
+procedure WSASetBlockingHook(
+    lpBlockFunc     : in FARPROC)
+                      return FARPROC;
+#pragma convention(WSASetBlockingHook,system);
+#pragma import(WSASetBlockingHook,'WSASetBlockingHook','Ws2_32.dll');
+
+type
+  t_084 = s_long;
+
+procedure WSACancelBlockingCall
+                      return t_084;
+#pragma convention(WSACancelBlockingCall,system);
+#pragma import(WSACancelBlockingCall,'WSACancelBlockingCall','Ws2_32.dll');
+
+type
+t_085=LPSTR;
+
+t_086=LPSTR;
+
+t_087=character 8;
+
+t_088=s_long;
+
+procedure WSAAsyncGetServByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_085; 
+    proto           : in t_086; 
+    buf             : out t_087; 
+    buflen          : in t_088)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetServByName,system);
+#pragma import(WSAAsyncGetServByName,'WSAAsyncGetServByName','Ws2_32.dll');
+
+type
+t_089=s_long;
+
+t_090=LPSTR;
+
+t_091=character 8;
+
+t_092=s_long;
+
+procedure WSAAsyncGetServByPort(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    port            : in t_089; 
+    proto           : in t_090; 
+    buf             : out t_091; 
+    buflen          : in t_092)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetServByPort,system);
+#pragma import(WSAAsyncGetServByPort,'WSAAsyncGetServByPort','Ws2_32.dll');
+
+type
+t_093=LPSTR;
+
+t_094=character 8;
+
+t_095=s_long;
+
+procedure WSAAsyncGetProtoByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_093; 
+    buf             : out t_094; 
+    buflen          : in t_095)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetProtoByName,system);
+#pragma import(WSAAsyncGetProtoByName,'WSAAsyncGetProtoByName','Ws2_32.dll');
+
+type
+t_096=s_long;
+
+t_097=character 8;
+
+t_098=s_long;
+
+procedure WSAAsyncGetProtoByNumber(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    number          : in t_096; 
+    buf             : out t_097; 
+    buflen          : in t_098)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetProtoByNumber,system);
+#pragma import(WSAAsyncGetProtoByNumber,'WSAAsyncGetProtoByNumber','Ws2_32.dll');
+
+type
+t_099=LPSTR;
+
+t_100=character 8;
+
+t_101=s_long;
+
+procedure WSAAsyncGetHostByName(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    name            : in t_099; 
+    buf             : out t_100; 
+    buflen          : in t_101)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetHostByName,system);
+#pragma import(WSAAsyncGetHostByName,'WSAAsyncGetHostByName','Ws2_32.dll');
+
+type
+t_102=LPSTR;
+
+t_103=s_long;
+
+t_104=s_long;
+
+t_105=character 8;
+
+t_106=s_long;
+
+procedure WSAAsyncGetHostByAddr(
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    addr            : in t_102; 
+    len             : in t_103; 
+    _type           : in t_104; 
+    buf             : out t_105; 
+    buflen          : in t_106)
+                      return t_HANDLE;
+#pragma convention(WSAAsyncGetHostByAddr,system);
+#pragma import(WSAAsyncGetHostByAddr,'WSAAsyncGetHostByAddr','Ws2_32.dll');
+
+type
+  t_107 = s_long;
+
+procedure WSACancelAsyncRequest(
+    hAsyncTaskHandle : in t_HANDLE)
+                      return t_107;
+#pragma convention(WSACancelAsyncRequest,system);
+#pragma import(WSACancelAsyncRequest,'WSACancelAsyncRequest','Ws2_32.dll');
+
+type
+t_108=s_long;
+
+  t_109 = s_long;
+
+procedure WSAAsyncSelect(
+    s               : in t_SOCKET; 
+    hWnd            : in t_HWND; 
+    wMsg            : in u_int; 
+    lEvent          : in t_108)
+                      return t_109;
+#pragma convention(WSAAsyncSelect,system);
+#pragma import(WSAAsyncSelect,'WSAAsyncSelect','Ws2_32.dll');
+
+-- /* WinSock 2 API new function prototypes 
+type
+t_110=s_long ;
+
+procedure WSAAccept(
+    s               : in t_SOCKET; 
+    addr            : out t_sockaddr; 
+    addrlen         : in out t_110; 
+    lpfnCondition   : in LPCONDITIONPROC; 
+    dwCallbackData  : in DWORD_PTR)
+                      return t_SOCKET;
+#pragma convention(WSAAccept,system);
+#pragma import(WSAAccept,'WSAAccept','Ws2_32.dll');
+
+procedure WSACloseEvent(
+    hEvent          : in WSAEVENT)
+                      return BOOL;
+#pragma convention(WSACloseEvent,system);
+#pragma import(WSACloseEvent,'WSACloseEvent','Ws2_32.dll');
+
+procedure WSAConnect(
+    s               : in t_SOCKET; 
+    name            : in SOCKADDR; 
+    namelen         : in s_long;
+    lpCallerData    : in LPWSABUF; 
+    lpCalleeData    : in LPWSABUF; 
+    lpSQOS          : in LPQOS; 
+    lpGQOS          : in LPQOS)
+                      return s_long;
+#pragma convention(WSAConnect,system);
+#pragma import(WSAConnect,'WSAConnect','Ws2_32.dll');
+
+procedure WSACreateEvent
+                      return WSAEVENT;
+#pragma convention(WSACreateEvent,system);
+#pragma import(WSACreateEvent,'WSACreateEvent','Ws2_32.dll');
+
+type
+  t_114 = s_long;
+
+procedure WSADuplicateSocketA(
+    s               : in t_SOCKET; 
+    dwProcessId     : in DWORD; 
+    lpProtocolInfo  : out _WSAPROTOCOL_INFOA)
+                      return t_114;
+#pragma convention(WSADuplicateSocketA,system);
+#pragma import(WSADuplicateSocketA,'WSADuplicateSocketA','Ws2_32.dll');
+
+type
+  t_115 = s_long;
+
+procedure WSADuplicateSocketW(
+    s               : in t_SOCKET; 
+    dwProcessId     : in DWORD; 
+    lpProtocolInfo  : out _WSAPROTOCOL_INFOW)
+                      return t_115;
+#pragma convention(WSADuplicateSocketW,system);
+#pragma import(WSADuplicateSocketW,'WSADuplicateSocketW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSADuplicateSocket;
+  WSADuplicateSocketW 
+#end WSADuplicateSocket;
+#else;
+#template WSADuplicateSocket;
+  WSADuplicateSocketA 
+#end WSADuplicateSocket;
+#end if;
+
+type
+  t_116 = s_long;
+
+procedure WSAEnumNetworkEvents(
+    s               : in t_SOCKET; 
+    hEventObject    : in WSAEVENT; 
+    lpNetworkEvents : out _WSANETWORKEVENTS)
+                      return t_116;
+#pragma convention(WSAEnumNetworkEvents,system);
+#pragma import(WSAEnumNetworkEvents,'WSAEnumNetworkEvents','Ws2_32.dll');
+
+type
+  t_117 = s_long;
+
+procedure WSAEnumProtocolsA(
+    lpiProtocols    : in LPINT; 
+    lpProtocolBuffer : out _WSAPROTOCOL_INFOA; 
+    lpdwBufferLength : in out DWORD )
+                      return t_117;
+#pragma convention(WSAEnumProtocolsA,system);
+#pragma import(WSAEnumProtocolsA,'WSAEnumProtocolsA','Ws2_32.dll');
+
+type
+  t_118 = s_long;
+
+procedure WSAEnumProtocolsW(
+    lpiProtocols    : in LPINT; 
+    lpProtocolBuffer : out _WSAPROTOCOL_INFOW; 
+    lpdwBufferLength : in out DWORD )
+                      return t_118;
+#pragma convention(WSAEnumProtocolsW,system);
+#pragma import(WSAEnumProtocolsW,'WSAEnumProtocolsW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAEnumProtocols;
+  WSAEnumProtocolsW 
+#end WSAEnumProtocols;
+#else;
+#template WSAEnumProtocols;
+  WSAEnumProtocolsA 
+#end WSAEnumProtocols;
+#end if;
+
+type
+t_119=s_long;
+
+  t_120 = s_long;
+
+procedure WSAEventSelect(
+    s               : in t_SOCKET; 
+    hEventObject    : in WSAEVENT; 
+    lNetworkEvents  : in t_119)
+                      return t_120;
+#pragma convention(WSAEventSelect,system);
+#pragma import(WSAEventSelect,'WSAEventSelect','Ws2_32.dll');
+
+procedure WSAGetOverlappedResult(
+    s               : in t_SOCKET; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpcbTransfer    : out DWORD ; 
+    fWait           : in BOOL; 
+    lpdwFlags       : out DWORD )
+                      return BOOL;
+#pragma convention(WSAGetOverlappedResult,system);
+#pragma import(WSAGetOverlappedResult,'WSAGetOverlappedResult','Ws2_32.dll');
+
+procedure WSAGetQOSByName(
+    s               : in t_SOCKET; 
+    lpQOSName       : in LPWSABUF; 
+    lpQOS           : out _QualityOfService)
+                      return BOOL;
+#pragma convention(WSAGetQOSByName,system);
+#pragma import(WSAGetQOSByName,'WSAGetQOSByName','Ws2_32.dll');
+
+type
+  t_121 = s_long;
+
+procedure WSAHtonl(
+    s               : in t_SOCKET; 
+    hostlong        : in u_long; 
+    lpnetlong       : out u_long)
+                      return t_121;
+#pragma convention(WSAHtonl,system);
+#pragma import(WSAHtonl,'WSAHtonl','Ws2_32.dll');
+
+type
+  t_122 = s_long;
+
+procedure WSAHtons(
+    s               : in t_SOCKET; 
+    hostshort       : in u_short; 
+    lpnetshort      : out u_short)
+                      return t_122;
+#pragma convention(WSAHtons,system);
+#pragma import(WSAHtons,'WSAHtons','Ws2_32.dll');
+
+type
+  t_123 = s_long;
+
+procedure WSAIoctl(
+    s               : in t_SOCKET; 
+    dwIoControlCode : in DWORD; 
+    lpvInBuffer     : in LPVOID; 
+    cbInBuffer      : in DWORD; 
+    lpvOutBuffer    : out unchecked ; 
+    cbOutBuffer     : in DWORD; 
+    lpcbBytesReturned : out DWORD ; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return t_123;
+#pragma convention(WSAIoctl,system);
+#pragma import(WSAIoctl,'WSAIoctl','Ws2_32.dll');
+
+type
+t_124=^t_sockaddr for machine_pointer use true;
+
+t_125=s_long;
+
+procedure WSAJoinLeaf(
+    s               : in t_SOCKET; 
+    name            : in t_124; 
+    namelen         : in t_125; 
+    lpCallerData    : in LPWSABUF; 
+    lpCalleeData    : in LPWSABUF; 
+    lpSQOS          : in LPQOS; 
+    lpGQOS          : in LPQOS; 
+    dwFlags         : in DWORD)
+                      return t_SOCKET;
+#pragma convention(WSAJoinLeaf,system);
+#pragma import(WSAJoinLeaf,'WSAJoinLeaf','Ws2_32.dll');
+
+type
+  t_126 = s_long;
+
+procedure WSANtohl(
+    s               : in t_SOCKET; 
+    netlong         : in u_long; 
+    lphostlong      : out u_long)
+                      return t_126;
+#pragma convention(WSANtohl,system);
+#pragma import(WSANtohl,'WSANtohl','Ws2_32.dll');
+
+type
+  t_127 = s_long;
+
+procedure WSANtohs(
+    s               : in t_SOCKET; 
+    netshort        : in u_short; 
+    lphostshort     : out u_short)
+                      return t_127;
+#pragma convention(WSANtohs,system);
+#pragma import(WSANtohs,'WSANtohs','Ws2_32.dll');
+
+procedure WSARecv(
+    s               : in t_SOCKET; 
+    lpBuffers       : in out WSABUF; 
+    dwBufferCount   : in DWORD; 
+    lpNumberOfBytesRecvd : out DWORD ; 
+    lpFlags         : in out DWORD ; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return s_long;
+#pragma convention(WSARecv,system);
+#pragma import(WSARecv,'WSARecv','Ws2_32.dll');
+
+procedure WSARecvDisconnect(
+    s               : in t_SOCKET; 
+    lpInboundDisconnectData : in LPWSABUF)
+                      return s_long;
+#pragma convention(WSARecvDisconnect,system);
+#pragma import(WSARecvDisconnect,'WSARecvDisconnect','Ws2_32.dll');
+
+
+procedure WSARecvFrom(
+    s               : in t_SOCKET; 
+    lpBuffers       : in out WSABUF; 
+    dwBufferCount   : in DWORD; 
+    lpNumberOfBytesRecvd : out DWORD ; 
+    lpFlags         : in out DWORD ; 
+    lpFrom          : out t_sockaddr; 
+    lpFromlen       : in out s_long; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return s_long;
+#pragma convention(WSARecvFrom,system);
+#pragma import(WSARecvFrom,'WSARecvFrom','Ws2_32.dll');
+
+procedure WSAResetEvent(
+    hEvent          : in WSAEVENT)
+                      return BOOL;
+#pragma convention(WSAResetEvent,system);
+#pragma import(WSAResetEvent,'WSAResetEvent','Ws2_32.dll');
+
+procedure WSASend(
+    s               : in t_SOCKET; 
+    lpBuffers       : in LPWSABUF; 
+    dwBufferCount   : in DWORD; 
+    lpNumberOfBytesSent : out DWORD ; 
+    dwFlags         : in DWORD; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return s_long;
+#pragma convention(WSASend,system);
+#pragma import(WSASend,'WSASend','Ws2_32.dll');
+
+procedure WSASendDisconnect(
+    s               : in t_SOCKET; 
+    lpOutboundDisconnectData : in LPWSABUF)
+                      return s_long;
+#pragma convention(WSASendDisconnect,system);
+#pragma import(WSASendDisconnect,'WSASendDisconnect','Ws2_32.dll');
+
+
+procedure WSASendTo(
+    s               : in t_SOCKET; 
+    lpBuffers       : in LPWSABUF; 
+    dwBufferCount   : in DWORD; 
+    lpNumberOfBytesSent : out DWORD ; 
+    dwFlags         : in DWORD; 
+    lpTo            : in LPSOCKADDR; 
+    iTolen          : in s_long; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return s_long;
+#pragma convention(WSASendTo,system);
+#pragma import(WSASendTo,'WSASendTo','Ws2_32.dll');
+
+procedure WSASetEvent(
+    hEvent          : in WSAEVENT)
+                      return BOOL;
+#pragma convention(WSASetEvent,system);
+#pragma import(WSASetEvent,'WSASetEvent','Ws2_32.dll');
+
+procedure WSASocketA(
+    af              : in s_long; 
+    _type           : in s_long; 
+    protocol        : in s_long; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOA; 
+    g               : in GROUP; 
+    dwFlags         : in DWORD)
+                      return t_SOCKET;
+#pragma convention(WSASocketA,system);
+#pragma import(WSASocketA,'WSASocketA','Ws2_32.dll');
+
+procedure WSASocketW(
+    af              : in s_long; 
+    _type           : in s_long; 
+    protocol        : in s_long; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOW; 
+    g               : in GROUP; 
+    dwFlags         : in DWORD)
+                      return t_SOCKET;
+#pragma convention(WSASocketW,system);
+#pragma import(WSASocketW,'WSASocketW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSASocket;
+  WSASocketW 
+#end WSASocket;
+#else;
+#template WSASocket;
+  WSASocketA 
+#end WSASocket;
+#end if;
+
+type
+t_143=^WSAEVENT for machine_pointer use true;
+
+procedure WSAWaitForMultipleEvents(
+    cEvents         : in DWORD; 
+    lphEvents       : in t_143; 
+    fWaitAll        : in BOOL; 
+    dwTimeout       : in DWORD; 
+    fAlertable      : in BOOL)
+                      return DWORD;
+#pragma convention(WSAWaitForMultipleEvents,system);
+#pragma import(WSAWaitForMultipleEvents,'WSAWaitForMultipleEvents','Ws2_32.dll');
+
+procedure WSAAddressToStringA(
+    lpsaAddress     : in LPSOCKADDR; 
+    dwAddressLength : in DWORD; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOA; 
+    lpszAddressString : in out CHARSTR ; 
+    lpdwAddressStringLength : in out DWORD )
+                      return INT;
+#pragma convention(WSAAddressToStringA,system);
+#pragma import(WSAAddressToStringA,'WSAAddressToStringA','Ws2_32.dll');
+
+procedure WSAAddressToStringW(
+    lpsaAddress     : in LPSOCKADDR; 
+    dwAddressLength : in DWORD; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOW; 
+    lpszAddressString : in out WCHARSTR ; 
+    lpdwAddressStringLength : in out DWORD )
+                      return INT;
+#pragma convention(WSAAddressToStringW,system);
+#pragma import(WSAAddressToStringW,'WSAAddressToStringW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAAddressToString;
+  WSAAddressToStringW 
+#end WSAAddressToString;
+#else;
+#template WSAAddressToString;
+  WSAAddressToStringA 
+#end WSAAddressToString;
+#end if;
+
+type
+t_144=s_long ;
+
+procedure WSAStringToAddressA(
+    AddressString   : in LPSTR; 
+    AddressFamily   : in INT; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOA; 
+    lpAddress       : out {!}LPSOCKADDR; 
+    lpAddressLength : in out t_144)
+                      return INT;
+#pragma convention(WSAStringToAddressA,system);
+#pragma import(WSAStringToAddressA,'WSAStringToAddressA','Ws2_32.dll');
+
+type
+t_145=s_long ;
+
+procedure WSAStringToAddressW(
+    AddressString   : in LPWSTR; 
+    AddressFamily   : in INT; 
+    lpProtocolInfo  : in LPWSAPROTOCOL_INFOW; 
+    lpAddress       : out {!}LPSOCKADDR; 
+    lpAddressLength : in out t_145)
+                      return INT;
+#pragma convention(WSAStringToAddressW,system);
+#pragma import(WSAStringToAddressW,'WSAStringToAddressW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAStringToAddress;
+  WSAStringToAddressW 
+#end WSAStringToAddress;
+#else;
+#template WSAStringToAddress;
+  WSAStringToAddressA 
+#end WSAStringToAddress;
+#end if;
+
+-- /* Registration and Name Resolution API functions 
+procedure WSALookupServiceBeginA(
+    lpqsRestrictions : in LPWSAQUERYSETA; 
+    dwControlFlags  : in DWORD; 
+    lphLookup       : out winnt.t_HANDLE )
+                      return INT;
+#pragma convention(WSALookupServiceBeginA,system);
+#pragma import(WSALookupServiceBeginA,'WSALookupServiceBeginA','Ws2_32.dll');
+
+procedure WSALookupServiceBeginW(
+    lpqsRestrictions : in LPWSAQUERYSETW; 
+    dwControlFlags  : in DWORD; 
+    lphLookup       : out winnt.t_HANDLE )
+                      return INT;
+#pragma convention(WSALookupServiceBeginW,system);
+#pragma import(WSALookupServiceBeginW,'WSALookupServiceBeginW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSALookupServiceBegin;
+  WSALookupServiceBeginW 
+#end WSALookupServiceBegin;
+#else;
+#template WSALookupServiceBegin;
+  WSALookupServiceBeginA 
+#end WSALookupServiceBegin;
+#end if;
+
+procedure WSALookupServiceNextA(
+    hLookup         : in t_HANDLE; 
+    dwControlFlags  : in DWORD; 
+    lpdwBufferLength : in out DWORD ; 
+    lpqsResults     : out _WSAQuerySetA)
+                      return INT;
+#pragma convention(WSALookupServiceNextA,system);
+#pragma import(WSALookupServiceNextA,'WSALookupServiceNextA','Ws2_32.dll');
+
+procedure WSALookupServiceNextW(
+    hLookup         : in t_HANDLE; 
+    dwControlFlags  : in DWORD; 
+    lpdwBufferLength : in out DWORD ; 
+    lpqsResults     : out _WSAQuerySetW)
+                      return INT;
+#pragma convention(WSALookupServiceNextW,system);
+#pragma import(WSALookupServiceNextW,'WSALookupServiceNextW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSALookupServiceNext;
+  WSALookupServiceNextW 
+#end WSALookupServiceNext;
+#else;
+#template WSALookupServiceNext;
+  WSALookupServiceNextA 
+#end WSALookupServiceNext;
+#end if;
+
+procedure WSANSPIoctl(
+    hLookup         : in t_HANDLE; 
+    dwControlCode   : in DWORD; 
+    lpvInBuffer     : in LPVOID; 
+    cbInBuffer      : in DWORD; 
+    lpvOutBuffer    : out unchecked ; 
+    cbOutBuffer     : in DWORD; 
+    lpcbBytesReturned : out DWORD ; 
+    lpCompletion    : in LPWSACOMPLETION)
+                      return INT;
+#pragma convention(WSANSPIoctl,system);
+#pragma import(WSANSPIoctl,'WSANSPIoctl','Ws2_32.dll');
+
+procedure WSALookupServiceEnd(
+    hLookup         : in t_HANDLE)
+                      return INT;
+#pragma convention(WSALookupServiceEnd,system);
+#pragma import(WSALookupServiceEnd,'WSALookupServiceEnd','Ws2_32.dll');
+
+procedure WSAInstallServiceClassA(
+    lpServiceClassInfo : in LPWSASERVICECLASSINFOA)
+                      return INT;
+#pragma convention(WSAInstallServiceClassA,system);
+#pragma import(WSAInstallServiceClassA,'WSAInstallServiceClassA','Ws2_32.dll');
+
+procedure WSAInstallServiceClassW(
+    lpServiceClassInfo : in LPWSASERVICECLASSINFOW)
+                      return INT;
+#pragma convention(WSAInstallServiceClassW,system);
+#pragma import(WSAInstallServiceClassW,'WSAInstallServiceClassW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAInstallServiceClass;
+  WSAInstallServiceClassW 
+#end WSAInstallServiceClass;
+#else;
+#template WSAInstallServiceClass;
+  WSAInstallServiceClassA 
+#end WSAInstallServiceClass;
+#end if;
+
+procedure WSARemoveServiceClass(
+    lpServiceClassId : in LPGUID)
+                      return INT;
+#pragma convention(WSARemoveServiceClass,system);
+#pragma import(WSARemoveServiceClass,'WSARemoveServiceClass','Ws2_32.dll');
+
+procedure WSAGetServiceClassInfoA(
+    lpProviderId    : in LPGUID; 
+    lpServiceClassId : in LPGUID; 
+    lpdwBufSize     : in out DWORD ; 
+    lpServiceClassInfo : out _WSAServiceClassInfoA)
+                      return INT;
+#pragma convention(WSAGetServiceClassInfoA,system);
+#pragma import(WSAGetServiceClassInfoA,'WSAGetServiceClassInfoA','Ws2_32.dll');
+
+procedure WSAGetServiceClassInfoW(
+    lpProviderId    : in LPGUID; 
+    lpServiceClassId : in LPGUID; 
+    lpdwBufSize     : in out DWORD ; 
+    lpServiceClassInfo : out _WSAServiceClassInfoW)
+                      return INT;
+#pragma convention(WSAGetServiceClassInfoW,system);
+#pragma import(WSAGetServiceClassInfoW,'WSAGetServiceClassInfoW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAGetServiceClassInfo;
+  WSAGetServiceClassInfoW 
+#end WSAGetServiceClassInfo;
+#else;
+#template WSAGetServiceClassInfo;
+  WSAGetServiceClassInfoA 
+#end WSAGetServiceClassInfo;
+#end if;
+
+procedure WSAEnumNameSpaceProvidersA(
+    lpdwBufferLength : in out DWORD ; 
+    lpnspBuffer     : out _WSANAMESPACE_INFOA)
+                      return INT;
+#pragma convention(WSAEnumNameSpaceProvidersA,system);
+#pragma import(WSAEnumNameSpaceProvidersA,'WSAEnumNameSpaceProvidersA','Ws2_32.dll');
+
+procedure WSAEnumNameSpaceProvidersW(
+    lpdwBufferLength : in out DWORD ; 
+    lpnspBuffer     : out _WSANAMESPACE_INFOW)
+                      return INT;
+#pragma convention(WSAEnumNameSpaceProvidersW,system);
+#pragma import(WSAEnumNameSpaceProvidersW,'WSAEnumNameSpaceProvidersW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAEnumNameSpaceProviders;
+  WSAEnumNameSpaceProvidersW 
+#end WSAEnumNameSpaceProviders;
+#else;
+#template WSAEnumNameSpaceProviders;
+  WSAEnumNameSpaceProvidersA 
+#end WSAEnumNameSpaceProviders;
+#end if;
+
+procedure WSAGetServiceClassNameByClassIdA(
+    lpServiceClassId : in LPGUID; 
+    lpszServiceClassName : out CHARSTR ; 
+    lpdwBufferLength : in out DWORD )
+                      return INT;
+#pragma convention(WSAGetServiceClassNameByClassIdA,system);
+#pragma import(WSAGetServiceClassNameByClassIdA,'WSAGetServiceClassNameByClassIdA','Ws2_32.dll');
+
+procedure WSAGetServiceClassNameByClassIdW(
+    lpServiceClassId : in LPGUID; 
+    lpszServiceClassName : out WCHARSTR ; 
+    lpdwBufferLength : in out DWORD )
+                      return INT;
+#pragma convention(WSAGetServiceClassNameByClassIdW,system);
+#pragma import(WSAGetServiceClassNameByClassIdW,'WSAGetServiceClassNameByClassIdW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSAGetServiceClassNameByClassId;
+  WSAGetServiceClassNameByClassIdW 
+#end WSAGetServiceClassNameByClassId;
+#else;
+#template WSAGetServiceClassNameByClassId;
+  WSAGetServiceClassNameByClassIdA 
+#end WSAGetServiceClassNameByClassId;
+#end if;
+
+procedure WSASetServiceA(
+    lpqsRegInfo     : in LPWSAQUERYSETA; 
+    essoperation    : in WSAESETSERVICEOP; 
+    dwControlFlags  : in DWORD)
+                      return INT;
+#pragma convention(WSASetServiceA,system);
+#pragma import(WSASetServiceA,'WSASetServiceA','Ws2_32.dll');
+
+procedure WSASetServiceW(
+    lpqsRegInfo     : in LPWSAQUERYSETW; 
+    essoperation    : in WSAESETSERVICEOP; 
+    dwControlFlags  : in DWORD)
+                      return INT;
+#pragma convention(WSASetServiceW,system);
+#pragma import(WSASetServiceW,'WSASetServiceW','Ws2_32.dll');
+
+#if #declared UNICODE; then;
+#template WSASetService;
+  WSASetServiceW 
+#end WSASetService;
+#else;
+#template WSASetService;
+  WSASetServiceA 
+#end WSASetService;
+#end if;
+
+procedure WSAProviderConfigChange(
+    lpNotificationHandle : in out winnt.t_HANDLE ; 
+    lpOverlapped    : in LPWSAOVERLAPPED; 
+    lpCompletionRoutine : in LPWSAOVERLAPPED_COMPLETION_ROUTINE)
+                      return INT;
+#pragma convention(WSAProviderConfigChange,system);
+#pragma import(WSAProviderConfigChange,'WSAProviderConfigChange','Ws2_32.dll');
+
+-- /* Microsoft Windows Extended data types 
+type
+  SOCKADDR_IN       = t_sockaddr_in;
+type
+  PSOCKADDR_IN      = ^t_sockaddr_in;
+type
+  LPSOCKADDR_IN     = ^t_sockaddr_in;
+type
+  LINGER            = t_linger;
+type
+  PLINGER           = ^t_linger;
+type
+  LPLINGER          = ^t_linger;
+type
+  IN_ADDR           = t_in_addr;
+type
+  PIN_ADDR          = ^t_in_addr;
+type
+  LPIN_ADDR         = ^t_in_addr;
+type
+  FD_SET            = t_fd_set;
+type
+  PFD_SET           = ^t_fd_set;
+type
+  LPFD_SET          = ^t_fd_set;
+type
+  HOSTENT           = t_hostent;
+type
+  PHOSTENT          = ^t_hostent;
+type
+  LPHOSTENT         = ^t_hostent;
+type
+  SERVENT           = t_servent;
+type
+  PSERVENT          = ^t_servent;
+type
+  LPSERVENT         = ^t_servent;
+type
+  PROTOENT          = t_protoent;
+type
+  PPROTOENT         = ^t_protoent;
+type
+  LPPROTOENT        = ^t_protoent;
+type
+  TIMEVAL           = t_timeval;
+type
+  PTIMEVAL          = ^t_timeval;
+type
+  LPTIMEVAL         = ^t_timeval;
+-- /*
+--  * Windows message parameter composition and decomposition
+--  * macros.
+--  *
+--  * WSAMAKEASYNCREPLY is intended for use by the Windows Sockets implementation
+--  * when constructing the response to a WSAAsyncGetXByY() routine.
+--  */
+-- /*
+--  * WSAMAKESELECTREPLY is intended for use by the Windows Sockets implementation
+--  * when constructing the response to WSAAsyncSelect().
+--  */
+-- /*
+--  * WSAGETASYNCBUFLEN is intended for use by the Windows Sockets application
+--  * to extract the buffer length from the lParam in the response
+--  * to a WSAAsyncGetXByY().
+--  */
+-- /*
+--  * WSAGETASYNCERROR is intended for use by the Windows Sockets application
+--  * to extract the error code from the lParam in the response
+--  * to a WSAGetXByY().
+--  */
+-- /*
+--  * WSAGETSELECTEVENT is intended for use by the Windows Sockets application
+--  * to extract the event code from the lParam in the response
+--  * to a WSAAsyncSelect().
+--  */
+-- /*
+--  * WSAGETSELECTERROR is intended for use by the Windows Sockets application
+--  * to extract the error code from the lParam in the response
+--  * to a WSAAsyncSelect().
+--  */
+-- ignored #include <poppack.h>
+
+end winsock2;

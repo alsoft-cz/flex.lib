@@ -12,12 +12,39 @@ var
   --------------------------------------------------------------------------------------------------
   static init_text_writer = 
   --------------------------------------------------------------------------------------------------
+  var
+      res          : t_logical;
+      buffer       : array 0..3 of t_data_byte;
+      pos          : t_offset;
+
   begin
-    -- zrirzdim cil
+    -- nastavim cil
     init_writer(target);
     -- nastavim kodovani
     this.encoder:=encoder;
+    if encoder<>nil then
+      encoder^.set_endian(res);
+      if res then
+        loop
+          encoder^.get_output(t_unsigned8(buffer[pos]),res);
+          succ pos;
+          until res;
+          p_stream_generic_writer(^this)^.write_unchecked(buffer,pos);
+        end if;
+      end if;
     end init_text_writer;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_text_writer.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if encoder<>nil then
+      encoder^.finalize_output;
+      end if;
+    close;
+    end close;
 
 
 
@@ -26,7 +53,7 @@ var
   ------------------------------------------------------------------------------------------------
   var
       all_out      : t_logical;
-      buffer       : array 0..4 of t_data_byte;
+      buffer       : array 0..3 of t_data_byte;
       pos          : t_offset;
 
   begin
@@ -35,7 +62,7 @@ var
       -- output all bytes
       loop
         encoder^.get_output(t_unsigned8(buffer[pos]),all_out);
-        pos + 1;
+        succ pos;
         until all_out;
       p_stream_generic_writer(^this)^.write_unchecked(buffer,pos);
     else
@@ -82,7 +109,7 @@ var
         -- output all bytes
         loop
           encoder^.get_output(t_unsigned8(buffer^[pos]),all_out);
-          pos + 1;
+          succ pos;
           -- odeslu buffer pokud je plny
           if pos=optimal_size then
             p_stream_generic_writer(^this)^.write_heap(p_data_array_long(buffer:unchecked)^,pos);
@@ -136,6 +163,18 @@ var
 
 
   ------------------------------------------------------------------------------------------------
+  override c_text_reader.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if decoder<>nil then
+      decoder^.finalize_input;
+      end if;
+    close;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
   override c_text_reader.read_char =
   ------------------------------------------------------------------------------------------------
   var
@@ -147,6 +186,7 @@ var
       loop
         if p_stream_generic_reader(^this)^.read_byte(b) then
           result:=true;
+          decoder^.finalize_input;
           return;
           end if;
         decoder^.put_byte (t_unsigned8(b),done);
@@ -172,9 +212,10 @@ var
           end if;
         result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
         if result then
+          decoder^.finalize_input;
           return;
         else
-          text:length + 1;
+          succ text:length;
           end if;
         end loop;
     else
@@ -207,7 +248,7 @@ var
         end if;
       result:=(^c_text_reader:(this))^.read_char(text[text:length+1]);
       if not result then
-        text:length + 1;
+        succ text:length;
         if text[text:length]=cr then
           text:length - 1;
         elsif text[text:length]=lf then
@@ -223,6 +264,138 @@ var
 
 
 
+
+
+--------------------------------------------------------------------------------------------------
+procedure convert_packet(
+    data           : in out t_data_packet;
+    charbuff       : in out t_data_char32;
+    charpos        : in out t_unsigned;
+    endian         : in out t_logical;
+    encoder        : in p_character_encoder:=nil;
+    decoder        : in p_character_decoder:=nil)= 
+--------------------------------------------------------------------------------------------------
+var
+  inpacket       : t_data_packet;
+  _indata        : p_data_array;
+  _insize        : t_offset;
+  _outdata       : p_data_array;
+  _outsize       : t_offset;
+  _outpos        : t_offset;
+  done           : t_logical;
+
+begin
+  if data.style=t_dps_signal or (decoder=nil and encoder=nil) then
+    return;
+
+  -- both convertors
+  elsif decoder<>nil and encoder<>nil then
+    inpacket:=data;
+    data:=nil;
+    read_packet(inpacket,_indata,_insize);
+
+    _outsize:=_insize;
+    new _outdata range _outsize;  --predpoklad
+    create_packet(data,_outdata,_outsize,t_dps_heap);
+
+    if not endian then
+      endian:=true;
+      encoder^.set_endian(done);
+      if done then
+        loop
+          encoder^.get_output(t_unsigned8(_outdata^[_outpos]),done);
+          succ _outpos;
+          if _outpos>=_outsize then
+            realloc_packet(data,_outsize,_outdata,_outsize);
+            end if;
+          until done;
+        end if;
+      end if;
+
+    for i in 1..(_insize) loop
+      decoder^.put_byte (t_unsigned8(_indata^[i-1]),done);
+      if done then
+        encoder^.put_character(decoder^.get_character());
+        loop
+          encoder^.get_output(t_unsigned8(_outdata^[_outpos]),done);
+          succ _outpos;
+          if _outpos>=_outsize then
+            realloc_packet(data,_outsize,_outdata,_outsize);
+            end if;
+          until done;
+        end if;
+      end loop;
+    data.size:=_outpos;
+    discard_packet(inpacket);
+
+  -- decoder only
+  elsif decoder<>nil then
+    inpacket:=data;
+    data:=nil;
+    read_packet(inpacket,_indata,_insize);
+
+    _outsize:=_insize*t_char32:size;  -- predpoklad
+    new _outdata range _outsize;
+    create_packet(data,_outdata,_outsize,t_dps_heap);
+
+    for i in 1..(_insize) loop
+      decoder^.put_byte (t_unsigned8(_indata^[i-1]),done);
+      if done then
+        p_char32(^_outdata^[_outpos]:unchecked)^:=decoder^.get_character();
+        _outpos + t_char32:size;
+        if _outpos>=(_outsize-3) then
+          realloc_packet(data,_outsize,_outdata,_outsize);
+          end if;
+        end if;
+      end loop;
+    data.size:=_outpos;
+    discard_packet(inpacket);
+
+  -- encoder only
+  elsif encoder<>nil then
+    inpacket:=data;
+    data:=nil;
+    read_packet(inpacket,_indata,_insize);
+
+    _outsize:=_insize div (t_char32:size-1);  -- predpoklad
+    new _outdata range _outsize;
+    create_packet(data,_outdata,_outsize,t_dps_heap);
+
+    if not endian then
+      endian:=true;
+      encoder^.set_endian(done);
+      if done then
+        loop
+          encoder^.get_output(t_unsigned8(_outdata^[_outpos]),done);
+          succ _outpos;
+          if _outpos>=_outsize then
+            realloc_packet(data,_outsize,_outdata,_outsize);
+            end if;
+          until done;
+        end if;
+      end if;
+
+    for i in 1..(_insize) loop
+      charbuff[charpos]:=_indata^[i-1];
+      succ charpos;
+      if charpos=3 then
+        encoder^.put_character(p_char32(^charbuff:unchecked)^);
+        loop
+          encoder^.get_output(t_unsigned8(_outdata^[_outpos]),done);
+          succ _outpos;
+          if _outpos>=_outsize then
+            realloc_packet(data,_outsize,_outdata,_outsize);
+            end if;
+          until done;
+        charpos:=0;
+        end if;
+      end loop;
+    data.size:=_outpos;
+    discard_packet(inpacket);
+    end if;
+  end convert_packet;
+
+
 ----------------------------------------------------------------------------------------------------
 class private c_input_stream_text_recoder = 
 ----------------------------------------------------------------------------------------------------
@@ -232,6 +405,14 @@ var
   decoder          : p_character_decoder;
   encoder          : p_character_encoder;
 
+  --char buffer
+  charbuff         : t_data_char32;
+  charpos          : t_unsigned;
+
+  --endian control
+  endian_bom       : t_logical;
+
+
   --------------------------------------------------------------------------------------------------
   static init_recoder =
   --------------------------------------------------------------------------------------------------
@@ -240,6 +421,15 @@ var
     this.decoder:=decoder;
     this.encoder:=encoder;
     end init_recoder;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static disable_byte_order_mark =
+  --------------------------------------------------------------------------------------------------
+  begin
+    endian_bom:=true;
+    end disable_byte_order_mark;
 
 
 
@@ -260,7 +450,8 @@ var
   override c_input_stream.read_packet =
   --------------------------------------------------------------------------------------------------
   begin
-    --%%TODO
+    _source^.read_packet(data);
+    convert_packet(data,charbuff,charpos,endian_bom,encoder,decoder);
     end read_packet;
   
 
@@ -288,6 +479,13 @@ var
   decoder          : p_character_decoder;
   encoder          : p_character_encoder;
 
+  --char buffer
+  charbuff         : t_data_char32;
+  charpos          : t_unsigned;
+
+  --Byte Order Mark control
+  endian_bom       : t_logical;
+
   --------------------------------------------------------------------------------------------------
   static init_recoder =
   --------------------------------------------------------------------------------------------------
@@ -296,6 +494,15 @@ var
     this.encoder:=encoder;
     this.decoder:=decoder;
     end init_recoder;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static disable_byte_order_mark =
+  --------------------------------------------------------------------------------------------------
+  begin
+    endian_bom:=true;
+    end disable_byte_order_mark;
 
 
 
@@ -315,8 +522,13 @@ var
   --------------------------------------------------------------------------------------------------
   override c_output_stream.write_packet =
   --------------------------------------------------------------------------------------------------
+  var
+    outpacket      : t_data_packet;
+
   begin
-    --%%TODO
+    outpacket:=data;
+    convert_packet(outpacket,charbuff,charpos,endian_bom,encoder,decoder);
+    _target^.write_packet(outpacket);
     end write_packet;
 
 

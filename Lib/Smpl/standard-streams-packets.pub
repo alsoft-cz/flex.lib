@@ -4,9 +4,12 @@ type
   t_data_string    = string of aliased t_data_byte;
   t_data_array     = array of aliased t_data_byte;
   t_data_array_long= array 0..$FFFF_FFFF of aliased t_data_byte;
+  t_data_array_char32= array 0..$3FFF_FFFF of aliased t_char32;
+  t_data_char32    = array 0..3 of aliased t_data_byte;
   
   p_data_array      = ^t_data_array      for machine_pointer use true;
   p_data_array_long = ^t_data_array_long for machine_pointer use true;
+  p_data_array_char32= ^t_data_array_char32 for machine_pointer use true;
   p_data_string     = ^t_data_string     for machine_pointer use true;
 
 const
@@ -48,8 +51,14 @@ type
     size           : out t_offset);
   p_data_packet_read = ^t_data_packet_read;
 
+  t_data_packet_copy = procedure(
+    inpacket       : in ref t_data_packet;
+    outpacket      : out ref t_data_packet);
+  p_data_packet_copy = ^t_data_packet_copy;
+
   t_data_packet_other = record
     read           : p_data_packet_read;
+    copy           : p_data_packet_copy;
     dispose        : p_data_packet_dispose;
     end record;
   p_data_packet_other = ^t_data_packet_other for machine_pointer use true;
@@ -100,6 +109,10 @@ procedure copy_to_packet(
     size           : in t_offset);
 -- create packet, copying data
 ----------------------------------------------------------------------------------------------------
+procedure copy_text_to_packet(
+    packet         : out t_data_packet;
+    text           : in ref t_char32ustr);
+----------------------------------------------------------------------------------------------------
 procedure discard_packet(
     packet         : in t_data_packet);
 -- destroy packet
@@ -116,10 +129,27 @@ procedure read_temporary_text(
 -- reads text packet
 ----------------------------------------------------------------------------------------------------
 procedure copy_from_packet(
-    packet         : in t_data_packet;
-    poffset        : in out t_offset;
-    data           : in p_data_array;
-    doffset        : in out t_offset;
+    inpacket       : in t_data_packet;
+    inoffset       : in out t_offset;
+    outdata        : in p_data_array;
+    outoffset      : in out t_offset;
     size           : in t_offset);
 -- reads packet data
+----------------------------------------------------------------------------------------------------
+procedure deep_copy(
+    inpacket       : in t_data_packet;
+    outpacket      : out t_data_packet);
+----------------------------------------------------------------------------------------------------
+procedure realloc_packet(
+    packet         : in out t_data_packet;
+    newbytes       : in t_offset;
+    data           : out p_data_array;
+    size           : out t_offset);
+----------------------------------------------------------------------------------------------------
+procedure copy_data(
+    indata         : in  p_data_array;
+    inoffset       : in t_offset;
+    outdata        : in p_data_array;
+    outoffset      : in t_offset;
+    size           : in t_offset);
 ----------------------------------------------------------------------------------------------------
