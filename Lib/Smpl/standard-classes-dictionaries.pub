@@ -47,17 +47,6 @@ class public abstract c_dictionary_key =
     end c_dictionary_key;
 
 
-----------------------------------------------------------------------------------------------------
-class {public} abstract c_predek =
--- Obecný předek pro hodnotu slovníku.
-----------------------------------------------------------------------------------------------------
-
-    virtual abstract met (
-        i : t_unsigned);
-
-    end c_predek;
-
-
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_dictionary_value =

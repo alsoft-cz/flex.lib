@@ -382,6 +382,9 @@ var
         c_output_stream:(this).write_eod;
         -- zastavim cerpadlo
         c_task:(this).wait;
+      else
+        --%%TODO rozmysli se rozmyli, na sve stesti pomysli
+        c_task:(this).kill;
         end if;
 
       -- uvolnit packety a data ktere druha strana odmitla precist
@@ -477,6 +480,8 @@ var
       begin
         _target^.write_packet(data);
       catch
+        when stream_other_side do
+          isreading:=false; -- %%TODO synchronize ?
         when stream_invalid_data do
           bad_data:=true;  -- %%TODO synchronize ?
         end;
