@@ -5,25 +5,24 @@ module private long_arithmetic =
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
-
-  -- ‡¡slo je ulo‘eno ve tvaru LSB first
-  -- internˆ je znam‚nko ulo‘eno jako prvn¡ element pole. 
-  -- nejvy¨¨¡ bit posledn¡ho bytu je znam‚nko, kde 0 znamen 
-  -- z porn‚ ‡¡slo, 0 je kladn‚ ‡¡slo. Nap©¡klad pro typ t_long_signed 32 bits:
-  --   5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 00000000
-  --  -5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 10000000
+-- ‡¡slo je ulo‘eno ve tvaru LSB first
+-- internˆ je znam‚nko ulo‘eno jako prvn¡ element pole. 
+-- nejvy¨¨¡ bit posledn¡ho bytu je znam‚nko, kde 0 znamen 
+-- z porn‚ ‡¡slo, 0 je kladn‚ ‡¡slo. Nap©¡klad pro typ t_long_signed 32 bits:
+--   5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+--  -5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 10000000
 
 const
-   long_signed_neutral  = 0;
-   long_signed_positive = 1;
-   long_signed_negative = 2;
+  long_signed_neutral  = 0;
+  long_signed_positive = 1;
+  long_signed_negative = 2;
 
 type
   t_cmp_result = enum 
-   cmp_res_equal;
-   cmp_res_smaller;
-   cmp_res_greater;
-   end enum;
+      cmp_res_equal;
+      cmp_res_smaller;
+      cmp_res_greater;
+      end enum;
 
   t_cmp_result_set = set of t_cmp_result;
 
@@ -1097,7 +1096,11 @@ begin
 --      mov   eax,l_false
 
       -- ulo‘it v˜sledek
+#if #environment compiler_version;='4.0.2' then;
+  @0: mov   result,al
+#else;
   @0: mov   result,eax
+#end if;
       #end asm;
   end long_unsigned_cmp;
 
