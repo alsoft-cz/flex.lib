@@ -1,5 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public streams =
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
@@ -8,7 +10,9 @@ class public c_console_output_stream = extend c_output_stream;
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   static init_console (
-    std_err        : t_logical:=true);
+    std_err        : t_logical:=false);          -- F - vytvori stream pro zapis na stdout
+                                                 -- T - vytvori stream pro zapis na stderr
+  -- vytvori stream pro zapis na kozolu
   ------------------------------------------------------------------------------------------------
   end c_console_output_stream;
 type p_console_output_stream = ^class c_console_output_stream;
@@ -21,18 +25,23 @@ class public c_console_input_stream = extend c_input_stream;
 -- Console input text stream.
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
-  static init_console;
+  static init_console;                           
+  -- vytvori stream pro cteni z kozole
   ------------------------------------------------------------------------------------------------
   static key_pressed return t_logical;
+  -- neblokujici test na zmacknutou klavesu
   ------------------------------------------------------------------------------------------------
   static set_mode(
     mode           : in t_input_mode);
+  -- zmeni rezim cteni udalosti konzoly
   ------------------------------------------------------------------------------------------------
   virtual get_cursor_position (
   pos              : out t_cursor_coordinates);
+  -- vrati pozici kurzoru
   --------------------------------------------------------------------------------------------------
   virtual get_console_size (
   pos              : out t_cursor_coordinates);
+  -- vrati velikost okna ve znacich
   --------------------------------------------------------------------------------------------------
   end c_console_input_stream;
 type p_console_input_stream = ^class c_console_input_stream;

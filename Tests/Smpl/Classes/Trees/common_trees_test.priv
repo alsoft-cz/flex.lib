@@ -1,0 +1,530 @@
+﻿----------------------------------------------------------------------------------------------------
+module private common_trees_test =
+-- Test of Classes library - Common n-ary trees and iterators.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.lists,
+  standard.classes.trees,
+  standard.random,
+  quality,
+  quality.debugging;
+
+-- dopředné deklarace
+class c_test_nodes_item;   type p_test_nodes_item = ^class c_test_nodes_item;
+class c_test_tree_node;    type p_test_tree_node = ^class c_test_tree_node;
+class c_test_values_item;  type p_test_values_item = ^class c_test_values_item;
+
+----------------------------------------------------------------------------------------------------
+class c_test_nodes_item = extend c_list_item;
+-- Třída složky spojového seznamu nebo zásobníku. Obsahuje jeden datový člen - pointer na uzel
+-- testovacího stromu.
+----------------------------------------------------------------------------------------------------
+
+    var
+      node         : p_test_tree_node;           -- pointer na uzel testovacího stromu
+
+    end c_test_nodes_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_test_values_item = extend c_list_item;
+-- Třída složky spojového seznamu. Obsahuje jeden datový člen - hodnotu uzlu testovacího stromu
+-- testovacího stromu.
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : t_signed;                   -- hodnota uzlu testovacího stromu
+
+    end c_test_values_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_test_tree_node = extend c_tree_node;
+-- Třída uzlu testovacího stromu. Každý uzel obsahuje jednu hodnotu [value].
+----------------------------------------------------------------------------------------------------
+  
+  var
+    value          : t_unsigned;                 -- hodnota testovacího uzlu
+
+  end c_test_tree_node;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_tree (
+    tree           : in p_tree;                  -- pointer na testovací strom
+    parent_node    : in p_test_tree_node;        -- předek nově vkládaného uzlu
+    node_list      : in p_list;                  -- pointer na spojový seznam obsahující jako své
+                                                 -- složky pointery na jednotlivé uzly testovacího
+                                                 -- stromu [tree]
+    max_child      : in t_unsigned;              -- maximální počet potomků
+    curr_level     : in t_unsigned;              -- aktuální úroveň
+    levels         : in t_unsigned) =            -- počet úrovní v testovacím stromu [tree]
+-- Vytvoří testovací strom [tree], který bude obsahovat maximálně [levels] úrovní. Každý uzel obsahuje
+-- náhodný počet potomků [neighbours], nejvýše však [max_child] potomků. Každý uzel obsahuje hodnotu
+-- [value], která je náhodně generovaná. Ukazatel na každý nově vytvořený uzel testovacího stromu
+-- [tree] je vložen do spojového seznamu uzlů [node_list].
+----------------------------------------------------------------------------------------------------
+var
+  curr_neighbours  : t_unsigned:=0;              -- aktuální počet uzlů ležících na jedné úrovni stromu
+  neighbours       : t_unsigned;                 -- celkový počet uzlů ležících na jedné úrovni stromu
+  node             : p_test_tree_node;           -- nově vkládaný uzel do testovacího stromu [tree]
+  node_item        : p_test_nodes_item;          -- složka seznamu [node_list] obsahující uzel
+                                                 -- testovacího stromu [tree]
+
+begin
+  -- vkládáme první uzel (kořen)?
+  if curr_level=0
+
+    -- ano => kořen nemá žádného souseda => [neighbours] nastavíme na 1
+    then neighbours:=1;
+
+    -- ne => určíme počet uzlů na dané úrovni stromu + podle náhodně generované hodnoty můžeme skončit
+    --       s vkládáním nových uzlů
+    else
+      -- určíme počet uzlů ležících na jedné úrovni stromu
+      neighbours:=random_unsigned mod (max_child+1);
+
+      -- generujeme náhodně číslo (0..9) a je-li větší než 7 nebo je-li aktuální úroveň testovacího stromu
+      -- [tree] rovna maximální úrovni [levels], pak končíme s vkládáním nových úrovní a jdeme vkládat
+      -- uzly do předchozích potomků (nebo končíme úplně)
+      if (random_unsigned mod 10)>7 or curr_level=levels then
+        return;
+        end if;
+      end if;
+
+  -- v cyklu postupně vytvoříme uzly na jedné úrovni + rekurzivně jejich potomky
+  for i in 1..neighbours loop
+    -- vytvoříme nový uzel testovacího stromu [tree] a vložíme mu náhodnou [value]
+    new node;
+    node^.value:=random_unsigned mod 100;
+
+    -- vložíme nový uzel [node] do testovacího stromu [tree]
+    tree^.insert_node(node,parent_node,id_add_child);
+
+    -- do seznamu uzlů [node_list] vložíme ukazatel na nově vložený uzel do testovacího stromu [tree]
+    new node_item;
+    node_item^.node:=node;
+    node_list^.insert_last(node_item);
+
+    -- rekurzivně vkládáme potomky uzlu [node]
+    create_tree(tree,node,node_list,max_child,curr_level+1,levels);
+    end loop;
+  end create_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_rand_item (
+    list           : p_list)                     -- ukazatel na spojový seznam
+    return p_test_nodes_item =
+-- Vrátí složku seznamu [list], která je uložená na náhodně generované pozici [pos]. Pokud neexistuje
+-- žádná složka nebo je seznam [list] prázdný, generuje procedura výjimku [test_error]. To by však
+-- nikdy nastat nemělo.
+----------------------------------------------------------------------------------------------------
+var
+  pos              : t_unsigned;                 -- náhodně generovaná pozice, na níž vybíráme složku seznamu
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod spojovým seznamem [list]
+
+begin
+  -- pokud je seznam [list] prázdný, generuje procedura výjimku [test_error]
+  if list^.count=0 then
+    raise test_error;
+    end if;
+
+  -- určíme pozici složky v seznamu
+  pos:=(random_unsigned mod list^.count)+1;
+
+  -- inicializujeme seznam na průchod od první k poslední složce
+  list_iterator.init(list^,tlwd_forward);
+
+  -- projdeme seznamem [list] dokud nenarazíme na složku na pozici [pos]
+  for i in 1..pos loop
+    if not list_iterator.get(result) then
+      raise test_error;
+      end if;
+    end loop;
+  end get_rand_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure compare_nodes_with_list (
+    tree           : p_tree;                     -- ukazatel na testovací strom, jehož uzly porovnáváme
+    list           : p_list)                     -- ukazatel na seznam, jehož složky porovnáváme s
+                                                 -- uzly testovacího stromu
+    return t_logical =
+-- Porovná hodnoty uzlů testovacího stromu [tree] s hodnotami uložených ve spojovém seznamu [list]
+-- (v něm jsou uloženy hodnoty všech uzlů testovacího stromu tak, jak byly postupně vytvářeny (voláním
+-- procedury [create_tree])). Procedura mimo jiné testuje průchod stromu [tree] iterátorem
+-- [tree_iterator] v prefixovém a reverzním postfixovém pořadí. Jsou-li hodnoty všech uzlů v daném
+-- pořadí (průchodu) rovny hodnotám všech složek ve spojovém seznamu [list], vrací [true], jinak [false].
+----------------------------------------------------------------------------------------------------
+var
+  tree_iterator    : c_tree_iterator;            -- iterátor pro průchod testovacího stromu [tree]
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod seznamem uzlů [list]
+  node             : p_test_tree_node;           -- ukazatel na uzel testovacího stromu [tree]
+  item             : p_test_nodes_item;          -- ukazatel na složku seznamu [list]
+
+begin
+  -- na počátku předpokládáme, že test bude úspěšný
+  result:=true;
+
+  -- Test v prefixovém průchodu
+  -- inicializace iterátorů (prefixový průchod)
+  tree_iterator.init(tree^,ttwd_prefix);
+  list_iterator.init(list^,tlwd_forward);
+
+  -- vybíráme postupně všechny uzly z testovacího stromu [tree] a porovnáváme jejich hodnoty s
+  -- hodnotami uzlů ve spojovém seznamu [list]
+  while tree_iterator.get(node) loop
+    -- pokud jsme vyčerpali všechny složky seznamu [list] => chyba => vracíme [false]
+    if not list_iterator.get(item) then
+      result:=false;
+      return;
+      end if;
+
+    -- porovnáme hodnoty uzlů, pokud jsou rozdílné => chyba => vracíme [false]
+    if node^.value<>item^.node^.value then
+      result:=false;
+      return;
+      end if;
+    end loop;
+
+  -- Test v inverzním prefixovém průchodu
+  -- inicializace iterátorů (inverzní postfixový průchod)
+  tree_iterator.init(tree^,ttwd_inv_postfix);
+  list_iterator.init(list^,tlwd_backward);
+
+  -- vybíráme postupně všechny uzly z testovacího stromu [tree] a porovnáváme jejich hodnoty s
+  -- hodnotami uzlů ve spojovém seznamu [list]
+  while tree_iterator.get(node) loop
+    -- pokud jsme vyčerpali všechny složky seznamu [list] => chyba => vracíme [false]
+    if not list_iterator.get(item) then
+      result:=false;
+      return;
+      end if;
+
+    -- porovnáme hodnoty uzlů, pokud jsou rozdílné => chyba => vracíme [false]
+    if node^.value<>item^.node^.value then
+      result:=false;
+      return;
+      end if;
+    end loop;
+  end compare_nodes_with_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_inserting_common_tree_test_case =
+-- Testovací třída pro vkládání uzlů do stromu [tree]. Uzel je typu [c_test_tree_node], tj. obsahuje
+-- hodnotu [value]. Třída rovněž testuje iterátor pro průchod stromem v prefixovém pořadí a v
+-- inverzním postfixovém pořadí (test je proveden za pomoci volání metody [compare_nodes_with_list]).
+--
+-- Upozornění: Inicializační metoda [entry] nastavuje maximální úroveň testovacího stromu (viz proměnná
+-- [max_level]) a maximální počet potomků každého uzlu (viz proměnná [max_child]). Jelikož tyto para-
+-- metry značně ovlivňují velikost stromu (počet jeho uzlů), nedoporučuje se z důvodu velké časové
+-- náročnosti volit tyto parametry vysoké. Velikost stromu, při níž je "výpočet ještě časově únosný",
+-- odpovídá nastavení parametrů tak, aby cca.: [max_cild]~[max_level]<=500 000 - 700 000.
+--
+-- Princip: Vytvoříme testovací strom [tree] mající maximálně [max_level] úrovní (úroveň odpovídá
+-- maximální výšce resp. hloubce stromu), přičemž každý uzel obsahuje maximálně [max_child] potomků.
+-- Každý uzel je ohodnocen náhodnou hodnotou [value]. Strom je vytvořen voláním procedury [create_tree].
+-- Tato procedura vrací ukazatel na seznam [node_list], což je seznam všech uzlů testovacího stromu
+-- [tree], v němž jsou jednotlivé položky setříděny tak, jak jednolivé uzly ve stromě vznikaly.
+-- Po vytvoření stromu probíhá test, ve kterém se testuje iterátor pro průchod stromu a tím i celá
+-- struktura stromu (pomocí procedury [compare_nodes_with_list]. Dále náhodně vybereme celkem [before]
+-- a [after] uzlů (pomocí procedury [get_rand_item], před které a za které vložíme nový náhodně
+-- generovaný uzel a opět testujeme iterátor a strukturu stromu + počet uzlů ve stromě. Na závěr testu
+-- celý testovací strom smažeme (všechny jeho uzly) a testujeme, zda je skutečně prázdný.
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_child    : t_unsigned;                 -- maximální počet potomků uzlu testovacího stromu
+      max_level    : t_unsigned;                 -- maximální počet úrovní testovacího stromu
+      before       : t_unsigned;                 -- počet nových uzlů, které budou vloženy za náhodně
+                                                 -- vybraný uzel stromu (nový uzel se stane jeho pravým
+                                                 -- sousedem)
+      after        : t_unsigned;                 -- počet nových uzlů, které budou vloženy za náhodně
+                                                 -- vybraný uzel stromu (nový uzel se stane jeho
+                                                 -- levým sousedem)
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    use
+      supervised c_test_nodes_item;
+
+
+    var
+      tree         : aliased c_tree;             -- testovací strom
+      node_list    : aliased c_list;             -- seznam obsahující ukazatele na všechny uzly stromu [tree]
+
+      node         : p_test_tree_node;           -- uzel testovacího stromu [tree]
+      item         : p_test_nodes_item;          -- složka seznamu [node_list] uzlů testovacího
+                                                 -- stromu [tree]
+      new_item     : p_test_nodes_item;          -- nová složka seznamu [node_list] uzlů testovacího
+                                                 -- stromu [tree]
+      node_count   : t_unsigned;                 -- pomocná proměnná udávající počet uzlů v podstromu
+
+    begin
+      -- vytvoříme testovací strom [tree], ukazatel na všechny jeho uzly budou uloženy ve spojovém
+      -- seznamu [node_list]
+      create_tree(^tree,nil,^node_list,max_child,0,max_level);
+
+      -- Testujeme iterátor a strukturu uzlů v testovacím stromě [tree]
+      fail_if_false(compare_nodes_with_list(^tree,^node_list),'Order of nodes of test tree is not expected');
+
+      -- vložíme [before] nových uzlů před náhodně zvolený uzel testovacího stromu [tree]
+      for i in 1..before loop
+        -- náhodně vybereme nějaký uzel [item^.node] z testovacího stromu [tree]
+        item:=get_rand_item(^node_list);
+
+        -- pokud uzel [item^.node] není kořen, pak mu přidáme levého souseda
+        if item^.node<>tree.get_root then
+          -- určíme počet uzlů v testovacím stromu [tree]
+          node_count:=tree.count;
+
+          -- vytvoříme nový uzel [node] a vložíme ho do testovacího stromu [tree] jako nového levého
+          -- souseda uzlu [item^.node]
+          new node;
+          node^.value:=random_unsigned mod 100;
+          tree.insert_node(node,item^.node,id_insert_before);
+
+          -- testujeme, zda se počet uzlů v testovacím stromě zvětšil o 1
+          fail_if_false(tree.count=node_count+1,'Expected count of nodes is not equal (insert before)');
+
+
+          -- do spojového seznamu [node_list] uzlů testovacího stromu [tree] vložíme ukazatel na nový
+          -- uzel [new_item] testovacího stromu [tree] (vložíme ho před složku [item])
+          new new_item;
+          new_item^.node:=node;
+          node_list.insert_before(item,new_item);
+
+          -- testujeme iterátor a strukturu uzlů v testovacím stromě [tree]
+          fail_if_false(compare_nodes_with_list(^tree,^node_list),'Order of nodes of test tree is not expected');
+          end if;
+        end loop;
+
+      -- vložíme [after] nových uzlů za náhodně zvolený uzel testovacího stromu [tree]
+      for i in 1..before loop
+        -- náhodně vybereme nějaký uzel [item^.node] z testovacího stromu [tree]
+        item:=get_rand_item(^node_list);
+
+        -- pokud uzel [item^.node] není kořen, pak mu přidáme pravého souseda
+        if item^.node<>tree.get_root then
+          -- určíme počet uzlů v testovacím stromu [tree]
+          node_count:=tree.count;
+
+          -- vytvoříme nový uzel [node] a vložíme ho do testovacího stromu [tree] jako nového pravého
+          -- souseda uzlu [item^.node]
+          new node;
+          node^.value:=random_unsigned mod 100;
+          tree.insert_node(node,item^.node,id_insert_after);
+
+          -- testujeme, zda se počet uzlů v testovacím stromě zvětšil o 1
+          fail_if_false(tree.count=node_count+1,'Expected count of nodes is not equal (insert after)');
+
+          -- do spojového seznamu [node_list] uzlů testovacího stromu [tree] vložíme ukazatel na nový
+          -- uzel [new_item] testovacího stromu [tree] (vložíme za složku [item], která obsahuje ukazatel
+          -- na "nejpravější" uzel uzlu [item^.node])
+          new new_item;
+          new_item^.node:=node;
+
+          -- do pomocné proměnné uložíme počet uzlů v podstromu mající za svůj kořen uzel [item^.node]
+          -- a v seznamu uzlů [node_list] se posuneme na nejpravější uzel uzlu [node]
+          node_count:=tree.get_node_count(item^.node)-1;
+          for j in 1..node_count loop
+            item:=item^.next;
+            end loop;
+
+          -- vložíme ukazatel na nový uzel stromu do seznamu [node_list] za složku [item]
+          node_list.insert_after(item,new_item);
+
+          -- testujeme iterátor a strukturu uzlů v testovacím stromě [tree]
+          fail_if_false(compare_nodes_with_list(^tree,^node_list),'Order of nodes of test tree is not expected');
+          end if;
+        end loop;
+
+      -- smažeme všechny uzly testovacího stromu [tree]
+      tree.delete_all;
+
+      -- testujeme, zda je testovací strom [tree] prázdný
+      fail_if_false(tree.count=0,'Tree is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_child:=8;
+      max_level:=6;
+      before:=100;
+      after:=100;
+      end entry;
+    
+    end c_inserting_common_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_removing_common_tree_test_case =
+-- Testovací třída pro odebírání uzlů včetně všech jejich potomků a pro spojování dvou stromů v jeden
+-- strom (viz. metody [split_subtree] a [merge_subtree]). Uzel je typu [c_test_tree_node], tj. obsahuje
+-- hodnotu [value]. Třída rovněž testuje iterátor pro průchod stromem v prefixovém pořadí a v
+-- inverzním postfixovém pořadí (test je proveden za pomoci volání metody [compare_nodes_with_list]).
+--
+-- Upozornění: Inicializační metoda [entry] nastavuje maximální úroveň testovacího stromu (viz proměnná
+-- [max_level]) a maximální počet potomků každého uzlu (viz proměnná [max_child]). Jelikož tyto para-
+-- metry značně ovlivňují velikost stromu (počet jeho uzlů), nedoporučuje se z důvodu velké časové
+-- náročnosti volit tyto parametry vysoké. Velikost stromu, při níž je "výpočet ještě časově únosný",
+-- odpovídá nastavení parametrů tak, aby cca.: [max_cild]~[max_level]<=500 000 - 700 000.
+--
+-- Princip: Vytvoříme testovací strom [tree] mající maximálně [max_level] úrovní (úroveň odpovídá
+-- maximální výšce resp. hloubce stromu), přičemž každý uzel obsahuje maximálně [max_child] potomků.
+-- Každý uzel je ohodnocen náhodnou hodnotou [value]. Strom je vytvořen voláním procedury [create_tree].
+-- Tato procedura vrací ukazatel na seznam [node_list], což je seznam všech uzlů testovacího stromu
+-- [tree], v němž jsou jednotlivé položky setříděny tak, jak jednolivé uzly ve stromě vznikaly.
+-- Po vytvoření stromu probíhá test, ve kterém postupně vybereme všechny uzly testovacího stromu
+-- [tree], a tyto uzly z testovacího stromu vyjmeme včetně všech jejich potomků a vytvoříme nový
+-- strom [subtree]. Testujeme, zda testovací strom [tree] a nový strom [subtree] obsahují očekávaný
+-- počet uzlů. Poté testovací strom [tree] a nový strom [subtree] spojíme v jeden strom a testujeme,
+-- zda uzly obou stromů mají očekávané hodnoty a dále testujeme strukturu testovacího stromu [tree]
+-- pomocí procedury [compare_nodes_with_list] (ta rovněž testuje iterátor pro průchod testovacím
+-- stromem [tree]). Na závěr testovací strom [tree] smažeme (všechny jeho uzly) a testujeme, zda je
+-- prázdný.
+----------------------------------------------------------------------------------------------------
+    use
+      supervised c_test_tree_node;
+
+    var
+      max_child    : t_unsigned;                 -- maximální počet potomků uzlu testovacího stromu
+      max_level    : t_unsigned;                 -- maximální počet úrovní testovacího stromu
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      tree         : aliased c_tree;             -- testovací strom
+      node_list    : aliased c_list;             -- seznam obsahující ukazatele na všechny uzly stromu [tree]
+      subtree      : aliased c_tree;             -- nová instance stromu, která bude obsahovat vyjmutý
+                                                 -- podstrom z testovacího stromu [tree]
+      node         : p_test_tree_node;           -- uzel testovacího stromu [tree]
+      curr_node    : p_test_tree_node;           -- uzel testovacího stromu [tree]
+      item         : p_test_nodes_item;          -- složka seznamu [node_list] uzlů testovacího
+                                                 -- stromu [tree]
+      count        : t_unsigned;                 -- počet uzlů v testovacím stromu [tree]
+      sub_nodes    : t_unsigned;                 -- počet uzlů v podstromu (jehož kořenem je uzel
+                                                 -- [node]) testovacího stromu [tree]
+      direction    : t_insert_direction;         -- pozice vkládání (mergování) podstromu [subtree]
+                                                 -- do testovacího stromu [tree]
+      list_iterator: c_list_iterator;            -- iterátor pro průchod seznamu uzlů [node_list]
+
+    begin
+      -- vytvoříme testovací strom [tree], ukazatel na všechny jeho uzly budou uloženy ve spojovém
+      -- seznamu [node_list]
+      create_tree(^tree,nil,^node_list,max_child,0,max_level);
+
+      -- určíme počet uzlu v testovacím stromu [tree]
+      count:=tree.count;
+
+      -- inicializace iterátoru pro průchod seznamem [node_list]
+      list_iterator.init(node_list,tlwd_forward);
+
+      -- dokud není neprojdeme všechny složky seznamu uzlů [node_list], vybíráme nové složky
+      while list_iterator.get(item) loop
+        -- náhodně vybereme uzel testovacího stromu [node]
+        item:=get_rand_item(^node_list);
+        node:=item^.node;
+
+        -- zjistíme počet uzlů v podstromu jehož kořenem je uzel [node] (včetně uzlu [node])
+        sub_nodes:=tree.get_node_count(node);
+
+        -- jelikož ze stromu [tree] vyjmeme podstrom [subtree] s kořenem [node] a poté ho vložíme zpět,
+        -- je nutné si zapamatovat, kam budume zpětně vkládat podstrom [subtree] - to rozhodneme
+        -- podle následujících čtyřech případů:
+        -- je uzel [node] kořen testovacího stromu [tree]?
+        if node=tree.get_root then
+          -- Ano => bude vyjmut celý strom [tree] => podstrom [subtree] poté budeme vkládat do
+          -- prázdného stromu
+          curr_node:=nil;
+          direction:=id_add;
+        -- má uzel [node] levého souseda?
+        elsif node^.prev<>nil then
+          -- Ano => podstrom [subtree] budeme vkládat jako pravého souseda současného levého souseda
+          -- uzlu [node]
+          curr_node:=node^.prev;
+          direction:=id_insert_after;
+        -- má uzel [node] pravého souseda?
+        elsif node^.next<>nil then
+          -- Ano => podstrom [subtree] budeme vkládat jako levého souseda současného pravého souseda
+          -- uzlu [node]
+          curr_node:=node^.next;
+          direction:=id_insert_before;
+        -- uzel nemá ani levého ani pravého souseda, ale má předka
+        else
+          -- => podstrom [subtree] budeme vkládat jako přímého potomka současného předka uzlu [node]
+          curr_node:=node^.up;
+          direction:=id_add_child;
+          end if;
+
+        -- vyjmeme podstrom mající kořen [node] z testovacího stromu [tree] a vložíme jej do nové
+        -- instance [subtree]
+        tree.split_subtree(node,subtree);
+
+        -- testujeme, zda počet uzlů v testovacím stromu [tree] odpovídá očekávané hodnotě
+        fail_if_false(tree.count=count-sub_nodes,'Expected count of splitted tree is not equal');
+
+        -- tesujteme, zda počet uzlů v novém podstromu [subtree] odpovídá očekávané hodnotě
+        fail_if_false(subtree.count=sub_nodes,'Expected count of new tree is not equal');
+
+        sub_nodes:=tree.count;
+
+        -- spojíme testovací strom [tree] s novým podstromem [subtree]
+        tree.merge_subtree(subtree,curr_node,direction);
+
+        sub_nodes:=tree.count;
+
+        -- testujeme, zda počet uzlů v testovacím stromu odpovídá původnímu počtu uzlů
+        fail_if_false(tree.count=count,'Expexted count aftre merging tree is not equal');
+
+        -- testujeme, zda podstrom [tree] je prázdný
+        fail_if_false(subtree.is_empty,'Subtree is not empty');
+
+        -- testujeme strukturu testovacího stromu [tree] a iterátor pro průchod stromem
+        fail_if_false(compare_nodes_with_list(^tree,^node_list),'Order of nodes of test tree is not expected');
+        end loop;
+
+      -- smažeme všechny uzly v testovacím stromu [tree]
+      tree.delete_all;
+
+      -- testujeme, zda testovací strom [tree] je prázdný
+      fail_if_false(tree.is_empty,'Test tree is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_child:=9;
+      max_level:=6;
+      end entry;
+    
+    end c_removing_common_tree_test_case;
+
+  end common_trees_test;

@@ -1,0 +1,79 @@
+﻿----------------------------------------------------------------------------------------------------
+module public hash_table_test =
+-- Test of Classes library - Hash tables.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public c_storing_hash_table_test_case = extend c_test_case;
+-- Testovací třída pro vkládání nových složek do hashovací tabulky. Hashovací tabulka je instance
+-- třídy [c_test_hash_table], která prvně vložené složce přiřadí ID rovné 0, druhé složce ID rovné
+-- 1, atd... Jednotlivé složky jsou instnace třídy [c_test_item], mající jediný datový člen - hodnotu
+-- [value] - ta je shodná se svým ID.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Poté pomocí procedury [test_content] testujeme obsah a strukturu testovací
+-- hashovací tabulky [hash_table]. Procedura rovněž testuje funkčnost metod pro získání předchozí
+-- a následující složky libovolné složky hashovací tabulky. Na závěr odstraníme všechny složky
+-- hashovací tabulky a testujeme, zda je prázdná.
+----------------------------------------------------------------------------------------------------
+
+    end c_storing_hash_table_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_removing_hash_table_test_case = extend c_test_case;
+-- Testovací třída pro odebírání složek z hashovací tabulky. Hashovací tabulka je instance
+-- třídy [c_test_hash_table], která prvně vložené složce přiřadí ID rovné 0, druhé složce ID rovné
+-- 1, atd... Jednotlivé složky jsou instnace třídy [c_test_item], mající jediný datový člen - hodnotu
+-- [value] - ta je shodná se svým ID.
+--
+-- Poznámka: Jelikož třída používá pro ověření správné struktury hashovací tabulky spojový seznam
+-- [item_list] a jeho průchod a vyhledávání v něm je značně pomalý (při velkém počtu složek), nedo-
+-- poručuje se nastavovat počet složek hashovací tabulky [item_count] na velké hodnoty. Optimální je
+-- [item_count] <= 10000.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Poté pomocí procedury [test_content] testujeme obsah a strukturu testovací
+-- hashovací tabulky [hash_table], přičmž do seznamu [item_list] vložíme ukazatele na jednotlivé
+-- složky tabulky [hash_table]. Poté následuje vlatní test, kdy v cyklu (dokud nevyčerpáme všechny
+-- složky seznamu [item_list]) odebíráme náhodné složky hashovací tabulky [hash_table]. Při tom
+-- testujeme, zda počet zbylých složek hashovací tabulky odpovídá očekávané hodnotě a dále testujeme
+-- obsah a vnitřní strukturu hashovací tabulky [hash_table]. Po odebrání všech složek testujeme, zda
+-- je tabulka [hash_table] prázdná.
+----------------------------------------------------------------------------------------------------
+
+    end c_removing_hash_table_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_finding_hash_table_test_case = extend c_test_case;
+-- Testovací třída pro odebírání složek z hashovací tabulky. Hashovací tabulka je instance
+-- třídy [c_test_hash_table], která prvně vložené složce přiřadí ID rovné 0, druhé složce ID rovné
+-- 1, atd... Jednotlivé složky jsou instnace třídy [c_test_item], mající jediný datový člen - hodnotu
+-- [value] - ta je shodná se svým ID.
+--
+-- Poznámka: Jelikož třída používá pro ověření správné struktury hashovací tabulky spojový seznam
+-- [item_list] a jeho průchod a vyhledávání v něm je značně pomalý (při velkém počtu složek), nedo-
+-- poručuje se nastavovat počet složek hashovací tabulky [item_count] na velké hodnoty. Optimální je
+-- [item_count] <= 10000.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Poté pomocí procedury [test_content] testujeme obsah a strukturu testovací
+-- hashovací tabulky [hash_table], přičmž do seznamu [item_list] vložíme ukazatele na jednotlivé
+-- složky tabulky [hash_table]. Poté následuje vlatní test, kdy v cyklu (dokud nevyčerpáme všechny
+-- složky seznamu [item_list]) odebíráme náhodné složky hashovací tabulky [hash_table]. Při tom
+-- testujeme, zda počet zbylých složek hashovací tabulky odpovídá očekávané hodnotě a dále testujeme
+-- obsah a vnitřní strukturu hashovací tabulky [hash_table]. Po odebrání všech složek testujeme, zda
+-- je tabulka [hash_table] prázdná.
+----------------------------------------------------------------------------------------------------
+
+    end c_finding_hash_table_test_case;
+
+  end hash_table_test;

@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private files =
 -- Files.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -46,7 +46,7 @@ begin
 
 
 ----------------------------------------------------------------------------------------------------
-class private c_filesystem_object =
+class   private c_filesystem_object =
 -- Filesystem class.
 ----------------------------------------------------------------------------------------------------
 -- This class is used as a general ancestor for all filesystem objects, such as c_drive, c_folder
@@ -107,8 +107,91 @@ class private c_filesystem_object =
     -- Returns requested date and time information. When the subprogram fails, [res] is set to 
     -- [tfe_get_info].
     ------------------------------------------------------------------------------------------------
+
+      ----------------------------------------------------------------------------------------------
+      procedure win32_filetime_to_flex_datetime (
+          filetime : in class windows.windef.t_FILETIME)
+          return t_datetime =
+      -- Festival of B&D!
+      ----------------------------------------------------------------------------------------------
+      -- %%TODO(DATETIME) prejit na [c_gregorian_calendar]
+      -- %%TODO presunout tuhle funkci nekam jinam?
+
+      var
+        systime    : windows.winbase._SYSTEMTIME;
+        calendar   : c_julian_calendar;
+        decomposed : c_julian_calendar.t_decomposed_datetime;
+
+      begin
+        if not windows.winbase.FileTimeToSystemTime(^filetime,systime) then
+          --?
+          raise calendar_error;
+          end if;
+        --%%TODO(DATETIME) co je to tick?
+        --decomposed.tick:=c_julian_calendar.t_dt_tick(systime.wMilliseconds)*10000;
+        decomposed.second:=c_julian_calendar.t_dt_second(systime.wSecond);
+        decomposed.minute:=c_julian_calendar.t_dt_minute(systime.wMinute);
+        decomposed.hour:=c_julian_calendar.t_dt_hour(systime.wHour);
+        decomposed.day:=c_julian_calendar.t_dt_month_day(systime.wDay);
+        decomposed.month:=c_julian_calendar.t_dt_month(systime.wMonth);
+        decomposed.year:=c_julian_calendar.t_dt_year(systime.wYear);
+        decomposed.era:=1;
+        calendar.compose_datetime(decomposed,result);
+        end win32_filetime_to_flex_datetime;
+
+
+
+    var
+      handle       : windows.windef.winnt.t_handle;
+      ctime        : windows.windef._filetime;
+      atime        : windows.windef._filetime;
+      mtime        : windows.windef._filetime;
+
     begin
-      raise feature_not_implemented;
+      -- open the file
+      declare var
+        sys_name   : windows.windef.winnt.pwstr; -- system name
+        text_name  : p_text_name;
+      begin
+        -- prepare UNICODE ASCIIZ file name
+        -- %%FLEX return of t_char32ustr
+        begin
+          name.compose_name(text_name);
+          to_system_string(text_name^,sys_name);
+        leave
+          discard text_name;
+          end;
+      
+        handle:=windows.winbase.CreateFileW(sys_name,0,windows.windef.winnt.FILE_SHARE_READ,nil,windows.winbase.OPEN_EXISTING,0,0);
+      leave
+        discard sys_name;
+        end declare;
+
+      -- check if there is a problem
+      if handle=windows.winbase.INVALID_HANDLE_VALUE then
+        set_error(tfe_open);
+        return;
+        end if;
+
+      -- query the file date/time
+      if windows.winbase.GetFileTime(handle,ctime,atime,mtime)
+        then
+          case kind
+            when tfdk_creation          do result:=win32_filetime_to_flex_datetime(ctime);
+            when tfdk_last_access       do result:=win32_filetime_to_flex_datetime(atime);
+            when tfdk_last_modification do result:=win32_filetime_to_flex_datetime(mtime);
+            end case;
+          set_ok;
+
+        else
+          set_error(tfe_get_info);
+        end if;
+
+    leave
+      -- close the file
+      if not windows.winbase.CloseHandle(handle) then
+        -- so what?
+        end if;
       end get_datetime;
 
 
@@ -352,7 +435,7 @@ class private c_file =
           nil,
           oflag{windows.winbase.open_existing},
           windows.windef.dword(sys_flags),
-          {windows.winbase.}null_handle);
+          null_handle);
 
       leave
         -- free temporary name
@@ -696,6 +779,50 @@ class private c_file =
 
 
     ------------------------------------------------------------------------------------------------
+    static delete_file =
+    -- Deletes the file.
+    -- When the delete operation fails due to any kind of error, [res] is set to [tfe_delete].
+    ------------------------------------------------------------------------------------------------
+    var
+      sys_name     : windows.windef.winnt.pwstr; -- system name
+      text_name    : p_text_name;
+
+    begin
+      -- prepare UNICODE ASCIIZ file name
+      -- %%FLEX return of t_char32ustr
+      begin
+        name.compose_name(text_name);
+        to_system_string(text_name^,sys_name);
+      leave
+        discard text_name;
+        end;
+    
+      if windows.winbase.DeleteFileW(sys_name)
+        then set_ok;
+        else set_error(tfe_delete);
+        end if;
+    leave
+      discard sys_name;
+      end delete_file;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_input_stream =
+    -- Temporary, to be removed once interfaces (abstract classes) will work.
+    ------------------------------------------------------------------------------------------------
+    var
+      os           : p_file_input_stream;
+
+    begin
+      new os;
+      os^.init(^this,init_ofs);
+      result:=os;
+      end get_input_stream;
+
+
+
+    ------------------------------------------------------------------------------------------------
     static get_output_stream =
     -- Temporary, to be removed once interfaces (abstract classes) will work.
     ------------------------------------------------------------------------------------------------
@@ -704,7 +831,7 @@ class private c_file =
 
     begin
       new os;
-      os^.init(^this);
+      os^.init(^this,init_ofs);
       result:=os;
       end get_output_stream;
 
@@ -980,7 +1107,7 @@ class private c_folder =
         -- open file
         handle:=windows.winbase.createfilew(
           sys_name^,sys_rights,sys_sharing,nil,windows.winbase.open_existing,
-          sys_flags,windows.winbase.null_handle)
+          sys_flags,null_handle)
 
       leave
         -- free temporary name
@@ -1106,8 +1233,12 @@ class private c_folder =
     -- 
     ------------------------------------------------------------------------------------------------
     begin
-      result.init_decomposed_name(this.name);
-      result.name.join_after(sub_folder);
+      new sub_folder;
+      sub_folder^.init_decomposed_name(this.name);
+      sub_folder^.name.join_after(sub_folder_name);
+
+    rollback
+      discard sub_folder;
       end get_sub_folder;
 
 
@@ -1123,6 +1254,18 @@ class private c_folder =
       files.register_trigger(^files_trigger);
       folders.register_trigger(^folders_trigger);
       end entry;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- discard content of files and folders
+      files.delete_all;
+      folders.delete_all;
+      end exit;
 
     end c_folder;
 

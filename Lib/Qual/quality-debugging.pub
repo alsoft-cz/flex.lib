@@ -1,0 +1,181 @@
+﻿----------------------------------------------------------------------------------------------------
+module public debugging =
+-- Debug statements + low-level logging
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Příklad loggování výpisů během testů
+--
+--  Setup tests information:                                              {Info před zahájením testů}                              
+--    Registred tests:
+--      addition test
+--      multiplication test
+--      substraction test
+--    Tests loop count:                      3
+--
+--  Testing                                                               {Info během provádění každého testu}
+--    addition test ... falied
+--    multiplication test ... OK
+--    multiplication test ... OK
+--    multiplication test ... OK
+--    substraction test ... falied
+--    substraction test ... falied
+--    substraction test ... falied
+--
+--  Test result info:                                                     {Info po skončení testů}
+--    Date/time of test start:               2004-03-30 12:34:15.0        \
+--    Date/time of test stop:                2004-03-30 12:34:15.0         \ 
+--    Testing duration (ms):                 0                              \
+--                                                                           \
+--    Total number of tests:                 7                                \
+--                                                                             \
+--    Tests succeeded:                       3                                  \
+--      "multiplication test"    2004-03-30 12:34:15.0 (0 ms)                    \
+--      "multiplication test"    2004-03-30 12:34:15.0 (0 ms)                     \ - {Info získané voláním [get_results]
+--      "multiplication test"    2004-03-30 12:34:15.0 (0 ms)                     /
+--                                                                               /
+--    Tests failed:                          4                                  /
+--      "addition test"    2004-03-30 12:34:15.0 1                             /
+--      "substraction test"    2004-03-30 12:34:15.0 1                        /
+--      "substraction test"    2004-03-30 12:34:15.0 2                       /
+--      "substraction test"    2004-03-30 12:34:15.0 3                      /
+--                                                                         /
+--    Test errors:                           0                            /
+
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.datetime;
+
+-- dopředné deklarace
+class abstract c_quality_formatter;     type p_quality_formatter = ^class c_quality_formatter;
+class c_console_quality_formatter;      type p_console_quality_formatter = ^class c_console_quality_formatter;
+class c_file_quality_formatter;         type p_file_quality_formatter = ^class c_file_quality_formatter;
+
+----------------------------------------------------------------------------------------------------
+procedure write_setup_before_all_tests (
+    formatter      : in p_quality_formatter;     -- výstupní formatter
+    test_list      : in p_list;                  -- pointer na seznam testů
+    loop_count     : in t_test_loop_count);      -- počet opakování testů
+-- Pošle do výstupního formatteru [formatter] setupu celého testsuitu, tj:
+--   jména všech registrovaných testů
+--   počet opakování testů
+----------------------------------------------------------------------------------------------------
+procedure write_results_after_all_tests (
+    formatter      : in p_quality_formatter;     -- výstupní formatter
+    start          : in t_datetime;              -- čas zahájení prvního testu
+    stop           : in t_datetime);             -- čas ukončení posledního testu
+-- Pošle do výstupního formatteru [formatter] časové informace testování, tj:
+--   datum a čas zahájení prvního testu
+--   datum a čas ukončení posledního testu
+--   celkovou dobu provádění testů, tj. rozdíl dvou předchozích hodnot
+----------------------------------------------------------------------------------------------------
+procedure write_testing (
+    formatter      : in p_quality_formatter);    -- výstupní formatter
+-- Pošle do výstupního formatteru [formatter] textový řetězec 'Testing'.
+----------------------------------------------------------------------------------------------------
+procedure write_start_test_name (
+    formatter      : in p_quality_formatter;     -- výstupní formatter
+    test_name      : t_char32str);               -- název testu
+-- Pošle do výstupního formatteru [formatter] název testu, který právě probíhá.
+----------------------------------------------------------------------------------------------------
+procedure write_result_OK (
+    formatter      : in p_quality_formatter);    -- výstupní formatter
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (OK).
+----------------------------------------------------------------------------------------------------
+procedure write_result_failed (
+    formatter      : in p_quality_formatter);    -- výstupní formatter
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (failed).
+----------------------------------------------------------------------------------------------------
+procedure write_result_error (
+    formatter      : in p_quality_formatter);    -- výstupní formatter
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (error).
+----------------------------------------------------------------------------------------------------
+procedure write_results (
+    formatter      : in p_quality_formatter;     -- výstupní formatter
+    success_list   : in p_list;                  -- seznam výsledků úspěšných testů
+    failure_list   : in p_list;                  -- seznam výsledků neúspěšných testů
+    error_list     : in p_list;                  -- seznam výsledků chybných testů
+    total_count    : in t_unsigned;              -- celkový počet testů
+    success_count  : in t_unsigned;              -- celkový počet úspěšných testů
+    fail_count     : in t_unsigned;              -- celkový počet neúspěšných testů
+    error_count    : in t_unsigned);             -- celkový počet chybných testů
+-- Pošle do výstupního formatteru [formatter] informace o výsledcích testování, tj:
+--   celkový počet provedených testů,
+--   celkový počet úspěšných testů + jména všech testů, datum a čas zahájení, dobu trvání,
+--   celkový počet neúspěšných testů + jména všech testů, datum a čas zahájení, krok v cyklu, kdy došlo k selhání,
+--   celkový počet chybných testů + jména všech testů, datum a čas zahájení, krok v cyklu, kdy došlo k selhání.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_quality_formatter = extend c_stream_text_writer;
+-- Abstraktní formatter pro testovací knihovny.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract write (
+        text       : in t_char32ustr);           -- zapisovaný text
+    -- Vypíše text [text] do výstupního formatteru [formatter].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract write_line (
+        text       : in t_char32ustr);           -- zapisovaný text
+    -- Vypíše text [text] do výstupního formatteru [formatter] a posune se na nový řádek.
+    ------------------------------------------------------------------------------------------------
+
+    end c_quality_formatter;
+
+
+----------------------------------------------------------------------------------------------------
+{%%TODO(XML formatter) - navrhnout a implementovat formatter pro XML výstup}
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_console_quality_formatter = extend c_quality_formatter;
+-- Formatter pro standardní výstup pro testovací knihovny.
+-- Potřebný setup interních proměnných provádí inicializační metoda [entry].
+----------------------------------------------------------------------------------------------------
+
+  protected
+    var
+      console_stream: aliased c_console_output_stream; -- proud pro výstup do konzole
+      console_writer: aliased c_stream_text_writer;    -- konzolový formatter
+      writer       : p_text_writer;                    -- interní formatter pro výstup do konzole
+    ------------------------------------------------------------------------------------------------
+
+    end c_console_quality_formatter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_file_quality_formatter = extend c_quality_formatter;
+-- Formatter pro standardní výstup pro testovací knihovny.
+-- Jelikož je zapotřebí znát pro výstup jméno výstupního souboru, je v tomto případě pro nastavení
+-- interních proměnných místo inicializační metody [entry] implementovaná metoda [init], jíž předá-
+-- váme název výstupního souboru. Úklid provádí metoda [exit].
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    {%%TODO(init) - pro parametr [encode_tag] implicitní hodnotu [c_character_encoder_utf8:tag]}
+    virtual init (
+        file_name  : t_char32str;                -- jméno výstupního souboru
+        encoder_tag: t_tag);                     -- tag kódování
+    -- Otevře výstupní soubor pro zápis (pokud neexistuje, vytvoří ho, pokud existuje, přepíše ho) a
+    -- provádí inicializaci interních proměnných.
+    -- Parametr [encoder_tag] udává encoder kódování, implicitní je UTF-8.
+    -- Metoda se volá před prvním výpisem [write].
+    ------------------------------------------------------------------------------------------------
+
+  protected
+    var
+      file_stream  : aliased c_file_output_stream; -- proud pro výstup do souboru
+      file_writer  : aliased c_text_file_writer;   -- souborový formatter
+      encoder      : p_character_encoder;          -- encoder kódování
+      writer       : p_text_writer;                -- interní formatter pro výstup do souboru
+        
+    end c_file_quality_formatter;
+
+  end debugging;

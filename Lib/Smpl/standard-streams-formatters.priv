@@ -1,4 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
 class private abstract c_stream_generic_writer = 
 ----------------------------------------------------------------------------------------------------
 var
@@ -13,7 +18,7 @@ var
   begin
     --%%TODO(FLEX) call parent method p_stream_writer(^this)^.init_writer(target);
     _target:=target;
-    _isinicialized:=true;
+    _isinitialized:=true;
     --%%END TODO
 
     target^.get_lazy_buffer(is_lazy);
@@ -29,7 +34,7 @@ var
 
   begin
     if buffer<>nil then
-      create_packet(packet,buffer,bpos,t_dps_heap);
+      create_packet(packet,buffer,bpos,t_dps_dynamic);
       _target^.write_packet(packet);
       buffer:=nil;
       bpos:=0;
@@ -89,7 +94,9 @@ var
       flush_internal;
       end if;
     --%%TODO(FLEX) call parent method p_stream_writer(^this)^.close();
-    _target^.close();
+    if _isinitialized then
+      _target^.close();
+      end if;
     --%%END TODO
     end close;
 
@@ -136,7 +143,7 @@ var
           buffer^[bpos]:=_data^[i];
           succ bpos;
           end loop;
-        if style=t_dps_heap then
+        if style=t_dps_dynamic then
           discard _data;
           end if;
       else
@@ -183,7 +190,7 @@ var
 
   begin
     _data:unchecked:=^data;
-    write_internal(_data,t_data_byte:size,t_dps_temporary);
+    write_internal(_data,t_data_byte:size,t_dps_callstack);
     end write_byte;
 
 
@@ -196,7 +203,7 @@ var
 
   begin
     _data:unchecked:=^data;
-    write_internal(_data,t_unsigned32:size,t_dps_temporary);
+    write_internal(_data,t_unsigned32:size,t_dps_callstack);
     end write_unsigned32;
 
 
@@ -209,7 +216,7 @@ var
 
   begin
     _data:unchecked:=^data;
-    write_internal(_data,t_char32:size,t_dps_temporary);
+    write_internal(_data,t_char32:size,t_dps_callstack);
     end write_char32;
 
 
@@ -223,7 +230,7 @@ var
   begin
     if size>0 then
       _data:unchecked:=^data;
-      write_internal(_data,size,t_dps_temporary);
+      write_internal(_data,size,t_dps_callstack);
       end if;
     end write_unchecked;
 
@@ -238,7 +245,7 @@ var
   begin
     if size>0 then
       _data:unchecked:=^data;
-      write_internal(_data,size,t_dps_heap);
+      write_internal(_data,size,t_dps_dynamic);
       end if;
     end write_heap;
 
@@ -253,7 +260,7 @@ var
   begin
     if data:size>0 then
       _data:unchecked:=^data[0];
-      write_internal(_data,data:size,t_dps_temporary);
+      write_internal(_data,data:size,t_dps_callstack);
       end if;
     end write_array;
 
@@ -268,7 +275,7 @@ var
   begin
     if data:length>0 then
       _data:unchecked:=^data[1];
-      write_internal(_data,data:length,t_dps_temporary);
+      write_internal(_data,data:length,t_dps_callstack);
       end if;
     end write_string;
 
@@ -285,7 +292,7 @@ var
     if count>0 then
       _data:unchecked:=^data:unchecked;
       t_unsigned(_data:unchecked) + t_unsigned:size;
-      write_internal(_data,count*t_char32:size,t_dps_temporary);
+      write_internal(_data,count*t_char32:size,t_dps_callstack);
       end if;
     end write_text_part;
   end c_stream_generic_writer;
@@ -320,6 +327,8 @@ var
       sizebytes    : in static t_offset;         -- velikost dat, která se mají přečíst
       readbytes    : out t_offset;               -- velikost ktera byla prectena
       eod          : out t_logical) =
+  -- implementace korenove cteci procedury
+  -- pri vypnutem lazy, posila zdroji dat hint o velikosti packetu
   ------------------------------------------------------------------------------------------------
   var
     _data          : p_data_array;
@@ -331,13 +340,16 @@ var
       raise stream_end_of_data;
       end if;
     while (sizebytes>readbytes) loop
+      -- pokud v bufferu neni zadny packet, precti packe novy
       if packet.style=t_dps_invalid then
+         -- nastav hint o velikosti packetu
          options:=t_ro_default;
          if not is_lazy then
            options.maximal_size:=sizebytes-readbytes;
            end if;
         _source^.read_packet(packet,options);
         end if;
+      -- pokud jsou to data, zpracuj data
       if packet.style<>t_dps_signal then
         copy_from_packet(packet,position,_data,readbytes,sizebytes-readbytes);
         if position=packet.size then
@@ -345,10 +357,13 @@ var
           discard_packet(packet);
           packet:=nil;
           end if;
+      -- pokud je to signal
       else
+        -- end of data
         if packet.signal=t_dpss_eod then
           eod:=true;
           return;
+        -- je to jiny packet ktery neumim zpracovat
         else
           discard_packet(packet);
           packet:=nil;
@@ -459,9 +474,9 @@ var
   override c_stream_reader.init_reader =
   ------------------------------------------------------------------------------------------------
   begin
-    --%%TODO(FLEX) call parent method p_stream_reader(^this)^.init_reader(lazy);
+    --%%TODO(FLEX) call parent method p_stream_reader(^this)^.init_reader(source);
     _source:=source;
-    _isinicialized:=true;
+    _isinitialized:=true;
     --%%END TODO
     set_lazy_buffer(true);
     end init_reader;

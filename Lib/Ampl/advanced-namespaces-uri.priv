@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private uri =
 -- Additional namespace to standard.names, representing URIs.
--- Advanced Multi-platform Library.
+-- Flex Advanced Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- Created: 2004-01-13 by Petr K
@@ -734,7 +734,59 @@ class private c_namespace_uri =
     with
       supervised c_name;
 
-   ------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static split_formdata =
+    -- A helper function to parse application/x-www-form-urlencoded data, usually from a POST request.
+    ------------------------------------------------------------------------------------------------
+    var
+      start        : t_unsigned;
+      nd           : aliased t_namespace_specific_uri;
+      tmp_data     : p_text_name;
+      variable_list: c_list;
+      iter         : c_list_iterator;
+      item         : p_name_component;
+      variable     : p_name_component_variable;
+
+    begin
+      -- prepare a temporary query, i.e. data, prepended with a '?' separator
+      new tmp_data range data:length+1;
+      tmp_data^:='?';
+      tmp_data^ & data;
+
+      -- process the query to a list of components
+      start:=1;
+      process_query(tmp_data^,start,variable_list,^nd);
+      if start<=tmp_data^:length then
+        -- illegal data
+        raise name_error;
+        end if;
+
+      -- convert the list into the dictionary
+      iter.init(variable_list);
+      while iter.get(p_item(item)) loop
+        variable:=item;
+        -- has variable a value?
+        if variable^.subcomponents.first=variable^.subcomponents.last
+          -- no => insert only variable
+          then variables.insert_value(p_name_subcomponent_variable_name(variable^.subcomponents.first)^.name^,
+                 '');
+
+          -- yes => insert variable with its value
+          else
+            variables.insert_value(p_name_subcomponent_variable_name(variable^.subcomponents.first)^.name^,
+              p_name_subcomponent_variable_name(variable^.subcomponents.last)^.name^);
+            end if;
+        end loop;
+    leave
+      -- clean up
+      variable_list.delete_all;
+      discard tmp_data;
+      end split_formdata;
+
+
+
+    ------------------------------------------------------------------------------------------------
     override check_name =
     -- Check if the given plain-text name [text_name] is a valid name in this namespace.
     -- Returns true if it is.
@@ -861,7 +913,8 @@ class private c_namespace_uri =
       -- process the fragment part if present
       process_fragment(text_name, start, name^.components, nd);
 
-      name^.namespace_tag:=this:tag;
+      -- %%TODO(TAG) az se opravi this:tag, zrusit strechy
+      name^.namespace_tag:=(^this)^:tag;
       name^.namespace:=namespace_uri;
       end decompose_name;
 
@@ -983,6 +1036,7 @@ class private c_namespace_uri =
       nd           : p_namespace_specific_uri;   -- ns_data, only with the proper type
       len          : t_unsigned;                 -- length of the result
       curr_comp    : p_name_component;           -- currently processed component
+      last_comp    : p_name_component;           -- last processed component
       first        : t_logical;                  -- T-we are currently the first subcomponent
       iter         : c_list_iterator;            -- iterator through [curr_comp]'s subcomponents
       curr_domain  : p_name_subcomponent;        -- currently processed domain/port
@@ -1042,6 +1096,7 @@ class private c_namespace_uri =
 
       -- for non-relative names, even the first path segment has its "/"
       first:=nd^.name_type=tnt_relative;
+      last_comp:=nil;
       -- append path
       while curr_comp<>nd^.first_variable {and curr_comp<>nd^.first_param }and curr_comp<>nd^.fragment loop
         -- separator
@@ -1052,8 +1107,17 @@ class private c_namespace_uri =
 
         len+get_segment_length(p_name_component_file_or_folder(curr_comp)^);
         -- skip to the next component
+        last_comp:=curr_comp;
         curr_comp:=name^.components.get_next(curr_comp);
         end loop;
+
+      -- append a '/' if the last component is definitively a folder
+      -- %%TODO(96) Az se opravi internal error 96, do jedne podminky
+      if last_comp<>nil then
+        if last_comp^:tag>=c_name_component_folder:tag then
+          len+1;
+          end if;
+        end if;
 
       -- is there a query?
       if nd^.first_variable<>nil then
@@ -1139,6 +1203,7 @@ class private c_namespace_uri =
 
       -- for non-relative names, even the first path segment has its "/"
       first:=nd^.name_type=tnt_relative;
+      last_comp:=nil;
       -- append path
       while curr_comp<>nd^.first_variable and curr_comp<>nd^.first_param and curr_comp<>nd^.fragment loop
         -- separator
@@ -1149,8 +1214,17 @@ class private c_namespace_uri =
 
         append_segment(p_name_component_file_or_folder(curr_comp)^, text_name);
         -- skip to the next component
+        last_comp:=curr_comp;
         curr_comp:=name^.components.get_next(curr_comp);
         end loop;
+
+      -- append a '/' if the last component is definitively a folder
+      -- %%TODO(96) Az se opravi internal error 96, do jedne podminky
+      if last_comp<>nil then
+        if last_comp^:tag>=c_name_component_folder:tag then
+          text_name^ & "/";
+          end if;
+        end if;
 
       -- is there a query?
       if nd^.first_variable<>nil then
@@ -1370,7 +1444,7 @@ class private c_namespace_uri =
               -- extract username
               new name;
               new tmp range colon_pos-1;
-              tmp^:=str_copy(str, 1, colon_pos-1);
+              str_copy(str,1,colon_pos-1,tmp^);
               --uri_decode_in_place(tmp^);
               name^.set_name(tmp^);
               userinfo^.subcomponents.insert(name);
@@ -1379,7 +1453,7 @@ class private c_namespace_uri =
               -- extract password
               new password;
               new tmp range str:length-colon_pos;
-              tmp^:=str_copy(str, colon_pos+1, str:length);
+              str_copy(str,colon_pos+1,str:length,tmp^);
               --uri_decode_in_place(tmp^);
               password^.set_name(tmp^);
               userinfo^.subcomponents.insert(password);
@@ -1447,8 +1521,8 @@ class private c_namespace_uri =
 
           -- store the port specification, if present
           if colon_pos<str:length then
-            part^:=str_copy(str, colon_pos+1, str:length);
-            uri_decode_in_place(part^, false);
+            str_copy(str,colon_pos+1,str:length,part^);
+            uri_decode_in_place(part^,false);
             new port;
             port^.set_name(part^);
             net_addr^.port:=port;    -- %%TODO(TAG) remove
@@ -1466,7 +1540,7 @@ class private c_namespace_uri =
     begin
       -- create a temporary
       i:=start;
-      new part range text_name:length-i+1;
+      new part range text_name:length+1-i;
 
       -- find the length of the network address
       while i<=text_name:length and then text_name[i]<>"/" loop
@@ -1518,15 +1592,15 @@ class private c_namespace_uri =
         end if;
 
       -- process the variable name
-      tmp^:=str_copy(str, 1, equal_sign_pos-1);
+      str_copy(str,1,equal_sign_pos-1,tmp^);
       uri_decode_in_place(tmp^, true);
       new name;
       name^.set_name(tmp^);
       variable.subcomponents.insert(name);
 
       -- process the variable value (if present)
-      if equal_sign_pos<=str:length then
-        tmp^:=str_copy(str, equal_sign_pos+1, str:length);
+      if equal_sign_pos<str:length then
+        str_copy(str,equal_sign_pos+1,str:length,tmp^);
         uri_decode_in_place(tmp^, true);
         new value;
         value^.set_name(tmp^);
@@ -1720,9 +1794,14 @@ class private c_namespace_uri =
       if i<=text_name:length and then text_name[i]="?" then
         -- skip the "?" separator
         succ i;
+        if i>text_name:length then
+          -- empty query ('scheme://net/doc?')
+          start:=i;
+          return;
+          end if;
 
         -- allocate a temporary buffer
-        new part range text_name:length-i+1;
+        new part range text_name:length+1-i;
 
         -- split the query text to variables
         while i<=text_name:length and then text_name[i]<>"#" loop
@@ -1788,8 +1867,8 @@ class private c_namespace_uri =
         succ i;
 
         -- allocate a temporary buffer to decode the fragment
-        new part range text_name:length-i+1;
-        part^:=str_copy(text_name, i, text_name:length);
+        new part range text_name:length+1-i;
+        str_copy(text_name,i,text_name:length,part^);
 
         -- process and store the fragment
         new fragment;
@@ -1909,7 +1988,8 @@ class private c_namespace_http_uri =
       -- process the fragment part if present
       process_fragment(text_name, start, name^.components, nd);
 
-      name^.namespace_tag:=this:tag;
+      -- %%TODO(TAG) az se opravi this:tag, zrusit strechy
+      name^.namespace_tag:=(^this)^:tag;
       end decompose_name;
 
     end c_namespace_http_uri;
@@ -1956,7 +2036,8 @@ class private c_namespace_ftp_uri =
       -- process the fragment part if present (?)
       process_fragment(text_name, start, name^.components, nd);
 
-      name^.namespace_tag:=this:tag;
+      -- %%TODO(TAG) az se opravi this:tag, zrusit strechy
+      name^.namespace_tag:=(^this)^:tag;
       end decompose_name;
 
     end c_namespace_ftp_uri;
@@ -2000,7 +2081,17 @@ class private c_uri_name =
     static delete_variables =
     -- Delete all variables (and fragment information) from the name's component list.
     ------------------------------------------------------------------------------------------------
+    with
+      supervised c_name;
+
+    var
+      nd           : c_namespace_uri.p_namespace_specific_uri;
+
     begin
+      nd:=ns_data;
+      nd^.first_variable:=nil;
+      nd^.fragment:=nil;
+      
       while components.count>0 loop
         -- %%TODO az se opravi chyba kolem internal error 96, prepsat do normalni podoby
         if components.last^:tag=c_name_component_fragment:tag then
@@ -2011,6 +2102,44 @@ class private c_uri_name =
         components.delete_last;
         end loop;
       end delete_variables;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static is_normalized =
+    -- Returns true if this name is normalized, i.e. no "/./", "/../", "//" inside
+    ------------------------------------------------------------------------------------------------
+    var
+      iter         : c_list_iterator;
+      comp         : p_name_component;
+      sub_iter     : c_list_iterator;
+      subcomp      : p_name_subcomponent;
+
+    begin
+      iter.init(components);
+      while iter.get(p_item(comp)) loop
+        -- check only file/folder components
+        if comp^:tag>=c_name_component_file_or_folder:tag then
+          -- empty component?
+          if comp^.subcomponents.count=0 then
+            -- yes => not normal
+            return
+            end if;
+
+          -- check subcomponents
+          sub_iter.init(comp^.subcomponents);
+          while sub_iter.get(p_item(subcomp)) loop
+            -- only dots and spaces? (i.e. '.', '..', '...', '. .' etc.)
+            if str_count_character(subcomp^.name^,".")+str_count_character(subcomp^.name^," ")=subcomp^.name^:length then
+              return;
+              end if;
+            end loop;
+          end if;
+        end loop;
+      -- all tests passed=>OK
+      result:=true;
+      end is_normalized;
+
 
 
     ------------------------------------------------------------------------------------------------

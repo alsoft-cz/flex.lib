@@ -1,8 +1,11 @@
-﻿----------------------------------------------------------------------------------------------------
+﻿{%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
+                      homogenní data}
+
+----------------------------------------------------------------------------------------------------
 module private trees =
 -- Data structures - trees.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 -- K implemetaci iterátorů:
@@ -48,6 +51,685 @@ class private abstract c_binary_tree =
       avl          : t_logical;                  -- T-vyvažovat
       unique_key   : t_logical;                  -- T-pouze uzly se stejnými klíči
 
+
+    -- dopředné deklarace pomocných metod
+    ------------------------------------------------------------------------------------------------
+    static has_node_rec (
+        i_current_node : in p_binary_tree_node;  -- aktuální uzel
+        node           : in p_binary_tree_node)  -- hledaný uzel
+        return t_logical;                        -- T-uzel nalezen
+    -- Vrací [true], pokud je [node] prvkem stromu.
+    ------------------------------------------------------------------------------------------------
+    static insert_left (
+        node       : in p_binary_tree_node;      -- aktuální uzel 
+        new_node   : in p_binary_tree_node);     -- vkládaný uzel
+    -- Přidá uzel [new_node] pod uzel [node] zleva, pokud je volné místo.
+    ------------------------------------------------------------------------------------------------
+    static insert_right (
+        node       : in p_binary_tree_node;      -- aktuální uzel 
+        new_node   : in p_binary_tree_node);     -- vkládaný uzel
+    -- Přidá uzel [new_node] pod uzel [node] zprava, pokud je volné místo.
+    ------------------------------------------------------------------------------------------------
+    static compute_balance (
+        node       : in p_binary_tree_node);     -- pointer na uzel stromu
+    -- Spočte váhu [weight] a hloubku [depth] uzlu [node] podle jeho levého a pravého potomka, pokud
+    -- uzel [node] existuje, tj. není [nil].
+    ------------------------------------------------------------------------------------------------
+    static remove_balance (
+        node       : in out p_binary_tree_node;  -- pointer na uzel stromu
+        rem        : in out t_logical);          -- [false] pokud nedošlo ke změně váhy uzlu [node]
+                                                 -- po LL nebo RR rotaci
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu ze stromu.
+    -- Pokud byla provedena LL nebo RR rotace uzlu [node] a nedošlo ke změně váhy uzlu [node],
+    -- nastaví [rem] na [false] a již nedojde k žádné rotaci u všech předků uzlů [node].
+    ------------------------------------------------------------------------------------------------
+    static remove_balance_left (
+        node       : in out p_binary_tree_node)  -- pointer na uzel stromu
+        return t_logical;
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu některého pravého
+    -- potomka uzlu [node] (nevyváženost vznikla v levém podstromu uzlu [node]).
+    -- Vrací [false], pokud při LL rotaci nedošlo ke změně váhy uzlu, což implikuje ukončení provádění
+    -- rotací všech předků uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static remove_balance_right (
+        node       : in out p_binary_tree_node)  -- pointer na uzel stromu
+        return t_logical;
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu některého levého
+    -- potomka uzlu [node] (nevyváženost vznikla v pravém podstromu uzlu [node]).
+    -- Vrací [false], pokud při RR rotaci nedošlo ke změně váhy uzlu, což implikuje ukončení provádění
+    -- rotací všech předků uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static insert_balance (
+        node       : in out p_binary_tree_node); -- pointer na uzel stromu
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu do stromu.
+    ------------------------------------------------------------------------------------------------
+    static insert_balance_left (
+        node       : in out p_binary_tree_node); -- pointer na uzel stromu
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu některého levého
+    -- potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static insert_balance_right (
+        node       : in out p_binary_tree_node); -- pointer na uzel stromu
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu některého pravého
+    -- potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static rotate_left (
+        node       : in out p_binary_tree_node); -- pointer na uzel stromu
+    -- Provede LL rotaci uzlu [node]. Po provedení rotace spočte váhy levého a pravého potomka uzlu
+    -- [node] (pokud existují) a váhu samotného uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static rotate_right (
+        node       : in out p_binary_tree_node); -- pointer na uzel stromu
+    -- Provede RR rotaci uzlu [node]. Po provedení rotace spočte váhy levého a pravého potomka uzlu
+    -- [node] (pokud existují) a váhu samotného uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static insert_node (
+        node       : in out p_binary_tree_node;  -- předek nově vkládaného uzlu [new_node]
+        new_node   : in p_binary_tree_node);     -- nový vkládaný uzel
+    -- Rekurzivně vkládá nový uzel [new_node] do stromu, jako potomka uzlu [node]. Pokud klíč
+    -- vkládaného uzlu [new_node] již ve stromě existuje a je povoleno více výskytů téhož klíče
+    -- ve stromě, pak nový uzel [new_node] uzložíme jako pravého potomka. Pokud není povolen
+    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [tree_error].
+    ------------------------------------------------------------------------------------------------
+    static remove_node (
+        node       : in out p_binary_tree_node;  -- pointer na uzel stromu
+        rem_node   : in p_binary_tree_node;      -- pointer na uzel stromu, který má být vyjmut
+        removed    : out t_logical;              -- [true], pokud došlo k vyjmutí uzlu [rem_node]
+        original   : out p_binary_tree_node;     -- pointer na uzel, kterým byl nahrazen odstraněný
+                                                 -- uzel [rem_node], který obsahoval levého i pravého potomka
+        equal      : in t_logical);              -- [true] pokud jsme se při vyhledávání uzlu [rem_node]
+                                                 -- ve stromě [tree] posunuli do pravého podstromu uzlu [node]
+                                                 -- a to v případě, kdy klíče uzlů [node] a [rem_node] byly
+                                                 -- identické
+    -- Vyjme uzel [rem_node] ze stromu. Rekurzivně vyhledává ve stromě uzel [rem_node] od zadaného
+    -- uzlu [node] směrem ke koncovým uzlům. Pointer [original] uchovává uzel, kterým byl nahrazen
+    -- odstraněný uzel [rem_node], který obsahuje levého i pravého potomka. Pokud uzel [rem_node]
+    -- nebyl ve stromě nalezen, genereje metoda výjimku [tree_error].
+    -- Uzel [rem_node] musí být nejprve ve stromě [tree] nalezen. Přitom se mohlo stát, že vlivem rotací
+    -- při vyvažování mohl být pravý potomek (mající stejný klíč jako jeho předek) nějakého uzlu změněn
+    -- na levého potomka. V takovém případě při identickém klíči nejprve vyhledáváme uzel v pravém
+    -- podstromu uzlu a pokud ho v něm nenajdeme, prohledáváme navíc ještě v levém podstromu. Pokud
+    -- ho ani v takovým případě nenalezneme, generuje metoda výjimku [tree_error]. Kvůli dvojímu
+    -- prohledávání levého podstromu uzlu při identických klíčích je použita logická proměnná [equal].
+    ------------------------------------------------------------------------------------------------
+    static remove_both_children (
+        node       : in out p_binary_tree_node;  -- pointer na uzel stromu
+        curr       : in out p_binary_tree_node;  -- levý potomek uzlu [node]
+        removed    : out t_logical;              -- [true], pokud došlo k vyjmutí uzlu [rem_node]
+        original   : out p_binary_tree_node);    -- "nejpravější" uzel levého potomka uzlu [node]
+    -- Vyjme uzel [node] ze stromu. Je volána v případě, kdy má uzel [node] oba dva potomky. Uzel
+    -- [node] je nahrazen "nejpravějším" uzlem levého potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    static merge_subtree_rec (
+        node       : p_binary_tree_node);        -- kořenový uzel přidávaného stromu
+    -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
+    -- reprezentovanou instancí této třídy. Pokud uxistují dva uzly se stejným klíčem, je uzel 
+    -- do stromu vložen v závislosti na parametru [unique_key].
+    ------------------------------------------------------------------------------------------------
+    static delete_all_rec (
+        node       : in out p_binary_tree_node); -- rušená větev
+    -- Zruší celou větev stromu a uvolní jejich paměť. Mazání je rychlejší, je použita v metodě
+    -- delete_all. Při smazání větve nemusí již být strom vyvážen.
+    ------------------------------------------------------------------------------------------------
+    static find_rec (
+        tree       : p_binary_tree_node;         -- uzel stromu
+        node       : p_binary_tree_node)         -- uzel (resp. klíč), který ve stromě vyhledáváme
+        return p_binary_tree_node;
+    -- Rekurzivně vyhledá první uzel, který má klíč rovný [node].
+    ------------------------------------------------------------------------------------------------
+    static remove_subtree (
+        node       : in p_binary_tree_node;      -- uzel stromu, který bude novým kořenem podstromu,
+                                                 -- jež bude vyjmut
+        sub_count  : out t_unsigned)             -- počet uzlů v odebraném podstromu
+        return p_binary_tree_node;
+    -- Odebere podstrom, jehož kořenem bude uzel [node], ze stromu.
+    -- Pokud není uzel [node] ve stromu nalezen, generuje metoda výjimku [tree_error].
+    -- Procedura vrací pointer na kořen nového podstromu, který byl odebrán. Parametr [sub_count]
+    -- obsahuje počet uzlů v odebraném stromu. 
+    ------------------------------------------------------------------------------------------------
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static has_node_rec =
+    -- Vrací [true], pokud je [node] prvkem stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- hledaný uzel musí být definovaný
+      if i_current_node=nil then
+        result:=false;
+        return;
+        end if;
+
+      -- jsou si oba uzly rovny?
+      if i_current_node=node then
+        -- ano, vrátit True
+        result:=true;
+        return;
+        end if;
+
+      -- porovnat klíče uzlů
+      case compare(i_current_node,node)
+        -- je aktuální uzel větší než hledaný uzel?
+        when cr_bigger do
+            -- jdi doleva
+            result:=has_node_rec(i_current_node^.left,node);
+
+        -- je aktuální uzel menší než hledaný uzel?
+        when cr_smaller do
+            -- jdi doprava
+            result:=has_node_rec(i_current_node^.right,node);
+
+        -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
+        when cr_equal do
+            -- jedná se o avl strom s možností mít více stejných klíčů?
+            if avl and not unique_key then
+              -- ano, prohledat celý podstrom, nejříve pravý, pokud uzel nebude nalezen, prohledat levý
+              result:=has_node_rec(i_current_node^.right,node);
+              if not result then
+                result:=has_node_rec(i_current_node^.left,node);
+                end if;
+              return;
+
+            -- pokud to není avl, mohou být ve stromě uzly se stejnými klíči?
+            elsif not unique_key then
+              -- ano, jít doprava
+              result:=has_node_rec(i_current_node^.right,node);
+
+            -- hledaný uzel nebyl nalezen
+            else
+              result:=false;
+              return;
+              end if;
+        end case;
+      end has_node_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_root =
+    -- Vrátí kořenový uzel. Pokud uzel není definován, vrací NIL.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vrátí root node
+      result:=root;
+      end get_root; 
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_node_count =
+    -- Spočítá počet uzlů v podstromu včetně uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestliže [node] není definován, ukonči rekurzi
+      if node=nil then 
+        return;
+        end if;
+
+      -- počet uzlů je o jeden větší
+      succ count;
+
+      -- procházet stromem 
+      get_node_count(node^.left,count);
+      get_node_count(node^.right,count);
+      end get_node_count;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_left =
+    -- Přidá uzel [new_node] pod uzel [node] zleva, pokud je volné místo.
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node^.left=nil then
+        -- ano, vlož uzel doleva
+        new_node^.weight:=0;
+        new_node^.depth:=1;
+        new_node^.left:=nil;
+        new_node^.right:=nil;
+        new_node^.up:=node;
+        node^.left:=new_node;
+
+        -- zvýšit počet uzlů ve stromu o 1
+        succ count;
+        end if;
+      end insert_left;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_right =
+    -- Přidá uzel [new_node] pod uzel [node] zprava, pokud je volné místo.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- je vpravo volné místo?
+      if node^.right=nil then
+        -- ano, vlož uzel doprava
+        new_node^.weight:=0;
+        new_node^.depth:=1;
+        new_node^.left:=nil;
+        new_node^.right:=nil;
+        new_node^.up:=node;
+        node^.right:=new_node;
+
+        -- zvýšit počet uzlů ve stromu o 1
+        succ count;
+        end if;
+      end insert_right;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static compute_balance =
+    -- Spočte váhu [weight] a hloubku [depth] uzlu [node] podle jeho levého a pravého potomka, pokud
+    -- uzel [node] existuje, tj. není [nil].
+    ------------------------------------------------------------------------------------------------
+    var
+      left_depth   : t_unsigned;                 -- hloubka levého potomka
+      right_depth  : t_unsigned;                 -- hloubka pravého potomka
+
+    begin
+      -- pokud uzel [node] existuje, jeho spočteme hloubku a váhu
+      if node<>nil then
+        -- pokud existuje levý potomek uzlu [node], zjistíme jeho hloubku, je jeho váha 0
+        if node^.left<>nil
+          then left_depth:=node^.left^.depth;
+          else left_depth:=0;
+          end if;
+
+        -- pokud existuje pravý potomek uzlu [node], zjistíme jeho hloubku, jinak je jeho váha 0
+        if node^.right<>nil
+          then right_depth:=node^.right^.depth;
+          else right_depth:=0;
+          end if;
+
+        -- pokud je hloubka levého potomka větší než pravého, bude hloubka uzlu [node] o 1 větší
+        -- než hloubka levého potomka, jinak o 1 větší než hloubka pravého potomka
+        if left_depth>right_depth
+          then node^.depth:=1+left_depth;
+          else node^.depth:=1+right_depth;
+          end if;
+
+        -- určíme váhu uzlu [node] (rozdíl hloubky pravého potomka a hloubky levého potomka)
+        node^.weight:=t_signed(right_depth)-t_signed(left_depth);
+        end if;
+      end compute_balance;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_balance =
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu ze stromu.
+    -- Pokud byla provedena LL nebo RR rotace uzlu [node] a nedošlo ke změně váhy uzlu [node],
+    -- nastaví [rem] na [false] a již nedojde k žádné rotaci u všech předků uzlů [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node^.weight>1 then rem:=remove_balance_right(node);
+      elsif node^.weight<-1 then rem:=remove_balance_left(node);
+        end if;
+      end remove_balance;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_balance_left =
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu některého pravého
+    -- potomka uzlu [node] (nevyváženost vznikla v levém podstromu uzlu [node]).
+    -- Vrací [false], pokud při LL rotaci nedošlo ke změně váhy uzlu, což implikuje ukončení provádění
+    -- rotací všech předků uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    var
+      weight       : t_signed;                   -- váha uzlu [node]
+
+    begin
+      result:=true;
+      if node^.left<>nil then
+        -- je váha levého potomka nekladná?
+        if node^.left^.weight<=0
+
+          -- ano => LL rotace
+          then
+            -- uzložíme si váhu před LL rotací. Pokud se po provední rotace nezmění, ukončíme provádění
+            -- rotací u všech předků uzlu [node]          
+            weight:=node^.weight;
+
+            -- LL rotace
+            rotate_left(node);
+            if node^.weight=weight then result:=false; end if;
+
+          -- ne => LR rotace
+          else
+            rotate_right(node^.left);
+            rotate_left(node);
+            end if;
+        end if;
+      end remove_balance_left;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_balance_right =
+    -- Provede vyvážení uzlu [node] podle definice AVL po odebrání libovolného uzlu některého levého
+    -- potomka uzlu [node] (nevyváženost vznikla v pravém podstromu uzlu [node]).
+    -- Vrací [false], pokud při RR rotaci nedošlo ke změně váhy uzlu, což implikuje ukončení provádění
+    -- rotací všech předků uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    var
+      weight       : t_signed;                   -- váha uzlu [node]
+
+    begin
+      result:=true;
+      if node^.right<>nil then
+        -- je váha pravého potomka nezáporná?
+        if node^.right^.weight>=0
+
+          -- ano => RR rotace
+          then
+            -- uzložíme si váhu před RR rotací. Pokud se po provední rotace nezmění, ukončíme provádění
+            -- rotací u všech předků uzlu [node]          
+            weight:=node^.weight;
+
+            -- RR rotace
+            rotate_right(node);
+            if node^.weight=weight then result:=false; end if;
+
+          -- ne => RL rotace
+          else
+            rotate_left(node^.right);
+            rotate_right(node);
+            end if;
+        end if;
+      end remove_balance_right;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_balance =
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu do stromu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node^.weight>1 then insert_balance_right(node);
+      elsif node^.weight<-1 then insert_balance_left(node);
+        end if;
+      end insert_balance;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_balance_left =
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu některého levého
+    -- potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node^.left<>nil then
+        -- je váha levého uzlu záporná?
+        if node^.left^.weight<0
+          -- ano => LL rotace
+          then rotate_left(node);
+
+          -- ne => LR rotace
+          else
+            rotate_right(node^.left);
+            rotate_left(node);
+          end if;
+        end if;
+      end insert_balance_left;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_balance_right =
+    -- Provede vyvážení uzlu [node] podle definice AVL po přidání libovolného uzlu některého pravého
+    -- potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      if node^.right<>nil then
+        -- je váha pravého uzlu kladná?
+        if node^.right^.weight>0
+          -- Ano => RR rotace
+          then rotate_right(node);
+
+          -- Ne => RL rotace
+          else
+            rotate_left(node^.right);
+            rotate_right(node);
+            end if;
+        end if;
+      end insert_balance_right;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static rotate_left =
+    -- Provede LL rotaci uzlu [node]. Po provedení rotace spočte váhy levého a pravého potomka uzlu
+    -- [node] (pokud existují) a váhu samotného uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    var
+      p            : p_binary_tree_node;         -- pomocný pointer na uzel binárního stromu
+
+    begin
+      p:=node^.left;
+      p^.up:=node^.up;
+      node^.left:=p^.right;
+      if p^.right<>nil then p^.right^.up:=node; end if;
+      p^.right:=node;
+      node^.up:=p;
+      node:=p;
+
+      -- spočteme váhu a hloubku levého a pravého potomka uzlu [node] a uzlu [node]
+      compute_balance(node^.left);
+      compute_balance(node^.right);
+      compute_balance(node);
+      end rotate_left;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static rotate_right =
+    -- Provede RR rotaci uzlu [node]. Po provedení rotace spočte váhy levého a pravého potomka uzlu
+    -- [node] (pokud existují) a váhu samotného uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    var
+      p            : p_binary_tree_node;         -- pomocný pointer na uzel binárního stromu
+
+    begin
+      p:=node^.right;
+      p^.up:=node^.up;
+      node^.right:=p^.left;
+      if p^.left<>nil then p^.left^.up:=node; end if;
+      p^.left:=node;
+      node^.up:=p;
+      node:=p;
+
+      -- spočteme váhu a hloubku levého a pravého potomka uzlu [node] a uzlu [node]
+      compute_balance(node^.left);
+      compute_balance(node^.right);
+      compute_balance(node);
+      end rotate_right;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static insert_node =
+    -- Rekurzivně vkládá nový uzel [new_node] do stromu, jako potomka uzlu [node]. Pokud klíč
+    -- vkládaného uzlu [new_node] již ve stromě existuje a je povoleno více výskytů téhož klíče
+    -- ve stromě, pak nový uzel [new_node] uzložíme jako pravého potomka. Pokud není povolen
+    -- vícenásobný výskyt téhož klíče ve stromě, generuje metoda výjimku [tree_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      cmp          : t_compare_result;           -- výsledek porovnávání dvou uzlů
+
+    begin
+      -- porovnáme uzlu [new_node] a [node]
+      cmp:=compare(new_node,node);
+
+      -- podle výsledku porovnání vložíme nový uzel [new_node] do levého či pravého potomka
+      case cmp
+
+        -- klíč nového uzlu [new_node] je menší než klíč uzelu [node] => vkládáme do levého potomka
+        when cr_smaller do
+          -- obsahuje uzel [node] levého potomka?
+          if node^.left<>nil
+
+            -- ano => posuneme se do levého podstromu uzlu [node]
+            then insert_node(node^.left,new_node);
+
+            -- ne => nový uzel [new_node] se stane levým potomkem uzlu [node]
+            else insert_left(node,new_node);
+            end if;
+
+        -- klíč nového uzlu [new_node] je větší nebo roven klíči uzlu [node] => vkládáme do pravého potomka
+        when cr_bigger, cr_equal do
+          -- pokud je klíč stejný a není povolen vícenásobný výskyt téhož klíče ve stromě, generujeme
+          -- výjimku [tree_error]
+          if cmp=cr_equal and unique_key then
+            execute(event_error);
+            raise tree_error;
+            end if;
+
+          -- obsahuje uzel [node] pravého potomka?
+          if node^.right<>nil
+
+            -- ano => posuneme se do pravého podstromu uzlu [node]
+            then insert_node(node^.right,new_node);
+
+            -- ne => nový uzel [new_node] se stane pravým potomkem uzlu [node]
+            else insert_right(node,new_node);
+            end if;
+        end case;
+
+      -- přepočteme výhu a hloubku uzlu [node]
+      compute_balance(node);
+
+      -- pokud jde o AVL strom, provedeme případné rotace při nevyvážení
+      if avl then insert_balance(node); end if;
+      end insert_node;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_all_rec =
+    -- Zruší celou větev stromu a uvolní jejich paměť. Mazání je rychlejší, je použita v metodě
+    -- delete_all. Při smazání větve nemusí již být strom vyvážen.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- jestliže [node] není definován, ukončit rekurzi
+      if node=nil then 
+        return;
+        end if;
+
+      -- procházet stromem 
+      delete_all_rec(node^.left);
+      delete_all_rec(node^.right);
+
+      -- uvolnit uzel z paměti
+      discard node;
+      end delete_all_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static find_rec =
+    -- Rekurzivně vyhledá první uzel, který má klíč rovný [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializovat
+      result:=nil;
+
+      -- uzel nebyl nalezen
+      if tree=nil then return end if;
+
+      -- porovnat klíče uzlů
+      case compare(tree,node)
+        -- je aktuální uzel větší než hledaný uzel?
+        when cr_bigger do
+            -- jdi doleva
+            result:=find_rec(tree^.left,node);
+
+        -- je aktuální uzel menší než hledaný uzel?
+        when cr_smaller do
+            -- jdi doprava
+            result:=find_rec(tree^.right,node);
+
+        -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
+        when cr_equal do
+            result:=tree;
+        end case;
+      end find_rec;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_subtree =
+    -- Odebere podstrom, jehož kořenem bude uzel [node], ze stromu.
+    -- Pokud není uzel [node] ve stromu nalezen, generuje metoda výjimku [tree_error].
+    -- Procedura vrací pointer na kořen nového podstromu, který byl odebrán. Parametr [sub_count]
+    -- obsahuje počet uzlů v odebraném stromu. 
+    ------------------------------------------------------------------------------------------------
+    var
+      new_root     : p_binary_tree_node;         -- kořen nového stromu
+      root_h       : p_binary_tree_node;         -- pomocný pointer na kořen původního stromu
+
+    begin
+      -- uzel musí být ve stromě nalezen
+      if not has_node(node) then
+        -- není nalezen, chyba
+        execute(event_error);
+        raise tree_error;
+        end if;
+
+      -- kořen nového podstromu
+      new_root:=node;
+
+      -- je odpojovaný uzel různý od [root]?
+      if new_root^.up<>nil 
+        -- ano, různý od kořenu
+        then
+          -- odpojit uzel z původního stromu
+          if new_root^.up^.left=new_root
+            then new_root^.up^.left:=nil
+            else new_root^.up^.right:=nil
+            end if;
+
+        -- ne, vymazat celý strom 
+        else
+          root:=nil;
+          end if;
+
+      -- nastavit předka nového kořenu na nil
+      new_root^.up:=nil;
+
+      -- má se původní strom znovu ustanovit?
+      if avl then
+        -- nastavit počet uzlů původního stromu
+        count:=0;
+
+        -- vytvořit původní strom na proměnnou [root_h] pro vyvolání [merge_subtree]
+        root_h:=root;
+
+        -- zrušit celý původní strom a zapamatovat si původní [root] pro znovuustanovení
+        root:=nil;
+
+        -- znovupostavit strom
+        merge_subtree_rec(root_h);
+        end if;
+
+      -- spočítat počet uzlů v novém podstromu
+      sub_count:=0;
+      get_node_count(new_root,sub_count);
+
+      -- pokud nebyl strom znovu sestaven přes avl, spočítat počet uzlů v původním stromu
+      if not avl then
+        count-sub_count;
+        end if;
+
+      -- vracíme pointer na kořen nového podstromu
+      result:=new_root;
+    end remove_subtree;
+
+
+
     ------------------------------------------------------------------------------------------------
     static init =
     -- Inicializace stromu.
@@ -73,65 +755,6 @@ class private abstract c_binary_tree =
 
 
     ------------------------------------------------------------------------------------------------
-    static has_node_rec (
-        i_current_node : in p_binary_tree_node;  -- aktuální uzel
-        node           : in p_binary_tree_node)  -- hledaný uzel
-        return t_logical =                       -- T-uzel nalezen
-    -- Vrací [true], pokud je [node] prvkem stromu.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- hledaný uzel musí být definovaný
-      if i_current_node=nil then
-        result:=false;
-        return;
-        end if;
-
-      -- jsou si oba uzly rovny?
-      if i_current_node=node then
-        -- ano, vrátit True
-        result:=true;
-        return;
-        end if;
-
-      -- porovnat klíče uzlů
-      case compare(i_current_node,node)
-        -- je aktuální uzel větší než hledaný uzel?
-        when cn_bigger do
-            -- jdi doleva
-            result:=has_node_rec(i_current_node^.left,node);
-
-        -- je aktuální uzel menší než hledaný uzel?
-        when cn_smaller do
-            -- jdi doprava
-            result:=has_node_rec(i_current_node^.right,node);
-
-        -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
-        when cn_equal do
-            -- jedná se o avl strom s možností mít více stejných klíčů?
-            if avl and not unique_key then
-              -- ano, prohledat celý podstrom, nejříve pravý, pokud uzel nebude nalezen, prohledat levý
-              result:=has_node_rec(i_current_node^.right,node);
-              if not result then
-                result:=has_node_rec(i_current_node^.left,node);
-                end if;
-              return;
-
-            -- pokud to není alv, mohou být ve stromě uzly se stejnými klíči?
-            elsif not unique_key then
-              -- ano, jít doprava
-              result:=has_node_rec(i_current_node^.right,node);
-
-            -- hledaný uzel nebyl nalezen
-            else
-              result:=false;
-              return;
-              end if;
-        end case;
-      end has_node_rec;
-
-
-
-    ------------------------------------------------------------------------------------------------
     static has_node =
     -- Vrací [true], pokud je [node] prvkem stromu.
     ------------------------------------------------------------------------------------------------
@@ -148,541 +771,18 @@ class private abstract c_binary_tree =
 
 
     ------------------------------------------------------------------------------------------------
-    static get_root =
-    -- Vrátí kořenový uzel. Pokud uzel není definován, vrací NIL.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- vrátí root node
-      result:=root;
-      end get_root;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static node_weight (
-        node       : p_binary_tree_node)         -- zkoumaný uzel
-        return t_unsigned =                      -- váha uzlu
-    -- Vrátí váhu uzlu stromu.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- pokud uzel existuje, vrátit jeho váhu, pokud uzel neexistuje vrátit 0
-      if node=nil
-        then result:=0
-        else result:=node^.weight;
-        end if;
-      end node_weight;
-
-
-    
-    ------------------------------------------------------------------------------------------------
-    static ll_rot (
-        node       : in out p_binary_tree_node) =       -- kritický uzel
-    -- LL rotace.
-    ------------------------------------------------------------------------------------------------
-    var 
-      plnode          : p_binary_tree_node;      -- node^.left
-      pxrnode         : p_binary_tree_node;      -- node^.left^.right
-      weightleftright : t_unsigned;              -- node^.left^.right^.weight
-      nodeup          : p_binary_tree_node;      -- node^.up
-
-    begin
-      -- inicializovat proměnné
-      plnode:=node^.left;
-      pxrnode:=plnode^.right;
-      weightleftright:=node_weight(pxrnode);
-
-      -- rotace uzlů
-      node^.left:=pxrnode;
-      plnode^.right:=node;
-
-      -- nastavit váhy
-      node^.weight:=1+weightleftright;
-      plnode^.weight:=1+node^.weight;
-
-      -- nastavit zpětné ukazatele
-      plnode^.up:=node^.up;
-      nodeup:=node^.up;
-      node^.up:=plnode;
-      if pxrnode<>nil then
-        pxrnode^.up:=node;
-        end if;
-
-      -- byl [root] kritickým uzlem?
-      if node=root 
-        -- ano, nastavit nový root
-        then 
-          root:=plnode;
-
-        -- ne, navázat předka bývalého kritického uzlu na [plnode]
-        else
-          -- byl kritický uzel na předka navázán zleva? navaž uzel zleva, jinak zprava 
-          if nodeup^.left=node
-            then nodeup^.left:=plnode;
-            else nodeup^.right:=plnode;
-            end if;
-          end if;
-      
-      -- nastavit nový orotovaný uzel
-      node:=plnode;
-      end ll_rot;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static rr_rot (
-        node       : in out p_binary_tree_node) =       -- kritický uzel
-    -- RR rotace.
-    ------------------------------------------------------------------------------------------------
-    var 
-      prnode          : p_binary_tree_node;             -- node^.right
-      pxlnode         : p_binary_tree_node;             -- node^.right^.left
-      weightrightleft : t_unsigned;              -- node^.right^.left^.weight
-      nodeup          : p_binary_tree_node;             -- node^.up
-
-    begin
-      -- inicializovat proměnné
-      prnode:=node^.right;
-      pxlnode:=prnode^.left;
-      weightrightleft:=node_weight(pxlnode);
-
-      -- rotace uzlů
-      node^.right:=pxlnode;
-      prnode^.left:=node;
-
-      -- nastavit váhy
-      node^.weight:=1+weightrightleft;
-      prnode^.weight:=1+node^.weight;
-
-      -- nastavit zpětné ukazatele
-      prnode^.up:=node^.up;
-      nodeup:=node^.up;
-      node^.up:=prnode;
-      if pxlnode<>nil then
-        pxlnode^.up:=node;
-        end if;
-
-      -- byl [root] kritickým uzlem?
-      if node=root 
-        -- ano, nastavit nový root
-        then 
-          root:=prnode;
-
-        -- ne, navázat předka bývalého kritického uzlu na [prnode]
-        else
-          -- byl kritický uzel na předka navázán zleva? navaž uzel zleva, jinak zprava 
-          if nodeup^.left=node
-            then nodeup^.left:=prnode;  
-            else nodeup^.right:=prnode; 
-            end if;
-          end if;
-
-      -- nastavit nový orotovaný uzel
-      node:=prnode;
-      end rr_rot;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static dlr_rot (
-        node       : in out p_binary_tree_node) =       -- kritický uzel
-    -- dlr rotace.
-    ------------------------------------------------------------------------------------------------
-    var
-      plnode          : p_binary_tree_node;             -- node^.left
-      pxrnode         : p_binary_tree_node;             -- node^.left^.right
-      weightleftright : t_unsigned;              -- node^.left^.right^.weight
-      nodeup          : p_binary_tree_node;             -- node^.up
-
-    begin
-      -- inicializovat proměnné
-      plnode:=node^.left;
-      pxrnode:=plnode^.right;
-      weightleftright:=node_weight(pxrnode);
-
-      -- nastavit zpětné ukazatele
-      pxrnode^.up:=node^.up;
-      plnode^.up:=pxrnode;
-      nodeup:=node^.up;
-      node^.up:=pxrnode;
-      if pxrnode^.left<>nil then
-        pxrnode^.left^.up:=plnode;
-        end if;
-      if pxrnode^.right<>nil then
-        pxrnode^.right^.up:=node;
-        end if;
-
-      -- rotace uzlů
-      plnode^.right := pxrnode^.left;
-      node^.left := pxrnode^.right;
-      pxrnode^.left := plnode;
-      pxrnode^.right := node;
-
-      -- nastavit váhy
-      node^.weight := weightleftright;
-      plnode^.weight := node^.weight;
-      pxrnode^.weight := node_weight(plnode);
-
-      -- byl [root] kritickým uzlem?
-      if node=root 
-        -- ano, nastavit nový root
-        then 
-          root:=pxrnode;
-
-        -- ne, navázat předka bývalého kritického uzlu na [pxrnode]
-        else
-          -- byl kritický uzel na předka navázán zleva? navaž uzel zleva, jinak zprava 
-          if nodeup^.left=node 
-            then nodeup^.left:=pxrnode;  
-            else nodeup^.right:=pxrnode; 
-            end if;
-          end if;
-
-      -- nastavit nový orotovaný uzel
-      node:=pxrnode;
-      end dlr_rot;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static drl_rot (
-        node       : in out p_binary_tree_node) =       -- kritický uzel
-    -- DRL rotace.
-    ------------------------------------------------------------------------------------------------
-    var
-      prnode          : p_binary_tree_node;             -- node^.right
-      noderightleft   : p_binary_tree_node;             -- node^.right^.left
-      weightrightleft : t_unsigned;              -- node^.right^.left^.weight
-      nodeup          : p_binary_tree_node;             -- node^.up
-
-    begin
-      -- inicializovat proměnné
-      prnode:=node^.right;
-      noderightleft:=prnode^.left;
-      weightrightleft:=node_weight(noderightleft);
-
-      -- nastavit zpětné ukazatele
-      noderightleft^.up:=node^.up;
-      prnode^.up:=noderightleft;
-      nodeup:=node^.up;
-      node^.up:=noderightleft;
-      if noderightleft^.right<>nil then
-        noderightleft^.right^.up:=prnode;
-        end if;
-      if noderightleft^.left<>nil then
-        noderightleft^.left^.up:=node;
-        end if;
-
-      -- rotace uzlů
-      prnode^.left:=noderightleft^.right;
-      node^.right:=noderightleft^.left;
-      noderightleft^.right:=prnode;
-      noderightleft^.left:=node;
-
-      -- nastavit váhy
-      node^.weight:=weightrightleft;
-      prnode^.weight:=node^.weight;
-      noderightleft^.weight:=node_weight(prnode);
-
-      -- byl [root] kritickým uzlem?
-      if node=root 
-        -- ano, nastavit nový root
-        then 
-          root:=noderightleft;
-
-        -- ne, navázat předka bývalého kritického uzlu na [noderightleft]
-        else
-          -- byl kritický uzel na předka navázán zleva? navaž uzel zleva, jinak zprava 
-          if nodeup^.left=node 
-            then nodeup^.left:=noderightleft;  
-            else nodeup^.right:=noderightleft; 
-            end if;
-          end if;
-
-      -- nastavit nový orotovaný uzel
-      node:=noderightleft;
-      end drl_rot;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static make_avl (
-        i_current_node : in out p_binary_tree_node; -- potenciální kritický uzel
-        critical     : out t_logical) =          -- T-kritický uzel vyvážen
-    -- Vytvoří z uzlu, který je kritický, uzel vyvážený. Nevyváženost musí být prvního stupně (=|2|),
-    -- pokud je větší, sníží stupeň nevyváženosti uzlu. Pokud je menší, není prováděna žádná akce.
-    ------------------------------------------------------------------------------------------------
-    var
-      plnode         : p_binary_tree_node;       -- i_current_node^.left
-      prnode         : p_binary_tree_node;       -- i_current_node^.right
-      hl             : t_unsigned;               -- plnode^.weight
-      hr             : t_unsigned;               -- prnode^.weight
-      hll            : t_unsigned;               -- left^.left^.weight
-      hlr            : t_unsigned;               -- left^.right^.weight
-      hrl            : t_unsigned;               -- right^.left^.weight
-      hrr            : t_unsigned;               -- right^.right^.weight
-
-    begin
-      -- předpoklad nenalezení kritického uzlu
-      critical:=false;
-
-      -- uzel musí existovat
-      if i_current_node=nil then
-        return;
-        end if;
-
-      -- inicializovat proměnné
-      plnode:=i_current_node^.left;
-      prnode:=i_current_node^.right;
-      hl:=node_weight(plnode);
-      hr:=node_weight(prnode);
-
-      -- je uzel kritický a těžsí vlevo?
-      if hl>hr+1 then
-        -- ano, zjistit výšky následovníků levého uzlu
-        if plnode<>nil 
-          then
-            hll:=node_weight(i_current_node^.left^.left);
-            hlr:=node_weight(i_current_node^.left^.right);
-          else
-            hll:=0;
-            hlr:=0;
-            end if;
-
-        -- zjisit typ vyvažování
-        if hll>=hlr
-          then
-            -- LL rorace
-            ll_rot(i_current_node);
-            critical:=true;
-          else
-            -- DLR rorace
-            dlr_rot(i_current_node);
-            critical:=true;
-            end if;
-
-      -- je uzel kritický a těžsí vpravo?
-      elsif hl+1<hr then
-        -- ano, zjistit výšky následovníků pravého uzlu
-        if prnode<>nil 
-          then 
-            hrr:=node_weight(i_current_node^.right^.right);
-            hrl:=node_weight(i_current_node^.right^.left);
-          else 
-            hrr:=0;
-            hrl:=0;
-            end if;
-
-        -- zjisit typ vyvažování
-        if hrr>=hrl
-          then
-            -- RR rorace
-            rr_rot(i_current_node);
-            critical:=true;
-          else
-            -- DRL rotace
-            drl_rot(i_current_node);
-            critical:=true;
-            end if;
-
-      -- korekce vah, pokud se nemuselo vyvažovat
-      elsif hl>hr
-        then i_current_node^.weight:=1+hl;
-        else i_current_node^.weight:=1+hr;
-      end if;
-    end make_avl;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static insert_left (
-        i_current_node : in p_binary_tree_node;           -- aktuální uzel 
-        node         : in p_binary_tree_node) =         -- vkládaný uzel
-    -- Přidá uzel [node] pod uzel [i_current_node] zleva, pokud je volné místo.
-    ------------------------------------------------------------------------------------------------
-    begin
-      if i_current_node^.left=nil then
-        -- ano, vlož uzel doleva
-        node^.weight:=1;
-        node^.left:=nil;
-        node^.right:=nil;
-        node^.up:=i_current_node;
-        i_current_node^.left:=node;
-
-        -- zvýšit počet uzlů ve stromu o 1
-        succ count;
-        end if;
-      end insert_left;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static insert_right (
-        i_current_node : in p_binary_tree_node;           -- aktuální uzel 
-        node         : in p_binary_tree_node) =         -- vkládaný uzel
-    -- Přidá uzel [node] pod uzel [i_current_node] zprava, pokud je volné místo.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- je vpravo volné místo?
-      if i_current_node^.right=nil then
-        -- ano, vlož uzel doprava
-        node^.weight:=1;
-        node^.left:=nil;
-        node^.right:=nil;
-        node^.up:=i_current_node;
-        i_current_node^.right:=node;
-
-        -- zvýšit počet uzlů ve stromu o 1
-        succ count;
-        end if;
-      end insert_right;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static insert_avl_rec (
-        i_current_node : in out p_binary_tree_node;       -- aktuální uzel 
-        node         : in p_binary_tree_node;           -- vkládaný uzel
-        critical     : in out t_logical) =       -- T-nalezen kritický uzel
-    -- Vloží uzel bez kontroly na neunikátnost klíče i duplicitu uzlu do stromu.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- aktuální uzel musí být definován
-      if i_current_node=nil then
-        return;
-        end if;
-
-      -- porovnat klíče obou uzlů
-      case compare(node,i_current_node)
-        -- je hledaný klíč uzlu menší než aktuální?
-        when cn_smaller do 
-            -- pokud existuje levý následník, jdi doleva, jinak vlož vlevo
-            if i_current_node^.left<>nil
-              then insert_avl_rec(i_current_node^.left,node,critical);
-              else insert_left(i_current_node,node);
-              end if;
-
-        -- je hledaný klíč uzlu větší než aktuální?
-        when cn_bigger do
-            -- pokud existuje pravý následník, jdi doprava, jinak vlož vravo
-            if i_current_node^.right<>nil
-              then insert_avl_rec(i_current_node^.right,node,critical);
-              else insert_right(i_current_node,node);
-              end if
-
-        -- klíče jsou si rovny
-        when cn_equal do
-          -- pokud existuje pravý následník, jdi doprava, jinak vlož doprava
-          if i_current_node^.right<>nil 
-            then insert_avl_rec(i_current_node^.right,node,critical)
-            else insert_right(i_current_node,node);
-            end if;
-          end case;
-
-      -- má se uzel vyvažovat?
-      if avl and not critical then
-        -- vyvážit uzel
-        make_avl(i_current_node,critical);
-        end if;
-      end insert_avl_rec;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static insert_rec (
-        i_current_node : in out p_binary_tree_node;       -- aktuální uzel 
-        node         : in p_binary_tree_node;           -- vkládaný uzel
-        critical     : in out t_logical) =       -- T-nalezen kritický uzel
-    -- Přidá uzel. Pokud se má vložit uzel se stejným klíčem, jaký už ve stromu existuje, 
-    -- nový uzel se vloží doprava.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- aktuální uzel musí být definován
-      if i_current_node=nil then
-        return;
-        end if;
-
-      -- je ve stromě již uzel obsažen?
-      if i_current_node=node then
-        -- ano, chyba
-        execute(event_error);
-        raise tree_error;
-        end if;
-
-      -- porovnat klíče obou uzlů
-      case compare(node,i_current_node)
-        -- je hledaný klíč uzlu menší než aktuální?
-        when cn_smaller do 
-            -- pokud existuje levý následník, jdi doleva, jinak vlož vlevo
-            if i_current_node^.left<>nil
-              then insert_rec(i_current_node^.left,node,critical);
-              else insert_left(i_current_node,node);
-              end if;
-
-        -- je hledaný klíč uzlu větší než aktuální?
-        when cn_bigger do
-            -- pokud existuje pravý následník, jdi doprava, jinak vlož vravo
-            if i_current_node^.right<>nil
-              then insert_rec(i_current_node^.right,node,critical);
-              else insert_right(i_current_node,node);
-              end if
-
-        -- klíče jsou si rovny
-        when cn_equal do
-            -- ano, je povoleno vkládat uzly s duplicitními klíči?
-            if not unique_key
-              -- ano, pokusit se jít dál
-              then
-                -- jde o avl strom?
-                if avl 
-                  -- ano, budou se muset testovat obě větve na existenci [node]
-                  then
-                    -- je v podstromu duplicitní uzel?
-                    if not has_node_rec(i_current_node,node)
-                      -- ne, vlož nový uzel
-                      then
-                        insert_avl_rec(i_current_node,node,critical);
-
-                      -- ano, chyba
-                      else
-                        execute(event_error);
-                        raise tree_error;
-                      end if;
-
-                  -- nejde o avl, ale mohou se vkládat uzly se stejnými klíči
-                  else
-                    -- pokud existuje pravý následník, jdi doprava, jinak vlož doprava
-                    if i_current_node^.right<>nil 
-                      then insert_rec(i_current_node^.right,node,critical)
-                      else insert_right(i_current_node,node);
-                      end if;
-                    end if;
-
-              -- ne, chyba
-              else 
-                execute(event_error);
-                raise tree_error;
-              end if;
-          end case;
-
-      -- má se uzel vyvažovat?
-      if avl and not critical then
-        -- vyvážit uzel
-        make_avl(i_current_node,critical);
-        end if;
-      end insert_rec;
-
-
-
-    ------------------------------------------------------------------------------------------------
     override insert =
-    -- Přidá uzel do stromu. Pokud se má vložit uzel se stejným klíčem, jaký už ve stromu
-    -- existuje, nový uzel se vloží doprava.
+    -- Vloží uzel [node] do binárního stromu. Pokud se má vložit uzel s klíčem, který se již ve
+    -- stromě vyskytuje a je povolen vícenásobný výskyt klíče ve stromě, je uzel vložen vpravo.
+    -- Pokud vícenásobný výskyt není povolen, generuje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     var
-      node         : p_binary_tree_node;                -- vkládaný uzel
-      critical     : t_logical:=false;           -- T-nalezen kritický uzel
+      node         : p_binary_tree_node;         -- vkládaný uzel
 
     begin
+      {%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
+                            homogenní data}
+
       -- přetypovat
       node:=p_binary_tree_node(item);
 
@@ -692,29 +792,27 @@ class private abstract c_binary_tree =
         raise tree_error;
         end if;
 
-      -- je kořen definován?
-      if root=nil then
-        -- vložit uzel
-        node^.weight:=1;
-        node^.left:=nil;
-        node^.right:=nil;
-        node^.up:=nil;
-        root:=node;
+      -- je uzel prázdný?
+      if root=nil
+        -- ano => jde o první uzel
+        then
+          node^.left:=nil;
+          node^.right:=nil;
+          node^.up:=nil;
+          node^.weight:=0;
+          node^.depth:=1;
+          root:=node;
+          succ count;
 
-        -- zvýšit počet uzlů ve stromu o 1
-        succ count;
-        return;
+        -- ne => uzel [node] do stromu vložíme pomocí metody [insert_node]
+        else insert_node(root,node);
         end if;
-
-      -- vložit uzel
-      insert_rec(root,node,critical);
       end insert;
 
 
 
     ------------------------------------------------------------------------------------------------
-    static merge_subtree_rec (
-        node       : p_binary_tree_node) =              -- kořenový uzel přidávaného stromu
+    static merge_subtree_rec =
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy. Pokud uxistují dva uzly se stejným klíčem, je uzel 
     -- do stromu vložen v závislosti na parametru [unique_key].
@@ -739,7 +837,8 @@ class private abstract c_binary_tree =
     static merge_subtree =
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy. Pokud uxistují dva uzly se stejným klíčem, je uzel 
-    -- do stromu vložen v závislosti na parametru [unique_key].
+    -- do stromu vložen v závislosti na parametru [unique_key] - v případě [unique_key]=[true] je
+    -- generována výjimka [tree_error].
     ------------------------------------------------------------------------------------------------
     begin
       -- spojit stromy
@@ -753,82 +852,195 @@ class private abstract c_binary_tree =
 
 
     ------------------------------------------------------------------------------------------------
-    static bonded_remove_rec (
-        i_current_node : in out p_binary_tree_node;
-        node         : in p_binary_tree_node) =
-    -- Vyjme uzel, který má pravého syna nebo oba syny.
+    static remove_node =
+    -- Vyjme uzel [rem_node] ze stromu. Rekurzivně vyhledává ve stromě uzel [rem_node] od zadaného
+    -- uzlu [node] směrem ke koncovým uzlům. Pointer [original] uchovává uzel, kterým byl nahrazen
+    -- odstraněný uzel [rem_node], který obsahuje levého i pravého potomka. Pokud uzel [rem_node]
+    -- nebyl ve stromě nalezen, genereje metoda výjimku [tree_error].
+    -- Uzel [rem_node] musí být nejprve ve stromě [tree] nalezen. Přitom se mohlo stát, že vlivem rotací
+    -- při vyvažování mohl být pravý potomek (mající stejný klíč jako jeho předek) nějakého uzlu změněn
+    -- na levého potomka. V takovém případě při identickém klíči nejprve vyhledáváme uzel v pravém
+    -- podstromu uzlu a pokud ho v něm nenajdeme, prohledáváme navíc ještě v levém podstromu. Pokud
+    -- ho ani v takovým případě nenalezneme, generuje metoda výjimku [tree_error]. Kvůli dvojímu
+    -- prohledávání levého podstromu uzlu při identických klíčích je použita logická proměnná [equal].
     ------------------------------------------------------------------------------------------------
     var
-      li_current_node : p_binary_tree_node;               -- i_current_node
-      critical      : t_logical;                 -- nevyužitá proměnná
+      cmp          : t_compare_result;           -- výsledek porovnávání klíčů dvou uzlů
 
     begin
-      -- nastavit lokální [i_current_node]
-      li_current_node:=i_current_node;
+      -- uzel [rem_node] jsme ve stromě nenalezli
+      if node=nil then
+        -- jde o identický klíč a přišli jsme do tohotu uzlu z pravého podstromu uzlu s identickým klíčem?
+        if equal
+          -- ano => jdeme zpátky k identickému klíči
+          then return;
 
-      -- uzel musí existovat
-      if li_current_node=nil then
-        return;
+          -- ne => uzel [rem_node] se ve stromě nevyskytuje => generujeme výjimku [tree_error]
+          else
+            execute(event_error);
+            raise tree_error;
+            end if;
         end if;
 
-      -- existuje pravý uzel?
-      if li_current_node^.right<>nil 
-        -- ano, jít doprava
-        then
-          bonded_remove_rec(li_current_node^.right,node);
+      -- porovnáme uzly [rem_node] a [node]
+      cmp:=compare(rem_node,node);
 
-        -- ne, vyjmout uzel
+      -- je klíč uzlu [rem_node] menší než klíč uzlu [node]? Ano => posuneme se do jeho levého podstromu
+      if cmp=cr_smaller then
+        remove_node(node^.left,rem_node,removed,original,equal);
+
+        -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
+        if removed then
+          compute_balance(node);
+        
+          -- pokud je strom AVL, pak provedeme případné rotace při nevyvážení
+          if avl then remove_balance(node,removed); end if;
+          end if;
+
+      -- je klíč uzlu [rem_node] větší než klíč uzlu [node]? Ano => posuneme se do jeho pravého podstromu
+      elsif cmp=cr_bigger then
+        remove_node(node^.right,rem_node,removed,original,equal);
+
+        -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
+        if removed then
+          compute_balance(node);
+
+          -- pokud je strom AVL, pak provedeme případné rotace při nevyvážení
+          if avl then remove_balance(node,removed); end if;
+          end if;
+
+      -- je klíč uzlu [rem_node] stejný jako klíč uzlu [node]? Ano => posuneme se do jeho pravého podstromu
+      -- a pokud v něm uzel nenalezneme, pak se ještě posuneme do jeho levého podstromu
+      elsif cmp=cr_equal and node<>rem_node then
+        -- je povolen vícenásobný výskyt klíče ve stromě?
+        if not unique_key
+
+          -- ano => stejný klíč nemusí být vlivem rotací nebo ubráním uzlu jen vpravo, ale i vlevo
+          -- => prohledáme nejprve pravý podstrom, poté levý podstrom, přičemž parametr [equal]
+          -- nastavíme na [true]
+          then
+            remove_node(node^.right,rem_node,removed,original,true);
+
+            -- uzel jsme nenalezli => posuneme se do levého podstromu 
+            if not removed then
+              remove_node(node^.left,rem_node,removed,original,true);
+              end if;
+
+          -- ne => chyba, neboť není povolen vícenásobný výskyt klíče
+          else
+            execute(event_error);
+            raise tree_error;
+            end if;
+
+        -- pokud byl uzel [rem_node] vyjmut, přepočteme váhu uzlu [node] a případně provedeme rotace
+        if removed then
+          compute_balance(node);
+
+          -- pokud je strom AVL, pak provedeme případné rotace při nevyvážení
+          if avl then remove_balance(node,removed); end if;
+          end if;
+
+      -- nalezli jsme uzel, který má být odstraněn
+      elsif cmp=cr_equal and node=rem_node then
+        -- neexistuje pravý potomek uzlu [node]? Ne => uzel [node] posuneme na levého potomka
+        if node^.right=nil then
+	  if node^.left<>nil then node^.left^.up:=node^.up; end if;
+          if node^.left<>nil then
+            node^.depth:=node^.left^.depth;
+            node^.weight:=node^.left^.weight;
+            end if;
+          node:=node^.left;
+          removed:=true;
+
+        -- neexistuje levý potomek uzlu [node]? Ne => uzel [node] posuneme na pravého potomka
+        elsif node^.left=nil then
+          if node^.right<>nil then node^.right^.up:=node^.up; end if;
+          if node^.right<>nil then
+            node^.depth:=node^.right^.depth;
+            node^.weight:=node^.right^.weight;
+            end if;
+          node:=node^.right;
+          removed:=true;
+
+        -- uzel [node] obsahuje levého i pravého potomka
         else
-          -- ano, odstranit uzel [node]
-          -- navázat levého syna nejpravějšího uzlu na předposlední procházený uzel
-          if li_current_node^.up^.left=li_current_node 
-            then li_current_node^.up^.left:=li_current_node^.left;
-            else li_current_node^.up^.right:=li_current_node^.left;
-            end if;
+          -- uzel [node] nahradíme "nejpravějším" uzlem levého potomka uzlu [node], příčemž uchováme
+          -- pointer na tento nejpravější uzel, abychom jeho datovou část mohli po ukončení volání
+          -- procedury [remove_node] vložit do uzlu [node]
+          remove_both_children(node,node^.left,removed,original);
 
-          -- získaný volný uzel uložit do stromu na místo rušeného uzlu
-          li_current_node^.left:=node^.left;
-          li_current_node^.right:=node^.right;
-          li_current_node^.up:=node^.up;
-          li_current_node^.weight:=node^.weight;
+          -- pokud byl uzel [rem_node] vyjmut, přepočítáme váhu uzlu [node] a případně provedeme
+          -- rotace
+          if removed
+            then
+              compute_balance(node);
 
-          -- pokud rušený uzel nemá předchůdce, zrušit kořen
-          if node^.up=nil then
-            root:=li_current_node;
-
-          -- jinak předat vazbu předka na místo rušeného uzlu
-          elsif node^.up^.left=node
-            then node^.up^.left:=li_current_node;
-            else node^.up^.right:=li_current_node;
-            end if;
-
-          -- nastavenit zpětné vazby pravého uzlu uzkazující nyní špatně na smazaný uzel
-          if li_current_node^.right<>nil then
-            li_current_node^.right^.up:=li_current_node;
-            end if;
-
-          -- nastavit zpětné vazby levého uzlu uzkazující nyní špatně na smazaný uzel
-          if li_current_node^.left<>nil then
-            li_current_node^.left^.up:=li_current_node;
+              -- pokud je strom AVL, pak provedeme případné rotace při nevyvážení
+              if avl then remove_balance(node,removed); end if;
+            else
+              removed:=true;
             end if;
           end if;
-  
-      -- má se uzel vyvažovat?
-      if avl then
-        -- vyvážit uzel
-        make_avl(li_current_node,critical);
+
+        -- dekrementujeme počet uzlů ve stromě
+        pred count;
+
+      -- uzel [rem_node] jsme ve stromě nenalezli => generujeme výjimku [tree_error]
+      else
+        execute(event_error);
+        raise tree_error;
         end if;
-      end bonded_remove_rec;
+      end remove_node;
 
 
 
+    ------------------------------------------------------------------------------------------------
+    static remove_both_children =
+    -- Vyjme uzel [node] ze stromu. Je volána v případě, kdy má uzel [node] oba dva potomky. Uzel
+    -- [node] je nahrazen "nejpravějším" uzlem levého potomka uzlu [node].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- obsahuje uzel [curr] pravého potomka?
+      if curr^.right=nil
+        -- ne => uchováme si pointer na uzel [curr] (tím nahradíme datovou část uzlu [node], který
+        --       se má odstranit)
+        then
+          original:=curr;
+          if curr^.left<>nil then curr^.left^.up:=curr^.up; end if;
+          curr:=curr^.left;
+          removed:=true;
+
+        -- ano => posuneme se na něho
+        else
+          -- posuneme se na pravého potomka
+          remove_both_children(node,curr^.right,removed,original);
+
+          -- pokud byl uzel [rem_node] vyjmut, přepočítáme váhu uzlu [node] a případně provedeme
+          -- rotace
+          if removed then
+            compute_balance(curr);
+
+            -- pokud je strom AVL, pak provedeme případné rotace při nevyvážení
+            if avl then remove_balance(curr,removed); end if;
+            end if;
+          end if;
+      end remove_both_children;
+
+    
+    
     ------------------------------------------------------------------------------------------------
     override remove =
     -- Vyjme uzel ze stromu.
+    -- Pokud odstraněný uzel [node] obsahuje levého i pravého potomka, pak uzel [node] byl nahradíme
+    -- "nejpravějším" uzlem jeho levého potomka - pointer na něj je uložen v [del]. Musíme provést
+    -- "přesměrování", kdy uzel [node] se stane uzelem [del], přičemž zůstanou zachovány původní
+    -- ukazatele, tj. dojde ke změně jen datové části uzlu.
+    -- Pokud uzel [rem_node] nebyl ve stromě nalezen, genereje metoda výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
-    var 
-      node         : p_binary_tree_node;                -- uzel pro vyjmutí ze stromu
-      critical     : t_logical;                  -- nevyužitá proměnná
+    var
+      removed      : t_logical:=false;           -- [true], pokud byl uzel [node] vyjmut ze stromu
+      node         : p_binary_tree_node;         -- uzel určený k vyjmutí
+      del          : p_binary_tree_node;         -- "nejpravější" uzel levého potomka uzlu [node]
 
     begin
       -- přetypovat [item]
@@ -840,146 +1052,59 @@ class private abstract c_binary_tree =
         raise tree_error;
         end if;
 
-      -- pokud není uzel ve stromu nalezen, konec
-      if not has_node(node) then
+      -- odstraníme uzel [node] ze stromu
+      remove_node(root,node,removed,del,false);
+
+      -- uzel [rem_node] nebyl ve stromu nalezen (případ identických klíčů) => generujeme výjimku
+      -- [tree_error]
+      if not removed then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- má rušený uzel odkaz jen na pravého potomka nebo na žádného?
-      if node^.left=nil 
-        -- ano
-        then
-          -- má rušený uzel předka?
-          if node^.up=nil then
-            -- ne, nastavit nový kořen
-            root:=node^.right;
+      -- pokud odstraněný uzel [node] neměl levého a pravého potomka, je vše OK, končíme
+      if del=nil then return; end if;
 
-            -- pokud existovala pravá větev
-            if root<>nil then
-              -- nastavit předka nového kořenu na nil
-              root^.up:=nil;
-              end if;
+      -- odstraněný uzel [node] obsahoval levého i pravého potomka. Uzel [node] byl nahrazen
+      -- "nejpravějším" uzlem svého levého potomka - pointer na něj je uložen v [del]. Nyní musíme
+      -- provést "přesměrování", kdy uzel [node] se stane uzelem [del], přičemž zůstanou zachovány
+      -- původní ukazatele, tj. dojde ke změně jen datové části uzlu.
 
-          -- ano, kořen má předka, tudíž spojíme předka s následníkem
-          elsif node^.up^.left=node 
-            then node^.up^.left:=node^.right;
-            else node^.up^.right:=node^.right;
-            end if;
+      -- uzlu [del] přiřadíme uzel [node] (levého a pravého potomka, předka, váhu, hloubku)
+      del^:=node^;
 
-        -- ne, má odkaz na levého nebo na oba potomky
+      -- pokud existuje levý či pravý potomek uzlu [node], pak bude mít nového předka - uzel [del]
+      if node^.left<>nil then node^.left^.up:=del; end if;
+      if node^.right<>nil then node^.right^.up:=del; end if;
+
+      -- je uzel [node] kořen?
+      if node^.up=nil
+
+        -- Ano => bude nový kořen 
+        then root:=del;
+
+        -- Ne => předek uzlu [node] bude ukazovat na uzel [del]
         else
-          -- odebere uzel
-          bonded_remove_rec(node^.left,node);
-          end if;
-
-      -- snížit počet uzlů ve stromu o 1
-      pred count;
-
-      -- má se vyvažovat?
-      if avl then
-        -- vyvažovat uzly až ke kořeni
-        loop
-          -- jít na předka
-          node:=node^.up;
-      
-          -- vyvážit uzel
-          make_avl(node,critical);
-          until node=root or node=nil;
+          if node^.up^.left=node
+            then node^.up^.left:=del;
+            else node^.up^.right:=del;
+            end if;
         end if;
       end remove;
 
 
 
     ------------------------------------------------------------------------------------------------
-    static get_node_count (
-        node       : in p_binary_tree_node;         -- aktuální uzel 
-        count      : in out t_unsigned) =        -- počet uzlů (pod)stromu
-    -- Spočítá počet uzlů v podstromu včetně uzlu [node].
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- jestliže [node] není definován, ukonči rekurzi
-      if node=nil then 
-        return;
-        end if;
-
-      -- počet uzlů je o jeden větší
-      succ count;
-
-      -- procházet stromem 
-      get_node_count(node^.left,count);
-      get_node_count(node^.right,count);
-      end get_node_count;
-
-
-
-    ------------------------------------------------------------------------------------------------
     static split_subtree =
     -- Vyjme ze stromu podstrom včetně uzlu [node] a vytvoří a inicializuje novou instance 
-    -- trídy [c_binary_tree]. Pokud uzel není nalezen, vrací prázdný strom se stejnými parametry jako
-    -- má instace tohoto stromu.
+    -- trídy [c_binary_tree]. Pokud uzel není nalezen generuje výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
-    var
-      lnode        : p_binary_tree_node;                -- kořen nového stromu
-
     begin
-      -- kořen podstromu/stromu
-      lnode:=node;
-
-      -- uzel musí být ve stromě nalezen
-      if not has_node(lnode) then
-        -- není nalezen, chyba
-        execute(event_error);
-        raise tree_error;
-        end if;
-
-      -- je odpojovaný uzel různý od [root]?
-      if lnode^.up<>nil 
-        -- ano, různý od kořenu
-        then
-          -- odpojit uzel z původního stromu
-          if lnode^.up^.left=lnode 
-            then lnode^.up^.left:=nil
-            else lnode^.up^.right:=nil
-            end if;
-
-        -- ne, vymazat celý strom 
-        else
-          root:=nil;
-          end if;
-
-      -- nastavit předka nového kořenu na nil
-      lnode^.up:=nil;
-
-      -- inicializovat nový strom
+      -- inicializujeme nový podstrom
       subtree.init(this.item_type,this.avl,this.unique_key,this.homogenous);
 
-      -- má se původní strom znovu ustanovit?
-      if avl then
-        -- nastavit počet uzlů původního stromu
-        count:=0;
-
-        -- vytvořit původní strom na proměnnou subtree pro vyvolání merge_subtree
-        subtree.root:=root;
-
-        -- zrušit celý původní strom a zapamatovat si původní [root] pro znovuustanovení
-        root:=nil;
-
-        -- znovupostavit strom
-        merge_subtree(subtree);
-        end if;
-
-      -- spočítat počet uzlů stromů
-      subtree.count:=0;
-      get_node_count(lnode,subtree.count);
-
-      -- pokud nebyl strom znovu sestaven přes avl, spočítat počet uzlů v původním stromu
-      if not avl then
-        count-subtree.count;
-        end if;
-
-      -- vytvořit nový strom
-      subtree.root:=lnode;
+      -- vytvoříme nový podstrom
+      subtree.root:=remove_subtree(node,subtree.count);
       end split_subtree;
 
 
@@ -1000,46 +1125,27 @@ class private abstract c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static delete_subtree =
-    -- Smaže podstrom včetně uzlu [node] ze stromu a uvolní pamět.
+    -- Smaže podstrom včetně uzlu [node] ze stromu a uvolní pamět. Pokud není uzel [node] ve stromu
+    -- nalezen, generuje metoda výjimku [tree_error].
+    -- Pozn.: Uzel [node] po ukončení metody nemusí být nutně [nil]. V případě AVL vyvažování mohl
+    -- být vnitřek (datová část) uzlu (který nebyl odstřaněn, ozn U) vložen na místo odstraněného uzlu
+    -- [node], přičemž datová část uzlu [node] byla vložena do uzlu U a tento uzel byl následně
+    -- odstraněn.
     ------------------------------------------------------------------------------------------------
+    var
+      count_h      : t_unsigned;                 -- pomocná proměnná udávající počet uzlů v odebraném
+                                                 -- podstromu (tuto hodnotu nepotřebujeme, proměnná
+                                                 -- je definována poze kvůli kompatibilitě při volání
+                                                 -- procedury [remove_subtree])
+      new_root     : p_binary_tree_node;         -- pomocný pointer na kořen odtrženého podstromu
+
     begin
-      -- jestliže [node] není definován, ukonči rekurzi
-      if node=nil then 
-        return;
-        end if;
+      -- odstraníme ze stromu podstrom, jehož kořen je uzel [node]
+      new_root:=remove_subtree(node,count_h);
 
-      -- procházet stromem 
-      delete_subtree(node^.left);
-      delete_subtree(node^.right);
-
-      -- vyjmout uzel
-      remove(node);
- 
-      -- uvolnit uzel z paměti
-      discard node;
+      -- odstraníme z paměti všechny uzly podstromu, jehož vrcholem je uzel [node]
+      delete_all_rec(new_root);
       end delete_subtree;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static delete_all_rec (
-        node       : in out p_binary_tree_node) =       -- rušená větev
-    -- Zruší celou větev stromu a uvolní jejich paměť. Mazání je rychlejší, je použita v metodě
-    -- delete_all. Při smazání větve nemusí již být strom vyvážen.
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- jestliže [node] není definován, ukončit rekurzi
-      if node=nil then 
-        return;
-        end if;
-
-      -- procházet stromem 
-      delete_all_rec(node^.left);
-      delete_all_rec(node^.right);
-
-      -- uvolnit uzel z paměti
-      discard node;
-      end delete_all_rec;
 
 
 
@@ -1048,48 +1154,18 @@ class private abstract c_binary_tree =
     -- Smaže všechny uzly ze stromu a uvolní pamět.
     ------------------------------------------------------------------------------------------------
     begin
-      -- smazat celý strom
+      -- smažeme celý strom
       delete_all_rec(root);
+
+      -- nastavíme počet uzlů ve stromě na 0
+      count:=0;
       end delete_all;
 
 
 
     ------------------------------------------------------------------------------------------------
-    static find_rec (
-        tree       : p_binary_tree_node;
-        node       : p_binary_tree_node)
-        return p_binary_tree_node =
-    -- Vyhledá uzel, který je rovný [node]
-    ------------------------------------------------------------------------------------------------
-    begin
-      -- inicializovat
-      result:=nil;
-
-      -- uzel nebyl nalezen
-      if tree=nil then return end if;
-
-      -- porovnat klíče uzlů
-      case compare(tree,node)
-        -- je aktuální uzel větší než hledaný uzel?
-        when cn_bigger do
-            -- jdi doleva
-            result:=find_rec(tree^.left,node);
-
-        -- je aktuální uzel menší než hledaný uzel?
-        when cn_smaller do
-            -- jdi doprava
-            result:=find_rec(tree^.right,node);
-
-        -- klíče jsou si rovny, ale zatím není nalezen hledaný uzel
-        when cn_equal do
-            result:=tree;
-        end case;
-
-      end find_rec;
-
-    ------------------------------------------------------------------------------------------------
     static find =
-    -- Vyhledá uzel, který je rovný [node]
+    -- Vyhledá první uzel, který má klíč rovný [node]. Pokud takový uzel nenalezne, vrací [false].
     ------------------------------------------------------------------------------------------------
     begin
       result:=find_rec(root,node);
@@ -1403,9 +1479,7 @@ class private c_tree =
 
 
     ------------------------------------------------------------------------------------------------
-    static get_node_count (
-        node       : in p_tree_node)             -- podstrom
-        return t_unsigned =
+    static get_node_count =
     -- Spočítá počet uzlů v podstromě určeném [node]
     ------------------------------------------------------------------------------------------------
     var
@@ -1506,6 +1580,9 @@ class private c_tree =
     -- Vloží se do stromu kořen.
     ------------------------------------------------------------------------------------------------
     begin
+      {%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
+                            homogenní data}
+
       -- pokusit se do stromu vložit uzel na místo kořenu
       insert_node(p_tree_node(item),nil,id_add);
       end insert;
@@ -1614,6 +1691,9 @@ class private c_tree =
     --   Pokud se má uzel vložit jako sousední uzel, ale [current_node]=[root], hlásí chybu
     ------------------------------------------------------------------------------------------------
     begin
+      {%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
+                            homogenní data}
+
       -- pokud [node]=NIL, hlásí chybu
       if node=nil then
         execute(event_error);
@@ -1694,8 +1774,9 @@ class private c_tree =
           raise tree_error;
           end if;
 
-        -- vložit kořen
+        -- vložit kořen a nastavit počet uzlů ve stromě
         root:=tree.root;
+        count:=tree.count;
 
         -- vyprázdnit původní strom
         tree.root:=nil;
@@ -1712,12 +1793,12 @@ class private c_tree =
       -- vlastní vložení, pokud při něm nastala chyba, konec
       if not do_insert(tree.root,current_node,direction) then return end if;
 
+      -- zvýšit počet uzlů ve stromu o tree^.count
+      count+tree.count;
+
       -- vyprázdnit původní strom
       tree.root:=nil;
       tree.count:=0;
-
-      -- zvýšit počet uzlů ve stromu o tree^.count
-      count+tree.count;
       end merge_subtree;
 
 
@@ -1865,8 +1946,8 @@ class private c_tree =
         -- procházet podstrom
         delete(down_node);
 
-        -- jdi na dalšího potomka
-        down_node:=lnode^.down.get_next(down_node);
+        -- jdi na prvního potomka
+        down_node:=lnode^.down.get_first;
         end loop;
 
       -- vyjmout uzel
@@ -2132,4 +2213,5 @@ class private c_tree_iterator =
     end c_tree_iterator;
 
 end trees;
+
 

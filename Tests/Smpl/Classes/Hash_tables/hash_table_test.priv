@@ -1,0 +1,513 @@
+﻿----------------------------------------------------------------------------------------------------
+module private hash_table_test =
+-- Test of Classes library - Hash tables.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.lists,
+  standard.classes.hash_tables,
+  standard.random,
+  quality,
+  quality.debugging;
+
+-- dopředné deklarace
+class c_test_item;              type p_test_item        = ^class c_test_item;
+class c_test_list_item;         type p_test_list_item   = ^class c_test_list_item;
+class c_test_hash_table;        type p_test_hash_table  = ^class c_test_hash_table;
+
+----------------------------------------------------------------------------------------------------
+class c_test_item = extend c_hash_table_item;
+-- Třída složky hashovací tabulky. Obsahuje jednu proměnnou [value] typu [t_unsigned].
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : t_unsigned;                 -- prvek složky seznamu
+
+    end c_test_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_test_list_item = extend c_list_item;
+-- Třída složky pomocného seznamu obsahující ukazatele na jednotlivé složky testovací hashovací
+-- tabulky.
+----------------------------------------------------------------------------------------------------
+
+    var
+      hash_item    : p_test_item;                -- ukazatel na složku hashovací tabulky
+
+    end c_test_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_test_hash_table = extend c_hash_table;
+-- Testovací hashovací tabulka. Obsahuje přepsanou metodu [assign_hash_id] pro výpočet ID každé
+-- nové složky hashovací tabulky (nově vložené složky do hashovací tabulky). Prvně vložená složka
+-- má ID 0, druhá má ID 1, atd...
+----------------------------------------------------------------------------------------------------
+
+    var
+      next_id      : t_unsigned:=0;              -- ID nové složky hashovací tabulky
+
+    ------------------------------------------------------------------------------------------------
+    override assign_hash_id =
+    -- Přepsaná metoda pro výpočet ID nové složky [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- přiřadíme ID složce [item]
+      item^.item_id:=next_id;
+
+      -- inkrementujeme ID pro další složku
+      next_id+1;
+      end assign_hash_id;
+
+  end c_test_hash_table;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_rand_item (
+    list           : p_list)                     -- ukazatel na spojový seznam
+    return p_test_list_item =
+-- Vrátí složku seznamu [list], která je uložená na náhodně generované pozici [pos]. Pokud neexistuje
+-- žádná složka nebo je seznam [list] prázdný, generuje procedura výjimku [test_error]. To by však
+-- nikdy nastat nemělo.
+----------------------------------------------------------------------------------------------------
+var
+  pos              : t_unsigned;                 -- náhodně generovaná pozice, na níž vybíráme složku seznamu
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod spojovým seznamem [list]
+
+begin
+  -- pokud je seznam [list] prázdný, generuje procedura výjimku [test_error]
+  if list^.count=0 then
+    raise test_error;
+    end if;
+
+  -- určíme pozici složky v seznamu
+  pos:=(random_unsigned mod list^.count)+1;
+
+  -- inicializujeme seznam na průchod od první k poslední složce
+  list_iterator.init(list^,tlwd_forward);
+
+  -- projdeme seznamem [list] dokud nenarazíme na složku na pozici [pos]
+  for i in 1..pos loop
+    if not list_iterator.get(result) then
+      raise test_error;
+      end if;
+    end loop;
+  end get_rand_item;
+           
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_new_table (
+    hash_table     : in p_test_hash_table;       -- ukazatel na testovací hashovací tabulku
+    item_count     : in t_unsigned) =            -- počet složek v hashovací tabulce
+-- Vyplní hashovací tabulku [hash_table] [item_count] složkami, jejichž hodnota [value] je postupně
+-- inkrementovaná od 0.
+----------------------------------------------------------------------------------------------------
+var
+  hash_item        : p_test_item;                -- složka testovací hashovací tabulky [hash_table]
+
+begin
+  -- v cyklu naplníme hashovací tabulku [item_count] složkami, jejichž hodnota [value] je postupně
+  -- inkrementovaná od 0
+  for i in 1..item_count loop
+    new hash_item;
+    hash_item^.value:=i-1;
+    hash_table^.insert(hash_item);
+    end loop;
+  end create_new_table;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure test_content (
+    hash_table     : in p_test_hash_table;       -- ukazatel na testovací hashovací tabulku
+    table_length   : in t_unsigned;              -- velikost hashovací tabulky
+    item_list      : in p_list:=nil)             -- ukazatel na seznam obsahující ukazatele na složky
+                                                 -- hashovací tabulky [hash_table]
+    return t_logical =
+-- Testuje obsah hashovací tabulky za využití iterátoru pro průchod hashovací tabulkou. Prochází
+-- hashovací tabulku [hash_table] od první k poslední složce a u každé testuje její hodnotu [value].
+-- Tu lze snadno vypočítat, neboť tabulka byla vytvořena procedurou [create_new_table] - v každém
+-- slotu jsou složky, jejichž hodnoty [value] mají stejný zbytek po dělení velikostí hashovací
+-- tabulky [table_length].
+-- Dále testuje funkčnost metod [set_next], [get_next] pro určení následující složky v hashovací
+-- tabulce a [set_prev] a [get_prev] pro určení předchozí složky v hashovací tabulce.
+-- Pokud existuje seznam [item_list] (není [nil]), pak tento seznam vyplníme ukazateli na složky
+-- hashovací tabulky [hash_table] při jejím průchodu iterátorem.
+-- Vrací [true] v případě, že test všech složek tabulky [hash_table] je OK, v opačném případě vrací
+-- [false].
+----------------------------------------------------------------------------------------------------
+var
+  iterator         : c_hash_table_iterator;      -- iterátor pro průchod hashovací tabulkou [hash_table]
+  hash_item        : p_test_item;                -- složka hashovací tabulky [hash_table]
+  next_item        : p_test_item;                -- následující složka složky [hash_item] hashovací
+                                                 -- tabulky [hash_table]
+  prev_item        : p_test_item;                -- předchozí složka složky [next_item] hashovací
+                                                 -- tabulky [hash_table]
+  expected_value   : t_unsigned:=0;              -- očekávaná hodnota [value] složek hashovací tabulky
+                                                 -- [hash_table] při jejím iterování
+  list_item        : p_test_list_item;           -- složka seznamu [item_list]
+
+begin
+  -- na počátku předpokládáme úspěšné provedené testu
+  result:=true;
+
+  -- inicializace iterátorů pro průchod hashovací tabulkou [hash_table]
+  iterator.init(hash_table^);
+
+  -- průchod hashovaví tabulky [hash_table] pomocí iterátoru [iterator] a test složek hashovací tabulky
+  while iterator.get(hash_item) loop
+    -- testujeme, zda hodnota [value] složky [hash_item] odpovídá očekávané hodnotě, pokud ne, vracíme
+    -- [false] a končíme
+    if hash_item^.value<>expected_value then
+      result:=false;
+      return;
+      end if;
+
+    -- určíme následující složku složky [hash_item]
+    next_item:=hash_item;
+    hash_table^.set_next(next_item);
+
+    -- testujeme, zda metody [set_next] a [get_next] provádějí totéž
+    if next_item<>hash_table^.get_next(hash_item) then
+      result:=false;
+      return;
+      end if;
+
+    -- pokud složka [next_item] existuje (není [nil]), určíme její předchozí složku [prev_item]
+    if next_item<>nil then
+      prev_item:=next_item;
+      hash_table^.set_prev(prev_item);
+
+      -- testujeme, zda metody [set_prev] a [get_prev] provádějí totéž
+      if prev_item<>hash_table^.get_prev(next_item) then
+        result:=false;
+        return;
+        end if;
+
+      -- testujeme, zda se hodnota předchozí složky následující složky shoduje se hodnotou [value]
+      -- složky [hash_item]
+      if hash_item^.value<>prev_item^.value then
+        result:=false;
+        return;
+        end if;
+      end if;
+
+    -- existuje-li seznam [item_list], pak do něho vložíme ukazatel na složku hashovací tabulky
+    if item_list<>nil then
+      new list_item;
+      list_item^.hash_item:=hash_item;
+      item_list^.insert_last(list_item);
+      end if;
+
+    -- inkrementujeme očekávanou hodnotu o velikost tabulky, pokud bude větší než počet složek v
+    -- hashovací tabulce [hash_table], resetujeme ji
+    expected_value+table_length;
+    if expected_value>=hash_table^.count then
+      expected_value:=(expected_value mod table_length)+1;
+      end if;
+    end loop;
+  end test_content;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure compare_items (
+    hash_table     : in p_test_hash_table;       -- ukazatel na testovací hashovací tabulku
+    item_list      : in p_list:=nil)             -- ukazatel na seznam obsahující ukazatele na složky
+                                                 -- hashovací tabulky [hash_table]
+    return t_logical =
+-- Porovná hodnoty všech složek hashovací tabulky [hash_table] při jejím průchodu iterátorem
+-- [hash_iterator] s hodnotami složek spojového seznamu [item_list]. Vrací [true], jsou-li hodnoty
+-- odpovídajících složek hashovací tabulky [hash_table] a seznamu [item_list] shodné, jinak vrací
+-- [false].
+-- Procedura vrací [false] i v případě, že vyčerpáme všechny složky seznamu [item_list]
+-- předtím, než vyčerpáme všechny složky hashovací tabulky [hash_table]. To by však v případě korektní
+-- implementace knihovny pro poskytování hashovaích tabulek nastat nikdy nemělo.
+----------------------------------------------------------------------------------------------------
+var
+  hash_iterator    : c_hash_table_iterator;      -- iterátor pro průchod hashovací tabulkou [hash_table]
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod seznamem [item_list]
+  hash_item        : p_test_item;                -- složka hashovací tabulky [hash_table]
+  list_item        : p_test_list_item;           -- složka seznamu [item_list]
+begin
+  -- na počátku předpokládáme úspěšný testu
+  result:=true;
+
+  -- inicializace iterátorů
+  hash_iterator.init(hash_table^);
+  list_iterator.init(item_list^);
+
+  -- procházíme hashovací tabulkou [hash_table] a zároveň seznamem [item_list] a porovnáváme hodnoty
+  -- odpovídajících složek
+  while hash_iterator.get(hash_item) loop
+    -- pokud se v seznamu [item_list] již nevyskytují žádné složky => chyba => vracíme [false] a
+    -- končíme
+    if not list_iterator.get(list_item) then
+      result:=false;
+      return;
+      end if;
+
+    -- porovnáváme hodnoty odpovídajících složek, pokud jsou rozdílné, vracíme [false] a končíme
+    if list_item^.hash_item^.value<>hash_item^.value then
+      result:=false;
+      return;
+      end if;
+    end loop;
+  end compare_items;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_storing_hash_table_test_case =
+-- Testovací třída pro vkládání nových složek do hashovací tabulky. Hashovací tabulka je instance
+-- třídy [c_test_hash_table], která prvně vložené složce přiřadí ID rovné 0, druhé složce ID rovné
+-- 1, atd... Jednotlivé složky jsou instnace třídy [c_test_item], mající jediný datový člen - hodnotu
+-- [value] - ta je shodná se svým ID.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Poté pomocí procedury [test_content] testujeme obsah a strukturu testovací
+-- hashovací tabulky [hash_table]. Procedura rovněž testuje funkčnost metod pro získání předchozí
+-- a následující složky libovolné složky hashovací tabulky. Na závěr odstraníme všechny složky
+-- hashovací tabulky a testujeme, zda je prázdná.
+----------------------------------------------------------------------------------------------------
+
+    var
+      item_count   : t_unsigned;                 -- celkový počet složek v testovací hashovací tabulce
+      table_length : t_unsigned;                 -- velikost hashovací tabulkly (počet slotů)
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      hash_table   : aliased c_test_hash_table;  -- testovací hashovací tabulka
+
+    begin
+      -- inicializujeme hashovací tabulku
+      hash_table.init(table_length,c_test_item:tag);
+
+      -- naplníme hashovací tabulku [item_count] složkami
+      create_new_table(^hash_table,item_count);
+
+      -- testujeme obsah a vnitřní strukturu testovací hashovací tabulky [hash_table]
+      fail_if_false(test_content(^hash_table,table_length),'Hash table has not expected content');
+
+      -- vyprázdníme hashovací tabulku
+      hash_table.delete_all;
+
+      -- testujeme, zda je testovací hashovací tabulka [hash_table] prázdná
+      fail_if_false(hash_table.is_empty,'Hash table is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro nastavení internícj proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení interních proměnných
+      item_count:=50000;
+      table_length:=589;
+      end entry;
+
+    end c_storing_hash_table_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_removing_hash_table_test_case =
+-- Testovací třída pro odebírání složek z hashovací tabulky. Hashovací tabulka je instance
+-- třídy [c_test_hash_table], která prvně vložené složce přiřadí ID rovné 0, druhé složce ID rovné
+-- 1, atd... Jednotlivé složky jsou instnace třídy [c_test_item], mající jediný datový člen - hodnotu
+-- [value] - ta je shodná se svým ID.
+--
+-- Poznámka: Jelikož třída používá pro ověření správné struktury hashovací tabulky spojový seznam
+-- [item_list] a jeho průchod a vyhledávání v něm je značně pomalý (při velkém počtu složek), nedo-
+-- poručuje se nastavovat počet složek hashovací tabulky [item_count] na velké hodnoty. Optimální je
+-- [item_count] <= 10000.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Poté pomocí procedury [test_content] testujeme obsah a strukturu testovací
+-- hashovací tabulky [hash_table], přičmž do seznamu [item_list] vložíme ukazatele na jednotlivé
+-- složky tabulky [hash_table]. Poté následuje vlatní test, kdy v cyklu (dokud nevyčerpáme všechny
+-- složky seznamu [item_list]) odebíráme náhodné složky hashovací tabulky [hash_table]. Při tom
+-- testujeme, zda počet zbylých složek hashovací tabulky odpovídá očekávané hodnotě a dále testujeme
+-- obsah a vnitřní strukturu hashovací tabulky [hash_table]. Po odebrání všech složek testujeme, zda
+-- je tabulka [hash_table] prázdná.
+----------------------------------------------------------------------------------------------------
+
+    var
+      item_count   : t_unsigned;                 -- celkový počet složek v testovací hashovací tabulce
+      table_length : t_unsigned;                 -- velikost hashovací tabulkly (počet slotů)
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      hash_table   : aliased c_test_hash_table;  -- testovací hashovací tabulka
+      item_list    : aliased c_list;             -- spojový seznam ukazatelů na všechny složky hashovací
+                                                 -- tabulky [hash_table] (setříděné při průchodu
+                                                 -- iterátorem hashovací tabulky)
+      hash_item    : p_test_item;                -- složka hashovací tabulky [hash_table]
+      list_item    : p_test_list_item;           -- složka seznamu [item_list]
+      hash_count   : t_unsigned;                 -- počet složek v hashovací tabulce [hash_table]
+
+    begin
+      -- inicializujeme hashovací tabulku
+      hash_table.init(table_length,c_test_item:tag);
+
+      -- naplníme hashovací tabulku [item_count] složkami a zjistíme počet složek v hashovací tabulce
+      create_new_table(^hash_table,item_count);
+      hash_count:=hash_table.count;
+
+      -- testujeme obsah a vnitřní strukturu testovací hashovací tabulky [hash_table], přičemž
+      -- vyplníme seznam [item_list] ukazateli na složky hashovací tabulky [hash_table]
+      item_list.init(c_test_list_item:tag);
+      fail_if_false(test_content(^hash_table,table_length,^item_list),'Hash table has not expected content');
+
+      -- dokud nevyčerpáme všechny složky seznamu [item_list], ubíráme náhodně vybranou složku z
+      -- hashovací tabulky [hash_table]
+      while not item_list.is_empty loop
+        -- vybereme náhodnou složku v hashovací tabulce [hash_table]
+        list_item:=get_rand_item(^item_list);
+        hash_item:=list_item^.hash_item;
+
+        -- odebereme náhodnou složku [hash_item] hashovací tabulky [hash_table] a dekrementujeme počet
+        -- složek v hashovací tabulce
+        hash_table.remove(hash_item);
+        hash_count-1;
+
+        -- smažeme složku hashovací tabulky a složku seznamu [item_list]
+        discard hash_item;
+        item_list.delete(list_item);
+
+        -- testujeme počet složek v hashovací tabulce [hash_table]
+        fail_if_false(hash_count=hash_table.count,'Expected count of items of hash table is not expected');
+
+        -- testujeme obsah a vnitřní strukturu testovací hashovací tabulky [hash_table]
+        fail_if_false(compare_items(^hash_table,^item_list),'Hash table has not expected content');
+        end loop;
+
+      -- testujeme, zda je hashovací tabulka [hash_table] prázdná
+      fail_if_false(hash_table.is_empty,'Hash table is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro nastavení internícj proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení interních proměnných
+      item_count:=8000;
+      table_length:=357;
+      end entry;
+
+    end c_removing_hash_table_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_finding_hash_table_test_case =
+-- Testovací třída pro nalezení složky v hashovací tabulce a její smazaní (viz metody [find] a
+-- [delete]. Hashovací tabulka je instance třídy [c_test_hash_table], která prvně vložené složce
+-- přiřadí ID rovné 0, druhé složce ID rovné 1, atd... Jednotlivé složky jsou instnace třídy
+-- [c_test_item], mající jediný datový člen - hodnotu [value] - ta je shodná se svým ID.
+--
+-- Princip: Nejprve je testovací hashovací tabulka zaplněna novými složkami pomocí procedury
+-- [create_new_table]. Následuje vlatní test, který je ve dvou fázích. V první procházíme všechna
+-- ID (0..[item_count]-1) složek hashovací tabulky a snažíme se pomocí těchto ID nalézt složku
+-- hashovací tabulky. U nalezené složky testujeme, zda skutečně existuje a dále testujeme, zda se
+-- jedná o složku, kterou jsme hledali (její hodnota [value] by měla být shodná s ID [id], jehož
+-- pomocí jsme složky hledali).
+-- V druhé fázi testu stejným způsobem hledáme složku v hashovací tabulce, ale nalezenou složku
+-- z hashovací tabulky odstraníme a smažeme (pomocí metody [delete]). V závěru testu 2. fáze kontro-
+-- lujeme, zda je hashovací tabulka prázdná.
+----------------------------------------------------------------------------------------------------
+
+    var
+      item_count   : t_unsigned;                 -- celkový počet složek v testovací hashovací tabulce
+      table_length : t_unsigned;                 -- velikost hashovací tabulkly (počet slotů)
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      hash_table   : aliased c_test_hash_table;  -- testovací hashovací tabulka
+      hash_item    : p_test_item;                -- složka hashovací tabulky [hash_table]
+      id           : t_unsigned:=0;              -- ID složky, která má být v hashovací tabulce
+                                                 -- [hash_table] nalezena
+    
+    begin
+      -- inicializujeme hashovací tabulku
+      hash_table.init(table_length,c_test_item:tag);
+
+      -- naplníme hashovací tabulku [item_count] složkami
+      create_new_table(^hash_table,item_count);
+
+      -- Fáze 1 (test samotného nalezení složky v hashovací tabulce)
+      while id<item_count loop
+        -- nalezneme v hashovací tabulce [hash_table] složku mající ID [id] a kontrolujeme, zda
+        -- hodnota [value] nalezené složky [hash_item] odpovídá očekávané hodnotě, v tomto případě
+        -- hodnotě [id]
+        hash_table.find(id,hash_item);
+        fail_if_false(hash_item<>nil,'There is no item with ID [id] in the hash table');
+        fail_if_false(hash_item^.value=id,'There was an incorrect item found in the hash table');
+
+        -- inkrementujeme [id]
+        id+1;
+        end loop;
+
+      -- Fáze 2 (test nalezení složky v hashovací tabulce a její smazání)
+      id:=0;
+      while id<item_count loop
+        -- nalezneme v hashovací tabulce [hash_table] složku mající ID [id] a kontrolujeme, zda
+        -- hodnota [value] nalezené složky [hash_item] odpovídá očekávané hodnotě, v tomto případě
+        -- hodnotě [id]
+        hash_table.find(id,hash_item);
+        fail_if_false(hash_item<>nil,'There is no item with ID [id] in the hash table');
+        fail_if_false(hash_item^.value=id,'There was an incorrect item found in the hash table');
+
+        -- smažeme nalezenou složku hashovací tabulky
+        hash_table.delete(hash_item);
+
+        -- testujeme, zda byla složka [hash_item] skutečně odstraněna - pousíme se jí opět nalézt,
+        -- pokud byla odstraněna, nenalezneme ji a [hash_item] bude [nil]
+        hash_table.find(id,hash_item);
+        fail_if_false(hash_item=nil,'Item of hash table was not deleted');
+
+        -- inkrementujeme [id]
+        id+1;
+        end loop;
+
+      -- testujeme, zda je testovací hashovací tabulka [hash_table] prázdná
+      fail_if_false(hash_table.is_empty,'Hash table is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro nastavení internícj proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení interních proměnných
+      item_count:=50000;
+      table_length:=589;
+      end entry;
+
+    end c_finding_hash_table_test_case;
+
+  end hash_table_test;

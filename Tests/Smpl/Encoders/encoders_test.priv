@@ -1,0 +1,379 @@
+﻿----------------------------------------------------------------------------------------------------
+module private encoders_test =
+-- Test of Characters library - Encoders/decoders.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Poznámka: Všechny testovací metody [run_test] testovacích tříd jsou téměř totožné, liší se pouze
+-- výběrem přípustných znaků. Možná by bylo lepší (a efektivnější), kdyby existovala procedura,
+-- v níž by byl vytvořen příslušný kodér a dekodér a kterou by volaly jednotlivé testovací metody
+-- v testovacích třídách. Přitom kódování jednotlivých znaků provádí metoda [put_character],
+-- která generuje výjimku [character_coder_error] např. v případě, že kódovaný znak není přípustný.
+-- Pak by byly tedy testovány všechny Unicode znaky (od $0000-$ffff), přičemž by test zachycoval
+-- pouze při kódování znaku výjimku [character_coder_error] a test by byl úspěšný v případě, že:
+--   a) daný znak byl úspěšně kódován a dekódován a původní a dekódovaný znak se shodují
+--   b) kódování znaku bylo neúspěšné (generování [character_coder_error].
+-- V ostatních případech, tj. non a) nebo generovaná libovolná výjimka (mimo [character_coder_error]
+-- při kódování znaku) by byl test označen za chybný nebo neúspěšný.
+--
+-- (Já se přikláním k 2. variantě, tj. společná procedura přo všechny testy)
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.characters;
+
+type
+  t_four_bytes = array 0..3 of t_unsigned8;  -- čtveřice bajtů
+
+----------------------------------------------------------------------------------------------------
+class private c_ascii_encoder_decoder_case =
+-- Test pro ASCII kódování/dekódování.
+{%%TODO(ASCII encoder test case) - implementovat}
+----------------------------------------------------------------------------------------------------
+ 
+    end c_ascii_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_utf8_encoder_decoder_case =
+-- Test pro UTF-8 kódování/dekódování.
+--
+-- Pricip: Provádí test kodéru [encoder] a dekodéru [decoder]. Kodér postupně kóduje všechny možné
+-- přípustné 4B znaky ($0000-$d7ff, $e000-$ffff a výjimku tvoří BOM ($feff)) uložené v [char]. Poté
+-- z kodéru vybereme až čtveřici bajtů kódujících znak [char], které vložíme do dekodéru [decoder].
+-- Z něho na závěr vybereme znak [expected], který byl kódován.
+-- Pokud se znaky [char] a [expected] shodují, bylo kódování a dekódování úspěšné.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda pro kodér a dekodér UTF-8.
+    ------------------------------------------------------------------------------------------------
+    var
+      char         : t_char32;                   -- vstupní znak určený ke kódování
+      expected     : t_char32;                   -- výstupní znak z dekodéru
+      encoder      : C_character_encoder_utf8;   -- UTF-8 enkóder
+      decoder      : c_character_decoder_utf8;   -- UTF-8 dekóder
+      bytes        : t_four_bytes;               -- čtveřice bajtů kódující znak [char]
+      all_out      : t_logical;                  -- [true] byly-li z kodéru [encoder] vybrány všechny
+                                                 -- bajty kódující znak [char]
+      char_done    : t_logical;                  -- [true] byly-li do dekodéru [decoder] odeslány
+                                                 -- všechny bajty, které kódují znak
+   
+    begin
+      -- projdeme všechny přípustné 4B znaky
+      for value in 0..$ffff loop
+        -- je hodnota [value] přípustná? (nejde o BOM?)
+        if value<>$feff and (value<$d800 or value>$dfff) then
+          -- nastavíme hodnotu znaku určeného ke kódování
+          char:ord:=value;
+
+          -- kódujeme znak [char]
+          encoder.put_character(char);
+
+          -- vybereme kódové bajty z kodéru
+          for i in 0..3 loop
+            encoder.get_output(bytes[i],all_out);
+            if all_out then break;
+              end if;
+            end loop;
+
+          -- vložíme kódové bajty do dekodéru a dekódujeme znak
+          for i in 0..3 loop
+            decoder.put_byte(bytes[i],char_done);
+            if char_done then break;
+              end if;
+            end loop;
+
+          -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+          expected:=decoder.get_character;
+          fail_if_false(char=expected,'Expected value is not equal');
+          end if;
+        end loop;
+      end run_test;
+  
+    end c_utf8_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_utf16_encoder_decoder_case =
+-- Test pro UTF-16 kódování/dekódování.
+--
+-- Pricip: Provádí test kodéru [encoder] a dekodéru [decoder]. Kodér postupně kóduje všechny možné
+-- přípustné 4B znaky ($0000-$d7ff, $e000-$fffe) uložené v [char]. Poté z kodéru vybereme až
+-- čtveřici bajtů kódujících znak [char], které vložíme do dekodéru [decoder]. Z něho na závěr
+-- vybereme znak [expected], který byl kódován.
+-- Pokud se znaky [char] a [expected] shodují, bylo kódování a dekódování úspěšné.
+-- Test je proveden ve dvou móodech endiánu - Little endian (LE) a Big endian (BE).
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda pro kodér a dekodér UTF-16.
+    ------------------------------------------------------------------------------------------------
+    var
+      char         : t_char32;                   -- vstupní znak určený ke kódování
+      expected     : t_char32;                   -- výstupní znak z dekodéru
+      encoder      : C_character_encoder_utf16;  -- UTF-16 enkóder
+      decoder      : c_character_decoder_utf16;  -- UTF-16 dekóder
+      bytes        : t_four_bytes;               -- čtveřice bajtů kódující znak [char]
+      all_out      : t_logical;                  -- [true] byly-li z kodéru [encoder] vybrány všechny
+                                                 -- bajty kódující znak [char]
+      char_done    : t_logical;                  -- [true] byly-li do dekodéru [decoder] odeslány
+                                                 -- všechny bajty, které kódují znak
+      bytes_ready  : t_logical;                  -- slouží pro nastavení endiánu kodéru
+   
+    begin
+      -- projdeme všechny přípustné 4B znaky
+      for value in 0..$fffd loop
+        -- je hodnota [value] přípustná?
+        if value<$d800 or value>$dfff then
+          -- nastavíme hodnotu znaku určeného ke kódování
+          char:ord:=value;
+
+          -- Test pro Big endian
+          -- nastavení endiánu kodéru a dekodéru
+          encoder.set_endian(bytes_ready,te_big_endian);
+          decoder.set_endian(te_big_endian);
+
+          -- kódujeme znak [char]
+          encoder.put_character(char);
+
+          -- vybereme kódové bajty z kodéru
+          for i in 0..3 loop
+            encoder.get_output(bytes[i],all_out);
+            if all_out then break;
+              end if;
+            end loop;
+
+          -- vložíme kódové bajty do dekodéru a dekódujeme znak
+          for i in 0..3 loop
+            decoder.put_byte(bytes[i],char_done);
+            if char_done then break;
+              end if;
+            end loop;
+
+          -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+          expected:=decoder.get_character;
+          fail_if_false(char=expected,'Expected value is not equal');
+
+          -- Test pro Little endian
+          -- nastavení endiánu kodéru a dekodéru
+          encoder.set_endian(bytes_ready,te_little_endian);
+          decoder.set_endian(te_little_endian);
+
+          -- kódujeme znak [char]
+          encoder.put_character(char);
+          
+          -- vybereme kódové bajty z kodéru
+          for i in 0..3 loop
+            encoder.get_output(bytes[i],all_out);
+            if all_out then break;
+              end if;
+            end loop;
+
+          -- vložíme kódové bajty do dekodéru a dekódujeme znak
+          for i in 0..3 loop
+            decoder.put_byte(bytes[i],char_done);
+            if char_done then break;
+              end if;
+            end loop;
+
+          -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+          expected:=decoder.get_character;
+          fail_if_false(t_char32(value)=expected,'Expected value is not equal');
+          end if;
+        end loop;
+      end run_test;
+  
+    end c_utf16_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_ucs2_encoder_decoder_case =
+-- Test pro UCS-2 kódování/dekódování.
+--
+-- Pricip: Provádí test kodéru [encoder] a dekodéru [decoder]. Kodér postupně kóduje všechny možné
+-- přípustné 4B znaky ($0000-$ffff) uložené v [char]. Poté z kodéru vybereme až čtveřici bajtů
+-- kódujících znak [char], které vložíme do dekodéru [decoder]. Z něho na závěr vybereme znak
+-- [expected], který byl kódován.
+-- Pokud se znaky [char] a [expected] shodují, bylo kódování a dekódování úspěšné.
+-- Test je proveden ve dvou móodech endiánu - Little endian (LE) a Big endian (BE).
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda pro kodér a dekodér UCS-2.
+    ------------------------------------------------------------------------------------------------
+    var
+      char         : t_char32;                   -- vstupní znak určený ke kódování
+      expected     : t_char32;                   -- výstupní znak z dekodéru
+      encoder      : C_character_encoder_ucs2;   -- UCS-2 enkóder
+      decoder      : c_character_decoder_ucs2;   -- UCS-2 dekóder
+      bytes        : t_four_bytes;               -- čtveřice bajtů kódující znak [char]
+      all_out      : t_logical;                  -- [true] byly-li z kodéru [encoder] vybrány všechny
+                                                 -- bajty kódující znak [char]
+      char_done    : t_logical;                  -- [true] byly-li do dekodéru [decoder] odeslány
+                                                 -- všechny bajty, které kódují znak
+      bytes_ready  : t_logical;                  -- slouží pro nastavení endiánu kodéru
+
+    begin
+      -- projdeme všechny možnéé 4B znaky
+      for value in 0..$ffff loop
+        -- nastavíme hodnotu znaku určeného ke kódování
+        char:ord:=value;
+
+        -- Test pro Big endian
+        -- nastavení endiánu kodéru a dekodéru
+        encoder.set_endian(bytes_ready,te_big_endian);
+        decoder.set_endian(te_big_endian);
+
+        -- kódujeme znak [char]
+        encoder.put_character(char);
+
+        -- vybereme kódové bajty z kodéru
+        for i in 0..3 loop
+          encoder.get_output(bytes[i],all_out);
+          if all_out then break;
+            end if;
+          end loop;
+
+        -- vložíme kódové bajty do dekodéru a dekódujeme znak
+        for i in 0..3 loop
+          decoder.put_byte(bytes[i],char_done);
+          if char_done then break;
+            end if;
+          end loop;
+
+        -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+        expected:=decoder.get_character;
+        fail_if_false(char=expected,'Expected value is not equal');
+
+        -- Test pro Little endian
+        -- nastavení endiánu kodéru a dekodéru
+        encoder.set_endian(bytes_ready,te_little_endian);
+        decoder.set_endian(te_little_endian);
+
+        -- kódujeme znak [char]
+        encoder.put_character(char);
+          
+        -- vybereme kódové bajty z kodéru
+        for i in 0..3 loop
+          encoder.get_output(bytes[i],all_out);
+          if all_out then break;
+            end if;
+          end loop;
+
+        -- vložíme kódové bajty do dekodéru a dekódujeme znak
+        for i in 0..3 loop
+          decoder.put_byte(bytes[i],char_done);
+          if char_done then break;
+            end if;
+          end loop;
+
+        -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+        expected:=decoder.get_character;
+        fail_if_false(t_char32(value)=expected,'Expected value is not equal');
+        end loop;
+      end run_test;
+ 
+    end c_ucs2_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_ucs4_encoder_decoder_case =
+-- Test pro UCS-4 kódování/dekódování.
+--
+-- Pricip: Provádí test kodéru [encoder] a dekodéru [decoder]. Kodér postupně kóduje všechny možné
+-- přípustné 4B znaky ($0000-$ffff) uložené v [char]. Poté z kodéru vybereme až čtveřici bajtů
+-- kódujících znak [char], které vložíme do dekodéru [decoder]. Z něho na závěr vybereme znak
+-- [expected], který byl kódován.
+-- Pokud se znaky [char] a [expected] shodují, bylo kódování a dekódování úspěšné.
+-- Test je proveden ve dvou móodech endiánu - Little endian (LE) a Big endian (BE).
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda pro kodér a dekodér UCS-4.
+    ------------------------------------------------------------------------------------------------
+    var
+      char         : t_char32;                   -- vstupní znak určený ke kódování
+      expected     : t_char32;                   -- výstupní znak z dekodéru
+      encoder      : C_character_encoder_ucs4;   -- UCS-4 enkóder
+      decoder      : c_character_decoder_ucs4;   -- UCS-4 dekóder
+      bytes        : t_four_bytes;               -- čtveřice bajtů kódující znak [char]
+      all_out      : t_logical;                  -- [true] byly-li z kodéru [encoder] vybrány všechny
+                                                 -- bajty kódující znak [char]
+      char_done    : t_logical;                  -- [true] byly-li do dekodéru [decoder] odeslány
+                                                 -- všechny bajty, které kódují znak
+      bytes_ready  : t_logical;                  -- slouží pro nastavení endiánu kodéru
+
+    begin
+      -- projdeme všechny možnéé 4B znaky
+      for value in 0..$ffff loop
+        -- nastavíme hodnotu znaku určeného ke kódování
+        char:ord:=value;
+
+        -- Test pro Big endian
+        -- nastavení endiánu kodéru a dekodéru
+        encoder.set_endian(bytes_ready,te_big_endian);
+        decoder.set_endian(te_big_endian);
+
+        -- kódujeme znak [char]
+        encoder.put_character(char);
+
+        -- vybereme kódové bajty z kodéru
+        for i in 0..3 loop
+          encoder.get_output(bytes[i],all_out);
+          if all_out then break;
+            end if;
+          end loop;
+
+        -- vložíme kódové bajty do dekodéru a dekódujeme znak
+        for i in 0..3 loop
+          decoder.put_byte(bytes[i],char_done);
+          if char_done then break;
+            end if;
+          end loop;
+
+        -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+        expected:=decoder.get_character;
+        fail_if_false(char=expected,'Expected value is not equal');
+
+        -- Test pro Little endian
+        -- nastavení endiánu kodéru a dekodéru
+        encoder.set_endian(bytes_ready,te_little_endian);
+        decoder.set_endian(te_little_endian);
+
+        -- kódujeme znak [char]
+        encoder.put_character(char);
+          
+        -- vybereme kódové bajty z kodéru
+        for i in 0..3 loop
+          encoder.get_output(bytes[i],all_out);
+          if all_out then break;
+            end if;
+          end loop;
+
+        -- vložíme kódové bajty do dekodéru a dekódujeme znak
+        for i in 0..3 loop
+          decoder.put_byte(bytes[i],char_done);
+          if char_done then break;
+            end if;
+          end loop;
+
+        -- vybereme dekódovaný znak [expected] z kodéru a porovnáme ho se znakem [char]
+        expected:=decoder.get_character;
+        fail_if_false(t_char32(value)=expected,'Expected value is not equal');
+        end loop;
+      end run_test;
+  
+    end c_ucs4_encoder_decoder_case;
+
+  end encoders_test;

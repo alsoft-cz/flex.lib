@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public hash_tables =
 -- Data structures - hash tables.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- add set/get_first/last/prev/next methods
@@ -17,8 +17,10 @@ extend
   standard.common.structures;
 
 -- forward declarations
-class abstract c_hash_table; type p_hash_table      = ^class c_hash_table;
-class c_hash_table_item;     type p_hash_table_item = ^class c_hash_table_item;
+class abstract c_hash_table;    type p_hash_table             = ^class c_hash_table;
+class c_hash_table_item;        type p_hash_table_item        = ^class c_hash_table_item;
+class c_incremental_hash_table; type p_incremental_hash_table = ^class p_incremental_hash_table;
+class c_hash_table_iterator;    type p_hash_table_iterator    = ^class c_hash_table_iterator;
 
 
 
@@ -146,6 +148,21 @@ class public c_incremental_hash_table = extend c_hash_table;
 ----------------------------------------------------------------------------------------------------
 
     end c_incremental_hash_table;
+    
+    
+    
+----------------------------------------------------------------------------------------------------
+class public c_hash_table_iterator = extend c_iterator;
+-- Hash table iterator.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        hash_table : in class c_hash_table);     -- a hash table to be iterated
+    -- Initializes an iterator used for walking through a hash table.
+    ------------------------------------------------------------------------------------------------   
+    
+    end c_hash_table_iterator;
 
 
 

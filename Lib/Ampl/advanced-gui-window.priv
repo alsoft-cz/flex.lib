@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private window =
 -- GUI window object.
--- Advanced Multi-platform Library.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with 

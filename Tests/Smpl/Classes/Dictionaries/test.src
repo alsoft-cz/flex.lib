@@ -1,0 +1,43 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+-- Dictionary test implementation
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Sada testů pro slovníky.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  dictionaries_test;
+
+----------------------------------------------------------------------------------------------------
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(c_inserting_values_test_case:tag,'Inserting values into dictionary');
+  psuite^.register_test(c_getting_values_test_case:tag,'Getting, removing and deletting items from dictionary');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests(30);
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

@@ -1,9 +1,11 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public program_control =
--- Flex Standard Library
 -- General program execution control.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
 
 message
   process_start_error;
@@ -75,7 +77,7 @@ procedure get_environment_variable (
     env_var        : in t_char32ustr;            -- environment variable name
     env_value      : out p_char32ustr;           -- environment variable value
     error          : out t_logical);             -- result of an operation
--- Returns the environment variable`s [env_var] value. The value is taken from the operating
+-- Returns the environment variable [env_var]'s value. The value is taken from the operating
 -- system without any modifications except character encodig changes. When no such environment
 -- variable exists, the subprogram fails.
 --   The caller is responsible for freeing the memory.
@@ -88,7 +90,7 @@ procedure set_environment_variable (
     env_var        : in t_char32ustr;            -- environment variable name
     env_value      : in t_char32ustr;            -- environment variable value
     error          : out t_logical);             -- result of an operation
--- Sets the environment variable`s [env_var] value. Neither [env_var] nor [env_value] may be an 
+-- Sets the environment variable [env_var]'s value. Neither [env_var] nor [env_value] may be an 
 -- empty string, otherwise the subprogram fails.
 --
 -- Result:
@@ -106,7 +108,7 @@ procedure delete_environment_variable (
 --   When the subprogram succeeds, [error] is set to [False]. 
 ----------------------------------------------------------------------------------------------------
 procedure discard_environment_variables (
-    env_vars       : in out p_environment_variables); -- list to be discarded
+    env_vars       : in out p_environment_variables);   -- list to be discarded
 -- Helper subprogram to discard a block of environment variables.
 --
 -- Result:
@@ -120,21 +122,29 @@ procedure discard_command_line_parameters (
 --   This subprogram never fails.
 ----------------------------------------------------------------------------------------------------
 procedure run_external_program (
-    cmd_line       : in p_command_line_parameters;
-    directory      : in p_char32ustr := nil;
-    env_vars       : in p_environment_variables := nil;
-    exitcode       : in p_unsigned := nil);
--- Starts new process
--- [cmd_line] list of parameters, first parameter is name of executable file
--- [directory] startup directyory, if nil process inherits current
--- [env_vars] is optional list of environment variables, if nil is passed new process inherits environment
--- [exitcode] if is not nil caller is blocked until child process finish and [exitcode^] is set to exitcode of process
+    cmd_line       : in p_command_line_parameters;      -- list of parameters
+    directory      : in p_char32ustr := nil;            -- optional startup directory
+    env_vars       : in p_environment_variables := nil; -- optional list of environment variables
+    exit_code      : in p_unsigned := nil);             -- child process exit code
+-- Runs an external program as a child process of the current process and optinaly waits for its
+-- completion.
+--   The first parameter of the [cmd_line] block of parameters shall shall be a name of an 
+-- executable file. This is determined by the operating system. However, the block of command line
+-- parameters may not be empty, otherswise [process_start_error] is raised.
+--   When [directory] is not NIL, the process is created with the specified current directory; 
+-- otherwise the child process inherits the current directory of this process. When [env_vars] is 
+-- not NIL, the process is created with the specified set of environment variable; otherwise the 
+-- child process inherits the environment of the current process.
+--   When [exit_code] is not NIL, execution stops until the child process terminates, and its exit
+-- code is passed to [exit_code^].
+--
 -- Result:
---  raise process_start_error when program didn't started succesfuly
+--   Raises [process_start_error] when the program didn't start succesfuly.
+--   Raises [tasking_error] when waiting for the program to terminate failed.
 ----------------------------------------------------------------------------------------------------
 procedure set_task_exit_code (
     exitcode       : t_unsigned);
--- sets exitcode for current task
+-- Sets exitcode for current task.
 ----------------------------------------------------------------------------------------------------
 
 end program_control;

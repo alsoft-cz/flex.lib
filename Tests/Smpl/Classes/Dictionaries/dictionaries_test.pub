@@ -1,0 +1,50 @@
+﻿----------------------------------------------------------------------------------------------------
+module public dictionaries_test =
+-- Test of Classes library - Dictionaries.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  quality,
+  quality.debugging;
+
+  
+----------------------------------------------------------------------------------------------------
+class public c_inserting_values_test_case = extend c_test_case;
+-- Vloží do testovaného slovníku [dictionary] [row_count] řádků ve formě klíč-hodnota pomocí pro-
+-- cedury [create_dictionary]. Klíč i jeho hodnota jsou náhodně generované řetězce maximální
+-- délky 20 znaků. Spolu s vytvořením slovníku je vytvořen spojový seznam [list], který obsahuje všechny
+-- dvojice klíč-hodnota slovníku.
+--
+-- Princip:
+-- Následuje test, v němž iterátorem slovníku procházíme jednotlivé dvojice klíč-hodnota, příčemž
+-- klíč vyhledáme ve spojovém seznamu [list]. Pokud se hodnota klíče ve spojovém seznamu shoduje
+-- s hodnotou klíče ve slovníku, odstraníme složku s klíčem a hodnotou ze seznamu [list] a vybíráme
+-- dalčí dvojici klíč-hodnota ze slovníku. Po vyčerpání všech dvojic slovníku by měl být seznam [list]
+-- prázdný a tím i test úspěšný. V opačných případech je test vyhodnocen jako neúspěšný. Na závěr
+-- pomocí procedury [is_dictionary_empty] testujeme, zda je slovník prázdný.
+----------------------------------------------------------------------------------------------------
+
+    end c_inserting_values_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_getting_values_test_case = extend c_test_case;
+-- Vloží do testovaného slovníku [dictionary] [row_count] řádků ve formě klíč-hodnota pomocí pro-
+-- cedury [create_dictionary]. Klíč i jeho hodnota jsou náhodně generované řetězce maximální
+-- délky 20 znaků. Spolu s vytvořením slovníku je vytvořen spojový seznam [list], který obsahuje všechny
+-- dvojice klíč-hodnota slovníku.
+--
+-- Princip:
+-- Následuje test, v němž postupně vybíráme složky seznamu [list]. Každá složka seznamu obsahuje klíč
+-- slovníku, který se pokusíme najít ve slovníku pomocí metody [exist_key]. Pokud ho nenalezneme, je
+-- test neúspěšný. Dále vyhledáme pomocí metody [get_value] hodnotu klíče. Pokud se tato hodnota
+-- neshoduje s hodnotou klíče složky seznamu [list], je test opět neúspěšný. Poté odebereme nalezenou
+-- dvojici klíč-hodnota (a to u sudých složek pomocí metody [delete] a u lichých pomocí [remove]).
+-- Na závěr pomocí procedury [is_dictionary_empty] testujeme, zda je slovník prázdný.
+----------------------------------------------------------------------------------------------------
+
+  end c_getting_values_test_case;
+
+  end dictionaries_test;

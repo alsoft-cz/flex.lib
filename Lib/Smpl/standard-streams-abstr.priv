@@ -1,4 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
 class private abstract c_abstract_stream =
 -- Abstraktní proud.
 ----------------------------------------------------------------------------------------------------
@@ -140,6 +145,7 @@ class private abstract c_output_stream =
   virtual transfer_all_packets =
   ------------------------------------------------------------------------------------------------
   begin
+    -- presunuje packety dokud to neni posledni
     while not transfer_packet(source,transfer_eod) loop
       end loop;
     end transfer_all_packets;
@@ -189,6 +195,7 @@ end c_output_stream;
 
 ----------------------------------------------------------------------------------------------------
 class private abstract c_stream_reader = 
+-- implementace se prevazne zabyva presmerovanim volani na podlehajici stream
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual init_reader =
@@ -196,7 +203,7 @@ class private abstract c_stream_reader =
   begin
     -- nastavim podrizeny stream
     _source:=source;
-    _isinicialized:=true;
+    _isinitialized:=true;
     end init_reader;
 
 
@@ -205,6 +212,9 @@ class private abstract c_stream_reader =
   virtual is_eod =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     result:=_source^.is_eod;
     end is_eod;
@@ -216,7 +226,9 @@ class private abstract c_stream_reader =
   ------------------------------------------------------------------------------------------------
   begin
     -- zavolam metodu podrizeneho streamu
-    _source^.close;
+    if _isinitialized then
+      _source^.close;
+      end if;
     end close;
 
   
@@ -225,6 +237,9 @@ class private abstract c_stream_reader =
   virtual get_flow =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _source^.get_flow(bytes);
     end get_flow;
@@ -235,6 +250,9 @@ class private abstract c_stream_reader =
   virtual set_optimal_packet_size =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _source^.set_optimal_packet_size(bytes);
     end set_optimal_packet_size;
@@ -245,6 +263,9 @@ class private abstract c_stream_reader =
   virtual get_optimal_packet_size =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _source^.get_optimal_packet_size(bytes);
     end get_optimal_packet_size;
@@ -255,6 +276,9 @@ class private abstract c_stream_reader =
   virtual set_lazy_buffer =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _source^.set_lazy_buffer(lazy);
     end set_lazy_buffer;
@@ -265,6 +289,9 @@ class private abstract c_stream_reader =
   virtual get_lazy_buffer =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _source^.get_lazy_buffer(lazy);
     end get_lazy_buffer;
@@ -274,6 +301,7 @@ class private abstract c_stream_reader =
 
 ----------------------------------------------------------------------------------------------------
 class private abstract c_stream_writer =
+-- implementace se prevazne zabyva presmerovanim volani na podlehajici stream
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual init_writer =
@@ -281,7 +309,7 @@ class private abstract c_stream_writer =
   begin
     -- nastavim podrizeny stream
     _target:=target;
-    _isinicialized:=true;
+    _isinitialized:=true;
     end init_writer;
 
 
@@ -290,6 +318,9 @@ class private abstract c_stream_writer =
   virtual is_reading =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     result:=_target^.is_reading;
     end is_reading;
@@ -301,7 +332,9 @@ class private abstract c_stream_writer =
   ------------------------------------------------------------------------------------------------
   begin
     -- zavolam metodu podrizeneho streamu
-    _target^.close;
+    if _isinitialized then
+      _target^.close;
+      end if;
     end close;
 
   
@@ -310,6 +343,9 @@ class private abstract c_stream_writer =
   virtual flush =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.flush;
     end flush;
@@ -320,6 +356,9 @@ class private abstract c_stream_writer =
   virtual get_flow =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.get_flow(bytes);
     end get_flow;
@@ -330,6 +369,9 @@ class private abstract c_stream_writer =
   virtual set_optimal_packet_size =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.set_optimal_packet_size(bytes);
     end set_optimal_packet_size;
@@ -340,6 +382,9 @@ class private abstract c_stream_writer =
   virtual get_optimal_packet_size =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.get_optimal_packet_size(bytes);
     end get_optimal_packet_size;
@@ -350,6 +395,9 @@ class private abstract c_stream_writer =
   virtual set_lazy_buffer =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.set_lazy_buffer(lazy);
     end set_lazy_buffer;
@@ -360,6 +408,9 @@ class private abstract c_stream_writer =
   virtual get_lazy_buffer =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
     -- zavolam metodu podrizeneho streamu
     _target^.get_lazy_buffer(lazy);
     end get_lazy_buffer;

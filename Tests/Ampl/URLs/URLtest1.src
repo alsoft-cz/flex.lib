@@ -1,4 +1,5 @@
 ﻿#option hint(all,false);
+#option warning(all,false);
 
 program url_test = 
 
@@ -8,6 +9,7 @@ with
   standard.conversions,
   standard.classes,
   standard.classes.lists,
+  standard.classes.dictionaries,
   standard.names,
   advanced.namespaces.uri;
 
@@ -16,7 +18,7 @@ with
 ----------------------------------------------------------------------------------------------------
 
 procedure test(
-    name           : in t_text_name;
+    src_name       : in t_text_name;
     name_type      : in t_name_type) =
 
   --------------------------------------------------------------------------------------------------
@@ -24,74 +26,116 @@ procedure test(
       names          : in c_list) =
   -- Lists all name components in a collection
   --------------------------------------------------------------------------------------------------
+
+  --------------------------------------------------------------------------------------------------
+  procedure print_subcomponents (
+      subcomponents  : in c_list) =
+  -- Lists all name components in a collection
+  --------------------------------------------------------------------------------------------------
+var
+  iterator         : c_list_iterator;
+  subc             : p_name_subcomponent;
+
+begin   
+  -- prepare an iterator
+  iterator.init(subcomponents,tlwd_forward);
+
+  -- output all names provided by the given iterator
+  while iterator.get(p_item(subc)) loop
+    write_line(subc^.name^);
+    end loop;
+  end print_subcomponents;
+
+
 var
   iterator         : c_list_iterator;
   name             : p_name_component;
   text_name        : p_text_name;
 
-begin
+begin   
   -- prepare an iterator
   iterator.init(p_list(^names)^,tlwd_forward);
 
   -- output all names provided by the given iterator
   while iterator.get(p_item(name)) loop
-    begin
-      -- retrieve a composed name
-      name^.compose_name(text_name);
-
-      -- output it
-      write_line(text_name^);
-
-    leave
-      -- and free the memory
-      discard text_name;
-      end;
+    print_subcomponents(name^.subcomponents);
+    write_line(' ---');
     end loop;
   end list_all;
 
 var
-  ns         : c_namespace_uri;
+  name       : p_name;
   valid      : t_logical;
-  comps      : c_list;
-  nsdata     : c_namespace.p_namespace_specific;
-  detected_nt: t_name_type;
   text_name  : p_text_name;
+  cn         : p_name;
+
 begin
-    write_line(name);
+    write_line(src_name);
     write('--- ');
     case name_type
       when tnt_unspecified do write('unspecified');
       when tnt_relative do write('relative');
       when tnt_absolute do write('absolute');
+      when others do write('another');
       end case;
     write(' ');
-    ns.check_name(name, name_type, valid);
+    valid := namespace_uri^.check_name(src_name);
     if valid
     then
-      write('--- valid ');
-      ns.decompose_name(name, name_type, detected_nt, comps, nsdata);
-      case detected_nt
-        when tnt_unspecified do write_line('unspecified');
-        when tnt_relative do write_line('relative');
-        when tnt_absolute do write_line('absolute');
-        end case;
-      list_all(comps);
-      write('--- recomposed: ');
       begin
-        ns.compose_name(comps, nsdata, text_name);
-        write_line(text_name^);
+        write_line('--- valid');
+        namespace_uri^.decompose_name(src_name, name, name_type);
+        list_all(name^.components);
+        write('--- recomposed: ');
+        begin
+          name^.compose_name(text_name);
+          write_line(text_name^);
+        leave
+          discard text_name;
+          end;
+
+        if p_uri_name(name)^.is_normalized
+          then write_line('(normal)');
+          else write_linE('(NOT NORMAL)');
+          end if;
+
+        write_line('***cloned***');
+
+        cn := name^.clone;
+        begin
+          list_all(cn^.components);
+          write('--- recomposed: ');
+          begin
+            cn^.compose_name(text_name);
+            write_line(text_name^);
+          leave
+            discard text_name;
+            end;
+        leave
+          discard cn;
+          end;
+      
       leave
-        discard text_name;
+        discard name;
         end;
     else
       write_line('--- invalid');
       end if;
   end test;
 
+var
+  uri : c_namespace_uri;
+  dict : c_string_string_dictionary;
+  iter : c_string_string_dictionary_iterator;
+  key : t_char32lstr;
+  value: t_char32lstr;
+
 begin
   test('abcd', tnt_unspecified);
-  test('http://www.example.com/path/somewhere.txt', tnt_unspecified);
-  test('http://user:password@www.example.com:2221/path/say%20thing?what=hello+world&lang=us#part3%F0', tnt_unspecified);
+  test('/', tnt_unspecified);
+  test('http://www.example.com/path/%2E%2E/somewhere.txt/', tnt_unspecified);
+  test('http://www.example.com/path/%2E%2E/somewhere.txt', tnt_unspecified);
+  test('http://user:password@www.example.com:2221/path/say%20thing?what=hello+world&lang=us#part3%00', tnt_unspecified);
   test('../relative/file', tnt_unspecified);
   test('/etc/passwd', tnt_unspecified);
   test('hey, joe, how are you?', tnt_unspecified);

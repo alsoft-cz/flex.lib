@@ -1,0 +1,239 @@
+﻿----------------------------------------------------------------------------------------------------
+module public dictionaries =
+-- Dictionary implementation
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Modul poskytuje tři třídy pro slovník:
+--       [c_dictionary] - obecný slovník pro libovolný typ klíče a hodnoty
+--       [c_string_dictionary] - slovník mající jako klíč řetězec a hodnotu libovolného typu
+--       [c_string_string_dictionary] - slovník mající za klíč a hodnotu řetězec.
+-- a jednu třídu [c_string_string_iterator] pro iteraci string-string slovníku.
+--
+-- Pro obecný slovník je zapotřebí vytvořit potomky tříd [c_dictionary_key] a [c_dictionary_value]
+-- pro specifikaci klíče a hodnoty. Navíc je nutné přepsat metodu [compare] třídy [c_dictionary_key],
+-- která porovnává dva klíče.
+--
+-- Slovník je obálkou binárního vyhledávacího stromu, jehož uzly tvoří dvojice klíč-hodnota. Každý
+-- slovník obsahuje [supervised] proměnnou [tree], což je ukazatel na strom, který reprezentuje
+-- slovník.
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.classes.trees;
+
+message
+  dictionary_error;
+
+-- dopředné deklarace
+class abstract c_dictionary_key;   type p_dictionary_key           = ^class c_dictionary_key;
+class abstract c_dictionary_value; type p_dictionary_value         = ^class c_dictionary_value;
+class c_dictionary;                type p_dictionary               = ^class c_dictionary;
+class c_string_dictionary;         type p_string_dictionary        = ^class c_string_dictionary;
+class c_string_string_dictionary;  type p_string_string_dictionary = ^class c_string_string_dictionary;
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_dictionary_key =
+-- Obecný předek pro klíč slovníku.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract compare (
+        other      : p_dictionary_key)           -- porovnávaný klíč
+        return t_compare_result;
+    -- Abstraktní metoda pro porovnání klíče [this] a [other].
+    ------------------------------------------------------------------------------------------------
+
+    end c_dictionary_key;
+
+
+----------------------------------------------------------------------------------------------------
+class {public} abstract c_predek =
+-- Obecný předek pro hodnotu slovníku.
+----------------------------------------------------------------------------------------------------
+
+    virtual abstract met (
+        i : t_unsigned);
+
+    end c_predek;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_dictionary_value =
+-- Obecný předek pro hodnotu slovníku.
+----------------------------------------------------------------------------------------------------
+
+    end c_dictionary_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_dictionary =
+-- Slovník - třída, která uchovává seznam dvojic klíč-hodnota 
+-- a pro každý klíč umí efektivně najít hodnotu
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value (
+        key        : in p_dictionary_key;        -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static set_value (
+        key        : in p_dictionary_key;        -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    static delete_value (
+        key        : in p_dictionary_key);       -- klíč
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static remove_value (
+        key        : in p_dictionary_key);       -- klíč
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static get_value (
+        key        : in p_dictionary_key)        -- klíč
+        return p_dictionary_value;
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static exist_key (
+        key        : in p_dictionary_key)        -- klíč
+        return t_logical;
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static delete_all;
+    -- Vymaže všechny položky slovníku.
+    ------------------------------------------------------------------------------------------------
+    static remove_all;
+    -- Vyčistí slovník.
+    ------------------------------------------------------------------------------------------------
+
+  supervised
+
+    var
+      tree         : p_binary_tree;
+
+    end c_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_dictionary = extend c_dictionary;
+-- Slovník s řetězcovými klíči
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static set_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : in p_dictionary_value);     -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    static delete_value (
+        key        : in t_char32ustr);           -- klíč
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static remove_value (
+        key        : in t_char32ustr);           -- klíč
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static get_value (
+        key        : in t_char32ustr)            -- klíč
+        return p_dictionary_value;
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static exist_key (
+        key        : in t_char32ustr)            -- klíč
+        return t_logical;
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_string_dictionary = extend c_string_dictionary;
+-- Slovník s řetězcovými klíči a řetězcovými hodnotami
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : in t_char32ustr);           -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static set_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : in t_char32ustr);           -- hodnota
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    {%%TODO(Unconstrainded string) - kompilátor nepodporuje funkce vracející unconstrained stringy
+                                   - až bude, stačí odkomentovat:}
+--    static get_value (
+--        key        : in t_char32ustr)            -- klíč
+--        return t_char32ustr;
+    {a tohle vyhodit:}
+    static get_value (
+        key        : in t_char32ustr;            -- klíč
+        value      : out t_char32ustr);          -- hodnota
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    static exist_key (
+        key        : in t_char32ustr)            -- klíč
+        return t_logical;
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_string_string_dictionary_iterator =
+-- Iterátor pro průchod slovníkem typu řetězec-řetězec.
+-- Je založen na iterátoru pro binární strom, neboť slovník je binárním stromem.
+{%%TODO(XXX) vymyslet hiearchii iterátorů}
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        dictionary : in c_string_string_dictionary);  -- slovník
+    -- Inicializuje iterátor.
+    ------------------------------------------------------------------------------------------------
+    static get_value (
+        key        : out t_char32ustr;           -- klíč
+        value      : out t_char32ustr)           -- hotnota
+        return t_logical;
+    -- Vrátí dvojici klíč - hodnota, posune na další prvek slovníku, vrátí T, pokud byly zapsány
+    -- nějaké hodnoty do [key],[value].
+    ------------------------------------------------------------------------------------------------
+    static reset;
+    -- Vyresetuje iterátor.
+    ------------------------------------------------------------------------------------------------
+
+    end c_string_string_dictionary_iterator;
+
+end dictionaries;

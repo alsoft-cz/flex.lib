@@ -1,0 +1,367 @@
+﻿----------------------------------------------------------------------------------------------------
+module private debugging =
+-- Debug statements + low-level logging
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure write_setup_before_all_tests =
+-- Pošle do výstupního formatteru [formatter] setupu celého testsuitu, tj:
+--   jména všech registrovaných testů
+--   počet opakování testů
+----------------------------------------------------------------------------------------------------
+var
+  item             : p_test_item;                -- prvek seznamu testů [test_list]
+  str              : t_char32str;                -- řetězec určený k výstupu
+begin
+  -- textový výstup (Vypisované informace)
+  formatter^.write_line('Setup tests information:');
+
+  -- textový výstup registrovaných testů
+  formatter^.write_line('  Registred tests:');
+
+  -- dokud jsou v seznamu testů nějaké testy, pošleme je do formatteru
+  item:=test_list^.get_first;
+  while item<>nil loop
+    str:='    ' & item^.test_name;
+    formatter^.write_line(str);
+    item:=test_list^.get_next(item);
+    end loop;
+
+  -- textový výstup počtu opakování jednotlivých testů
+  str:='  Tests loop count:                      ' & unsigned_to_string(t_unsigned(loop_count));
+  formatter^.write_line(str);
+  formatter^.write_line('');
+  end write_setup_before_all_tests;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_results_after_all_tests =
+-- Pošle do výstupního formatteru [formatter] časové informace testování, tj:
+--   datum a čas zahájení prvního testu
+--   datum a čas ukončení posledního testu
+--   celkovou dobu provádění testů, tj. rozdíl dvou předchozích hodnot
+----------------------------------------------------------------------------------------------------
+var
+  cal              : c_gregorian_calendar;       -- insatnce Gregoriánského kalendáře
+  decomp_datim     : cal.t_decomposed_datetime;  -- dekomponovaný datum/čas
+  str              : t_char32str;                -- řetězec určený k výstupu
+
+begin
+  -- vypíšeme úvodní info
+  formatter^.write_line('');
+  formatter^.write_line('Test result info:');
+
+  -- dekomponujeme vstupní datum/čas [start] zahájení testu
+  cal.decompose_datetime(start,decomp_datim);
+
+  -- textový výstup datumu/času zahájení testu
+  str:='  Date/time of test start:               ' & cal.decomposed_datim_to_string(decomp_datim,false);
+  formatter^.write_line(str);
+
+    -- dekomponujeme vstupní datum/čas [stop] ukončení testu
+  cal.decompose_datetime(stop,decomp_datim);
+
+  -- textový výstup datumu/času ukončení testu
+  str:='  Date/time of test stop:                ' & cal.decomposed_datim_to_string(decomp_datim,false);
+  formatter^.write_line(str);
+
+  -- textový výstup datumu/času doby provádění testu
+  str:='  Testing duration (s):                  ' & unsigned_to_string(t_unsigned(get_timespan(start,stop)));
+  formatter^.write_line(str);
+  formatter^.write_line('');
+  end write_results_after_all_tests;
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_testing =
+-- Pošle do výstupního formatteru [formatter] textový řetězec 'Testing'.
+----------------------------------------------------------------------------------------------------
+begin
+  -- zapíšeme výstupní text
+  formatter^.write_line('Testing');
+  end write_testing;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_start_test_name =
+-- Pošle do výstupního formatteru [formatter] název testu, který právě probíhá.
+----------------------------------------------------------------------------------------------------
+var
+  str              : t_char32str;                -- řetězec určený k výstupu
+
+begin
+  -- zapíšeme výstupní text
+  str:='  ' & test_name;
+  formatter^.write(str);
+  end write_start_test_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_result_OK =
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (OK).
+----------------------------------------------------------------------------------------------------
+begin
+  -- zapíšeme výstupní text
+  formatter^.write_line(' ... OK');
+  end write_result_OK;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_result_failed =
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (failed).
+----------------------------------------------------------------------------------------------------
+begin
+  -- zapíšeme výstupní text
+  formatter^.write_line(' ... failed');
+  end write_result_failed;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_result_error =
+-- Pošle do výstupního formatteru [formatter] hlášení o výsledku provedení testu (error).
+----------------------------------------------------------------------------------------------------
+begin
+  -- zapíšeme výstupní text
+  formatter^.write_line(' ... error');
+  end write_result_error;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure write_results =
+-- Pošle do výstupního formatteru [formatter] informace o výsledcích testování, tj:
+--   celkový počet provedených testů,
+--   celkový počet úspěšných testů + jména všech testů, datum a čas zahájení, dobu trvání,
+--   celkový počet neúspěšných testů + jména všech testů, datum a čas zahájení, krok v cyklu, kdy došlo k selhání,
+--   celkový počet chybných testů + jména všech testů, datum a čas zahájení, krok v cyklu, kdy došlo k selhání.
+----------------------------------------------------------------------------------------------------
+var
+    cal            : c_gregorian_calendar;       -- instance Gregoriánského kalendáře (pro dekompozici datumu a času)
+    decomp_datim   : cal.t_decomposed_datetime;  -- dekomponovaný datum
+    item           : p_result_item;              -- složka seznamu výsledků testu [success_list] resp. [failure_list] resp. [error_list]
+    str            : t_char32str;                -- řetězec určený k výstupu
+
+begin
+    -- zapíšeme celkový počet testů
+    str:='  Total number of tests:                 ' & unsigned_to_string(total_count);
+    formatter^.write_line(str);
+    formatter^.write_line('');
+
+    -- zapíšeme počet úspěšných testů
+    str:='  Tests succeeded:                       ' & unsigned_to_string(success_count);
+    formatter^.write_line(str);
+
+    -- zapíšeme info o jednotlivých úspěšných testech (jméno testu, datum, čas, doba provádění)
+    item:=success_list^.get_first;
+    while item<>nil loop
+      -- název testu
+      str:='    "' & item^.test_name & '"    ';
+
+      -- dekomponujeme datum a čas zahájení provádění testu a přidáme ho k výstupnímu řetězci [str]
+      cal.decompose_datetime(item^.time,decomp_datim);
+      str & cal.decomposed_datim_to_string(decomp_datim,false);
+
+      -- určíme dobu provádění v milisekundách a přídáme ji k výstupnímu řetězci [str]
+      str & ' (' & unsigned_to_string(t_unsigned(item^.duration*cal.t_dtl_second)) & ' ms) ';
+
+      -- ze seznamu výsledků [success_list] vybereme další složku
+      item:=success_list^.get_next(item);
+
+      -- vlastní zapsání
+      formatter^.write_line(str);
+      end loop;
+
+    -- zapíšeme počet neúspěšných testů
+    formatter^.write_line('');
+    str:='  Tests failed:                          ' & unsigned_to_string(fail_count);
+    formatter^.write_line(str);
+
+    -- zapíšeme info o jednotlivých neúspěšných testech (jméno testu, datum, čas, zprávu)
+    item:=failure_list^.get_first;
+    while item<>nil loop
+      -- název testu
+      str:='    "' & item^.test_name & '"    ';
+
+      -- dekomponujeme datum a čas zahájení provádění testu a přidáme ho k výstupnímu řetězci [str]
+      cal.decompose_datetime(item^.time,decomp_datim);
+      str & cal.decomposed_datim_to_string(decomp_datim,false);
+
+      -- "místo" resp. zpráva, která vznikla při generování výjimky [test_error] při chybě v
+      -- testu. To v současnosti však není podporováno.
+      {%%TODO(msg) - dořešit vložení zprávy}
+
+      -- k řetězci [str] dále přidáme index v cyklu, kdy došlo k neúspěšnému testování
+      str & ' ' & unsigned_to_string(item^.loop_failed);
+
+      -- ze seznamu výsledků [failure_list] vybereme další složku
+      item:=failure_list^.get_next(item);
+
+      -- vlastní zapsání
+      formatter^.write_line(str);
+      end loop;
+
+    -- zapíšeme počet chybných testů
+    formatter^.write_line('');
+    str:='  Test errors:                           ' & unsigned_to_string(error_count);
+    formatter^.write_line(str);
+
+    -- zobrazíme info o jednotlivých chybných testech (jméno testu, datum, čas, jméno generované výjimky)
+    item:=error_list^.get_first;
+    while item<>nil loop
+      -- název testu
+      str:='    "' & item^.test_name & '"    ';
+
+      -- dekomponujeme datum a čas zahájení provádění testu a přidáme ho k výstupnímu řetězci [str]
+      cal.decompose_datetime(item^.time,decomp_datim);
+      str & cal.decomposed_datim_to_string(decomp_datim,false);
+
+      -- Jméno neočekávané výjimky, ke které během testování došlo (byla generována kódem určeným
+      -- k testování. To v současnosti však není podporováno.
+      {%%TODO(exception name)}
+
+      -- k řetězci [str] dále přidáme index v cyklu, kdy k chybě v testu
+      str & ' ' & unsigned_to_string(item^.loop_failed);
+
+      -- ze seznamu výsledků [error_list] vybereme další složku
+      item:=error_list^.get_next(item);
+
+      -- vlastní zapsání
+      formatter^.write_line(str);
+      end loop;
+  end write_results;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_quality_formatter =
+-- Abstraktní formatter pro testovací knihovny.
+----------------------------------------------------------------------------------------------------
+
+    end c_quality_formatter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_console_quality_formatter =
+-- Formatter pro standardní výstup pro testovací knihovny.
+-- Potřebný setup interních proměnných provádí inicializační metoda [entry].
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override write =
+    -- Vypíše text [text] na konzoli.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vypíšeme text do souboru pomocí interního formatteru [writer]
+      writer^.write(text);
+      end write;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override write_line =
+    -- Vypíše text [text] na konzoli a posune se na nový řádek.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vypíšeme text na konzoli pomocí interního formatteru [writer]
+      writer^.write_line(text);
+      end write_line;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro nastavení konzolového streamu [console_stream] a interního formatteru
+    -- [writer].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace streamu pro výstup na konzoli
+      console_stream.init_console;
+
+      -- propojení streamu a writeru
+      console_writer.init_text_writer(^console_stream);
+
+      -- získáme interface [c_text_writer]
+      writer:=^c_text_writer:(console_writer);
+      end entry;
+       
+    end c_console_quality_formatter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_file_quality_formatter =
+-- Formatter pro standardní výstup pro testovací knihovny.
+-- Jelikož je zapotřebí znát pro výstup jméno výstupního souboru, je v tomto případě pro nastavení
+-- interních proměnných místo inicializační metody [entry] implementovaná metoda [init], jíž předá-
+-- váme název výstupního souboru. Úklid provádí metoda [exit].
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual init =
+    -- Otevře výstupní soubor pro zápis (pokud neexistuje, vytvoří ho, pokud existuje, přepíše ho) a
+    -- provádí inicializaci interních proměnných.
+    -- Parametr [encoder_tag] udává encoder kódování, implicitní je UTF-8.
+    -- Metoda se volá před prvním výpisem [write].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace streamu pro výstup do souboru + vytvoření výstupního souboru
+      file_stream.create(file_name,tfss_not_shared,true);
+
+      -- alokace encoderu kódování
+      new encoder tag encoder_tag;
+
+      -- propojení streamu a writeru
+      file_writer.init_text_writer(^file_stream,encoder);
+
+      -- získáme interface [c_text_writer]
+      writer:=^c_text_writer:(file_writer);
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override write =
+    -- Vypíše text [text] do souboru.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vypíšeme text do souboru pomocí interního formatteru [writer]
+      writer^.write(text);
+      end write;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    override write_line =
+    -- Vypíše text [text] do souboru a posune se na nový řádek.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vypíšeme text do souboru pomocí interního formatteru [writer]
+      writer^.write_line(text);
+      end write_line;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Dealokuje alokované proměnné v inicializační metodě [init], tj.:
+    --   kodér [encoder]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- dealokace encoderu
+      if encoder<>nil then
+        discard encoder;
+        end if;
+      end exit;
+      
+    end c_file_quality_formatter;
+
+  end debugging;

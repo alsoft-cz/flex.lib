@@ -1,11 +1,12 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private tasks =
 -- Tasks.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
+  flex,
   flex.tasks;
 
 ----------------------------------------------------------------------------------------------------
@@ -37,6 +38,19 @@ var
   begin
     rtl_wait_and_finish_task(reference);
     end wait;
+
+
+
+  --------------------------------------------------------------------------------------------------
+  static try_wait =
+  -- Waits until the task terminates, but no longer than [timeout] ms. If the task has terminated
+  -- before the timeout, returns true, in case of timeout, the function returns false.
+  --------------------------------------------------------------------------------------------------
+  begin
+    if rtl_try_wait_for_finish_task(reference,t_rtl_timeout(timeout)) then
+      result:=true;
+      end if;
+    end try_wait;
 
 
 

@@ -1,0 +1,44 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Testy pro spojový seznam [c_list], iterátor seznamu [c_list_iterator] a zásobník [c_stack].
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  list_test;
+
+----------------------------------------------------------------------------------------------------
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(c_inserting_list_test_case:tag,'Inserting items of list test');
+  psuite^.register_test(c_removing_list_test_case:tag,'Removing items of list test');
+  psuite^.register_test(c_list_iterator_test_case:tag,'List iterator test');
+  psuite^.register_test(c_stack_test_case:tag,'Stack test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests;
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

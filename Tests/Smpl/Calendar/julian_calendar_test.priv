@@ -1,0 +1,1166 @@
+﻿----------------------------------------------------------------------------------------------------
+module private julian_calendar_test =
+-- Test of Datetime library - Julian calendar.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Upozornění: Jelikož je v současnosti použit pro komponovaný datum a čas modulární typ
+-- [t_mod_unsigned32] na místo [t_signed32], mohou být testy knihovny [datetime] neúspěšné v kraj-
+-- ních hodnotách kritických datumů, tj. na počátku ([datim]~[datim:first]) a na konci
+-- ([datim]~[datim:last]). Proto v nejsou v těchto krajních hodnotách testy prováděny.
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_decompose_compose_case =
+-- Test pro dekompozici a kompozici datumu a času Juliánského kalendáře
+-- Test je založen na dekompozici datumu [datim] a následné kompzici na datum [expected]. Pokud se
+-- datumy [datim] a [expected] shodují, test byl úspěšný. Vždy probíhá testování dvou po sobě jdoucích
+-- dnů po sekundách kolem kritických datumů.
+----------------------------------------------------------------------------------------------------
+    
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      loop_count   : t_timespan;                 -- rozmezí pro smyčku (2 dny v tickách)
+      feb_1972     : t_datetime;                 -- 28.02.1972 00:00:00.0 (v tickách)
+      jun_1972     : t_datetime;                 -- 30.06.1972 00:00:00.0 (v tickách)
+      feb_1999     : t_datetime;                 -- 28.02.1999 00:00:00.0 (v tickách)
+
+      -- u následujících proměnných se přepokládá, že 31.12.2000 byla odebrána jedna sekunda
+      feb_2000     : t_datetime;                 -- 28.02.2000 00:00:00.0 (v tickách)
+      dec_2000     : t_datetime;                 -- 31.12.2000 00:00:00.0 (v tickách)
+      feb_2100     : t_datetime;                 -- 28.02.2100 00:00:00.0 (v tickách)
+      jun_2105     : t_datetime;                 -- 30.06.2105 00:00:00.0 (v tickách)
+
+    ------------------------------------------------------------------------------------------------
+    static test_2_days (
+        date       : t_datetime) =               -- datum, kolem kterého testujeme
+    -- Testuje (dekomponuje a komponuje) datum po sekundách během dvou dnů
+    ------------------------------------------------------------------------------------------------
+    var
+      decomp_datim : cal.t_decomposed_datetime;  -- dekomponovaný datum
+      datim        : t_datetime;                 -- komponovaný datum
+      expected     : t_datetime;                 -- očekávaný komponovaný datum
+
+    begin
+      -- komponujeme a dekomponujeme datum [datim], který postupně nabývá hodnot [date]..[date]+2 dny
+      for i in 0..loop_count loop
+        datim:=t_datetime(date+i*cal.t_dtl_second);
+        cal.decompose_datetime(datim,decomp_datim);
+        cal.compose_datetime(decomp_datim,expected);
+        fail_if_false(datim=expected,'Expected value is not equal');
+        end loop;
+      end test_2_days;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    ------------------------------------------------------------------------------------------------
+    begin
+
+      -- test kolem počátku
+      test_2_days(0);  
+
+      -- test kolem 28. února prvního přestupného roku 1972
+      test_2_days(feb_1972);
+
+      -- test kolem 30. června 1972 (přidání první přestupné sekundy)
+      test_2_days(jun_1972);
+
+      -- test kolem 28. února 1999
+      test_2_days(feb_1999);
+
+      -- test kolem 28. února 2000 (první přestupné století)
+      test_2_days(feb_2000);
+
+      -- test kolem 31. prosince 2000 (první odebrání sekundy)
+      test_2_days(dec_2000);
+
+      -- test kolem 28. února 2100 (první nepřestupné století)
+      test_2_days(feb_2100);
+
+      -- test kolem 30. června 2105
+      test_2_days(jun_2105);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      loop_count:=172800;
+      feb_1972:=68083200;
+      jun_1972:=78710400;
+      feb_1999:=920160022;
+      feb_2000:=951696022;
+      dec_2000:=978220822;
+      feb_2100:=4107456021;
+      jun_2105:=4275763221;
+      end entry;
+  
+    end c_julian_decompose_compose_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_addition_case =
+-- Test pro sčítání datumu a časového intervalu Juliánského kalendáře, umožňující testovat
+-- korektnost metody [get_decomposed_timespan] pro určení rozdílu (časového inervalu) mezi dvěma
+-- datumy [datim] a [date].
+--
+-- Princip: V několika vnořených cyklech přičteme k datumu [date] dekomponovaný časový interval
+-- [time_span] a výsledek vložíme do [datim]. Poté určíme rozdíl [span] (dekomponovaný časový interval)
+-- mezi datumy [datim] a [date]. Nokonec opět k datumu [date] přičteme interval [span] a výsledek
+-- vložíme do [expected]. Pokud se [expected] a [datim] shodují, byl test úspěšný.
+-- Celý postup opakujeme pro několik kritických datumů [date]. Přičemž test kritického datumu provádí
+-- metoda [single_test].
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      time_span    : cal.t_decomposed_timespan;  -- dekomponovaný časový interval
+      max_year     : t_unsigned;                 -- maximální rok
+      min_year     : t_unsigned;                 -- minimální rok
+      max_month    : t_unsigned;                 -- maximální měsíc
+      min_month    : t_unsigned;                 -- minimální měsíc
+      max_day      : t_unsigned;                 -- maximální den v měsíci
+      min_day      : t_unsigned;                 -- minimální den v měsíci
+      max_hour     : t_unsigned;                 -- maximální hodina ve dni
+      min_hour     : t_unsigned;                 -- minimální hodina ve dni
+      max_minute   : t_unsigned;                 -- maximální minuta v hodině
+      min_minute   : t_unsigned;                 -- minimální minuta v hodině
+      max_second   : t_unsigned;                 -- maximální sekunda v minutě
+      min_second   : t_unsigned;                 -- minimální sekunda v minutě
+      feb_1972     : t_datetime;                 -- 28.02.1972 00:00:00.0 (v tickách)
+      jun_1972     : t_datetime;                 -- 30.06.1972 00:00:00.0 (v tickách)
+      feb_1999     : t_datetime;                 -- 28.02.1999 00:00:00.0 (v tickách)
+
+      -- u následujících proměnných se přepokládá, že 31.12.2000 byla odebrána jedna sekunda
+      feb_2000     : t_datetime;                 -- 28.02.2000 00:00:00.0 (v tickách)
+      dec_2000     : t_datetime;                 -- 31.12.2000 00:00:00.0 (v tickách)
+      feb_2100     : t_datetime;                 -- 28.02.2100 00:00:00.0 (v tickách)
+      jun_2105     : t_datetime;                 -- 30.06.2105 00:00:00.0 (v tickách)
+
+    ------------------------------------------------------------------------------------------------
+    static set_timespan (
+        years      : t_unsigned;                 -- roky
+        months     : t_unsigned;                 -- měsíce
+        days       : t_unsigned;                 -- dny
+        hours      : t_unsigned;                 -- hodiny
+        minutes    : t_unsigned;                 -- minuty
+        seconds    : t_unsigned;                 -- sekundy
+        ticks      : t_unsigned)                 -- ticky
+        return cal.t_decomposed_timespan =
+    -- Nastaví jednotlivé složky dekomponovaného časového intervalu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavíme jednotlivé složky
+      result.years:=t_timebasic(years);
+      result.months:=t_timebasic(months);
+      result.days:=t_timebasic(days);
+      result.hours:=t_timebasic(hours);
+      result.minutes:=t_timebasic(minutes);
+      result.seconds:=t_timebasic(seconds);
+      result.ticks:=t_timebasic(ticks);
+      end set_timespan;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        date       : t_datetime) =               -- vstupní kritický datum
+    -- Testovací metoda pro kritický datum [date].
+    --
+    -- Princip: V několika vnořených cyklech přičteme k datumu [date] dekomponovaný časový interval
+    -- [time_span] a výsledek vložíme do [datim]. Poté určíme rozdíl [span] (dekomponovaný časový
+    -- interval) mezi datumy [datim] a [date]. Nokonec opět k datumu [date] přičteme interval [span]
+    -- a výsledek vložíme do [expected]. Pokud se [expected] a [datim] shodují, byl test úspěšný.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim        : t_datetime;                 -- komponovaný datum (součet [date]+[time_span])
+      expected     : t_datetime;                 -- očekávaný komponovaný datum
+      span         : cal.t_decomposed_timespan;  -- dekomponovaný interval rozdílu [datim]-[date]
+      largest      : cal.t_ts_decomposition;     -- nejvyšší složka, která může být nenulová při dekompozici
+                                                 -- časového intervalu mezi datumy [date] a [datim]
+      smallest     : cal.t_ts_decomposition;     -- nejmenší složka, která může být nenulová při dekompozici
+                                                 -- časového intervalu mezi datumy [date] a [datim]
+      time_span  : cal.t_decomposed_timespan;    -- časový interval, který přičteme k [date]
+
+    begin
+      -- v několika vnořených cyklech postupně formujeme dekomponovaný časový interval [time_span],
+      -- který přičteme ke kritickému datumu [date].
+      for year in min_year..max_year loop
+        for month in min_month..max_month loop
+          for day in min_day..max_day loop
+            for hour in min_hour..max_hour loop
+              for minute in min_minute..max_minute loop
+                for second in min_second..max_second loop
+                  -- vytvoření intervalu [time_span]
+                  time_span:=set_timespan(year,month,day,hour,minute,second,0);
+
+                  -- nastvení horní meze pro dekompozici intervalu mezi datumy [datim] a [date]
+                  -- (podle nejvyšší nenulové složky intervalu [time_span])
+                  if time_span.years<>0 then largest:=cal.t_tsd_years;
+                  elsif time_span.months<>0 then largest:=cal.t_tsd_months;
+                  elsif time_span.days<>0 then largest:=cal.t_tsd_days;
+                  elsif time_span.hours<>0 then largest:=cal.t_tsd_hours;
+                  elsif time_span.minutes<>0 then largest:=cal.t_tsd_minutes;
+                  elsif time_span.seconds<>0 then largest:=cal.t_tsd_seconds;
+                  else
+                    largest:=cal.t_tsd_ticks;
+                    end if;
+
+                  -- nastvení spodní meze pro dekompozici intervalu mezi datumy [datim] a [date]
+                  -- (podle nejnižší nenulové složky intervalu [time_span])
+                  if time_span.seconds<>0 then smallest:=cal.t_tsd_seconds;
+                  elsif time_span.minutes<>0 then smallest:=cal.t_tsd_minutes;
+                  elsif time_span.hours<>0 then smallest:=cal.t_tsd_hours;
+                  elsif time_span.days<>0 then smallest:=cal.t_tsd_days;
+                  elsif time_span.months<>0 then smallest:=cal.t_tsd_months;
+                  elsif time_span.years<>0 then smallest:=cal.t_tsd_years;
+                  else
+                    largest:=cal.t_tsd_ticks;
+                    end if;
+               
+                  -- vlastní test
+                  begin
+                    datim:=cal.add_decomposed_timespan(date,time_span);
+                    span:=cal.get_decomposed_timespan(datim,date,smallest,largest);
+                    expected:=cal.add_decomposed_timespan(date,span);
+                    fail_if_false(datim=expected,'Expected value is not equal');
+
+                  catch
+                    -- OK (výjimka, kterou v případě chyby generuje modul [datetime])
+                    when calendar_error do
+
+                    -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+                    when test_error do raise test_error;
+                    end;
+                  end loop;
+                end loop;
+              end loop;
+            end loop;
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+
+      -- test kolem počátku
+      single_test(0);
+
+      -- test kolem 28. února prvního přestupného roku 1972
+      single_test(feb_1972);
+
+      -- test kolem 30. června 1972 (přidání první přestupné sekundy)
+      single_test(jun_1972);
+
+      -- test kolem 28. února 1999
+      single_test(feb_1999);
+
+      -- test kolem 28. února 2000 (první přestupné století)
+      single_test(feb_2000);
+
+      -- test kolem 31. prosince 2000 (první odebrání sekundy)
+      single_test(dec_2000);
+
+      -- test kolem 28. února 2100 (první nepřestupné století)
+      single_test(feb_2100);
+
+      -- test kolem 30. června 2105
+{      single_test(jun_2105);}
+      end run_test;
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      feb_1972:=68083200;
+      jun_1972:=78710400;
+      feb_1999:=920160022;
+      feb_2000:=951696022;
+      dec_2000:=978220822;
+      feb_2100:=4107456021;
+      jun_2105:=4275763221;
+
+      -- nastavení opakování
+      max_year:=2;
+      min_year:=0;
+
+      max_month:=10;
+      min_month:=0;
+
+      max_day:=31;
+      min_day:=25;
+
+      max_hour:=23;
+      min_hour:=20;
+
+      max_minute:=59;
+      min_minute:=50;
+
+      max_second:=60;
+      min_second:=0;
+      end entry;
+  
+    end c_julian_addition_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_second_of_minute_case =
+-- Test pro nalezení sekundy v minutě Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší sekundu
+-- [j]. Pokud výsledná sekunda datumu [datim_new] je skutečně [j], byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      jan_1970     : t_timebasic;                -- 1.1.   1970 00:00:00.0
+      feb_28_1972  : t_timebasic;                -- 28.2.  1972 23:59:30.0
+      feb_29_1972  : t_timebasic;                -- 29.2.  1972 23:59:30.0
+      jun_30_1972  : t_timebasic;                -- 30.6.  1972 23:59:30.0
+      dec_31_1974  : t_timebasic;                -- 31.12. 1974 23:58:47.0
+      nov_15_1995  : t_timebasic;                -- 15.11. 1995 15:45:15.0
+      dec_31_1999  : t_timebasic;                -- 31.12. 1999 23:59:30.0
+      jun_30_2045  : t_timebasic;                -- 30.06. 2045 23:58:59.0
+      sep_25_2050  : t_timebasic;                -- 25.9   2050 08:54:23.0 
+      dec_31_2099  : t_timebasic;                -- 31.12. 2099 23:59:30.0
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : t_datetime) =               -- počáteční kritický datum
+    -- Testovací metoda pro kritický datum [datim].
+    --
+    -- Kritický datum je v cyklu po sekundě inkrementován (celkem 61x (maximální počet sekund v
+    -- minutě)) - viz [datim_old] a pro každou jeho hodnotu datumu dochází ke všem možným (61)
+    -- vyhledáním nejbližší vyšší sekundy v minutě - viz [j], čemuž odpovídá datum [datim_new].
+    -- Poté kontrolujeme, zda sekunda v minutě v datumu [datim_new] skutečně odpovídá [j]-té sekundě.
+    -- Dojde-li při hledání nejbližší vyšší sekundy ke generování [calendar_error], je vše OK, neboť
+    -- hledaná sekunda neexistuje.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší sekundu v minutě
+      datim_new    : t_datetime;                 -- nalezený datum nejbližší vyšší sekundy v minutě od [datim_old]
+
+    begin
+      -- 61x inkrementujeme po sekundách kritický datum [datim]
+      for i in 0..cal.t_dt_second:last loop
+        datim_old:=datim+t_timebasic(i)*cal.t_dtl_second;
+
+        -- vyhledáme všechny možné nejbližší vyšší sekundy (tj. 0..60)
+        for j in 0..cal.t_dt_second:last loop
+          begin
+            datim_new:=cal.find_second_of_minute(datim_old,cal.t_dt_second(j),cal.t_dtf_next);
+            fail_if_false(cal.get_second(datim_new)=cal.t_dt_second(j),'Expected value is not equal');
+
+          catch
+            -- OK
+            when calendar_error do
+
+            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+            when test_error do raise test_error;
+            end;         
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test 1.1. 1970 00:00:00.0
+      single_test(jan_1970);
+
+      -- test 28.2. 1972 23:59:30.0
+      single_test(feb_28_1972);
+
+      -- test 29.2. 1972 23:59:30.0
+      single_test(feb_29_1972);
+
+      -- test 30.6. 1972 23:59:30.0
+      single_test(jun_30_1972);
+
+      -- trst 31.12. 1972 23:59:60.0
+      single_test(dec_31_1974);
+
+      -- test 15.11.1995 15:45:15.0
+      single_test(nov_15_1995);
+
+      -- test 31.12.1999 23:59:30.0
+      single_test(dec_31_1999);
+
+      -- test 30.6 2045 23:58:59.0
+      single_test(jun_30_2045);
+
+      -- test 25.9 2050 08:54:23.0
+      single_test(sep_25_2050);
+
+      -- test 31.12. 2099 23:59:30.0
+      single_test(dec_31_2099);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      jan_1970:=0;
+      feb_28_1972:=68169570;
+      feb_29_1972:=68255970;
+      jun_30_1972:=78796770;
+      dec_31_1974:=157766327;
+      nov_15_1995:=816450315;
+      dec_31_1999:=946684770;
+      jun_30_2045:=2382479939;
+      sep_25_2050:=2547708863;
+      dec_31_2099:=4102444770;
+      end entry;
+
+    end c_julian_find_second_of_minute_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_minute_of_hour_case =
+-- Test pro nalezení minuty v hodině Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší minutu
+-- [min_to_find] v hodině. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší minutu
+-- (která odpovídá minutě v kritickém datumu) v hodině. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      jan_1970     : t_timebasic;                -- 1.1.   1970 00:00:00.0
+      feb_28_1972  : t_timebasic;                -- 28.2.  1972 23:59:30.0
+      feb_29_1972  : t_timebasic;                -- 29.2.  1972 23:59:30.0
+      jun_30_1972  : t_timebasic;                -- 30.6.  1972 23:59:30.0
+      dec_31_1974  : t_timebasic;                -- 31.12. 1974 23:58:47.0
+      nov_15_1995  : t_timebasic;                -- 15.11. 1995 15:45:15.0
+      dec_31_1999  : t_timebasic;                -- 31.12. 1999 23:59:30.0
+      jun_30_2045  : t_timebasic;                -- 30.06. 2045 23:58:59.0
+      sep_25_2050  : t_timebasic;                -- 25.9   2050 08:54:23.0 
+      dec_31_2099  : t_timebasic;                -- 31.12. 2099 23:59:30.0
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : in t_datetime) =            -- počáteční kritický datum
+    -- Testovací metoda pro kritický datum [datim].
+    -- Kritický datum [datim] postupě inkrementujeme o jednu minutu (celkem 60x), což ukládáme do
+    -- [datim_old]. Pro datum [datim_old] vyhledáme všechny možné nejbližší vyšší minuty v hodině
+    -- (celkem 60) a výsledek uložíme do [datim_new]. K tomuto datumu nalezneme nejbližší nižší
+    -- minuty v hodině a výsledek uložíme do [expected]. Vynulujeme všechny nižší složky než
+    -- minuty v datumu [datim_old] a pokud se [datim_old] shoduje s [expected], byl test úspěšný.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší minutu v hodině
+      datim_new    : t_datetime;                 -- nalezený datum nejbližší vyšší minuty v hodině od [datim_old]
+      expected     : t_datetime;                 -- očekávaný datum
+      minute_of_hour: cal.t_dt_minute;           -- minuta v hodině v datumu [datim_old]
+      timespan     : cal.t_decomposed_timespan;  -- časový interval o délce jedné minuty
+
+    begin
+      for min in 0..minute_of_hour:last loop
+        -- nastavíme časový inetrval
+        timespan.minutes:=t_timebasic(min);
+
+        -- zvětšíme datum [datim] o jednu minutu
+        datim_old:=cal.add_decomposed_timespan(datim,timespan);
+
+        -- určíme minutu v hodině v datumu [datim_old]
+        minute_of_hour:=cal.get_minute(datim_old);
+
+        -- nalezneme všechny možné nejbližší větší minuty v hodině
+        for min_to_find in 0..minute_of_hour:last loop
+          begin
+            -- nalezneme nejbližší vyšší minutu [min_to_find] k datumu [datim_old]
+            datim_new:=cal.find_minute_of_hour(datim_old,cal.t_dt_minute(min_to_find),cal.t_dtf_next);
+
+            -- nalezneme nejbližší nižší minutu [minute_of_hour] k datumu [datim_new]
+            expected:=cal.find_minute_of_hour(datim_new,minute_of_hour,cal.t_dtf_prev);
+
+            -- nulujeme nižší složky než minuty u [datim_old]
+            datim_old:=cal.set_second(datim_old,0);
+
+            -- test shodnosti
+            fail_if_false(datim_old=expected,'Expected date/time is not equal');
+
+          catch
+            -- OK
+            when calendar_error do
+
+            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+            when test_error do raise test_error;
+            end;
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test 1.1. 1970 00:00:00.0
+      single_test(jan_1970);
+
+      -- test 28.2. 1972 23:59:30.0
+      single_test(feb_28_1972);
+
+      -- test 29.2. 1972 23:59:30.0
+      single_test(feb_29_1972);
+
+      -- test 30.6. 1972 23:59:30.0
+      single_test(jun_30_1972);
+
+      -- trst 31.12. 1972 23:59:60.0
+      single_test(dec_31_1974);
+
+      -- test 15.11.1995 15:45:15.0
+      single_test(nov_15_1995);
+
+      -- test 31.12.1999 23:59:30.0
+      single_test(dec_31_1999);
+
+      -- test 30.6 2045 23:58:59.0
+      single_test(jun_30_2045);
+
+      -- test 25.9 2050 08:54:23.0
+      single_test(sep_25_2050);
+
+      -- test 31.12. 2099 23:59:30.0
+      single_test(dec_31_2099);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      jan_1970:=0;
+      feb_28_1972:=68169570;
+      feb_29_1972:=68255970;
+      jun_30_1972:=78796770;
+      dec_31_1974:=157766327;
+      nov_15_1995:=816450315;
+      dec_31_1999:=946684770;
+      jun_30_2045:=2382479939;
+      sep_25_2050:=2547708863;
+      dec_31_2099:=4102444770;
+      end entry;
+
+    end c_julian_find_minute_of_hour_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_hour_of_day_case =
+-- Test pro nalezení hodiny ve dni Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší hodinu
+-- [hour_to_find] ve dni. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší hodinu
+-- (která odpovídá hodině v kritickém datumu) ve dni. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      jan_1970     : t_timebasic;                -- 1.1.   1970 00:00:00.0
+      feb_28_1972  : t_timebasic;                -- 28.2.  1972 23:59:30.0
+      feb_29_1972  : t_timebasic;                -- 29.2.  1972 23:59:30.0
+      jun_30_1972  : t_timebasic;                -- 30.6.  1972 23:59:30.0
+      dec_31_1974  : t_timebasic;                -- 31.12. 1974 23:58:47.0
+      nov_15_1995  : t_timebasic;                -- 15.11. 1995 15:45:15.0
+      dec_31_1999  : t_timebasic;                -- 31.12. 1999 23:59:30.0
+      jun_30_2045  : t_timebasic;                -- 30.06. 2045 23:58:59.0
+      sep_25_2050  : t_timebasic;                -- 25.9   2050 08:54:23.0 
+      dec_31_2099  : t_timebasic;                -- 31.12. 2099 23:59:30.0
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : in t_datetime) =            -- počáteční kritický datum
+    -- Testovací metoda pro kritický datum [datim].
+    -- Kritický datum [datim] postupě inkrementujeme o jednu hodinu (celkem 23x), což ukládáme do
+    -- [datim_old]. Pro datum [datim_old] vyhledáme všechny možné nejbližší vyšší hodiny ve dni
+    -- (celkem 60) a výsledek uložíme do [datim_new]. K tomuto datumu nalezneme nejbližší nižší
+    -- hodiny ve dni a výsledek uložíme do [expected]. Vynulujeme všechny nižší složky než
+    -- hodiny v datumu [datim_old] a pokud se [datim_old] shoduje s [expected], byl test úspěšný.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší hodinu ve dni
+      datim_new    : t_datetime;                 -- nalezený datum nejbližší vyšší hodiny ve dni od [datim_old]
+      expected     : t_datetime;                 -- očekávaný datum
+      hour_of_day  : cal.t_dt_hour;              -- hodina ve dni v datumu [datim_old]
+      timespan     : cal.t_decomposed_timespan;  -- časový interval o délce jedné hodiny
+
+    begin
+      for hour in 0..hour_of_day:last loop
+        -- nastavíme časový inetrval
+        timespan.hours:=t_timebasic(hour);
+
+        -- zvětšíme datum [datim] o jednu hodinu
+        datim_old:=cal.add_decomposed_timespan(datim,timespan);
+
+        -- určíme hodinu ve dni v datumu [datim_old]
+        hour_of_day:=cal.get_hour(datim_old);
+
+        -- nalezneme všechny možné nejbližší větší hodiny ve dni
+        for hour_to_find in 0..hour_of_day:last loop
+          begin
+            -- nalezneme nejbližší vyšší hodinu [hour_to_find] k datumu [datim_old]
+            datim_new:=cal.find_hour_of_day(datim_old,cal.t_dt_hour(hour_to_find),cal.t_dtf_next);
+
+            -- nalezneme nejbližší nižší hodinu [hour_of_hour] k datumu [datim_new]
+            expected:=cal.find_hour_of_day(datim_new,hour_of_day,cal.t_dtf_prev);
+
+            -- nulujeme nižší složky než hodiny u [datim_old]
+            datim_old:=cal.set_second(datim_old,0);
+            datim_old:=cal.set_minute(datim_old,0);
+
+            -- test shodnosti
+            fail_if_false(datim_old=expected,'Expected date/time is not equal');
+
+          catch
+            -- OK
+            when calendar_error do
+
+            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+            when test_error do raise test_error;
+            end;
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test 1.1. 1970 00:00:00.0
+      single_test(jan_1970);
+
+      -- test 28.2. 1972 23:59:30.0
+      single_test(feb_28_1972);
+
+      -- test 29.2. 1972 23:59:30.0
+      single_test(feb_29_1972);
+
+      -- test 30.6. 1972 23:59:30.0
+      single_test(jun_30_1972);
+
+      -- trst 31.12. 1972 23:59:60.0
+      single_test(dec_31_1974);
+
+      -- test 15.11.1995 15:45:15.0
+      single_test(nov_15_1995);
+
+      -- test 31.12.1999 23:59:30.0
+      single_test(dec_31_1999);
+
+      -- test 30.6 2045 23:58:59.0
+      single_test(jun_30_2045);
+
+      -- test 25.9 2050 08:54:23.0
+      single_test(sep_25_2050);
+
+      -- test 31.12. 2099 23:59:30.0
+      single_test(dec_31_2099);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      jan_1970:=0;
+      feb_28_1972:=68169570;
+      feb_29_1972:=68255970;
+      jun_30_1972:=78796770;
+      dec_31_1974:=157766327;
+      nov_15_1995:=816450315;
+      dec_31_1999:=946684770;
+      jun_30_2045:=2382479939;
+      sep_25_2050:=2547708863;
+      dec_31_2099:=4102444770;
+      end entry;
+
+    end c_julian_find_hour_of_day_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_day_of_week_case =
+-- Test pro nalezení dne v týdnu Juliánského kalendáře.
+-- Princip: Testujeme datumy v kritických rokách (viz [_1970], [_1972], ... Pro každý rok je vytvo-
+-- řena testovací metoda [single_test]. Na počátku zjistíme, který den v týdnu odpovídá zadanému
+-- vstupnímu datumu a uložíme jej do [week_day]. Poté v cyklu (celkem 53x (počet týdnů v roce))
+-- pomocí metody [find_day_of_week] nalezneme nejbližší vyšší den ke dni [week_day] - ten by měl být
+-- přesně za jeden týden, tj. 7 dní. Zjistíme dekomponovaný časový interval mezi datumy a odpovídá-li
+-- sedmi dnům, je test OK. Dále od nalezeného nejbližšího vyššího dne nalezneme týž nejbližší nižší
+-- den, který se musí shodovat s původním datumem. Shoduje-li se, je test OK.
+----------------------------------------------------------------------------------------------------
+    
+    var
+      _1970        : t_timebasic;                -- rok 1970
+      _1972        : t_timebasic;                -- rok 1972
+      _1980        : t_timebasic;                -- rok 1980
+      _1999        : t_timebasic;                -- rok 1999
+      _2000        : t_timebasic;                -- rok 2000
+      _2050        : t_timebasic;                -- rok 2050
+      _2099        : t_timebasic;                -- rok 2099
+      _2100        : t_timebasic;                -- rok 2100
+      _2102        : t_timebasic;                -- rok 2102
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : t_datetime) =               -- počáteční kritický datum
+    -- Test v kritickém roku [datim].
+    --
+    -- Od datumu [datim_old] nalezneme nejbližší vyšší den [week_day] v týdnu a nalezený datum
+    -- uložíme do [datim_new]. Obdobně od datumu [datim_new] nalezneme nejbližší nižší den
+    -- [week_day] v týdnu a nalezený datum vložíme do [expected]. Pokud se oba datumy shodují,
+    -- je test OK. Pokud rozdíl (zjištěný voláním [get_decomposed_timespan] datumů [datim_old] a
+    -- [datim_new] je sedm dní (jeden týden), je test OK.
+    ------------------------------------------------------------------------------------------------
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      weeks        : cal.t_dt_year_week;         -- týden v roce
+      week_day     : cal.t_dt_week_day;          -- den v týdnu
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší den v týdnu
+      datim_new    : t_datetime;                 -- nalezený datum nejbližšího vyššího dne v týdnu od [datim_old]
+      expected_date: t_datetime;                 -- očekávaný datum (nejbližší nižší den v týdnu od [datim_new]
+      span         : cal.t_decomposed_timespan;  -- rozdíl (ve dnech) mezi [datim_old] a [datim_new]
+      expected_span: cal.t_decomposed_timespan;  -- očekávaný rozdíl mezi dny [datim_old] a [datim_new] (7 dní)
+
+    begin
+      -- nastavíme očekávaný rozdíl mezi [datim_old] a [datim_new] (7 dní)
+      expected_span.days:=cal.get_days_in_week;
+
+      -- zjistíme den v týdnu
+      week_day:=cal.get_day_of_week(datim);
+
+      datim_old:=datim;
+
+      -- celkem 53x (maximální počet týdnů v roce) testujeme každý týden
+      while weeks<weeks:last loop
+        begin
+          -- Od datumu [datim_old] nalezneme nejbližší vyšší den [week_day] v týdnu a nalezený datum
+          -- uložíme do [datim_new]. Obdobně od datumu [datim_new] nalezneme nejbližší nižší den
+          -- [week_day] v týdnu a nalezený datum vložíme do [expected]. Pokud se oba datumy shodují,
+          -- je test OK.
+          datim_new:=cal.find_day_of_week(datim_old,week_day,cal.t_dtf_next);
+          expected_date:=cal.find_day_of_week(datim_new,week_day,cal.t_dtf_prev);
+          datim_old:=cal.set_second(datim_old,0);
+          datim_old:=cal.set_minute(datim_old,0);
+          datim_old:=cal.set_hour(datim_old,0);
+          fail_if_false(datim_old=expected_date,'Expected date/time is not equal');
+
+          -- Pokud rozdíl (zjištěný voláním [get_decomposed_timespan] datumů [datim_old] a [datim_new]
+          -- je sedm dní (jeden týden), je test OK.
+          span:=cal.get_decomposed_timespan(datim_old,datim_new);
+          fail_if_false(span=expected_span,'Expected timespan is not equal');
+
+          datim_old:=datim_new;
+
+        catch
+          -- OK
+          when calendar_error do
+
+          -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+          when test_error do raise test_error;
+
+        leave
+          weeks+1;
+          end;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test v roce 1970
+      single_test(_1970);
+
+      -- test v roce 1972
+      single_test(_1972);
+
+      -- test v roce 1999
+      single_test(_1999);
+
+      -- test v roce 2000
+      single_test(_2000);
+
+      -- test v roce 2050
+      single_test(_2050);
+
+      -- test v roce 2099
+      single_test(_2099);
+
+      -- test v roce 2100
+      single_test(_2100);
+
+      -- test v roce 2105
+      single_test(_2102);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      _1970:=0;
+      _1972:=63072000;
+      _1999:=315532809;
+      _2000:=946684822;
+      _2050:=2524608022;
+      _2099:=4070908822;
+      _2100:=4102444822;
+      _2102:=4165516822;
+      end entry;
+  
+    end c_julian_find_day_of_week_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_day_of_month_case =
+-- Test pro nalezení dne v měsíci Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v měsíci. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v měsíci. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      jan_1970     : t_timebasic;                -- 1.1.   1970 00:00:00.0
+      feb_28_1972  : t_timebasic;                -- 28.2.  1972 23:59:30.0
+      feb_29_1972  : t_timebasic;                -- 29.2.  1972 23:59:30.0
+      jun_30_1972  : t_timebasic;                -- 30.6.  1972 23:59:30.0
+      dec_31_1974  : t_timebasic;                -- 31.12. 1974 23:58:47.0
+      nov_15_1995  : t_timebasic;                -- 15.11. 1995 15:45:15.0
+      dec_31_1999  : t_timebasic;                -- 31.12. 1999 23:59:30.0
+      jun_30_2045  : t_timebasic;                -- 30.06. 2045 23:58:59.0
+      sep_25_2050  : t_timebasic;                -- 25.9   2050 08:54:23.0 
+      dec_31_2099  : t_timebasic;                -- 31.12. 2099 23:59:30.0
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : in t_datetime) =            -- počáteční kritický datum
+    -- Testovací metoda pro kritický datum [datim].
+    -- Kritický datum [datim] postupě inkrementujeme o jeden den (celkem 31x), což ukládáme do
+    -- [datim_old]. Pro datum [datim_old] vyhledáme všechny možné nejbližší vyšší dny v měsíci
+    -- (celkem 31) a výsledek uložíme do [datim_new]. K tomuto datumu nalezneme nejbližší nižší
+    -- den v měsíci a výsledek uložíme do [expected]. Vynulujeme všechny nižší složky než
+    -- dny v datumu [datim_old] a pokud se [datim_old] shoduje s [expected], byl test úspěšný.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší den v měsíci
+      datim_new    : t_datetime;                 -- nalezený datum nejbližšího vyššího dne v měsíci od [datim_old]
+      expected     : t_datetime;                 -- očekávaný datum
+      day_of_month : cal.t_dt_month_day;         -- den v měsíci v datumu [datim_old]
+      timespan     : cal.t_decomposed_timespan;  -- časový interval o délce jednoho dne
+
+    begin
+      for day in 1..day_of_month:last loop
+        -- nastavíme časový inetrval
+        timespan.days:=t_timebasic(day);
+
+        -- zvětšíme datum [datim] o jeden den
+        datim_old:=cal.add_decomposed_timespan(datim,timespan);
+
+        -- určíme den v měsíci v datumu [datim_old]
+        day_of_month:=cal.get_day_of_month(datim_old);
+
+        -- nalezneme všechny možné nejbližší větší dny v měsíci
+        for day_to_find in 1..day_of_month:last loop
+          begin
+            -- nalezneme nejbližší vyšší den [day_to_find] k datumu [datim_old]
+            datim_new:=cal.find_day_of_month(datim_old,cal.t_dt_month_day(day_to_find),cal.t_dtf_next);
+
+            -- dokud se nebudou shodovat měsíce datumů [datim_old] a [expected]
+            loop
+              -- nalezneme nejbližší nižší den [day_of_hour] k datumu [datim_new], přičemž aspoň
+              -- jednou musíme tímto cyklem projít
+              expected:=cal.find_day_of_month(datim_new,day_of_month,cal.t_dtf_prev);
+              datim_new:=expected;
+            until cal.get_month(datim_old)>=cal.get_month(expected);
+
+            -- nulujeme nižší složky než dny u [datim_old]
+            datim_old:=cal.set_second(datim_old,0);
+            datim_old:=cal.set_minute(datim_old,0);
+            datim_old:=cal.set_hour(datim_old,0);
+
+            -- test shodnosti
+            fail_if_false(datim_old=expected,'Expected date/time is not equal');
+
+          catch
+            -- OK
+            when calendar_error do
+
+            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+            when test_error do raise test_error;
+            end;
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test 1.1. 1970 00:00:00.0
+      single_test(jan_1970);
+
+      -- test 28.2. 1972 23:59:30.0
+      single_test(feb_28_1972);
+
+      -- test 29.2. 1972 23:59:30.0
+      single_test(feb_29_1972);
+
+      -- test 30.6. 1972 23:59:30.0
+      single_test(jun_30_1972);
+
+      -- trst 31.12. 1972 23:59:60.0
+      single_test(dec_31_1974);
+
+      -- test 15.11.1995 15:45:15.0
+      single_test(nov_15_1995);
+
+      -- test 31.12.1999 23:59:30.0
+      single_test(dec_31_1999);
+
+      -- test 30.6 2045 23:58:59.0
+      single_test(jun_30_2045);
+
+      -- test 25.9 2050 08:54:23.0
+      single_test(sep_25_2050);
+
+      -- test 31.12. 2099 23:59:30.0
+      single_test(dec_31_2099);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      jan_1970:=0;
+      feb_28_1972:=68169570;
+      feb_29_1972:=68255970;
+      jun_30_1972:=78796770;
+      dec_31_1974:=157766327;
+      nov_15_1995:=816450315;
+      dec_31_1999:=946684770;
+      jun_30_2045:=2382479939;
+      sep_25_2050:=2547708863;
+      dec_31_2099:=4102444770;
+      end entry;
+
+    end c_julian_find_day_of_month_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_julian_find_day_of_year_case =
+-- Test pro nalezení dne v roce Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v roce. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v roce. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    var
+      cal          : c_julian_calendar;          -- instance Juliánského kalendáře
+      jan_1970     : t_timebasic;                -- 1.1.   1970 00:00:00.0
+      feb_28_1972  : t_timebasic;                -- 28.2.  1972 23:59:30.0
+      feb_29_1972  : t_timebasic;                -- 29.2.  1972 23:59:30.0
+      jun_30_1972  : t_timebasic;                -- 30.6.  1972 23:59:30.0
+      dec_31_1974  : t_timebasic;                -- 31.12. 1974 23:58:47.0
+      nov_15_1995  : t_timebasic;                -- 15.11. 1995 15:45:15.0
+      dec_31_1999  : t_timebasic;                -- 31.12. 1999 23:59:30.0
+      jun_30_2045  : t_timebasic;                -- 30.06. 2045 23:58:59.0
+      sep_25_2050  : t_timebasic;                -- 25.9   2050 08:54:23.0 
+      dec_31_2099  : t_timebasic;                -- 31.12. 2099 23:59:30.0
+
+    ------------------------------------------------------------------------------------------------
+    static single_test (
+        datim      : in t_datetime) =            -- počáteční kritický datum
+    -- Testovací metoda pro kritický datum [datim].
+    -- Kritický datum [datim] postupě inkrementujeme o jeden den (celkem 366x), což ukládáme do
+    -- [datim_old]. Pro datum [datim_old] vyhledáme všechny možné nejbližší vyšší dny v roce
+    -- (celkem 366) a výsledek uložíme do [datim_new]. K tomuto datumu nalezneme nejbližší nižší
+    -- den v roce a výsledek uložíme do [expected]. Vynulujeme všechny nižší složky než
+    -- dny v datumu [datim_old] a pokud se [datim_old] shoduje s [expected], byl test úspěšný.
+    ------------------------------------------------------------------------------------------------
+    var
+      datim_old    : t_datetime;                 -- datum, od kterého hledáme nejbližší vyšší den v roce
+      datim_new    : t_datetime;                 -- nalezený datum nejbližšího vyššího dne v roce od [datim_old]
+      expected     : t_datetime;                 -- očekávaný datum
+      day_of_year  : cal.t_dt_year_day;          -- den v roce v datumu [datim_old]
+      timespan     : cal.t_decomposed_timespan;  -- časový interval o délce jednoho dne
+      xx           : cal.t_decomposed_datetime;
+      yy           : cal.t_decomposed_datetime;
+
+    begin
+      for day in 1..day_of_year:last loop
+        -- nastavíme časový inetrval
+        timespan.days:=t_timebasic(day);
+
+        -- zvětšíme datum [datim] o jeden den
+        datim_old:=cal.add_decomposed_timespan(datim,timespan);
+
+        -- určíme den v roce v datumu [datim_old]
+        day_of_year:=cal.get_day_of_year(datim_old);
+        cal.decompose_datetime(datim_old,xx);
+
+        -- nalezneme všechny možné nejbližší větší dny v roce
+        for day_to_find in 1..day_of_year:last loop
+          begin
+            -- nalezneme nejbližší vyšší den [day_to_find] v roce k datumu [datim_old]
+            datim_new:=cal.find_day_of_year(datim_old,cal.t_dt_year_day(day_to_find),cal.t_dtf_next);
+
+            cal.decompose_datetime(datim_new,yy);
+
+            -- dokud se nebudou shodovat roky datumů [datim_old] a [expected]
+            loop
+              -- nalezneme nejbližší nižší den [day_of_hour] v roce k datumu [datim_new], přičemž aspoň
+              -- jednou musíme tímto cyklem projít
+              expected:=cal.find_day_of_year(datim_new,day_of_year,cal.t_dtf_prev);
+              datim_new:=expected;
+            until cal.get_year(datim_old)>=cal.get_year(expected);
+
+            -- nulujeme nižší složky než dny u [datim_old]
+            datim_old:=cal.set_second(datim_old,0);
+            datim_old:=cal.set_minute(datim_old,0);
+            datim_old:=cal.set_hour(datim_old,0);
+
+            -- test shodnosti
+            fail_if_false(datim_old=expected,'Expected date/time is not equal');
+
+          catch
+            -- OK
+            when calendar_error do
+
+            -- OK (to generovalo předchozí volání [fail_if_false] a pošleme ji výš
+            when test_error do raise test_error;
+            end;
+          end loop;
+        end loop;
+      end single_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test v několika kritických datumech. Využívá metodu [single_test].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- test 1.1. 1970 00:00:00.0
+      single_test(jan_1970);
+
+      -- test 28.2. 1972 23:59:30.0
+      single_test(feb_28_1972);
+
+      -- test 29.2. 1972 23:59:30.0
+      single_test(feb_29_1972);
+
+      -- test 30.6. 1972 23:59:30.0
+      single_test(jun_30_1972);
+
+      -- trst 31.12. 1972 23:59:60.0
+      single_test(dec_31_1974);
+
+      -- test 15.11.1995 15:45:15.0
+      single_test(nov_15_1995);
+
+      -- test 31.12.1999 23:59:30.0
+      single_test(dec_31_1999);
+
+      -- test 30.6 2045 23:58:59.0
+      single_test(jun_30_2045);
+
+      -- test 25.9 2050 08:54:23.0
+      single_test(sep_25_2050);
+
+      -- test 31.12. 2099 23:59:30.0
+      single_test(dec_31_2099);
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - setup interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- nastavení kritických datumů
+      jan_1970:=0;
+      feb_28_1972:=68169570;
+      feb_29_1972:=68255970;
+      jun_30_1972:=78796770;
+      dec_31_1974:=157766327;
+      nov_15_1995:=816450315;
+      dec_31_1999:=946684770;
+      jun_30_2045:=2382479939;
+      sep_25_2050:=2547708863;
+      dec_31_2099:=4102444770;
+      end entry;
+
+    end c_julian_find_day_of_year_case;
+  end julian_calendar_test;

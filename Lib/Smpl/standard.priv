@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private standard =
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -9,7 +9,9 @@ with
 
 #if #environment target_os_family;='WIN32' then;
 use
-  windows.winbase;
+  system.windows.winbase,
+  system.windows.windef,
+  system.windows.windef.winnt;
 #end if;
 #if #environment target_os_family;='UNIX' then;
 use
@@ -34,6 +36,10 @@ const
 type
   -- conversions of specific system types to modular arithmetic
   t_mod_dword      = mod unsigned system.windows.windef.dword:bits;
+  
+const  
+  -- null handle value
+  null_handle      = system.windows.windef.winnt.t_handle(0);
 #end if;
 
 #if os_win32 then;

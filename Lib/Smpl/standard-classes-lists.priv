@@ -1,8 +1,8 @@
 ﻿---------------------------------------------------------------------------------------------------
 module private lists =
 -- Data structures - linked lists.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
@@ -732,7 +732,6 @@ class private c_list_iterator =
 
 
 
-#if #declared radekr_stack; #and then; radekr_stack then;
 ----------------------------------------------------------------------------------------------------
 class private c_stack =
 -- Stack.
@@ -740,6 +739,9 @@ class private c_stack =
 -- Remarks
 --   The [c_container.insert] method behaves as the [push] method.
 ----------------------------------------------------------------------------------------------------
+
+    use
+      supervised c_list_item;
 
     var 
       current_item : p_list_item;
@@ -764,10 +766,18 @@ class private c_stack =
       item^.next:=nil;
       item^.prev:=nil;
 
-      -- link item to stack
-      current_item^.next:=item;
-      item^.prev:=current_item;
-      current_item:=item;
+      -- pushing first item into stack?
+      if current_item=nil
+        -- yes => [current_item] will be [item]
+        then current_item:=item;
+
+        -- no => linek item to stack
+        else
+          -- link item to stack
+          current_item^.next:=item;
+          item^.prev:=current_item;
+          current_item:=item;
+          end if;
 
     leave
       -- trigger the 'after' event
@@ -881,8 +891,5 @@ class private c_stack =
 
 
     end c_stack;
-
-#end if {radekr_stack};
-
 
 end lists;

@@ -1,4 +1,10 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------------------------------
 procedure create_eod =
 ----------------------------------------------------------------------------------------------------
 begin
@@ -43,7 +49,7 @@ begin
 procedure create_temporary_text =
 ----------------------------------------------------------------------------------------------------
 begin
-  packet.style:=t_dps_temporary;
+  packet.style:=t_dps_callstack;
   packet.size:=text:length*t_char32:size;
   packet.data:unchecked:=^text:unchecked;
   t_unsigned(packet.data:unchecked) + t_unsigned:size;
@@ -67,7 +73,7 @@ begin
 procedure copy_to_packet =
 ----------------------------------------------------------------------------------------------------
 begin
-  packet.style:=t_dps_heap;
+  packet.style:=t_dps_dynamic;
   packet.size:=size;
   new packet.data range size;
   --%%TODO rez polem
@@ -105,7 +111,7 @@ var
 
 begin
   case (packet.style)
-    when t_dps_heap do
+    when t_dps_dynamic do
       heap:=packet.data;
       discard heap;
     when t_dps_signal do
@@ -162,7 +168,7 @@ var
     ptr            : t_unsigned;
 
 begin
-  if packet.style<>t_dps_temporary or else packet.phint<>t_dph_flex_string then
+  if packet.style<>t_dps_callstack or else packet.phint<>t_dph_flex_string then
     raise program_error;
     end if;
   ptr:unchecked:=packet.data:unchecked;
@@ -213,7 +219,7 @@ var
 begin
   data:unchecked:=^text:unchecked;
   t_unsigned(data:unchecked) + t_unsigned:size;
-  packet.style:=t_dps_heap;
+  packet.style:=t_dps_dynamic;
   packet.size:=text:length*t_char32:size;
   new packet.data range packet.size;
   --%%TODO rez polem
@@ -235,7 +241,7 @@ begin
     packet.size:=maxsize;
     end if;
   if packet.size>0 then
-    packet.style:=t_dps_heap;
+    packet.style:=t_dps_dynamic;
     new packet.data range packet.size;
     --%%TODO rez polem
     copy_data(data,offset,packet.data,0,packet.size);
@@ -256,7 +262,7 @@ var
 begin
   read_packet(packet,_data,_size);
   size:=_size+newbytes;
-  _out.style:=t_dps_heap;
+  _out.style:=t_dps_dynamic;
   _out.size:=size;
   --%%TODO realoc by flex adjust
   new _out.data range size;

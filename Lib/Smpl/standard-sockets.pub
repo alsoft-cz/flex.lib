@@ -1,9 +1,11 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public sockets =
 -- Console I/O.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
 
 type
     t_socket = protected t_unsigned;

@@ -1,0 +1,132 @@
+﻿----------------------------------------------------------------------------------------------------
+module public julian_calendar_test =
+-- Test of Datetime library - Julian calendar.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Upozornění: Jelikož je v současnosti použit pro komponovaný datum a čas modulární typ
+-- [t_mod_unsigned32] na místo [t_signed32], mohou být testy knihovny [datetime] neúspěšné v kraj-
+-- ních hodnotách kritických datumů, tj. na počátku ([datim]~[datim:first]) a na konci
+-- ([datim]~[datim:last]). Proto v nejsou v těchto krajních hodnotách testy prováděny.
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.datetime,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_decompose_compose_case = extend c_test_case;
+-- Test pro dekompozici a kompozici datumu a času Juliánského kalendáře
+-- Test je založen na dekompozici datumu [datim] a následné kompzici na datum [expected]. Pokud se
+-- datumy [datim] a [expected] shodují, test byl úspěšný. Vždy probíhá testování dvou po sobě jdoucích
+-- dnů po sekundách kolem kritických datumů.
+----------------------------------------------------------------------------------------------------
+  
+    end c_julian_decompose_compose_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_addition_case = extend c_test_case;
+-- Test pro sčítání datumu a časového intervalu Juliánského kalendáře, umožňující testovat
+-- korektnost metody [get_decomposed_timespan] pro určení rozdílu (časového inervalu) mezi dvěma
+-- datumy [datim] a [date].
+--
+-- Princip: V několika vnořených cyklech přičteme k datumu [date] dekomponovaný časový interval
+-- [time_span] a výsledek vložíme do [datim]. Poté určíme rozdíl [span] (dekomponovaný časový interval)
+-- mezi datumy [datim] a [date]. Nokonec opět k datumu [date] přičteme interval [span] a výsledek
+-- vložíme do [expected]. Pokud se [expected] a [datim] shodují, byl test úspěšný.
+-- Celý postup opakujeme pro několik kritických datumů [date]. Přičemž test kritického datumu provádí
+-- metoda [single_test].
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_addition_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_second_of_minute_case = extend c_test_case;
+-- Test pro nalezení sekundy v minutě Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší sekundu
+-- [j]. Pokud výsledná sekunda datumu [datim_new] je skutečně [j], byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_second_of_minute_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_minute_of_hour_case = extend c_test_case;
+-- Test pro nalezení minuty v hodině Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší minutu
+-- [min_to_find] v hodině. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší minutu
+-- (která odpovídá minutě v kritickém datumu) v hodině. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_minute_of_hour_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_hour_of_day_case = extend c_test_case;
+-- Test pro nalezení hodiny ve dni Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší hodinu
+-- [hour_to_find] ve dni. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší hodinu
+-- (která odpovídá hodině v kritickém datumu) ve dni. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_hour_of_day_case;
+
+
+                                             
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_day_of_week_case = extend c_test_case;
+-- Test pro nalezení dne v týdnu Juliánského kalendáře.
+-- Princip: Testujeme datumy v kritických rokách (viz [_1970], [_1972], ... Pro každý rok je vytvo-
+-- řena testovací metoda [single_test]. Na počátku zjistíme, který den v týdnu odpovídá zadanému
+-- vstupnímu datumu a uložíme jej do [week_day]. Poté v cyklu (celkem 53x (počet týdnů v roce))
+-- pomocí metody [find_day_of_week] nalezneme nejbližší vyšší den ke dni [week_day] - ten by měl být
+-- přesně za jeden týden, tj. 7 dní. Zjistíme dekomponovaný časový interval mezi datumy a odpovídá-li
+-- sedmi dnům, je test OK. Dále od nalezeného nejbližšího vyššího dne nalezneme týž nejbližší nižší
+-- den, který se musí shodovat s původním datumem. Shoduje-li se, je test OK.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_day_of_week_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_day_of_month_case = extend c_test_case;
+-- Test pro nalezení dne v měsíci Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v měsíci. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v měsíci. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_day_of_month_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_find_day_of_year_case = extend c_test_case;
+-- Test pro nalezení dne v roce Juliánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v roce. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v roce. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_find_day_of_year_case;
+
+  end julian_calendar_test;

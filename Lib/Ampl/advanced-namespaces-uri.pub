@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public uri =
 -- Additions to standard.names for working with URIs.
--- Advanced Multi-platform Library.
+-- Flex Advanced Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- General module overview:
@@ -23,7 +23,8 @@ with
   standard.names,
   standard.characters,
   standard.characters.transformers,
-  standard.classes.lists;
+  standard.classes.lists,
+  standard.classes.dictionaries;
 
 -- forward declarations
 class c_namespace_uri;                      type p_namespace_uri                   = ^class c_namespace_uri;
@@ -85,6 +86,13 @@ class public c_namespace_uri = extend c_namespace;
           fragment   : p_name_component_fragment; -- the fragment part of this URI, [nil] if not present
           end record;
       p_namespace_specific_uri = ^class t_namespace_specific_uri;
+
+    ------------------------------------------------------------------------------------------------
+    static split_formdata (
+        data       : in t_char32ustr;                           -- input data
+        variables  : in c_string_string_dictionary);            -- dictionary into which should the variables be stored
+    -- A helper function to parse application/x-www-form-urlencoded data, usually from a POST request.
+    ------------------------------------------------------------------------------------------------
 
   protected
     -- general utility functions used by subclasses
@@ -214,6 +222,9 @@ class public c_uri_name = extend c_name;
     ------------------------------------------------------------------------------------------------
     static delete_variables;
     -- Delete all variables (and fragment information) from the name's component list.
+    ------------------------------------------------------------------------------------------------
+    static is_normalized return t_logical;
+    -- Returns true if this name is normalized, i.e. no "/./", "/../", "//" inside
     ------------------------------------------------------------------------------------------------
 
     end c_uri_name;

@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private short_arithmetic =
 -- Short arithmetic low-level operations.
--- Advanced Multi-platform Library.
+-- Flex Advanced Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 

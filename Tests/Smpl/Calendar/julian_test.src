@@ -1,0 +1,55 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Testy pro Juliánský kalendář.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Upozornění: Jelikož je v současnosti použit pro komponovaný datum a čas modulární typ
+-- [t_mod_unsigned32] na místo [t_signed32], mohou být testy knihovny [datetime] neúspěšné v kraj-
+-- ních hodnotách kritických datumů, tj. na počátku ([datim]~[datim:first]) a na konci
+-- ([datim]~[datim:last]). Proto v nejsou v těchto krajních hodnotách testy prováděny.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.characters,
+  quality,
+  quality.debugging,
+  julian_calendar_test;
+
+----------------------------------------------------------------------------------------------------
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(c_julian_decompose_compose_case:tag,'decompsition-composition test');
+  psuite^.register_test(c_julian_addition_case:tag,'addition + time span decomposition test');
+  psuite^.register_test(c_julian_find_second_of_minute_case:tag,'find-second of minute test');
+  psuite^.register_test(c_julian_find_minute_of_hour_case:tag,'find-minute of hour test');
+  psuite^.register_test(c_julian_find_hour_of_day_case:tag,'find-hour of day test');
+  psuite^.register_test(c_julian_find_day_of_week_case:tag,'find-day of week test');
+  psuite^.register_test(c_julian_find_day_of_month_case:tag,'find-day of month test');
+  psuite^.register_test(c_julian_find_day_of_year_case:tag,'find-day of year test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests;
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

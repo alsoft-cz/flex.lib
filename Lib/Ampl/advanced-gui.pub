@@ -1,20 +1,19 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public gui =
 -- Graphic User Interface Library.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- %% Working version
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
 
 with
   standard;
 
 use 
-  system,
-  system.windows,
-  system.windows.windef,
   system.windows.windef.winnt;
-
 
 type
   t_system_window_handle = system.windows.windef.winnt.t_handle;

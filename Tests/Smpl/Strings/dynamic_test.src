@@ -1,0 +1,44 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Sada testů pro dynamické řetězce.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  dynamic_strings_test;
+
+----------------------------------------------------------------------------------------------------
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(substring_manipulation_test_case:tag,'Manupulation with substrings test');
+  psuite^.register_test(finding_strings_test_case:tag,'Finding strings of string test');
+  psuite^.register_test(finding_items_test_case:tag,'Finding items of string test');
+  psuite^.register_test(assigning_test_case:tag,'Assigning string test');
+  psuite^.register_test(replacing_test_case:tag,'Replacing string test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests(20);
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

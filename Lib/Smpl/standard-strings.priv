@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private strings =
 -- Character strings' manipulation.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -85,20 +85,20 @@ begin
 
           -- trim on the left side only
           elsif trim_ends=t_str_end_set:[se_left] then
-            for i in str:length-length+1..length loop
+            for i in str:length-length+1..str:length loop
               result & str[i];
               end loop;
           { %%FLEX
-            result & [for str:length-lenght+1..length use str[i]];
+            result & [for str:length-lenght+1..str:length use str[i]];
           }
 
           -- trim on both sides only
           else
-            for i in str:length-length div 2 + 1..str:length-length div 2 + length loop
+            for i in (str:length-length) div 2 + 1..(str:length-length) div 2 + length loop
               result & str[i];
               end loop;
           { %%FLEX
-            result & [str:length-length div 2 + 1..str:length-length div 2 + length use str[i]];  
+            result & [(str:length-length) div 2 + 1..(str:length-length) div 2 + length use str[i]];  
           }
             end if;
 
@@ -219,7 +219,7 @@ begin
   i:=str:first;
   while i<=str:length loop
     -- compare substring
-    xsubstr:=str_copy(str,i,i+old_substr:length-1);
+    str_copy(str,i,i+old_substr:length-1,xsubstr);
     if xsubstr=old_substr
   { %%FLEX
     if str[i..i+old_substr:length-1]=old_substr
@@ -275,7 +275,7 @@ begin
   i:=str:first;
   while i<=str:length loop
     -- compare substring
-    xsubstr:=str_copy(str,i,i+substr:length-1);
+    str_copy(str,i,i+substr:length-1,xsubstr);
     if xsubstr=substr
   { %%FLEX
     if str[i..i+substr:length-1]=substr
@@ -319,24 +319,65 @@ procedure str_pos_substring =
 --   This subprogram always succeeds.
 --   If there is no occurence of [substr] in [str] subprogram returns 0.
 ----------------------------------------------------------------------------------------------------
-var 
-  i                : t_unsigned:=1;
-  j                : t_unsigned:=1;
+var
+  found            : t_logical;
+  max_i            : t_unsigned;                 -- upper loop limit
+  shift_k          : t_unsigned;                 -- K-shift size
+  shift_l          : t_unsigned;                 -- L-shift size
+  i                : t_unsigned;                 -- loop control variable
+  str_len          : t_unsigned;                 -- [str:length]
+  substr_len       : t_unsigned;                 -- [substr:length]
 
 begin
-  while i<=str:length loop
-    if str[i]=substr[j] then
-      while str[i]=substr[j] loop
-        if j=substr:length then
-          result:=i-j+1;
+  -- store lengths
+  str_len:=str:length;
+  substr_len:=substr:length;
+
+  -- check lengths
+  if str_len<substr_len then
+    -- "substring" is longer the [str], it cannot be contained within...
+    return;
+    end if;
+
+  -- special case (searching for one item)
+  if substr_len=1 then
+    result:=str_pos_character(str, substr[1]);
+    return;
+    end if;
+
+  -- compute shifts
+  if substr[1]=substr[2]
+    then
+      shift_k:=2;
+      shift_l:=1;
+    else
+      shift_k:=1;
+      shift_l:=2;
+      end if;
+
+  --%%TODO maybe some better algorithm (BM, KMP, ...)
+  -- "Not So Naive" algorithm (http://www-igm.univ-mlv.fr/~lecroq/string/node13.html)
+  i:=1;
+  max_i:=str_len-substr_len+1;
+  while i<=max_i loop
+    if str[i+1]<>substr[2]
+      then
+        -- mismatch at the second character
+        i + shift_k;
+      else
+        found:=true;
+        for j in 3..substr_len loop
+          if str[i+j-1]<>substr[j] then
+            found:=false;
+            break;
+            end if;
+          end loop;
+        if found and then str[i]=substr[1] then
+          result:=i;
           return;
           end if;
-        i+1;
-        j+1;
-        end loop;
-      j:=1;
-      end if;
-      i+1;
+        i + shift_l;
+        end if;
     end loop;
   end str_pos_substring;
 
@@ -379,7 +420,7 @@ begin
   i:=str:first;
   while i<=str:length loop
     -- compare substring
-    xsubstr:=str_copy(str,i,i+substr:length-1);
+    str_copy(str,i,i+substr:length-1,xsubstr);
     if xsubstr=substr
   { %%FLEX
     if str[i..i+substr:length-1]=substr
@@ -444,9 +485,13 @@ procedure str_combine =
 -- Joins strings of an array [_array] into a string separated by character [separator].
 ----------------------------------------------------------------------------------------------------
 begin 
-  for i in _string:range loop
+{  for i in _string:range loop
+    result & _string[i] & separator; 
+    end loop;}
+  for i in 1.._string:last-1 loop
     result & _string[i] & separator; 
     end loop;
+  result & _string[_string:last];
   end str_combine;
 
 
@@ -556,12 +601,21 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure str_copy =
--- Returns a substring of string [str] from position [_start] to position [_stop].
+-- Copies a substring of string [str] from position [_start] to position [_stop] into [result].
 ----------------------------------------------------------------------------------------------------
+var
+  tmp_result       : p_char32ustr;
+
 begin
+  -- in order to handle str_copy(str,_,_,str), we have to use a temporary buffer instead of
+  -- modifying result directly
+  new tmp_result range 1+_end-_start;
   for i in _start..min_unsigned(_end,str:length) loop
-    result & str[i];
+    tmp_result^ & str[i];
     end loop;
+  result:=tmp_result^;
+leave
+  discard tmp_result;
   end str_copy;       
 
 
@@ -609,399 +663,22 @@ begin
 
 
 ----------------------------------------------------------------------------------------------------
-class private c_string =
--- Class for handling automatically allocated and deallocated unconstrained strings of t_char32
--- characters.
-----------------------------------------------------------------------------------------------------  
--- %% TO CONSIDER serializace
+procedure str_hash =
+-- Returns a hash of the string.
 ----------------------------------------------------------------------------------------------------
-
-    const
-      new_block_size = 5;                          -- size of memory block that will be allocated in 
-                                                   -- case of needs
-    
-    var 
-      data           : p_char32ustr;               -- pointer to the main data
-
-    message 
-      string_delete_error;                         -- error when deleteting from string
-
-    ------------------------------------------------------------------------------------------------
-    static set_string =
-    -- Sets string to store value of t_char32ustr given the value as [source].
-    -- Exapmle:
-    --    Setting string to ''-empty string would delete its content.
-    ------------------------------------------------------------------------------------------------
-    var 
-      new_blocks     : t_unsigned;
-
-    begin
-      discard data;
-      new_blocks:=source:length div new_block_size;
-      new_blocks+1;
-      new data range new_blocks*new_block_size;
-      data^:=source;
-      end set_string;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static add_char =
-    -- Adds character to the end of this string value.
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp            : p_char32ustr;
-      old_data       : p_char32ustr;
-
-    begin
-      if data^:size<data^:length + 1 then
-        new tmp range data^:length + new_block_size;
-        tmp^:=data^;
-        old_data:=data;
-        data:=tmp;
-        discard old_data;
-        end if;
-      data^ & char;
-      end add_char;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static add_string =
-    -- Adds character to the end of this string value.
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp            : p_char32ustr;
-      old_data       : p_char32ustr;
-      new_blocks     : t_unsigned;
-
-    begin
-      new_blocks:=str:length-(data^:size-data^:length) div new_block_size;
-      new_blocks+1;
-      if str:length-(data^:size-data^:length)>0 then
-        new tmp range data^:length + new_blocks*new_block_size;
-        tmp^:=data^;
-        old_data:=data;
-        data:=tmp;
-        discard old_data;
-        end if;
-      data^ & str;   
-      end add_string;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static get_string =
-    -- Gets poiter to the string represented by this class.
-    ------------------------------------------------------------------------------------------------
-    begin
-      result:=data; 
-      end get_string;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    static get_char =
-    -- Gets the string of t_char32 represented by this class.
-    ------------------------------------------------------------------------------------------------
-    begin
-      if position>data^:length or position<1
-        then
-          result:=nil;
-        else
-          result:=data^[position];
-          end if;
-      end get_char;
-
-
-    ------------------------------------------------------------------------------------------------
-    static del_char =
-    -- Removes character at position [position] from the string.
-    ------------------------------------------------------------------------------------------------
-    var 
-      i              : t_unsigned;
-      tmp            : p_char32ustr;
-      old_data       : p_char32ustr;
-
-    begin
-      if position>data^:length or position<1 then
-        raise string_delete_error;
-        return;
-        end if;
-      {%%FLEX
-      data^:=data^[1..position-1] & data^[postion+1..data^:last];
-      data^:length-1;}
-      new tmp range data^:length-1;
-      tmp^:length:=data^:length-1;
-      i:=1;
-      while i<position loop
-        tmp^[i]:=data^[i]; 
-        i+1;
-        end loop;
-      i+1;
-      while i<=data^:length loop
-        tmp^[i-1]:=data^[i]; 
-        i+1;
-        end loop;
-      old_data:=data;
-      data:=tmp;
-      discard old_data;
-      end del_char;
-    
-
-    
-    ------------------------------------------------------------------------------------------------
-    static del_string =
-    -- Removes [count] number of character starting at position [position] from the string.
-    ------------------------------------------------------------------------------------------------
-    var 
-      i              : t_unsigned;
-      tmp            : p_char32ustr;
-      old_data       : p_char32ustr;
-
-    begin
-      if position+count-1>data^:length or position<1 then
-        raise string_delete_error;
-        return;
-        end if;
-      {%%FLEX
-      data^:=data^[1..position-1] & data^[postion+1..data^:last];
-      data^:length-1;}
-      new tmp range data^:length-1;
-      tmp^:length:=data^:length-1;
-      i:=1;
-      while i<position loop
-        tmp^[i]:=data^[i]; 
-        i+1;
-        end loop;
-      i+count;
-      while i<=data^:length loop
-        tmp^[i-count]:=data^[i]; 
-        i+1;
-        end loop;
-      old_data:=data;
-      data:=tmp;
-      discard old_data;
-      end del_string;
-
-    
-
-    ------------------------------------------------------------------------------------------------
-    static length =
-    ------------------------------------------------------------------------------------------------
-    begin
-      result:=data^:length;
-      end length;
-
-
-    
-    ------------------------------------------------------------------------------------------------
-    procedure op_assign_ts_cs =
-    -- A := B
-    ------------------------------------------------------------------------------------------------
-    begin
-      a:=b.get_string^;
-      end op_assign_ts_cs;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_assign_cs_ts =
-    -- A := B
-    ------------------------------------------------------------------------------------------------
-    begin
-      a.set_string(b);
-      end op_assign_cs_ts;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs =
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      a.add_string(b.get_string^);
-      end op_concat_cs_cs;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts =
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      a.add_string(b);
-      end op_concat_cs_ts;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs =
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp          : p_char32ustr;
-
-    begin
-      tmp:=b.get_string;
-      a & tmp^;
-      --%%X a & b.get_string^;
-      end op_concat_ts_cs;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc =
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      a.add_char(b);
-      end op_concat_cs_tc;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts_cs =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp          : p_char32ustr;
-      i            : t_unsigned; --%%
-
-    begin
-      i:=a.length + b:length;
-      new tmp range a.length + b:length;
-      tmp^:=a.get_string^;
-      tmp^ & b;
-      result.set_string(tmp^);
-      discard tmp;
-      end op_concat_cs_ts_cs;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts_ps =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      new result range a.length + b:length;
-      result^:=a.get_string^;
-      result^ & b;
-      end op_concat_cs_ts_ps;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs_cs =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp          : p_char32ustr;
-
-    begin
-      new tmp range a.length + b.length;
-      tmp^:=a.get_string^;
-      tmp^ & b.get_string^;
-      result.set_string(tmp^);
-      discard tmp;
-      end op_concat_cs_cs_cs;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs_ps =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      new result range a.length + b.length;
-      result^:=a.get_string^;
-      result^ & b.get_string^;
-      end op_concat_cs_cs_ps;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs_cs =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    var
-      tmp          : p_char32ustr;
-
-    begin
-      new tmp range a:length + b.length;
-      tmp^:=a;
-      tmp^ & b.get_string^;
-      result.set_string(tmp^);
-      end op_concat_ts_cs_cs;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs_ps =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      new result range a:length + b.length;
-      result^:=a;
-      result^ & b.get_string^;
-      end op_concat_ts_cs_ps;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc_cs =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp          : p_char32ustr;
-
-    begin
-      new tmp range a.length + 1;
-      tmp:=a.get_string;
-      tmp^ & b;
-      result.set_string(tmp^);
-      end op_concat_cs_tc_cs;
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc_ps =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    var 
-      tmp          : p_char32ustr;
-
-    begin
-      new result range a.length + 1;
-      tmp:=a.get_string;
-      tmp^ & b;
-      result:=tmp;
-      end op_concat_cs_tc_ps;
-
-
-
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_tc_cs_cs =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      result.add_char(a);
-      result.add_string(b.get_string^);
-      end op_concat_tc_cs_cs;
-    
-    
-    
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_tc_cs_ps =
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    begin
-      new result range b.length + 1;
-      result^ & a;
-      result^ & b.get_string^;
-      end op_concat_tc_cs_ps;
-    
-    
-    
-    ------------------------------------------------------------------------------------------------
-    exit =
-    -- Freing memmory on exit
-    ------------------------------------------------------------------------------------------------
-    begin
-      discard data;
-      end exit;
-    
-    end c_string;
+var
+  hash             : t_mod_unsigned;
+begin
+  hash:=0;
+  for i in str:range loop
+    hash:=hash*31 + t_mod_unsigned(str[i]:ord);
+    end loop;
+  result:=t_unsigned(hash);
+  end str_hash;
+
+
+----------------------------------------------------------------------------------------------------
+#separate private dynamic;
+----------------------------------------------------------------------------------------------------
 
 end strings;

@@ -1,0 +1,48 @@
+﻿----------------------------------------------------------------------------------------------------
+module public test_example =
+-- Quality Assurance Library example
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  quality;
+
+----------------------------------------------------------------------------------------------------
+class public c_add_math_test = extend c_test_case;
+-- Primitivní test sčítání dvou čísel.
+----------------------------------------------------------------------------------------------------
+    var  
+      a            : protected t_unsigned;       -- sčítanec
+      b            : protected t_unsigned;       -- sčítanec
+      res          : protected t_unsigned;       -- výsledek sčítání [a] a [b]
+
+    end c_add_math_test;
+
+                        
+
+----------------------------------------------------------------------------------------------------
+class public c_sub_math_test = extend c_test_case;
+-- Primitivní test odečítání dvou čísel.
+----------------------------------------------------------------------------------------------------
+    var  
+      a            : protected t_unsigned;       -- menšenec
+      b            : protected t_unsigned;       -- menšitel
+      res          : protected t_unsigned;       -- výsledek odečítání [a] a [b]
+
+    end c_sub_math_test;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_mul_math_test = extend c_test_case;
+-- Primitivní test násobení dvou čísel.
+----------------------------------------------------------------------------------------------------
+    var  
+      a            : protected t_unsigned;       -- činitel
+      b            : protected t_unsigned;       -- činitel
+      res          : protected t_unsigned;       -- výsledek násobení [a] a [b]
+
+    end c_mul_math_test;
+
+  end test_example;

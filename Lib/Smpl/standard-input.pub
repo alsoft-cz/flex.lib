@@ -1,12 +1,14 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public input =
 -- Input operations routines.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- <heading>... </heading>
 -- 
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
 
 with 
   standard.triggers;

@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private names =
 -- Object names.
--- Flex Standard Library
+-- Flex Standard Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- todo:
@@ -568,6 +568,9 @@ class private c_name =
     begin
       -- Free memory
       discard ns_data;
+      
+      -- discard all components
+      components.delete_all;
       end exit;
 
     end c_name;
@@ -658,6 +661,17 @@ class private abstract c_name_component =
       -- all tests passed=>the components are equal
       result:=true;
       end operator_equal;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- exit
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- discard all subcomponents
+      subcomponents.delete_all;
+      end exit;
 
     end c_name_component;
 

@@ -1,9 +1,10 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private streams =
 -- Stream Interface
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
 ----------------------------------------------------------------------------------------------------
 #separate private abstr;
 -- abstract interfaces
@@ -23,6 +24,5 @@ module private streams =
 #separate private terminators;
 -- stream terminators
 ----------------------------------------------------------------------------------------------------
-
 
 end streams;

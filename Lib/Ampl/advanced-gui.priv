@@ -1,13 +1,20 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private gui =
 -- Graphic User Interface Library.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- %% Working version
 ----------------------------------------------------------------------------------------------------
 
 with
   standard;
+
+#if #environment target_os_family;='WIN32' then;
+const  
+  -- null handle value
+  null_handle      = system.windows.windef.winnt.t_handle(0);
+#end if;
 
 ----------------------------------------------------------------------------------------------------
 #separate private resources;

@@ -1,9 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module winspool =
--- Windows header [converted by h2flex]
---
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Win32 API Binding
+-- Translation to Flex Copyright (C) 2003-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with

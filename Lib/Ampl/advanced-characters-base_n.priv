@@ -1,0 +1,537 @@
+﻿----------------------------------------------------------------------------------------------------
+module private base_n =
+-- Additional character transformers for Base-16, Base-32, Base-64 data encodings (RFC 3548).
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Created: 2004-05-06 by Petr K
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.characters,
+  standard.characters.transformers,
+  standard.strings;
+
+
+-- Encoding alphabets
+var
+  alphabet_base16  : static const aliased string 16 of t_char32 := '0123456789ABCDEF';
+  alphabet_base32  : static const aliased string 32 of t_char32 := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  alphabet_base64  : static const aliased string 64 of t_char32 := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  --alphabet_base64_safe : static const aliased string 64 of t_char32 := 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_base_n_decoder =
+-- Abstract superclass for character transformers that are able to decode Base-N encoded data.
+----------------------------------------------------------------------------------------------------
+
+    type
+      t_decoder_state = enum
+        tds_normal;
+        tds_padding;
+        tds_finished;
+        tds_finalized;
+        end enum;
+
+    var
+      bit_buffer   : t_mod_unsigned;
+      bitpos       : t_unsigned;
+      state        : t_decoder_state;
+
+      output_buffer: t_char32;
+      output_set   : t_logical;
+
+    ------------------------------------------------------------------------------------------------
+    procedure set_error_handling =
+    -- Sets which detected errors should be ignored. The rest of errors causes an exception.
+    ------------------------------------------------------------------------------------------------
+    begin
+      this.ignore_case:=ignore_case;
+      this.ignore_pad:=ignore_pad;
+      this.ignore_ctrl:=ignore_ctrl;
+      this.ignore_chars:=ignore_chars;
+      end set_error_handling;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override put_character =
+    ------------------------------------------------------------------------------------------------
+    with
+      standard.characters.iso10646;
+
+    var
+      c_real       : t_char32;
+      c_value      : t_mod_unsigned;
+
+    begin
+      -- restart if finalized
+      if state=tds_finalized then
+        state:=tds_normal;
+        bit_buffer:=0;
+        bitpos:=0;
+        end if;
+
+      -- let us find out the real meaning of the character
+      c_real:=c;
+
+      -- if we should ignore case, handle the character always as uppercase
+      if ignore_case then
+        --%%TODO(OVERLOAD) iso_char_to_upper => char_to_upper (a zrusit with standard.characters.iso10646)
+        c_real:=iso_char_to_upper(c_real);
+        end if;
+
+      -- handle padding
+      if c_real=padding then
+        case state
+          when tds_normal do
+            c_real:=alphabet^[1];
+            state:=tds_padding;
+
+          when tds_padding do
+            c_real:=alphabet^[1];
+
+          when tds_finished do
+            -- we do not expect more padding
+            if ignore_pad
+              then return;
+              else raise character_transformer_error;
+              end if;
+
+          when others do
+            raise character_transformer_error;
+          end case;
+        end if;
+
+      -- convert character to N-bit value
+      c_value:=t_mod_unsigned(str_pos_character(alphabet^,c_real));
+      if c_value=0 then
+        -- invalid character => handle accordingly
+        if (c_real<" " and ignore_ctrl) or ignore_chars
+          then return;
+          else raise character_transformer_error;
+          end if;
+        end if;
+
+      -- check validity according to the state
+      case state
+        when tds_normal do;
+
+        when tds_padding do
+          if c<>padding then
+            raise character_transformer_error;
+            end if;
+
+        when tds_finished do
+          raise character_transformer_error;
+
+        when others do
+          raise character_transformer_error;
+        end case;
+
+      -- we are interested in the character value, not position
+      c_value-1;
+
+      -- put these N-bit data into the buffer
+      if bitpos+lg_n<=8
+        then
+          -- all N-bit data fit into the current buffer
+          bitpos+lg_n;
+          bit_buffer or (c_value shl (8-bitpos));
+
+          -- is the buffer full?
+          if bitpos=8 then
+            -- yes=>send the data to output and reset
+            if output_set then
+              raise character_transformer_buffer_full_error;
+              end if;
+            output_buffer:=t_char32(bit_buffer);
+            output_set:=true;
+            bitpos:=0;
+            bit_buffer:=0;
+            end if;
+
+        else
+          -- we have to split the data into the current and the next buffer
+          declare var
+            c_part : t_mod_unsigned;
+
+          begin
+            -- get the part that goes to the current buffer
+            bitpos:=bitpos+lg_n-8;
+            c_part:=c_value shr bitpos;
+            bit_buffer or c_part;
+
+            -- send the current (full) buffer to output
+            if output_set then
+              raise character_transformer_buffer_full_error;
+              end if;
+            output_buffer:=t_char32(bit_buffer);
+            output_set:=true;
+
+            -- reset the buffer and fill it with the remaining data
+            -- %%TODO(SHL) zrusit pretypovani
+            bit_buffer:=(c_value and t_mod_unsigned(1) shl bitpos-1) shl (8-bitpos);
+            end declare;
+          end if;
+
+      -- if we are padding, the output is not valid
+      if state=tds_padding then
+        output_set:=false;
+        end if;
+
+      -- check whether we are finished with the padding
+      if state=tds_padding and bitpos=0 then
+        state:=tds_finished;
+        end if;
+
+      -- report whether any output is ready
+      output_ready:=output_set;
+      end put_character;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override finalize_input =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- restart if finalized
+      if state=tds_finalized then
+        state:=tds_normal;
+        bit_buffer:=0;
+        bitpos:=0;
+        end if;
+
+      -- check validity according to the state
+      case state
+        when tds_normal do
+          -- Are there any bits in the buffer?
+          if bitpos<>0 then
+            -- Yes=>we are missing some padding. Is it a problem?
+            if not ignore_pad then
+              raise character_transformer_error;
+              end if;
+
+            -- Otherwise, just send the currently buffered data to output.
+            output_buffer:=t_char32(bit_buffer);
+            output_set:=true;
+            end if;
+
+        when tds_padding do
+          -- We are still expecting more padding to come. Is it a problem?
+          if not ignore_pad then
+            raise character_transformer_error;
+            end if;
+
+          -- Otherwise, just send the currently buffered data to output.
+          output_buffer:=t_char32(bit_buffer);
+          output_set:=true;
+
+        when tds_finished do;
+
+        when others do
+          raise character_transformer_error;
+        end case;
+
+      -- store state
+      state:=tds_finalized;
+
+      -- Is there any remaining output?
+      result:=output_set;
+      end finalize_input;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_character =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Is there any output ready?
+      if not output_set then
+        raise character_transformer_buffer_empty_error;
+        end if;
+
+      -- Send the buffer to output and clear.
+      c:=output_buffer;
+      output_buffer:=\$ffff;
+      output_set:=false;
+      more_output:=false;
+      end get_character;
+
+    end c_base_n_decoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_base_n_encoder =
+-- Abstract superclass for character transformers that are able to encode data using a Base-N encoding.
+----------------------------------------------------------------------------------------------------
+
+    type
+      t_encoder_state = enum
+        tes_normal;
+        tes_padding;
+        tes_finalized;
+        end enum;
+
+    var
+      buffer       : t_mod_unsigned;
+      buff_len     : t_unsigned;
+      state        : t_encoder_state;
+      rem_padding  : t_unsigned;
+
+    ------------------------------------------------------------------------------------------------
+    override put_character =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- restart if finalized
+      if state=tes_finalized then
+        buffer:=0;
+        buff_len:=0;
+        state:=tes_normal;
+        end if;
+
+      -- check state
+      if state<>tes_normal then
+        raise character_transformer_error;
+        end if;
+
+      -- check if there is enough space in the buffer (i.e. there is not a character ready)
+      if buff_len>=lg_n then
+        raise character_transformer_buffer_full_error;
+        end if;
+
+      -- add the byte to the buffer
+      buffer:=(buffer shl 8) or t_mod_unsigned(c:ord);
+      buff_len+8;
+      output_ready:=true;
+      end put_character;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override finalize_input =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- restart if finalized
+      if state=tes_finalized then
+        buffer:=0;
+        buff_len:=0;
+        state:=tes_normal;
+        end if;
+
+      -- check state
+      if state<>tes_normal then
+        raise character_transformer_error;
+        end if;
+
+      -- check if there is enough space in the buffer (i.e. there is not a character ready)
+      if buff_len>=lg_n then
+        raise character_transformer_buffer_full_error;
+        end if;
+
+      -- add padding if required
+      if buff_len>0
+        then
+          -- begin finalization
+          state:=tes_padding;
+          rem_padding:=get_length_of_padding(buff_len);
+          buffer:=buffer shl (lg_n-buff_len);
+          buff_len:=lg_n;
+          result:=true;
+
+        else
+          -- padding not required
+          state:=tes_finalized;
+          result:=false;
+          end if;
+      end finalize_input;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_character =
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- check state and buffer
+      if (state=tes_finalized) or (state=tes_normal and buff_len<lg_n) then
+        raise character_transformer_buffer_empty_error;
+        end if;
+
+      -- should we output data, or padding?
+      if state=tes_normal or buff_len>0
+        then
+          -- some normal data is ready
+          -- %%TODO(SHL) zrusit pretypovani
+          c:=alphabet^[t_unsigned((buffer shr (buff_len-lg_n)) and (t_mod_unsigned(1) shl lg_n-1))+1];
+          buff_len-lg_n;
+          more_output:=buff_len>=lg_n or state=tes_padding;
+
+        else
+          -- only padding remaining
+          c:=padding;
+          pred rem_padding;
+
+          -- are we finished with the padding?
+          more_output:=rem_padding>0;
+          if not more_output then
+            state:=tes_finalized;
+            end if;
+          end if;
+      end get_character;
+
+   
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_length_of_padding =
+    -- Compute the length of required padding when [rem_bits] bits are remaining in the buffer.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- default implementation: no padding supported, raise an exception
+      raise character_transformer_error;
+      end get_length_of_padding;
+
+    
+    end c_base_n_encoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base16_decoder =
+-- Character transformer that is able to decode Base-16 encoded data.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the decoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=4;
+      alphabet:=^alphabet_base16;
+      padding:=\$ffff;
+      ignore_case:=true;
+      end entry;
+
+    end c_base16_decoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base16_encoder =
+-- Character transformer that is able to encode data using the Base-16 encoding.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the encoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=4;
+      alphabet:=^alphabet_base16;
+      padding:=\$ffff;
+      end entry;
+
+    end c_base16_encoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base32_decoder =
+-- Character transformer that is able to decode Base-32 encoded data.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the decoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=5;
+      alphabet:=^alphabet_base32;
+      padding:="=";
+      ignore_case:=true;
+      end entry;
+
+    end c_base32_decoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base32_encoder =
+-- Character transformer that is able to encode data using the Base-32 encoding.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override get_length_of_padding =
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=(rem_bits*5) mod 8-1;
+      end get_length_of_padding;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the encoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=5;
+      alphabet:=^alphabet_base32;
+      padding:="=";
+      end entry;
+
+    end c_base32_encoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base64_decoder =
+-- Character transformer that is able to decode Base-64 encoded data.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the decoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=6;
+      alphabet:=^alphabet_base64;
+      padding:="=";
+      end entry;
+
+    end c_base64_decoder;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_base64_encoder =
+-- Character transformer that is able to encode data using the Base-64 encoding.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override get_length_of_padding =
+    ------------------------------------------------------------------------------------------------
+    begin
+      case rem_bits
+        when 2 do result:=2;
+        when 4 do result:=1;
+        when others do raise character_transformer_error;
+        end case;
+      end get_length_of_padding;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Initialization: configure the encoder.
+    ------------------------------------------------------------------------------------------------
+    begin
+      lg_n:=6;
+      alphabet:=^alphabet_base64;
+      padding:="=";
+      end entry;
+
+    end c_base64_encoder;
+
+
+end base_n;

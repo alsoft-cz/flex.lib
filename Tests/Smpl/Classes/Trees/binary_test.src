@@ -1,0 +1,47 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Testy pro binární stromy (nevyvážené i AVL)
+-- Výstup výsledku se provádí do souboru "output.txt" z důvodu rozsáhlých výpisů
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  binary_trees_test;
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  file             : aliased c_file_quality_formatter;    -- souborový formatter
+
+begin
+  -- výstup do souboru
+  -- vytvoříme sadu testů a provedeme výstup do souboru
+  new psuite;
+
+  -- inicializace výstupního souboru "output.txt"
+  file.init('output.txt',c_character_encoder_utf8:tag);
+
+  -- inicializace souborového formatteru
+  psuite^.init(^file);
+
+  -- registrace testů
+  psuite^.register_test(c_inserting_binary_tree_test_case:tag,'Inserting nodes of binary tree test');
+  psuite^.register_test(c_removing_binary_tree_test_case:tag,'Removing nodes from binary tree test');
+  psuite^.register_test(c_merging_binary_tree_test_case:tag,'Merging binary trees test');
+  psuite^.register_test(c_spliting_binary_tree_test_case:tag,'Spliting binary tree test');
+  psuite^.register_test(c_deleting_subtree_binary_tree_test_case:tag,'Deleting subtree of binary tree test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests(200);
+
+  -- zobrazení výsledků testů do souboru
+  psuite^.get_results;
+  discard psuite;
+  end test;

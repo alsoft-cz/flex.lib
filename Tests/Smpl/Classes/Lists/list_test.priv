@@ -1,0 +1,409 @@
+﻿----------------------------------------------------------------------------------------------------
+module private list_test =
+-- Test of Classes library - List, list iterator and stack.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.lists,
+  quality,
+  quality.debugging;
+
+-- dopředné deklarace
+class c_test_list_item;     type p_test_list_item     = ^class c_test_list_item;
+
+----------------------------------------------------------------------------------------------------
+class c_test_list_item = extend c_list_item;
+-- Třída složek testovaného seznamu. Obsahuje jednu proměnnou [value] typu [t_unsigned].
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : t_unsigned;                 -- prvek složky seznamu
+
+    end c_test_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure feed_list (
+    list           : p_list;                     -- pointer na seznam, který se má vyplnit
+    n              : t_unsigned) =               -- počet složek v seznamu [list]
+-- Vytvoří seznam [list] a vyplní ho postupně hodnotami 1..[n], přičemž první složce odpovídá 1,
+-- druhé 2, ..., poslední [n].
+----------------------------------------------------------------------------------------------------
+var
+  item             : p_test_list_item;           -- složka seznamu
+
+begin
+  -- v cyklu postupně vytváříme seznam a vkládáme do něj hodnoty 1..[n]
+  for i in 1..n loop
+    new item;
+    item^.value:=i;
+    list^.insert_last(item);
+    end loop;
+  end feed_list;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_inserting_list_test_case =
+-- Třída pro test pro metody [insert] seznamu [c_list].
+--
+-- Princip: Ve čtyřech sériích (počet kroků v každé sérii udává [series_count]) postupně vytvoříme
+-- spojový seznam, který bude obsahovat hodnoty 1..4*[series_count], přičemž využíváme metod
+-- [insert_first], [insert_last], [insert_after] a [insert_before]. Po vytvoření seznamu 2x
+-- testujeme, zda seznam skutečně obsahuje rostoucí hodnoty 1..4*[series_count], přitom v prvním
+-- testu procházíme seznam od začátku do konce a v druhém testu od konce do začátku.
+----------------------------------------------------------------------------------------------------
+
+    var
+      list         : c_list;                     -- testovaný spojový seznam
+      series_count : t_unsigned;                 -- počet složek v seznamu [c_list], které se přidají
+                                                 -- v každé sérii.
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_test_list_item;           -- složka testovaného spojového seznamu [list]
+      marker_first : p_test_list_item;           -- pointer na prvně vloženou složku pomocí [insert_first]
+      marker_last  : p_test_list_item;           -- pointer na prvně vloženou složku pomocí [insert_last]
+      j            : t_unsigned;                 -- kontrolní počítadlo
+
+    begin
+      -- vložíme na začátek [series_count] složek do seznamu [list] pomocí metody [insert_first]
+      -- (vkládáme hodnoty 1..[series_count]).
+      for i in reverse 1..series_count loop
+        new item;
+        item^.value:=i;
+        list.insert_first(item);
+
+        -- uchováme si pointer na prvně vloženou složku
+        if i=series_count then
+          marker_first:=item;
+          end if;
+        end loop;
+
+      -- vložíme na konec [series_count] složek do seznamu [list] pomocí metody [insert_last]
+      -- (vkládáme hodnoty [series_count]+1..3*[series_count]).
+      for i in 1..series_count loop
+        new item;
+        item^.value:=i+3*series_count;
+        list.insert_last(item);
+
+        -- uchováme si pointer na prvně vloženou složku
+        if i=1 then
+          marker_last:=item;
+          end if;
+        end loop;
+
+      -- vložíme [series_count] složek do seznamu [list] za složku [marker_first] pomocí metody
+      -- [insert_after] (vkládáme hodnoty [series_count]+1..2*[series_count]). Přitom po každém
+      -- vložení složky [item] odkazuje [marker_first] na vloženou složku [item].
+      for i in 1..series_count loop
+        new item;
+        item^.value:=i+series_count;
+        list.insert_after(marker_first,item);
+        marker_first:=item;
+        end loop;
+
+      -- vložíme [series_count] složek do seznamu [list] před složku [marker_last] pomocí metody
+      -- [insert_before] (vkládáme hodnoty 2*[series_count]+1..3*[series_count]). Přitom po každém
+      -- vložení složky [item] odkazuje [marker_last] na vloženou složku [item].
+      for i in reverse 1..series_count loop
+        new item;
+        item^.value:=i+2*series_count;
+        list.insert_before(marker_last,item);
+        marker_last:=item;
+        end loop;
+
+      -- Testujeme, zda se složky v seznamu [list] jsou v očekávaném pořadí, přičemž seznamem
+      -- procházíme od začátku do konce
+      j:=1;
+      item:=list.get_first;
+      while item<>nil loop
+        fail_if_false(item^.value=j,'Expected value is not equal');
+        item:=list.get_next(item);
+        j+1;
+        end loop;
+
+      -- Testujeme, zda se složky v seznamu [list] jsou v očekávaném pořadí, přičemž seznamem
+      -- procházíme od konce do začátku
+      j:=4*series_count;
+      item:=list.get_last;
+      while item<>nil loop
+        fail_if_false(item^.value=j,'Expected value is not equal');
+        item:=list.get_prev(item);
+        j-1;
+        end loop;
+      end run_test;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metodo pro inicializaci interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních priměnných
+      series_count:=500;
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní všechny složky v seznamu [list]
+    ------------------------------------------------------------------------------------------------
+    begin
+      list.delete_all;
+      end exit;
+
+    end c_inserting_list_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_removing_list_test_case =
+-- Třída pro test pro metody [remove] a [delete] seznamu [c_list].
+--
+-- Princip: Vytvoříme spojový seznam o [item_count] složkách, přičemž první složka bude obsahovat
+-- hodnotu 1, 2. hodnotu 2, ..., poslední hodnotu [item_count].
+-- Pozor! Implicitně předpokládáme, že [item_count]>=6.
+-- Dále určíme první, druhou, třetí, čtvrtou, předposlední a poslední složku seznamu. Ze seznamu
+-- [list] vyjmeme čtvrtou složku a kontrolujeme počet prvků v seznamu (měl by být [item_count]-1).
+-- Poté ze seznamu odstraníme třetí složku a kontrolujeme počet prvků v seznamu (měl by být
+-- [item_count]-2). Dále vyjmeme první a poslední prvek a kontrolujeme, zda jsme skutečně vyjmuli
+-- první a poslední prvek a počet prvků v seznamu. Dále odstraníme první a poslední prvek v seznamu
+-- a kontrolujeme počet prvků v seznamu. Na závěr projdeme celý seznam od začátku do konce a
+-- testujeme, zda hodnoty ve složkách postupně odpovádají hodnotám 5, 6, 7, ..., [item_count]-1.
+----------------------------------------------------------------------------------------------------
+
+    var
+      list         : aliased c_list;             -- testovaný spojový seznam
+      item_count   : t_unsigned;                 -- počet složek v seznamu [c_list]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      first_item   : p_test_list_item;           -- první složka seznamu [list]
+      second_item  : p_test_list_item;           -- druhá složka seznamu [list]
+      third_item   : p_test_list_item;           -- třetí složka seznamu [list]
+      fourth_item  : p_test_list_item;           -- čtvrtá složka seznamu [list]
+      prev_last_item:p_test_list_item;           -- poslední složka seznamu [list]
+      last_item    : p_test_list_item;           -- předposlední složka seznamu [list]
+      removed_item : p_test_list_item;           -- pointer na vyjmutou složku seznamu [list]
+      item         : p_test_list_item;           -- složka seznamu [list]
+
+    begin
+      -- seznam vzestupně naplníme hodnotami 1..[item_count]
+      feed_list(^list,item_count);
+
+      -- určíme první, druhou, třetí, čtvrtou, poslední a předposlední složku seznamu
+      first_item:=list.get_first;
+      second_item:=list.get_next(first_item);
+      third_item:=list.get_next(second_item);
+      fourth_item:=list.get_next(third_item);
+      last_item:=list.get_last;
+      prev_last_item:=list.get_prev(last_item);
+
+      -- vybereme čtvrtou složku seznamu [list] a provedeme test výsledku
+      list.remove(fourth_item);
+      fail_if_false(item_count=list.count+1,'Remove item failed');
+      discard fourth_item;
+
+      -- odstraníme třetí složku seznamu [list] a provedeme test výsledku
+      list.delete(third_item);
+      fail_if_false(item_count=list.count+2,'Delete item failed');
+
+      -- vybereme první složku seznamu [list] a provedeme test výsledku
+      removed_item:=list.remove_first;
+      fail_if_false(removed_item=first_item and item_count=list.count+3,'Remove first item failed');
+      discard removed_item;
+                         
+      -- vybereme poslední složku seznamu [list] a provedeme test výsledku
+      removed_item:=list.remove_last;
+      fail_if_false(removed_item=last_item and item_count=list.count+4,'Remove last item failed');
+      discard removed_item;
+
+      -- odstraníme první složku seznamu [list] (v původním seznamu to byla 2. složka)
+      list.delete_first;
+      fail_if_false(item_count=list.count+5,'Dele first item failed');
+
+      -- odstraníme poslední složku seznamu [list] (v původním seznamu to byla předposlední složka)
+      list.delete_last;
+      fail_if_false(item_count=list.count+6,'Delete last item failed');
+
+      -- porjdeme celý seznam [list] a testujeme, zda jeho jednotlivé složky odpovídají předpokládaným
+      -- hodnotám
+      item:=list.get_first;
+      for i in 1..list.count loop
+        fail_if_false(i+4=item^.value,'Expected value is not equal');
+        item:=list.get_next(item);
+        end loop;
+
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metodo pro inicializaci interních proměnných
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      item_count:=500;
+      end entry;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní všechny složky v seznamu [list]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- odstraníme všechny složky v seznamu [list]
+      list.delete_all;
+      end exit;
+
+    end c_removing_list_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_list_iterator_test_case =
+-- Třída pro test iterátoru [c_list_iterator] seznamu [c_list].
+--
+-- Princip: Vytvoříme spojový seznam o [item_count] složkách, přičemž první složka bude obsahovat
+-- hodnotu 1, 2. hodnotu 2, ..., poslední hodnotu [item_count].
+-- Dále inicializujeme iterátor [iterator] pro průchod seznamu [list] od první k poslední složce,
+-- přičemž testujeme, zda hodnoty [value] složek vybraných ze seznamu postupně odpovídají hodnotám
+-- 1, 2, 3, ..., [item_count]. Totéž provedeme pro iteráor inicializovaný pro průchod od poslední
+-- k první složce.
+----------------------------------------------------------------------------------------------------
+
+    var
+      iterator     : c_list_iterator;            -- testovaný iterátor spojového seznamu [list]
+      list         : aliased c_list;             -- spojový seznam
+      item_count   : t_unsigned;                 -- počet složek v seznamu [c_list]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      item         : p_test_list_item;           -- složka seznamu [list]
+      i            : t_unsigned;                 -- počítadlo
+      
+    begin
+      -- seznam vzestupně naplníme hodnotami 1..[item_count]
+      feed_list(^list,item_count);
+
+      -- test průchodu od první k poslední složce
+      iterator.init(list,tlwd_forward);
+      while iterator.get(item) loop
+        i+1;
+        fail_if_false(item^.value=i,'Expected value is not equal (Forward direction)');
+        end loop;
+
+      -- test průchodu od poslední k první složce
+      iterator.init(list,tlwd_backward);
+      while iterator.get(item) loop
+        fail_if_false(item^.value=i,'Expected value is not equal (Backward direction)');
+        i-1;
+        end loop;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      item_count:=2000;
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Ukončovací metoda - odstraní všechny složky v seznamu [list]
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- odstraníme všechny složky v seznamu [list]
+      list.delete_all;
+      end exit;
+
+
+    end c_list_iterator_test_case;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_stack_test_case =
+-- Třída pro test zásobníku [c_stack].
+--
+-- Princip: Vytvoříme zásobník a postupně ho naplníme hodnotami 1..[stack_count] pomocí metody
+-- [push]. Zkontrolujeme, zda poslední (vrchní) hodnota na zásobníku odpovídá hodnotě [stack_count].
+-- Poté z něj postupně odebíráme (pomocí metody [pop]) hodnoty a kotrnolujeme, zda jsou v obráceném
+-- pořadí, tj. [stack_count]..1. Poté, co vybereme všech [stack_count] složek kontrolujeme, zda
+-- je zásobník prázdný (metoda [pop] vrací [nil]).
+----------------------------------------------------------------------------------------------------
+
+    var
+      stack        : c_stack;                    -- testovaný zásobník
+      stack_count  : t_unsigned;                 -- počet záznamů v seznamu
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda
+    ------------------------------------------------------------------------------------------------
+    var
+      stack_item   : p_test_list_item;           -- složka (záznam) zásobníku
+
+    begin
+      -- vyplníme zásobník postupně hodnotami 1..[stack_count]
+      for i in 1..stack_count loop
+        new stack_item;
+        stack_item^.value:=i;
+        stack.push(stack_item);
+        end loop;
+
+      -- zkontrolujeme, zda poslední záznam na zásobníku odpovídá hodnotě [stack_count]
+      stack.peek(stack_item);
+      fail_if_false(stack_item^.value=stack_count,'Expected value is not equal (peek)');
+
+      -- vybereme jednotlivé záznamy na zásobníku a kontrolujeme, zda odpovídají vloženým hodnotám
+      for i in reverse 1..stack_count loop
+        stack.pop(stack_item);
+        fail_if_false(stack_item^.value=i,'Expected value is not equal (pop)');
+        discard stack_item;
+        end loop;
+
+      -- zkontrolujeme, zda je zásobník prázdný
+      stack.pop(stack_item);
+      fail_if_false(stack_item=nil,'Stack is not empty');
+      end run_test;
+
+
+
+      ------------------------------------------------------------------------------------------------
+      entry =
+      -- Inicializační metoda pro inicializaci interních proměnných.
+      ------------------------------------------------------------------------------------------------
+      begin
+        -- inicializace interních proměnných
+        stack_count:=2000;
+        end entry;
+
+    end c_stack_test_case;
+
+  end list_test;

@@ -1,8 +1,8 @@
 ﻿---------------------------------------------------------------------------------------------------
 module public files =
 -- Files.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- use automatic memory management (ref) for NAME,
@@ -27,12 +27,12 @@ message
     file_error;                                  --%%TODO extend message types
 
 -- forward declarations
-class c_filesystem_object; type p_filesystem_object = ^class c_filesystem_object;
-class c_file;              type p_file              = ^class c_file;
-class c_folder;            type p_folder            = ^class c_folder;
-class c_drive;             type p_drive             = ^class c_drive;
-class c_drives;            type p_drives            = ^class c_drives;
-class c_file_manager;      type p_file_manager      = ^class c_file_manager;
+class c_filesystem_object; type p_filesystem_object                                 = ^class c_filesystem_object;
+class c_file;              type p_file              #option required_security(100); = ^class c_file;
+class c_folder;            type p_folder                                            = ^class c_folder;
+class c_drive;             type p_drive                                             = ^class c_drive;
+class c_drives;            type p_drives                                            = ^class c_drives;
+class c_file_manager;      type p_file_manager      #option required_security(100); = ^class c_file_manager;
 
 
 
@@ -201,6 +201,8 @@ class public c_file = extend c_filesystem_object;
 --   -- When the subprogram succeeds, [res] contains [tfe_ok].
 ----------------------------------------------------------------------------------------------------
 
+#option required_security(100);
+
     var
       access       : protected t_file_access;    -- expected file access style
       sharing      : protected t_file_sharing_set;-- sharing allowance
@@ -208,7 +210,7 @@ class public c_file = extend c_filesystem_object;
     
     ------------------------------------------------------------------------------------------------
     static init_decomposed_name (
-        name       : in c_name);                 -- name of the file
+        name       : in class c_name);                 -- name of the file
     -- Initializes the instance of the file access class. Given file name will be used in the 
     -- [open]/[create] operations. 
     --
@@ -302,9 +304,23 @@ class public c_file = extend c_filesystem_object;
     -- longer than the actual file size, it is enlarged and the new space is filled with binary 
     -- zeroes when [zero] is [true], otherwise it is left uninitialized.
     ------------------------------------------------------------------------------------------------
-  
+
     ------------------------------------------------------------------------------------------------
-    static get_output_stream return p_output_stream;
+    static delete_file;
+    -- Deletes the file.
+    -- When the delete operation fails due to any kind of error, [res] is set to [tfe_delete].
+    -- %%TODO(VIRTUAL) Odstranit po přechodu na multivirtuální metody.
+    ------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static get_input_stream (
+        init_ofs   : in t_file_pointer:=0)       -- offset of the beginning of the stream
+        return p_input_stream;
+    -- Temporary, to be removed once interfaces (abstract classes) will work.
+    ------------------------------------------------------------------------------------------------
+    static get_output_stream (
+        init_ofs   : in t_file_pointer:=0)       -- offset of the beginning of the stream
+        return p_output_stream;
     -- Temporary, to be removed once interfaces (abstract classes) will work.
     ------------------------------------------------------------------------------------------------
 
@@ -324,7 +340,7 @@ class public c_folder = extend c_filesystem_object;
 
     ------------------------------------------------------------------------------------------------
     static init_decomposed_name (
-        name       : in c_name);                 -- name of the file
+        name       : in class c_name);                 -- name of the file
     -- Initializes the instance of the folder access class with the given folder name. 
     --
     -- Result:
@@ -377,8 +393,8 @@ class public c_folder = extend c_filesystem_object;
   }
     ------------------------------------------------------------------------------------------------
     static get_sub_folder (
-        sub_folder  : in c_name)                 -- 
-        return c_folder;                         -- 
+        sub_folder_name : in class c_name;
+        sub_folder      : out p_folder);         -- 
     -- 
     ------------------------------------------------------------------------------------------------
 
@@ -398,7 +414,7 @@ class public c_drive = extend c_filesystem_object;
 
     ------------------------------------------------------------------------------------------------
     static set_mount_point (
-        new_mount_point : in c_name);            -- new mount point
+        new_mount_point : in class c_name);            -- new mount point
     -- Sets [mount_point] of the drive to [new_mount_point].
     ------------------------------------------------------------------------------------------------
     static get_mount_point return c_name;
@@ -433,11 +449,13 @@ class public c_drives = extend c_list;
 ----------------------------------------------------------------------------------------------------
 class public c_file_manager =
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
     
     ------------------------------------------------------------------------------------------------
     static copy_file (
-        srcname    : in c_name;                  -- absulute path name of the file to be copied
-        destname   : in c_name;                  -- absulute path name of the destination
+        srcname    : in class c_name;                  -- absulute path name of the file to be copied
+        destname   : in class c_name;                  -- absulute path name of the destination
         fm_error   : out t_fm_error);            -- error indication      
     -- Copies file of name [srcname] to a file at destination of [destname].
     --
@@ -446,8 +464,8 @@ class public c_file_manager =
     --   If subprogram fails [fm_error] flag will be set to [tfme_copy].
     ------------------------------------------------------------------------------------------------
     static move_file (
-        srcname    : in c_name;                  -- absulute path name of the file to be moved
-        destname   : in c_name;                  -- absulute path name of the destination
+        srcname    : in class c_name;                  -- absulute path name of the file to be moved
+        destname   : in class c_name;                  -- absulute path name of the destination
         fm_error   : out t_fm_error);            -- error indication      
     -- Moves file of name [srcname] to a file at destination of [destname].
     --
@@ -456,7 +474,7 @@ class public c_file_manager =
     --   If subprogram fails [fm_error] flag will be set to [tfme_move].
     ------------------------------------------------------------------------------------------------
     static delete_file (
-        filename   : in c_name;                  -- absulute path name of the file to be deleted
+        filename   : in class c_name;                  -- absulute path name of the file to be deleted
         fm_error   : out t_fm_error);            -- error indication      
     -- Deletes file of name [filename].
     --
@@ -465,8 +483,8 @@ class public c_file_manager =
     --   If subprogram fails [fm_error] flag will be set to [tfme_delete].
     ------------------------------------------------------------------------------------------------
     static copy_folder (
-        srcname    : in c_name;                  -- absulute path name of the folder to be copied
-        destname   : in c_name;                  -- absulute path name of the destination
+        srcname    : in class c_name;                  -- absulute path name of the folder to be copied
+        destname   : in class c_name;                  -- absulute path name of the destination
         fm_error   : out t_fm_error);            -- error indication      
     -- Copies folder of name [srcname] to a folder at destination of [destname].
     --
@@ -475,8 +493,8 @@ class public c_file_manager =
     --   If subprogram fails [fm_error] flag will be set to [tfme_copy].
     ------------------------------------------------------------------------------------------------
     static move_folder (
-        srcname    : in c_name;                  -- absulute path name of the folder to be copied
-        destname   : in c_name;                  -- absulute path name of the destination
+        srcname    : in class c_name;                  -- absulute path name of the folder to be copied
+        destname   : in class c_name;                  -- absulute path name of the destination
         fm_error   : out t_fm_error);            -- error indication      
     -- Moves file of name [srcname] to a file at destination of [destname].
     --
@@ -485,7 +503,7 @@ class public c_file_manager =
     --   If subprogram fails [fm_error] flag will be set to [tfme_move].
     ------------------------------------------------------------------------------------------------
     static remove_folder (
-        pathname   : in c_name;                  -- absulute path name of the folder to be deleted
+        pathname   : in class c_name;                  -- absulute path name of the folder to be deleted
         fm_error   : out t_fm_error;             -- error indication
         always     : in t_logical:=false);       -- T- remove folder even if not empty
     -- Removes folder of name [pathname].
@@ -510,40 +528,40 @@ protected
 {
 ----------------------------------------------------------------------------------------------------
 virtual do_copy_file (
-    src_name       : in c_name;                  -- source name
+    src_name       : in class c_name;                  -- source name
     src_namespace  : in t_tag;                   -- source namespace
-    dst_name       : in c_name;                  -- destination name
+    dst_name       : in class c_name;                  -- destination name
     dst_namespace  : in t_tag);                  -- destination namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------
 virtual do_move_file (
-    src_name       : in c_name;                  -- source name
+    src_name       : in class c_name;                  -- source name
     src_namespace  : in t_tag;                   -- source namespace
-    dst_name       : in c_name;                  -- destination name
+    dst_name       : in class c_name;                  -- destination name
     dst_namespace  : in t_tag);                  -- destination namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------
 virtual do_delete_file (
-    name           : in c_name;                  -- filename
+    name           : in class c_name;                  -- filename
     namespace      : in t_tag);                  -- file namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------
 virtual do_copy_folder (
-    src_name       : in c_name;                  -- source name
+    src_name       : in class c_name;                  -- source name
     src_namespace  : in t_tag;                   -- source namespace
-    dst_name       : in c_name;                  -- destination name
+    dst_name       : in class c_name;                  -- destination name
     dst_namespace  : in t_tag);                  -- destination namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------
 virtual do_move_folder (
-    src_name       : in c_name;                  -- source name
+    src_name       : in class c_name;                  -- source name
     src_namespace  : in t_tag;                   -- source namespace
-    dst_name       : in c_name;                  -- destination name
+    dst_name       : in class c_name;                  -- destination name
     dst_namespace  : in t_tag);                  -- destination namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------
 virtual do_delete_folder (
-    name           : in c_name;                  -- folder name
+    name           : in class c_name;                  -- folder name
     namespace      : in t_tag);                  -- folder namespace
 -- Virtual template for subprogram processing file copying.
 ----------------------------------------------------------------------------------------------------

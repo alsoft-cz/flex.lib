@@ -1,8 +1,13 @@
 ﻿----------------------------------------------------------------------------------------------------
 module transformers =
 -- Types and classes for characters transforming.
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+
+-- Forward declarations
+class abstract c_character_transformer; type p_character_transformer = ^class c_character_transformer;
 
 
 ----------------------------------------------------------------------------------------------------

@@ -1,0 +1,72 @@
+﻿----------------------------------------------------------------------------------------------------
+module public common_trees_test =
+-- Test of Classes library - Common n-ary trees and iterators.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.trees,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public c_inserting_common_tree_test_case = extend c_test_case;
+-- Testovací třída pro vkládání uzlů do stromu [tree]. Uzel je typu [c_test_tree_node], tj. obsahuje
+-- hodnotu [value]. Třída rovněž testuje iterátor pro průchod stromem v prefixovém pořadí a v
+-- inverzním postfixovém pořadí (test je proveden za pomoci volání metody [compare_nodes_with_list]).
+--
+-- Upozornění: Inicializační metoda [entry] nastavuje maximální úroveň testovacího stromu (viz proměnná
+-- [max_level]) a maximální počet potomků každého uzlu (viz proměnná [max_child]). Jelikož tyto para-
+-- metry značně ovlivňují velikost stromu (počet jeho uzlů), nedoporučuje se z důvodu velké časové
+-- náročnosti volit tyto parametry vysoké. Velikost stromu, při níž je "výpočet ještě časově únosný",
+-- odpovídá nastavení parametrů tak, aby cca.: [max_cild]~[max_level]<=500 000 - 700 000.
+--
+-- Princip: Vytvoříme testovací strom [tree] mající maximálně [max_level] úrovní (úroveň odpovídá
+-- maximální výšce resp. hloubce stromu), přičemž každý uzel obsahuje maximálně [max_child] potomků.
+-- Každý uzel je ohodnocen náhodnou hodnotou [value]. Strom je vytvořen voláním procedury [create_tree].
+-- Tato procedura vrací ukazatel na seznam [node_list], což je seznam všech uzlů testovacího stromu
+-- [tree], v němž jsou jednotlivé položky setříděny tak, jak jednolivé uzly ve stromě vznikaly.
+-- Po vytvoření stromu probíhá test, ve kterém se testuje iterátor pro průchod stromu a tím i celá
+-- struktura stromu (pomocí procedury [compare_nodes_with_list]. Dále náhodně vybereme celkem [before]
+-- a [after] uzlů (pomocí procedury [get_rand_item], před které a za které vložíme nový náhodně
+-- generovaný uzel a opět testujeme iterátor a strukturu stromu + počet uzlů ve stromě. Na závěr testu
+-- celý testovací strom smažeme (všechny jeho uzly) a testujeme, zda je skutečně prázdný.
+----------------------------------------------------------------------------------------------------
+    
+    end c_inserting_common_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_removing_common_tree_test_case = extend c_test_case;
+-- Testovací třída pro odebírání uzlů včetně všech jejich potomků a pro spojování dvou stromů v jeden
+-- strom (viz. metody [split_subtree] a [merge_subtree]). Uzel je typu [c_test_tree_node], tj. obsahuje
+-- hodnotu [value]. Třída rovněž testuje iterátor pro průchod stromem v prefixovém pořadí a v
+-- inverzním postfixovém pořadí (test je proveden za pomoci volání metody [compare_nodes_with_list]).
+--
+-- Upozornění: Inicializační metoda [entry] nastavuje maximální úroveň testovacího stromu (viz proměnná
+-- [max_level]) a maximální počet potomků každého uzlu (viz proměnná [max_child]). Jelikož tyto para-
+-- metry značně ovlivňují velikost stromu (počet jeho uzlů), nedoporučuje se z důvodu velké časové
+-- náročnosti volit tyto parametry vysoké. Velikost stromu, při níž je "výpočet ještě časově únosný",
+-- odpovídá nastavení parametrů tak, aby cca.: [max_cild]~[max_level]<=500 000 - 700 000.
+--
+-- Princip: Vytvoříme testovací strom [tree] mající maximálně [max_level] úrovní (úroveň odpovídá
+-- maximální výšce resp. hloubce stromu), přičemž každý uzel obsahuje maximálně [max_child] potomků.
+-- Každý uzel je ohodnocen náhodnou hodnotou [value]. Strom je vytvořen voláním procedury [create_tree].
+-- Tato procedura vrací ukazatel na seznam [node_list], což je seznam všech uzlů testovacího stromu
+-- [tree], v němž jsou jednotlivé položky setříděny tak, jak jednolivé uzly ve stromě vznikaly.
+-- Po vytvoření stromu probíhá test, ve kterém postupně vybereme všechny uzly testovacího stromu
+-- [tree], a tyto uzly z testovacího stromu vyjmeme včetně všech jejich potomků a vytvoříme nový
+-- strom [subtree]. Testujeme, zda testovací strom [tree] a nový strom [subtree] obsahují očekávaný
+-- počet uzlů. Poté testovací strom [tree] a nový strom [subtree] spojíme v jeden strom a testujeme,
+-- zda uzly obou stromů mají očekávané hodnoty a dále testujeme strukturu testovacího stromu [tree]
+-- pomocí procedury [compare_nodes_with_list] (ta rovněž testuje iterátor pro průchod testovacím
+-- stromem [tree]). Na závěr testovací strom [tree] smažeme (všechny jeho uzly) a testujeme, zda je
+-- prázdný.
+----------------------------------------------------------------------------------------------------
+    
+    end c_removing_common_tree_test_case;
+
+  end common_trees_test;

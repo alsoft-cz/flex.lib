@@ -1,0 +1,754 @@
+﻿----------------------------------------------------------------------------------------------------
+module private dictionaries =
+-- Dictionary implementation
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+-- Modul poskytuje tři třídy pro slovník:
+--       [c_dictionary] - obecný slovník pro libovolný typ klíče a hodnoty
+--       [c_string_dictionary] - slovník mající jako klíč řetězec a hodnotu libovolného typu
+--       [c_string_string_dictionary] - slovník mající za klíč a hodnotu řetězec.
+-- a jednu třídu [c_string_string_iterator] pro iteraci string-string slovníku.
+--
+-- Pro obecný slovník je zapotřebí vytvořit potomky tříd [c_dictionary_key] a [c_dictionary_value]
+-- pro specifikaci klíče a hodnoty. Navíc je nutné přepsat metodu [compare] třídy [c_dictionary_key],
+-- která porovnává dva klíče.
+--
+-- Slovník je obálkou binárního vyhledávacího stromu, jehož uzly tvoří dvojice klíč-hodnota. Každý
+-- slovník obsahuje [supervised] proměnnou [tree], což je ukazatel na strom, který reprezentuje
+-- slovník.
+----------------------------------------------------------------------------------------------------
+
+
+with
+  standard.classes.trees;
+
+-- dopředné deklarace
+class c_dictionary_tree_node;     type p_dictionary_tree_node     = ^class c_dictionary_tree_node;
+class c_string_dictionary_key;    type p_string_dictionary_key    = ^class c_string_dictionary_key;
+class c_string_dictionary_value;  type p_string_dictionary_value  = ^class c_string_dictionary_value;
+
+----------------------------------------------------------------------------------------------------
+class c_dictionary_tree_node = extend c_binary_tree_node;
+-- Uzel stromu, reprezentuje uspařádanou dvojici [klíč,hodnota]
+----------------------------------------------------------------------------------------------------
+
+    var
+      key           : p_dictionary_key;          -- klíč
+      value         : p_dictionary_value;        -- hodnota
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        key        : in p_dictionary_key;
+        value      : in p_dictionary_value) =
+    -- Inicializace uzlu (nastaví klíč a hodnotu). Pokud klíč není definován (je [nil]), vyvolá výjimku
+    -- [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace
+      this.key:=key;
+      this.value:=value;
+
+      -- kontrola, zda je definován klíč
+      if key=nil then
+        raise dictionary_error;
+        end if;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static discard_fields =
+    -- Uvolní pamět držených objektů [key] a [value].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uvolnit klíč
+      if key<>nil then
+        discard key;
+        end if;
+
+      -- uvolnit hodnotu
+      if value<>nil then
+        discard value;
+        end if;
+      end discard_fields;
+
+    end c_dictionary_tree_node;
+
+{----------------------------------------------------------------------------------------------------
+class private abstract c_predek =
+-- Obecný předek pro hodnotu slovníku.
+----------------------------------------------------------------------------------------------------
+
+    end c_predek;}
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_dictionary_value =
+-- Obecný předek pro hodnotu slovníku.
+----------------------------------------------------------------------------------------------------
+
+    end c_dictionary_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_dictionary_key =
+-- Obecný předek pro klíč slovníku.
+----------------------------------------------------------------------------------------------------
+
+    end c_dictionary_key;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_dictionary_tree = extend c_binary_tree;
+-- Specializace binárního vyhledávacího stromu pro použití ve slovníku.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override compare =
+    -- Vrátí výsledek porovnání dvou uzlů.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=p_dictionary_tree_node(node_a)^.key^.compare(p_dictionary_tree_node(node_b)^.key);
+      end compare;
+
+    end c_dictionary_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_dictionary =
+-- Slovník - třída, která uchovává seznam dvojic klíč-hodnota a pro každý klíč umí efektivně najít
+-- hodnotu.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value =
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      node         : p_dictionary_tree_node;     -- vkládaný uzel stromu
+
+    begin
+      -- pokud už klíč ve stromě existuje, skončit na výjimku
+      if exist_key(key) then
+        raise dictionary_error;
+        end if;
+
+      -- vyvořit a inicializovat uzel
+      new node;
+      node^.init(key,value);
+
+      -- vložit uzel
+      tree^.insert(node);
+      end insert_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_value =
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    var
+      node         : p_dictionary_tree_node;     -- vkládaný uzel stromu
+
+    begin
+      -- pokud už klíč ve stromě existuje, smazat ho
+      if exist_key(key) then
+        delete_value(key);
+        end if;
+
+      -- vyvořit a inicializovat uzel
+      new node;
+      node^.init(key,value);
+
+      -- vložit uzel
+      tree^.insert(node);
+      end set_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_value =
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
+      node         : p_dictionary_tree_node;         -- mazaný uzel
+
+    begin
+      -- inicializovat pomocný uzel stromu
+      tmp_item.init(key,nil);
+
+      -- najít vymazávaný uzel
+      node:=tree^.find(^tmp_item);
+
+      -- nalezli jsme uzel?
+      if node<>nil
+        -- ano => provedeme výmaz
+        then
+          -- vyjmout uzel ze stromu
+          tree^.remove(node);
+
+          -- uvolnit klíč a hodnotu
+          node^.discard_fields;
+
+          -- dealokovat uzel
+          discard node;
+
+        -- ne => generujeme výjimku [dictionary_error]
+        else raise dictionary_error;
+        end if;
+      end delete_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_value =
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
+      node         : p_dictionary_tree_node;         -- mazaný uzel
+
+    begin
+      -- inicializovat pomocný uzel stromu
+      tmp_item.init(key,nil);
+
+      -- najít vymazávaný uzel
+      node:=tree^.find(^tmp_item);
+
+      -- nalezli jsme uzel?
+      if node<>nil
+        -- ano => provedeme výmaz
+        then
+          -- vymazat uzel stromu
+          tree^.delete(node);
+
+        -- ne => generujeme výjimku [dictionary_error]
+        else raise dictionary_error;
+        end if;
+      end remove_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_value =
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
+      tmp_res      : p_dictionary_tree_node;     -- výsledek
+
+    begin
+      -- inicializovat pomocný uzel stromu
+      tmp_item.init(key,nil);
+
+      -- najít výslednou hodnotu
+      tmp_res:=tree^.find(^tmp_item);
+
+      -- pokud byl nalezen správný uzel, zjístit výsledek, jinak vyvoláme výjimku [dictionary_error]
+      if tmp_res<>nil
+        then result:=tmp_res^.value;
+        else raise dictionary_error;
+        end if;
+      end get_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static exist_key =
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    -- Pokud klíč [key] není definován (je [nil]), vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocný uzel stromu
+      tmp_res      : p_dictionary_tree_node;     -- výsledek
+
+    begin
+      -- inicializovat pomocný uzel stromu
+      tmp_item.init(key,nil);
+
+      -- najít výslednou hodnotu
+      tmp_res:=tree^.find(^tmp_item);
+
+      -- pokud byl nalezen správný uzel, zjístit výsledek
+      if tmp_res<>nil then 
+        result:=true;
+        end if;
+      end exist_key;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_all =
+    -- Vymaže všechny položky slovníku.
+    ------------------------------------------------------------------------------------------------
+    var
+      iterator     : c_binary_tree_iterator;     -- iterátor
+      item         : p_item;                     -- uzel stromu
+
+    begin
+      -- zrušit všechny klíče a hodnoty
+      iterator.init(tree^,ttwd_inv_infix); 
+      while iterator.get(item) loop
+        p_dictionary_tree_node(item)^.discard_fields;
+        end loop;
+
+      -- zrušit uzly stromu
+      tree^.delete_all;
+      end delete_all;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_all =
+    -- Vyčistí slovník.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- zrušit uzly stromu
+      tree^.delete_all;
+      end remove_all;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializace.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- alokace stromu
+      new tree tag c_dictionary_tree:tag;
+
+      -- inicializovat strom
+      tree^.init(c_dictionary_tree_node:tag);
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Uvolnění paměti.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- smaže uzlu stromu
+      tree^.delete_all;
+
+      -- dealokace stromu
+      discard tree;
+      end exit;
+
+    end c_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_string_dictionary_key = extend c_dictionary_key;
+-- Řetězcový klíč do slovníku.
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : p_char32ustr;               -- hodnota klíče
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        val        : in t_char32ustr) =          -- hodnota klíče
+    -- Inicializace proměnné nesoucí klíč.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vytvořit a inicializovat
+      new this.value range val:length;
+      this.value^:=val;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override compare =
+    -- Vracví výsledek porovnávání dvou klíčů [this] a [other].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- porovnání řetězců
+      if p_string_dictionary_key(other)^.value^<value^ then 
+        result:=cr_smaller;
+        return;
+        end if;
+
+      -- porovnání řetězců
+      if p_string_dictionary_key(other)^.value^>value^ then 
+        result:=cr_bigger;
+        return;
+        end if;
+
+      -- řetězce jsou si rovny
+      result:=cr_equal;
+      end compare;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Uvolnění paměti.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uvolnit
+      discard value;
+      end exit;
+
+    end c_string_dictionary_key;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_string_dictionary =
+-- Slovník s řetězcovými klíči.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value =
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- vložit
+      {%%TODO(Ancestor)}
+      p_dictionary(^this)^.insert_value(sk,value);
+
+      -- vložením přejde zopovědnost za zrušení klíče na slovník, proto žádné discard
+      end insert_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_value =
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- vložit
+      {%%TODO(Ancestor)}
+      p_dictionary(^this)^.set_value(sk,value);
+
+      -- vložením přejde zopovědnost za zrušení klíče na slovník, proto žádné discard
+      end set_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static delete_value =
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč i jeho hodnotu uvolní z paměti.
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- vymazat klíč a jeho hodnotu
+      {%%TODO(Ancestor)}
+      p_dictionary(^this)^.delete_value(sk);
+
+    leave
+      -- uvolnit pamět
+      discard sk;
+      end delete_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static remove_value =
+    -- Vymaže klíč a jeho hodnotu ze slovníku, klíč a jeho hodnotu neuvolní z paměti.
+    -- Pokud není klíč ve slovníku nalezen, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- vymazat klíč a jeho hodnotu
+      {%%TODO(Ancestor)}
+      p_dictionary(^this)^.remove_value(sk);
+
+    leave
+      -- uvolnit pamět
+      discard sk;
+      end remove_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_value =
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- najít hodnotu příslušnou ke klíči
+      {%%TODO(Ancestor)}
+      result:=p_dictionary(^this)^.get_value(sk);
+
+    leave
+      -- uvolnit pamět
+      discard sk;
+      end get_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static exist_key =
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    ------------------------------------------------------------------------------------------------
+    var
+      sk           : p_string_dictionary_key;    -- pomocný záznam pro klíč
+
+    begin
+      -- vytvořit klíč
+      new sk;
+      sk^.init(key);
+
+      -- zjistíme, zda existuje klíč
+      {%%TODO(Ancestor)}
+      result:=p_dictionary(^this)^.exist_key(sk);
+
+    leave
+      -- uvolnit pamět
+      discard sk;
+      end exist_key;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Uvolnění paměti.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uvolnit klíče a hodnoty
+      delete_all;
+      end exit;
+
+    end c_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_string_dictionary_value = extend c_dictionary_value;
+-- Kontejner na hodnotu klíče.
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : p_char32ustr;               -- vlastní hodnota
+
+    ------------------------------------------------------------------------------------------------
+    static init (
+        val        : in t_char32ustr) =          -- hodnota klíče
+    -- Inicializace proměnné nesoucí hodnotu.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- vytvořit dynamický řetězec
+      new this.value range val:length;
+
+      -- inicializovat obsah
+      this.value^:=val;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Uvolnění paměti.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uvolnit hodnotu
+      discard value;
+      end exit;
+
+    end c_string_dictionary_value;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_string_string_dictionary =
+-- Slovník s řetězcovými klíči a řetězcovými hodnotami
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    static insert_value =
+    -- Přidá do slovníku dvojici [key,value]
+    -- Pokud už [key] ve slovníku existuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      val          : p_string_dictionary_value;  -- hodnota
+
+    begin
+      -- vytvořit pomocnou instanci
+      new val;
+  
+      -- inicializovat hodnotu
+      val^.init(value);
+
+      -- vložit hodnotu
+      {%%TODO(Ancestor)}
+      p_string_dictionary(^this)^.insert_value(key,val);
+      end insert_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static set_value =
+    -- Přidá do slovníku dvojici [key,value].
+    -- Pokud už [key] ve slovníku existuje, vloží k němu novou hodnotu [value].
+    ------------------------------------------------------------------------------------------------
+    var
+      val          : p_string_dictionary_value;  -- hodnota
+
+    begin
+      -- vytvořit pomocnou instanci
+      new val;
+  
+      -- inicializovat hodnotu
+      val^.init(value);
+
+      -- vložit hodnotu
+      {%%TODO(Ancestor)}
+      p_string_dictionary(^this)^.set_value(key,val);
+      end set_value;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    static get_value =
+    -- Najde hodnotu klíče ve slovníku. Pokud klíč ve slovníku neexistuje, vyvolá výjimku [dictionary_error].
+    ------------------------------------------------------------------------------------------------
+    var
+      res          : p_string_dictionary_value;  -- výslená hodnota
+
+    begin
+      -- zjistit hodnotu klíče
+      {%%TODO(Ancestor)}
+      res:=p_string_dictionary(^this)^.get_value(key);
+
+      -- klíč se povedlo nalézt => překopírovat výslednou hodnotu
+      if res<>nil then 
+       {%%TODO(Unconstrainded string) - kompilátor nepodporuje funkce vracející unconstrained stringy
+                                   - až bude, stačí odkomentovat:}
+        -- result:=res^.value^;
+        {a tohle vyhodit}
+        value:=res^.value^;
+        end if;
+      end get_value;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static exist_key =
+    -- Zjistí, zda se ve slovníku nachází klíč [key]. Pokud ano, vrací [true], jinak [false].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- zjistíme, zda existuje klíč
+      {%%TODO(Ancestor)}
+      result:=p_string_dictionary(^this)^.exist_key(key);
+      end exist_key;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Uvolnění paměti.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- uvolnit vše
+      delete_all;
+      end exit;
+
+    end c_string_string_dictionary;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_string_string_dictionary_iterator =
+-- Iterátor pro průchod slovníkem typu řetězec-řetězec.
+-- Je založen na iterátoru pro binární strom, neboť slovník je binárním stromem.
+{%%TODO(XXX) vymyslet hiearchii iterátorů}
+----------------------------------------------------------------------------------------------------
+    use
+      supervised c_string_string_dictionary;
+
+    var
+      iterator     : c_binary_tree_iterator;     -- iterátor binárního vyhledávacího stromu
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Inicializuje iterátor.
+    ------------------------------------------------------------------------------------------------
+    begin
+      iterator.init(dictionary.tree^);
+      end init;
+
+
+    ------------------------------------------------------------------------------------------------
+    static get_value =
+    -- Vrátí dvojici klíč - hodnota.
+    ------------------------------------------------------------------------------------------------
+    var 
+      node         : p_dictionary_tree_node;     -- uzel stromu reprezentující slovník
+
+    begin
+      -- vracíme uzel stromu
+      result:=iterator.get(node);
+      if not result then
+        return;
+        end if;
+
+      -- pokud se ve stromu nacházel nějaký uzel, pak z něho vybereme klíč [key] a hodnotu [value]
+      key:=p_string_dictionary_key(node^.key)^.value^;
+      value:=p_string_dictionary_value(node^.value)^.value^;
+      end get_value;
+
+
+    ------------------------------------------------------------------------------------------------
+    static reset =
+    -- Vyresetuje iterátor
+    ------------------------------------------------------------------------------------------------
+    begin
+      iterator.reset;
+      end reset;
+
+    end c_string_string_dictionary_iterator;
+
+end dictionaries;

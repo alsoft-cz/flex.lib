@@ -1,108 +1,113 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public streams =
 -- Stream Interface
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
+{
 ----------------------------------------------------------------------------------------------------
--- Popis :
--- Stream je proud netypovanych dat. Zakladni rozdeleni je : 
---  - proudy ktere data tlaci smerem k prijemci [c_output_stream]
---  - proudy ktere data tahaji ze zdroje [c_input_stream]
---
+Streamy
 ----------------------------------------------------------------------------------------------------
--- Data jsou representovany datovymi packety techto zakladnich druhu
-----------------------------------------------------------------------------------------------------
---  [t_dps_heap]        - data na flex heapu, ktere jsou uvolneny prijemcem data
---  [t_dps_immortal]    - data ktere maji platnost delsi nez je zivotnost streamu
---  [t_dps_temporary]   - data na stacku volajiciho, museji byt zpracovany nebo zkopirovany v tomto volani
---  [t_dps_other]       - data ktere potrebuji jine zachazeni, napr jiny alokator
---  [t_dps_signal]      - signalizuje nedatovou udalost
---    [t_dpss_eod]        - signalizuje konec dat
---    [t_dpss_flush]      - signalizuje pozadavek na (nedestruktivni) vyprazdneni vsech bufferu
---
---
---
-----------------------------------------------------------------------------------------------------
--- Koncove prvky retezu streamu implementuji [c_output_stream] nebo [c_input_stream].
-----------------------------------------------------------------------------------------------------
--- Implementovany jsou :
--- [c_null_input_stream],[c_empty_input_stream],[c_null_output_stream]
--- [c_file_output_stream],[c_file_input_stream],[c_buffered_file_output_stream],[c_buffered_file_output_stream]
--- [c_console_output_stream],[c_console_input_stream]
---
--- Implementace [c_output_stream] implementuje metody interface takto:
---
--- override [write_packet] - cte data packetu pomoci procedury [read_packet]
---                         - zapisuje data na podlehajici cil, 
---                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
---                         - reaguje na packet [t_dps_signal] [t_dpss_flush] a ceka na zapsani vsech dat
---                         - resi zapis po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
---                         - resi zapis po [close] vyhozenim vyjimky [stream_already_closed]
---                         - zapocitava prutok dat pomoci [add_flow]
---                         - uvolnuje packety pomoci procedury [discard_packet]
--- override [close]        - propaguje uvolneni zdroju na podlehajici cil, 
---                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
--- override [is_reading]   - vraci jestli podlehajici cil je(byl) schopen prijimat data
---
---
---
--- Implementace [c_input_stream] implemntuje metody interface takto:
---
--- override [read_packet]  - vytvari packety pomoci procedury [create_packet]
---                         - cte data z podlehajiciho zdroje
---                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
---                         - reaguje na packet [t_dps_signal] [t_dpss_flush]
---                         - resi cteni po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
---                         - resi cteni po [close] vyhozenim vyjimky [stream_already_closed]
---                         - zapocitava prutok dat pomoci [add_flow]
--- override [close]        - propaguje uvolneni zdroju na podlehajici zdroj pomoci
---                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
--- override [is_eod]       - vraci informaci jestli uz byl precten signal [t_dpss_eod]
---
---
---
-----------------------------------------------------------------------------------------------------
--- Formattery jsou koncove prvky implementujici jina rozhrani a pouzivajici streamy
-----------------------------------------------------------------------------------------------------
--- Odvozuji ze z [c_stream_writer],[c_stream_reader] 
--- nebo z pomocnych [c_stream_generic_writer],[c_stream_generic_reader]
---
--- Implementovany jsou :
--- [c_stream_binary_writer],[c_stream_binary_reader]
--- [c_stream_text_writer],[c_stream_text_reader]
--- [c_text_file_reader],[c_text_file_writer]
---
---
---
-----------------------------------------------------------------------------------------------------
--- Filtry jsou forwardery packetu z vestavenou funkcnosti jako (sifrovani, komprese, bufferovani).
-----------------------------------------------------------------------------------------------------
--- Mohou (a nemusi)mit buffery a pomocne thready. Nemeni smer toku dat. 
--- Ovozuji se z [c_stream_writer_filter] nebo [c_stream_reader_filter]
--- Implementovany jsou : 
--- [c_input_stream_buffer],[c_output_stream_buffer],
--- [c_input_stream_text_recoder],[c_output_stream_text_recoder]
---
---
---
-----------------------------------------------------------------------------------------------------
--- Connectory jsou forwardery ktere meni smer toku dat.
-----------------------------------------------------------------------------------------------------
--- Mohou mit buffery a pomocne thready.
--- Implementovany jsou : [c_active_stream_connector],[c_passive_buffered_stream_connector]
--- 
---
---
+
+Streamy jsou proudy dat. SMPL definuje stream jako parove interfacy pro dva smery toku dat.
+[c_input_stream] je interface streamu, ktery je konzumovan uzivatelem ktery chce cist data.
+[c_output_stream] je interface streamu, ktery je konzumovan uzivatelem ktery chce zapisovat data.
+Smer toku dat je vniman z pohledu konzumenta interface. Vyznam streamu spociva v unifikaci prace 
+s proudem dat. Tyto data mohou byt ctena (odebirana) nebo ukladana (posilana) napriklad na/ze 
+site, souboru, pameti, standardního vstupu resp. výstupu a podobně.
+
+Data proudi streamovym interfacem zabalene do [t_data_packet] paketu. Tyto packety mohou nest samotna 
+data a nebo metainformace (signaly).
+
+Formatovace jsou nadstavbovymi objekty pro praci koncoveho spotrebitele nebo producenta dat se streamy. 
+Tak jako je packetovy inteface uzitecny pro zvyseni obecnosti a vykonu, je pro zvyseni 
+znovupouzitelnosti a komfortu navrzena abstraktni predloha pro implementaci formatovacu 
+[c_stream_writer] a [c_stream_reader]. Formatovac ma za ukol prevadet netypovane pakety dat na data 
+v pouzitelnejsi forme. Napriklad [c_text_writer] konvertuje znaky na posloupnost bytu v nastavenem 
+kodovani a [c_text_reader] je zase prevadi zpet. Tyto nadstavbove formatery vystavuji svoje 
+specializovane rozhrani a konzumuji obecne packetove rozhrani. Díky tomu je mozne snadno zretezit 
+zapisovac textu a obecny zapisovaci stream. Instance streamu muze byt urcena k zapisu na libovolne zarizeni.
+
+Filtry jsou zaroven poskytovately i konzumenty streamoveho rozhrani. Jsou navrzeny jako meziblok mezi 
+konzumentem stream intefacu a jeho primarnim poskytovatelem. Tyto mezibloky mohou byt razene do 
+retezu a implementovat rozmanite transformace dat. Napriklad bufferovani, sifrovani, kompresi, 
+filtrovani. Kazdy filter musi pro sve potreby znat format dat, ktere jim prochazeji.
+
+Poskytovatele stream rozhrani jsou koncove prvky. Trivialni koncove prvky jsou jednoduchou 
+implementaci stream interfacu. Napriklad [c_random_input_stream] je urcen ke cteni nahodne 
+posloupnosti dat. Netrivialni implementace jsou napriklad [c_file_output_stream] a [c_file_input_stream] 
+pro praci s daty souboru, [c_socket_stream] pro praci s TCP/IP nebo [c_console_output_stream] a 
+[c_console_input_stream] pro praci s konzoli.
+
+Connectory jsou konzumenti a/nebo vystavovatele streamoveho interface ktere maji za ukol zmenit "motivaci"
+toku dat. Napriklad bufferovat data ktera jsou jednim konzumentem tlacena pomoci [c_output_stream] a 
+drzet je dokud si je konzument [c_input_stream] nevyzvedne. Jsou neparove.
+
+Pumpovani packetu mezi ruznymi streamy je implementovano jako metody [transfer_packet] a 
+[transfer_all_packets]. Napriklad pro pripojeni dat z jednoho souboru na konec druheho pouzijeme
+input_file_stream.transfer_all_packets(output_file_stream);
+
+Datove packety nesou informaci o delce a alokacni strategii 
+datoveho bufferu. Signalove packety nesou sluzebni informace o proudu dat jako jsou [t_dpss_eod] 
+pro konec dat nebo [t_dpss_flush] prikaz pro vyprazdneni bufferu. Signaly take mohou byt 
+specializovane pro konkretni pouziti. Implementace streamu musi rozeznavat a reagovat pouze na 
+signaly [t_dpss_eod] a [t_dpss_bad_data]. Posledni jmenovany je mozne prelozit na vyjimku 
+[stream_invalid_data]. Nejmensi mozne mnozstvi informace je jeden byte.
+
+Casovani a blokovani. Rozhrani je navrzeno jako prevazne blokujici. To znamena ze volajici je blokovan 
+uvnitr metohy interface dokud se pozadovana operace nedokonci.  Vyjimku mohou tvorit bufferujici 
+implementace.
+
+Bufferovani a velikost packetu. Bufferovani mohou provadet vsechny komponenty. Je rizeno prepinacem 
+[set_lazy_buffer], ktery urcuje zda maji komponenty bufferovat. Typicky predstavitel je 
+[c_stream_generic_writer] ktery pri zapnutem (implicitně je vypnuto) bufferovani vytvari packety velikosti 
+nastavené voláním metody [set_optimal_packet_size]. [c_stream_generic_reader] pri zapnutem (implicitně
+je zapnuto) bufferovani zada podrizeny stream o packet velikosti nastavený voláním metody
+[set_optimal_packet_size] a drzi ho dokud neni konzumentem (*** celý ?) vycten.
+
+Flush a Close. Flush je definovany jako zadost o nedestruktivni *** v jakém smyslu? zapsani dat v bufferech. Je blokujici 
+az do dokonceni zapisu. Close je zadost o definitivni zapsani dat a uvolneni podrizenych zdroju. 
+Je take blokujici. Obe zpravy se automaticky propaguji retezem streamu.
+
+
+Implementace [c_output_stream] implementuje metody interface takto:
+
+ override [write_packet] - cte data packetu pomoci procedury [read_packet]
+                         - zapisuje data na podlehajici cil, 
+                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
+                         - reaguje na packet [t_dps_signal] [t_dpss_flush] a ceka na zapsani vsech dat
+                         - resi zapis po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
+                         - resi zapis po [close] vyhozenim vyjimky [stream_already_closed]
+                         - zapocitava prutok dat pomoci [add_flow]
+                         - uvolnuje packety pomoci procedury [discard_packet]
+ override [close]        - propaguje uvolneni zdroju na podlehajici cil, 
+                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
+ override [is_reading]   - vraci jestli podlehajici cil je (byl) schopen prijimat data
+
+
+
+Implementace [c_input_stream] implementuje metody interface takto:
+
+ override [read_packet]  - vytvari packety pomoci procedury [create_packet]
+                         - cte data z podlehajiciho zdroje
+                         - reaguje na packet [t_dps_signal] [t_dpss_eod]
+                         - reaguje na packet [t_dps_signal] [t_dpss_flush]
+                         - resi cteni po [t_dpss_eod] vyhozenim vyjimky [stream_end_of_data]
+                         - resi cteni po [close] vyhozenim vyjimky [stream_already_closed]
+                         - zapocitava prutok dat pomoci [add_flow]
+ override [close]        - propaguje uvolneni zdroju na podlehajici zdroj pomoci
+                         - resi kontrolu na vicenasobne zavreni pomoci [stream_already_closed] vyjimky
+ override [is_eod]       - vraci informaci jestli uz byl precten signal [t_dpss_eod]
+
+}
 
 with 
   standard.tasks,
   standard.synchronization;
 
-
 message
-  stream_exception;                              -- obecná výjimka při práci se streamy
+  stream_exception : exception;                  -- obecná výjimka při práci se streamy
   stream_error extend stream_exception;          -- obecná chyba při práci se streamy
   stream_internal_error extend stream_error;     -- interní chyba
   stream_read_error extend stream_error;         -- chyba při čtení
@@ -112,23 +117,826 @@ message
   stream_invalid_data extend stream_exception;   -- vadne data
 
 
+-- ultimatni predek streamovych interfacu
+class abstract c_abstract_stream;         type p_abstract_stream         = ^class c_abstract_stream;
+
+-- interface streamu pro tahani za data
+class abstract c_input_stream;            type p_input_stream            = ^class c_input_stream;
+-- interface streamu pro tlaceni dat
+class abstract c_output_stream;           type p_output_stream           = ^class c_output_stream;
+
+-- predek pro uzivatele streamu
+class abstract c_stream_reader;           type p_stream_reader           = ^class c_stream_reader;
+class abstract c_stream_writer;           type p_stream_writer           = ^class c_stream_writer;
+
+-- predek pro filtry
+class abstract c_stream_reader_filter;    type p_stream_reader_filter    = ^class c_stream_reader_filter;
+class abstract c_stream_writer_filter;    type p_stream_writer_filter    = ^class c_stream_writer_filter;
+
+
+
 ----------------------------------------------------------------------------------------------------
-#separate public packets;
 -- packet structures
 ----------------------------------------------------------------------------------------------------
-#separate public abstr;
+
+type
+  -- typ pro unchecked data v datových proudech a uložištích
+  t_data_byte      = protected mod unsigned 8;
+  t_data_string    = string of aliased t_data_byte;
+  t_data_array     = array of aliased t_data_byte;
+  t_data_array_long= array 0..$FFFF_FFFF of aliased t_data_byte;
+  t_data_array_char32= array 0..$3FFF_FFFF of aliased t_char32;
+  t_data_char32    = array 0..3 of aliased t_data_byte;
+  
+  p_data_array      = ^t_data_array      for machine_pointer use true;
+  p_data_array_long = ^t_data_array_long for machine_pointer use true;
+  p_data_array_char32= ^t_data_array_char32 for machine_pointer use true;
+  p_data_string     = ^t_data_string     for machine_pointer use true;
+
+type
+  t_data_packet;
+  p_data_packet  = ^t_data_packet for machine_pointer use true;
+
+  -- druh datoveho packetu
+  t_data_packet_style = enum
+    t_dps_invalid;                               -- invalid
+    t_dps_signal;                                -- signal packet
+    t_dps_callstack;                             -- on stack
+    t_dps_dynamic;                               -- data is pointer to memory deallocated by stream using discard
+    t_dps_static;                                -- data is pointer to Data or Code segment or very long lived data
+    t_dps_other;                                 -- data is pointer memory with special t_data_packet_dispose method
+    end enum
+      for size use 2;
+
+  -- pomocne informace
+  t_data_packet_hint = enum
+    t_dph_invalid;                               -- no hint
+    t_dph_flex_string;                           -- string :length at data-4 possition
+    end enum
+      for size use 2;
+
+  -- callback procedury pro alokace a praci s nadstavbovym typem packetu
+  t_data_packet_dispose = procedure(
+    packet         : in ref t_data_packet);
+  p_data_packet_dispose = ^t_data_packet_dispose;
+
+  t_data_packet_read = procedure(
+    packet         : in ref t_data_packet;
+    data           : out p_data_array;
+    size           : out t_offset);
+  p_data_packet_read = ^t_data_packet_read;
+
+  t_data_packet_copy = procedure(
+    inpacket       : in ref t_data_packet;
+    outpacket      : out ref t_data_packet);
+  p_data_packet_copy = ^t_data_packet_copy;
+
+  --popis nadstavboveho typu packetu
+  t_data_packet_other = record
+    read           : p_data_packet_read;
+    copy           : p_data_packet_copy;
+    dispose        : p_data_packet_dispose;
+    end record;
+  p_data_packet_other = ^t_data_packet_other for machine_pointer use true;
+
+  -- datovy packet pro stream interface
+  t_data_packet = record
+    style          : t_data_packet_style         for position use 0;
+    phint          : t_data_packet_hint          for position use 2;
+    data           : p_data_array                for position use 4;
+    signal         : t_unsigned                  for position use 4;
+    other          : p_data_packet_other         for position use 8;
+    size           : t_offset                    for position use 8;
+    signal_data    : p_data_array                for position use 8;
+    end record;
+
+  -- volby [c_input_stream.read_packet] metody
+  t_read_options   = record
+    maximal_size    : t_offset;                  -- maximalni velikost packetu
+                                                 -- je vhodne tuto velikost dodrzet s ohledem na neocekavane dopredne nacteni dat
+                                                 -- konzumenti [c_input_stream.read_packet] maji byt implementovani tak aby poruseni tohoto pozadavku nevedlo k chybe
+    end record;
+
+const
+    dp_optimal_packet_size = 65536;              -- optimalni defaultni velikost packetu
+    dp_maximal_size = t_offset:last;             -- maximalni velikost packetu na systemu
+
+-- druhy signalnich packetu
+const
+    t_dpss_invalid : t_unsigned = 0;             -- no signal
+    t_dpss_eod     : t_unsigned = 1;             -- end of data signal
+    t_dpss_flush   : t_unsigned = 2;             -- flush signal
+    t_dpss_bad_data: t_unsigned = 3;             -- invalid data signal
+    t_dpss_seek    : t_unsigned = 4;             -- seek
+
+const
+    t_ro_default   : t_read_options = [dp_maximal_size];
+
+
+
+----------------------------------------------------------------------------------------------------
+-- pomocne procedury na praci s packety
+----------------------------------------------------------------------------------------------------
+procedure create_flush(
+    packet         : out t_data_packet);
+-- create flush packet
+----------------------------------------------------------------------------------------------------
+procedure create_eod(
+    packet         : out t_data_packet);
+-- create end of data packet
+----------------------------------------------------------------------------------------------------
+procedure create_bad_data(
+    packet         : out t_data_packet);
+-- create end of data packet
+----------------------------------------------------------------------------------------------------
+procedure create_signal(
+    packet         : out t_data_packet;
+    signal         : in t_unsigned;
+    userdata       : in p_data_array:=nil);
+-- create user signal
+-- userdata on heap, auto discard by receiver
+----------------------------------------------------------------------------------------------------
+procedure create_temporary_text(
+    packet         : out t_data_packet;
+    text           : in ref t_char32ustr);
+-- create text packet
+----------------------------------------------------------------------------------------------------
+procedure create_packet(
+    packet         : out t_data_packet;
+    data           : in p_data_array;
+    size           : in t_offset;
+    style          : in t_data_packet_style);
+-- create packet, freeing data by [style]
+----------------------------------------------------------------------------------------------------
+procedure copy_to_packet(
+    packet         : out t_data_packet;
+    data           : in p_data_array;
+    size           : in t_offset);
+-- create packet, copying data
+----------------------------------------------------------------------------------------------------
+procedure copy_text_to_packet(
+    packet         : out t_data_packet;
+    text           : in ref t_char32ustr);
+-- optimalizovana implementace kopirovani textu do packetu
+----------------------------------------------------------------------------------------------------
+procedure copy_text_offset_to_packet(
+    packet         : out t_data_packet;
+    text           : in ref t_char32ustr;
+    maxsize        : in t_offset;
+    offset         : in out t_offset);
+-- optimalizovana implementace kopirovani textu od offsatu do packetu na offset
+----------------------------------------------------------------------------------------------------
+procedure discard_packet(
+    packet         : in t_data_packet);
+-- destroy packet
+----------------------------------------------------------------------------------------------------
+procedure read_packet(
+    packet         : in ref t_data_packet;
+    data           : out p_data_array;
+    size           : out t_offset);
+-- reads packet data
+----------------------------------------------------------------------------------------------------
+procedure packet_size(
+    packet         : in ref t_data_packet)
+    return t_offset;
+-- reads packet size
+----------------------------------------------------------------------------------------------------
+procedure read_temporary_text(
+    packet         : in ref t_data_packet;
+    text           : out p_char32ustr);
+-- reads text packet
+----------------------------------------------------------------------------------------------------
+procedure copy_from_packet(
+    inpacket       : in t_data_packet;
+    inoffset       : in out t_offset;
+    outdata        : in p_data_array;
+    outoffset      : in out t_offset;
+    size           : in t_offset);
+-- reads packet data
+----------------------------------------------------------------------------------------------------
+procedure deep_copy(
+    inpacket       : in t_data_packet;
+    outpacket      : out t_data_packet);
+-- hloubkova kopie packetu
+----------------------------------------------------------------------------------------------------
+procedure realloc_packet(
+    packet         : in out t_data_packet;
+    newbytes       : in t_offset;
+    data           : out p_data_array;
+    size           : out t_offset);
+-- realokace datove casti packetu za ucelelm zvetseni bufferu
+----------------------------------------------------------------------------------------------------
+procedure copy_data(
+    indata         : in p_data_array;
+    inoffset       : in t_offset;
+    outdata        : in p_data_array;
+    outoffset      : in t_offset;
+    size           : in t_offset);
+-- kopiruje data
+----------------------------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
 -- abstract interfaces
 ----------------------------------------------------------------------------------------------------
-#separate public formatters;
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_abstract_stream =
+-- Abstraktní proud.
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual abstract close;
+  -- zavře stream, uvolní zdroj, blokuje volajícího
+  ------------------------------------------------------------------------------------------------
+  virtual get_flow(
+    bytes          : out t_offset);
+  -- vrati pocet protecenych bytu
+  ------------------------------------------------------------------------------------------------
+  virtual add_flow(
+    data          : in ref t_data_packet);
+  -- zvysi pocet protecenych bytu
+  ------------------------------------------------------------------------------------------------
+  virtual set_optimal_packet_size(
+    bytes          : in t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual get_optimal_packet_size(
+    bytes          : out t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual set_lazy_buffer(
+    lazy           : in t_logical);
+  -- nastavi povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+  virtual get_lazy_buffer(
+    lazy           : out t_logical);
+  -- precte povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+
+protected
+
+var
+  flow             : t_offset;                   -- pocitadlo protecenych dat
+  optimal_size     : t_offset;                   -- optimalni velikost packetu
+  lazy_buffer      : t_logical;                  -- povoleni bufferu pro spozdeny zapis/predcasne cteni
+
+  end c_abstract_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_input_stream = extend c_abstract_stream;
+-- Abstraktní proud ke čtení.
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual abstract read_packet(
+      data         : out t_data_packet;
+      options      : t_read_options);            -- hinty pro cteni dat
+  -- zapíše packet, blokuje volajícího do dokonceni nacteni
+  ------------------------------------------------------------------------------------------------
+  virtual abstract is_eod return t_logical;
+  -- zjisti jetli jeste muzou prijit nejake data
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_packet(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false)           --F packet eod bude zahozen
+    return t_logical;
+  -- presune jeden packet
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety az do end of data
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_output_stream = extend c_abstract_stream;
+-- abstraktní proud k zápisu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual abstract write_packet(
+      data       : in t_data_packet);
+  -- zapíše packet, blokuje volajícího do dokonceni zapsani
+  ------------------------------------------------------------------------------------------------
+  virtual flush;
+  -- nedestruktivne vyprazdni vsechny buffery, blokuje volajiciho
+  ------------------------------------------------------------------------------------------------
+  virtual abstract is_reading return t_logical;
+  -- zjisti jetli jeste nekdo cte data
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_packet(
+    source         : p_input_stream;
+    transfer_eod   : t_logical:=false)           --F packet eod bude zahozen
+    return t_logical;
+  -- presune jeden packet
+  ------------------------------------------------------------------------------------------------
+  virtual transfer_all_packets(
+    source         : p_input_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety az do end of data
+  ------------------------------------------------------------------------------------------------
+  virtual write_eod;
+  -- zapise end of data packet
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_reader = 
+-- Predek zapisovatele do streamu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual is_eod return t_logical;
+  -- zjisti jestli uz byl vycten end of data packet
+  ------------------------------------------------------------------------------------------------
+  virtual close;
+  -- uzavre podrizeny stream stream
+  ------------------------------------------------------------------------------------------------
+  virtual get_flow(
+    bytes          : out t_offset);
+  -- vrati pocet protecenych bytu
+  ------------------------------------------------------------------------------------------------
+  virtual set_optimal_packet_size(
+    bytes          : in t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual get_optimal_packet_size(
+    bytes          : out t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual set_lazy_buffer(
+    lazy           : in t_logical);
+  -- nastavi povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+  virtual get_lazy_buffer(
+    lazy           : out t_logical);
+  -- precte povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+--%%TODO protected
+  ------------------------------------------------------------------------------------------------
+  virtual init_reader (
+      source     : in p_input_stream);     -- odkaz na vstupní stream
+  --nastavi podrizeny stream
+  ------------------------------------------------------------------------------------------------
+
+  var
+    _source        : p_input_stream;             -- odkaz na vstupní stream
+    _isinitialized : t_logical;                  -- flag o inicializaci
+
+  end c_stream_reader;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_writer =
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  virtual is_reading return t_logical;
+  -- zjisti jestli druha strana jeste cte data
+  ------------------------------------------------------------------------------------------------
+  virtual close;
+  -- uzavre podrizeny stream
+  ------------------------------------------------------------------------------------------------
+  virtual flush;
+  -- nedestruktivne vyprazdni vsechny buffery, blokuje volajiciho
+  ------------------------------------------------------------------------------------------------
+  virtual get_flow(
+    bytes          : out t_offset);
+  -- vrati pocet protecenych bytu
+  ------------------------------------------------------------------------------------------------
+  virtual set_optimal_packet_size(
+    bytes          : in t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual get_optimal_packet_size(
+    bytes          : out t_offset);
+  -- nastavi optimalni velikost packetu
+  ------------------------------------------------------------------------------------------------
+  virtual set_lazy_buffer(
+    lazy           : in t_logical);
+  -- nastavi povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+  virtual get_lazy_buffer(
+    lazy           : out t_logical);
+  -- precte povoleni pro zpozdeny zapis
+  ------------------------------------------------------------------------------------------------
+--%%TODO protected
+  ------------------------------------------------------------------------------------------------
+  virtual init_writer(
+      target     : in p_output_stream);          -- odkaz na výstupní stream
+  ------------------------------------------------------------------------------------------------
+  var
+    _target        : p_output_stream;            -- odkaz na výstupní stream
+    _isinitialized : t_logical;                  -- flag o inicializaci
+
+  end c_stream_writer;
+
+
+
+----------------------------------------------------------------------------------------------------
 -- stream formaters
 ----------------------------------------------------------------------------------------------------
-#separate public filters;
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_generic_writer = extend c_stream_writer;
+-- pomocna implementace formateru zapisovaciho streamu
+-- vhodna jako predek pro skutecny formater
+----------------------------------------------------------------------------------------------------
+protected
+  ------------------------------------------------------------------------------------------------
+  static write_byte(
+      data       : in t_data_byte);            -- zapisovaný byte
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_unsigned32 (
+      data         : in t_unsigned32);           -- zapisovaný unsigned
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_char32 (
+      data         : in t_char32);               -- zapisovaný znak
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked (
+      data         : in unchecked;               -- zapisovaná data
+      size         : in t_unsigned32);           -- velikost dat, která se mají zapsat
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_heap (
+      data         : in unchecked;               -- zapisovaná data, alokovana na heapu, uvolni prijemce
+      size         : in t_unsigned32);           -- velikost dat, která se mají zapsat
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_array(
+      data         : in ref t_data_array);       -- zapisované pole
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_string(
+      data         : in ref t_data_string);      -- zapisovaný řetězec
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_text(
+      data         : in ref t_char32ustr);       -- zapisovaný řetězec
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_text_part(
+      data         : in ref t_char32ustr;        -- zapisovaný řetězec
+      count        : t_unsigned);                -- pocet znaku ktere se maji zapsat
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  end c_stream_generic_writer;
+type p_stream_generic_writer = ^class c_stream_generic_writer;
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_generic_reader = extend c_stream_reader;
+-- pomocna implementace formateru cteciho streamu
+-- vhodna jako predek pro skutecny formater
+----------------------------------------------------------------------------------------------------
+protected
+  ------------------------------------------------------------------------------------------------
+  static read_byte (
+      data         : out t_data_byte;              -- načtený byte
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- eod           false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_unsigned32 (
+      data         : out t_unsigned32;
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_char32 (
+      data         : out t_char32;               -- načtený řetězec
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked (
+      data         : out unchecked;              -- přečtená data
+      size         : in t_offset;                -- velikost dat, která se mají přečíst
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked_out (
+      data         : out unchecked;              -- přečtená data
+      size         : in out t_offset;            -- velikost dat, která se mají přečíst, prectena velikost
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - valid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_array (
+      data         : out t_data_array;           -- načtené pole
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_string (
+      data         : out t_data_string;          -- načtený řetězec
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - valid data, end of data
+  ------------------------------------------------------------------------------------------------
+  static read_text (
+      data         : out t_char32ustr;           -- načtený řetězec
+      eod          : out t_logical);
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- returns eod - false  - valid data
+  --               true   - invalid data, end of data
+  ------------------------------------------------------------------------------------------------
+  end c_stream_generic_reader;
+type p_stream_generic_reader = ^class c_stream_generic_reader;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_stream_binary_writer = extend c_stream_generic_writer;
+-- implementace binarniho zapisu do streamu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked (
+      data       : in unchecked);                -- zapisovaná data
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  static write_unchecked_part (
+      data       : in unchecked;                 -- zapisovaná data
+      size       : in t_unsigned32);             -- velikost dat, která se mají zapsat
+  -- zapise data, blokuje volajiciho do dokonceni zapisu
+  -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
+  ------------------------------------------------------------------------------------------------
+  end c_stream_binary_writer;
+type p_stream_binary_writer = ^class c_stream_binary_writer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_stream_binary_reader = extend c_stream_generic_reader;
+-- implementace binarniho cteni ze streamu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static read_unchecked (
+      data       : out unchecked;              -- přečtená data
+      size       : in t_unsigned32);           -- velikost dat, která se mají přečíst
+  -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
+  -- muze vyvolat vyjimku stream_end_of_data kdyz jsou data kratsi nez pozadovana data
+  ------------------------------------------------------------------------------------------------
+  end c_stream_binary_reader;
+type p_stream_binary_reader = ^class c_stream_binary_reader;
+
+
+
+---------------------------------------------------------------------------------------------------
 -- stream filters
 ----------------------------------------------------------------------------------------------------
-#separate public connectors;
--- stream filters
+
 ----------------------------------------------------------------------------------------------------
-#separate public terminators;
+class public abstract c_stream_reader_filter = extend c_stream_reader; expose c_input_stream;
+-- predek pro filtry, ktere tahaji data
+----------------------------------------------------------------------------------------------------
+  end c_stream_reader_filter;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_stream_writer_filter = extend c_stream_writer; expose c_output_stream;
+-- predek pro filtry, ktere tlaci data
+----------------------------------------------------------------------------------------------------
+  end c_stream_writer_filter;
+
+
+
+---------------------------------------------------------------------------------------------------
+class public c_input_stream_buffer = extend c_stream_reader_filter; expose c_task;
+-- implementace bufferujiciho filtru
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_input_buffer(
+      source       : in p_input_stream);         -- odkaz na výstupní stream
+  -- inicializace
+  ------------------------------------------------------------------------------------------------
+  static transfer_buffered_packets(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety v bufferu
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream_buffer;
+type p_input_stream_buffer = ^class c_input_stream_buffer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_buffer = extend c_stream_writer_filter; expose c_task;
+-- implementace bufferujiciho forwarderu, ktery tlaci bufferovane data pomoci tasku
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_output_buffer(
+      target     : in p_output_stream);          -- odkaz na výstupní stream
+  -- inicializace
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_buffer;
+type p_output_stream_buffer = ^class c_output_stream_buffer;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_passive_buffer = expose c_output_stream;
+-- implementace bufferujiciho forwarderu, ktery tlaci bufferovane data pri volani [transfer_buffered_packets]
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static transfer_buffered_packets(
+    target         : p_output_stream;
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety v bufferu
+  -- blokuje az do nalezeni end-of-data
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_passive_buffer;
+type p_output_stream_passive_buffer = ^class c_output_stream_passive_buffer;
+
+
+
+---------------------------------------------------------------------------------------------------
+class public c_input_stream_redirector = extend c_stream_reader_filter;
+-- implementace redirectorujiciho forwarderu
+-- je to vyhybka
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_input_redirector(
+      source       : in p_input_stream);         -- odkaz na výstupní stream
+  -- inicializuje se pro cteni dat z [source] zdroje
+  ------------------------------------------------------------------------------------------------
+  static change_input_redirector(
+      source       : in p_input_stream);         -- odkaz na výstupní stream
+  -- presmeruje se pro predavani dat z noveho [source] zdroje
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream_redirector;
+type p_input_stream_redirector = ^class c_input_stream_redirector;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_redirector = extend c_stream_writer_filter;
+-- implementace redirectorujiciho forwarderu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_output_redirector(
+      target     : in p_output_stream);          -- odkaz na výstupní stream
+  -- inicializuje se pro predavani dat do [target] zdroje
+  ------------------------------------------------------------------------------------------------
+  static change_output_redirector(
+      target     : in p_output_stream);          -- odkaz na výstupní stream
+  -- presmeruje se pro predavani dat do noveho [target] zdroje
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_redirector;
+type p_output_stream_redirector = ^class c_output_stream_redirector;
+
+
+
+
+---------------------------------------------------------------------------------------------------
+class public c_input_stream_frame = extend c_stream_reader_filter;
+-- implementace ramce nad streamem
+-- vycte z [source] pocet [max_length] dat a pak posle end-of-data packet
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_input_stream_frame(
+      source       : in p_input_stream;          -- odkaz na výstupní stream
+      max_length   : in t_offset);               -- maximalni delka kterou je mozne precist
+  -- nastavi  z [source] pocet [max_length] dat a pak posle end-of-data packet
+  ------------------------------------------------------------------------------------------------
+  end c_input_stream_frame;
+type p_input_stream_frame = ^class c_input_stream_frame;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_output_stream_frame = extend c_stream_writer_filter;
+-- implementace ramce nad streamem
+-- zapise do [target] pocet [max_length] dat, pokud bude zapsano vice vyhodi [stream_other_side] vyjimku
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static init_output_stream_frame(
+      target       : in p_output_stream;         -- odkaz na výstupní stream
+      max_length   : in t_offset);               -- maximalni delka kterou je mozne zapsat 
+  ------------------------------------------------------------------------------------------------
+  end c_output_stream_frame;
+type p_output_stream_frame = ^class c_output_stream_frame;
+
+
+
+----------------------------------------------------------------------------------------------------
+-- stream connectors
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_passive_buffered_stream_connector = expose c_input_stream,c_output_stream;
+-- implementace streamoveho bufferu ovladaneho stream interfacy obou typu
+----------------------------------------------------------------------------------------------------
+  end c_passive_buffered_stream_connector;
+type p_passive_buffered_stream_connector = ^class c_passive_buffered_stream_connector;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_controlled_stream_connector = expose c_stream_reader,c_stream_writer;
+-- implementace streamoveho cerpadla, pouzivajiciho stream interfacy obou typu
+----------------------------------------------------------------------------------------------------
+  static transfer_packet(
+    transfer_eod   : t_logical:=false)           --F packet eod bude zahozen
+    return t_logical;
+  -- presune jeden packet
+  ------------------------------------------------------------------------------------------------
+  static transfer_all_packets(
+    transfer_eod   : t_logical:=false);          --F packet eod bude zahozen
+  -- presune vsechny packety az do end of data
+  ------------------------------------------------------------------------------------------------
+  static init_connector(
+      source       : in p_input_stream;          -- odkaz na vstupní stream
+      target       : in p_output_stream);        -- odkaz na výstupní stream
+  ------------------------------------------------------------------------------------------------
+  end c_controlled_stream_connector;
+type p_controlled_stream_connector = ^class c_controlled_stream_connector;
+
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_active_stream_connector = extend c_controlled_stream_connector; expose c_task;
+-- implementace streamoveho cerpadla, pouzivajiciho stream interfacy obou typu
+----------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------
+  static start_connector(
+      source       : in p_input_stream;          -- odkaz na vstupní stream
+      target       : in p_output_stream);        -- odkaz na výstupní stream
+  -- spusti thread cerpadla a zacne tahat a tlacit packety
+  -- thread se ukonci po pruchodu end-of-data packetu
+  ------------------------------------------------------------------------------------------------
+  end c_active_stream_connector;
+type p_active_stream_connector = ^class c_active_stream_connector;
+
+
+----------------------------------------------------------------------------------------------------
 -- stream terminators
 ----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_null_input_stream = extend c_input_stream;
+-- Nulový stream - vraci nulova data az do close
+----------------------------------------------------------------------------------------------------
+    end c_null_input_stream;
+type  p_null_input_stream       = ^class c_null_input_stream;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_empty_input_stream = extend c_input_stream;
+-- Nulový stream - vraci end of data jako prvni packet
+----------------------------------------------------------------------------------------------------
+    end c_empty_input_stream;
+type  p_empty_input_stream      = ^class c_empty_input_stream;
+
+
+
+{%%TODO
+----------------------------------------------------------------------------------------------------
+class public c_random_input_stream = extend c_input_stream;
+-- Nulový stream - vrací pseudanáhodná data.
+----------------------------------------------------------------------------------------------------
+    end c_random_input_stream;
+type  p_random_input_stream     = ^class c_random_input_stream;
+}
+
+
+----------------------------------------------------------------------------------------------------
+class public c_null_output_stream = extend c_output_stream;
+-- Nulový stream - zahazuje zapsanádata az do close
+----------------------------------------------------------------------------------------------------
+    end c_null_output_stream;
+type  p_null_output_stream      = ^class c_null_output_stream;
+
+
 end streams;

@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public ascii =
 -- Support for 8bit ASCII character coding.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 #if #declared radekr; #and then; radekr then;

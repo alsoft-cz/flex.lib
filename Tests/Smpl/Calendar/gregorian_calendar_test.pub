@@ -1,0 +1,147 @@
+﻿----------------------------------------------------------------------------------------------------
+module public gregorian_calendar_test =
+-- Test of Datetime library - Gregorian calendar.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.datetime,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+-- Upozornění: Jelikož je v současnosti použit pro komponovaný datum a čas modulární typ
+-- [t_mod_unsigned32] na místo [t_signed32], mohou být testy knihovny [datetime] neúspěšné v kraj-
+-- ních hodnotách kritických datumů, tj. na počátku ([datim]~[datim:first]) a na konci
+-- ([datim]~[datim:last]). Proto v nejsou v těchto krajních hodnotách testy prováděny.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_decompose_compose_case = extend c_test_case;
+-- Test pro dekompozici a kompozici datumu a času Gregoriánského kalendáře
+-- Test je založen na dekompozici datumu [datim] a následné kompzici na datum [expected]. Pokud se
+-- datumy [datim] a [expected] shodují, test byl úspěšný. Vždy probíhá testování dvou po sobě jdoucích
+-- dnů po sekundách kolem kritických datumů.
+----------------------------------------------------------------------------------------------------
+  
+    end c_gregorian_decompose_compose_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_leap_sec_addition_compose_case = extend c_test_case;
+-- Test pro vkládání (ne)přestupných sekund v Gregoriánském kalendáři pomocí metody [add_leap_second].
+-- Vlastní test je prováděn za pomocí metody [single_test]. Jejími parametry jsou složky dekompono-
+-- vaného datumu a komponovaný datum. Komponovaný datum je dekomponován a porovnán s dekomponovaným
+-- datumem. Jsou-li oba datumy shodné, je test OK.
+-- Během testu je několikrát přidána či odebrána přestupná sekunda v zadaném roce a poté pomocí
+-- metody [single_test] testován následující den po změně přestupné sekundy v čase 0:00:00.0. (Tj.
+-- po odebrání přestupné sekundy v prosinci r. 2015 je testován datum 1.1. 20016 v 0:00:00.0).
+----------------------------------------------------------------------------------------------------
+  
+    end c_leap_sec_addition_compose_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_addition_case = extend c_test_case;
+-- Test pro sčítání datumu a časového intervalu Gregoriánského kalendáře, umožňující testovat
+-- korektnost metody [get_decomposed_timespan] pro určení rozdílu (časového inervalu) mezi dvěma
+-- datumy [datim] a [date].
+--
+-- Princip: V několika vnořených cyklech přičteme k datumu [date] dekomponovaný časový interval
+-- [time_span] a výsledek vložíme do [datim]. Poté určíme rozdíl [span] (dekomponovaný časový interval)
+-- mezi datumy [datim] a [date]. Nokonec opět k datumu [date] přičteme interval [span] a výsledek
+-- vložíme do [expected]. Pokud se [expected] a [datim] shodují, byl test úspěšný.
+-- Celý postup opakujeme pro několik kritických datumů [date]. Přičemž test kritického datumu provádí
+-- metoda [single_test].
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_addition_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_second_of_minute_case = extend c_test_case;
+-- Test pro nalezení sekundy v minutě Gregoriánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší sekundu
+-- [j]. Pokud výsledná sekunda datumu [datim_new] je skutečně [j], byl test úspěšný.
+-- Více viz metoda [single_test], která testuje kritický datum.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_second_of_minute_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_minute_of_hour_case = extend c_test_case;
+-- Test pro nalezení minuty v hodině Gregoriánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší minutu
+-- [min_to_find] v hodině. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší minutu
+-- (která odpovídá minutě v kritickém datumu) v hodině. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_minute_of_hour_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_hour_of_day_case = extend c_test_case;
+-- Test pro nalezení hodiny ve dni Gregoriánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší hodinu
+-- [hour_to_find] ve dni. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší hodinu
+-- (která odpovídá hodině v kritickém datumu) ve dni. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_hour_of_day_case;
+
+
+                                             
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_day_of_week_case = extend c_test_case;
+-- Test pro nalezení dne v týdnu Gregoriánského kalendáře.
+-- Princip: Testujeme datumy v kritických rokách (viz [_1970], [_1972], ... Pro každý rok je vytvo-
+-- řena testovací metoda [single_test]. Na počátku zjistíme, který den v týdnu odpovídá zadanému
+-- vstupnímu datumu a uložíme jej do [week_day]. Poté v cyklu (celkem 53x (počet týdnů v roce))
+-- pomocí metody [find_day_of_week] nalezneme nejbližší vyšší den ke dni [week_day] - ten by měl být
+-- přesně za jeden týden, tj. 7 dní. Zjistíme dekomponovaný časový interval mezi datumy a odpovídá-li
+-- sedmi dnům, je test OK. Dále od nalezeného nejbližšího vyššího dne nalezneme týž nejbližší nižší
+-- den, který se musí shodovat s původním datumem. Shoduje-li se, je test OK.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_day_of_week_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_day_of_month_case = extend c_test_case;
+-- Test pro nalezení dne v měsíci Gregoriánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v měsíci. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v měsíci. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_day_of_month_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_find_day_of_year_case = extend c_test_case;
+-- Test pro nalezení dne v roce Gregoriánského kalendáře.
+--
+-- Princip: Ke každému kritickému datumu nalezneme datum [datim_new] mající nejbliží vyšší den
+-- [day_to_find] v roce. K tomuto datumu nalezneme datum [expected] mající nejbližší nižší den
+-- (která odpovídá dnu v kritickém datumu) v roce. Pokud se kritický datum a [expected] shodují,
+-- byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    end c_gregorian_find_day_of_year_case;
+
+  end gregorian_calendar_test;

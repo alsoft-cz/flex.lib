@@ -1,0 +1,44 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Sada testů pro statické řetězce.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  strings_test;
+
+----------------------------------------------------------------------------------------------------
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(removing_and_replacing_substring_test_case:tag,'Removing + replacing substrings test');
+  psuite^.register_test(removing_and_replacing_chars_test_case:tag,'Removing + replacing characters test');
+  psuite^.register_test(separating_test_case:tag,'Separating substrings test');
+  psuite^.register_test(to_lower_test_case:tag,'Conversion to lower-case letter test');
+  psuite^.register_test(trimming_test_case:tag,'Trimming of string test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests(25);
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

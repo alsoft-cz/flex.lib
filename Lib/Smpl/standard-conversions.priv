@@ -1,11 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private conversions =
 -- Miscellaneous conversion routines.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
-
-
 
 const
   -- konstanty pro převod 
@@ -915,11 +913,11 @@ begin
   -- znaménko minus
   if wstr[1]="-" then
     minus:=true;
-    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    str_copy(wstr,2,wstr:length{%%TODO :last},wstr);
   -- znaménko plus
   elsif wstr[1]="+" then
     minus:=false;
-    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    str_copy(wstr,2,wstr:length{%%TODO :last},wstr);
   -- žádné znaménko
   elsif wstr[1]>="0" and wstr[1]<="9"  then
     minus:=false
@@ -980,11 +978,11 @@ begin
   -- znaménko minus
   if wstr[1]="-" then
     minus:=true;
-    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    str_copy(wstr,2,wstr:length{%%TODO :last},wstr);
   -- znaménko plus
   elsif wstr[1]="+" then
     minus:=false;
-    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    str_copy(wstr,2,wstr:length{%%TODO :last},wstr);
   -- žádné znaménko
   elsif wstr[1]>="0" and wstr[1]<="9"  then
     minus:=false
@@ -996,7 +994,7 @@ begin
 
   -- odstranit nevýznamné nuly zleva
   while wstr:length>0 and wstr[1]="0" loop
-    wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
+    str_copy(wstr,2,wstr:length{%%TODO :last},wstr);
     end loop;
   
 
@@ -1010,8 +1008,8 @@ begin
     pexp+1
     end loop;
   if pexp<=wstr:length{%%TODO :last} then 
-    wexp:=str_copy(wstr,pexp+1,wstr:length{%%TODO :last});
-    wstr:=str_copy(wstr,1,pexp-1);
+    str_copy(wstr,pexp+1,wstr:length{%%TODO :last},wexp);
+    str_copy(wstr,1,pexp-1,wstr);
     end if;
 
 
@@ -1030,8 +1028,8 @@ begin
   while point<=wstr:length{%%TODO :last} and wstr[point]<>"." loop
     point+1
     end loop;
-  frac:=str_copy(wstr,point+1,wstr:length{%%TODO :last});
-  int:=str_copy(wstr,1,point-1);
+  str_copy(wstr,point+1,wstr:length{%%TODO :last},frac);
+  str_copy(wstr,1,point-1,int);
 
   -- ze získaných složek teď sestavit číslo
   string_to_float_primitive(int,frac,minus,exp,num);

@@ -1,9 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module winbase =
--- Windows header [converted by h2flex]
---
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Win32 API Binding
+-- Translation to Flex Copyright (C) 2003-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -1299,7 +1297,7 @@ const
   MAXINTATOM        = $C000;
 
 procedure FreeLibrary(
-    hLibModule      : in out {!}t_HMODULE)
+    hLibModule      : in {!?}t_HMODULE)
                       return BOOL;
 #pragma convention(FreeLibrary,system);
 #pragma import(FreeLibrary,'FreeLibrary','kernel32.dll');
@@ -1610,7 +1608,7 @@ procedure HeapCreate(
 #pragma import(HeapCreate,'HeapCreate','kernel32.dll');
 
 procedure HeapDestroy(
-    hHeap           : in out {!}t_HANDLE)
+    hHeap           : in {!?}t_HANDLE)
                       return BOOL;
 #pragma convention(HeapDestroy,system);
 #pragma import(HeapDestroy,'HeapDestroy','kernel32.dll');
@@ -2298,7 +2296,7 @@ procedure GetExitCodeThread(
 procedure GetThreadSelectorEntry(
     hThread         : in t_HANDLE; 
     dwSelector      : in DWORD; 
-    lpSelectorEntry : out {!}LPLDT_ENTRY)
+    lpSelectorEntry : out {!?}LDT_ENTRY)
                       return BOOL;
 #pragma convention(GetThreadSelectorEntry,system);
 #pragma import(GetThreadSelectorEntry,'GetThreadSelectorEntry','kernel32.dll');
@@ -2398,7 +2396,7 @@ procedure WriteProcessMemory(
 
 procedure GetThreadContext(
     hThread         : in t_HANDLE; 
-    lpContext       : in out {!}p_CONTEXT)
+    lpContext       : in out {!?}CONTEXT)
                       return BOOL;
 #pragma convention(GetThreadContext,system);
 #pragma import(GetThreadContext,'GetThreadContext','kernel32.dll');
@@ -2492,42 +2490,42 @@ procedure DebugBreakProcess(
 #pragma import(DebugBreakProcess,'DebugBreakProcess','kernel32.dll');
 
 procedure InitializeCriticalSection(
-    lpCriticalSection : out {!}LPCRITICAL_SECTION);
+    lpCriticalSection : out {!?}CRITICAL_SECTION);
 #pragma convention(InitializeCriticalSection,system);
 #pragma import(InitializeCriticalSection,'InitializeCriticalSection','kernel32.dll');
 
 procedure EnterCriticalSection(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION);
+    lpCriticalSection : in out {!?}CRITICAL_SECTION);
 #pragma convention(EnterCriticalSection,system);
 #pragma import(EnterCriticalSection,'EnterCriticalSection','kernel32.dll');
 
 procedure LeaveCriticalSection(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION);
+    lpCriticalSection : in out {!?}CRITICAL_SECTION);
 #pragma convention(LeaveCriticalSection,system);
 #pragma import(LeaveCriticalSection,'LeaveCriticalSection','kernel32.dll');
 
 procedure InitializeCriticalSectionAndSpinCount(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION; 
+    lpCriticalSection : in out {!?}CRITICAL_SECTION; 
     dwSpinCount     : in DWORD)
                       return BOOL;
 #pragma convention(InitializeCriticalSectionAndSpinCount,system);
 #pragma import(InitializeCriticalSectionAndSpinCount,'InitializeCriticalSectionAndSpinCount','kernel32.dll');
 
 procedure SetCriticalSectionSpinCount(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION; 
+    lpCriticalSection : in out {!?}CRITICAL_SECTION; 
     dwSpinCount     : in DWORD)
                       return DWORD;
 #pragma convention(SetCriticalSectionSpinCount,system);
 #pragma import(SetCriticalSectionSpinCount,'SetCriticalSectionSpinCount','kernel32.dll');
 
 procedure TryEnterCriticalSection(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION)
+    lpCriticalSection : in out {!?}CRITICAL_SECTION)
                       return BOOL;
 #pragma convention(TryEnterCriticalSection,system);
 #pragma import(TryEnterCriticalSection,'TryEnterCriticalSection','kernel32.dll');
 
 procedure DeleteCriticalSection(
-    lpCriticalSection : in out {!}LPCRITICAL_SECTION);
+    lpCriticalSection : in out {!?}CRITICAL_SECTION);
 #pragma convention(DeleteCriticalSection,system);
 #pragma import(DeleteCriticalSection,'DeleteCriticalSection','kernel32.dll');
 
@@ -2827,7 +2825,7 @@ procedure SetFilePointerEx(
 #pragma import(SetFilePointerEx,'SetFilePointerEx','kernel32.dll');
 
 procedure FindClose(
-    hFindFile       : in out {!}t_HANDLE)
+    hFindFile       : in {!?}t_HANDLE)
                       return BOOL;
 #pragma convention(FindClose,system);
 #pragma import(FindClose,'FindClose','kernel32.dll');
@@ -4005,7 +4003,7 @@ procedure _hwrite(
 #pragma import(_hwrite,'_hwrite','kernel32.dll');
 
 procedure _lclose(
-    hFile           : in out {!}t_HFILE)
+    hFile           : in {!?}t_HFILE)
                       return t_HFILE;
 #pragma convention(_lclose,system);
 #pragma import(_lclose,'_lclose','kernel32.dll');
@@ -7271,13 +7269,13 @@ procedure BackupEventLogW(
 #end if;
 
 procedure CloseEventLog(
-    hEventLog       : in out {!}t_HANDLE)
+    hEventLog       : in {!?}t_HANDLE)
                       return BOOL;
 #pragma convention(CloseEventLog,system);
 #pragma import(CloseEventLog,'CloseEventLog','advapi32.dll');
 
 procedure DeregisterEventSource(
-    hEventLog       : in out {!}t_HANDLE)
+    hEventLog       : in {!?}t_HANDLE)
                       return BOOL;
 #pragma convention(DeregisterEventSource,system);
 #pragma import(DeregisterEventSource,'DeregisterEventSource','advapi32.dll');
@@ -7488,7 +7486,7 @@ procedure DuplicateToken(
 procedure GetKernelObjectSecurity(
     Handle          : in t_HANDLE; 
     RequestedInformation : in SECURITY_INFORMATION; 
-    pSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     nLength         : in DWORD; 
     lpnLengthNeeded : out DWORD )
                       return BOOL;
@@ -7998,7 +7996,7 @@ procedure IsWellKnownSid(
 procedure CreateWellKnownSid(
     WellKnownSidType : in WELL_KNOWN_SID_TYPE; 
     DomainSid       : in {out optional} p_SID; 
-    pSid            : out {!}p_SID; 
+    pSid            : in {!?}p_SID; 
     cbSid           : in out DWORD)
                       return BOOL;
 #pragma convention(CreateWellKnownSid,system);
@@ -8014,7 +8012,7 @@ procedure EqualDomainSid(
 
 procedure GetWindowsAccountDomainSid(
     pSid            : in p_SID; 
-    ppDomainSid     : out {out optional} {!}p_SID; 
+    ppDomainSid     : in {out optional} {!?}p_SID; 
     cbSid           : in out DWORD)
                       return BOOL;
 #pragma convention(GetWindowsAccountDomainSid,system);
@@ -8069,7 +8067,7 @@ procedure FreeSid(
 #pragma import(FreeSid,'FreeSid','advapi32.dll');
 
 procedure InitializeSid(
-    Sid             : out {!}p_SID; 
+    Sid             : in {!?}p_SID; 
     pIdentifierAuthority : in PSID_IDENTIFIER_AUTHORITY; 
     nSubAuthorityCount : in BYTE)
                       return BOOL;
@@ -8103,7 +8101,7 @@ procedure GetLengthSid(
 
 procedure CopySid(
     nDestinationSidLength : in DWORD; 
-    pDestinationSid : out {!}p_SID; 
+    pDestinationSid : in {!?}p_SID; 
     pSourceSid      : in p_SID)
                       return BOOL;
 #pragma convention(CopySid,system);
@@ -8308,7 +8306,7 @@ procedure FindFirstFreeAce(
 #pragma import(FindFirstFreeAce,'FindFirstFreeAce','advapi32.dll');
 
 procedure InitializeSecurityDescriptor(
-    pSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     dwRevision      : in DWORD)
                       return BOOL;
 #pragma convention(InitializeSecurityDescriptor,system);
@@ -8343,7 +8341,7 @@ procedure SetSecurityDescriptorControl(
 #pragma import(SetSecurityDescriptorControl,'SetSecurityDescriptorControl','advapi32.dll');
 
 procedure SetSecurityDescriptorDacl(
-    pSecurityDescriptor : in out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : in out {!?}SECURITY_DESCRIPTOR; 
     bDaclPresent    : in BOOL; 
     pDacl           : in p_ACL; 
     bDaclDefaulted  : in BOOL)
@@ -8361,7 +8359,7 @@ procedure GetSecurityDescriptorDacl(
 #pragma import(GetSecurityDescriptorDacl,'GetSecurityDescriptorDacl','advapi32.dll');
 
 procedure SetSecurityDescriptorSacl(
-    pSecurityDescriptor : in out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : in out {!?}SECURITY_DESCRIPTOR; 
     bSaclPresent    : in BOOL; 
     pSacl           : in p_ACL; 
     bSaclDefaulted  : in BOOL)
@@ -8379,7 +8377,7 @@ procedure GetSecurityDescriptorSacl(
 #pragma import(GetSecurityDescriptorSacl,'GetSecurityDescriptorSacl','advapi32.dll');
 
 procedure SetSecurityDescriptorOwner(
-    pSecurityDescriptor : in out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : in out {!?}SECURITY_DESCRIPTOR; 
     pOwner          : in p_SID; 
     bOwnerDefaulted : in BOOL)
                       return BOOL;
@@ -8395,7 +8393,7 @@ procedure GetSecurityDescriptorOwner(
 #pragma import(GetSecurityDescriptorOwner,'GetSecurityDescriptorOwner','advapi32.dll');
 
 procedure SetSecurityDescriptorGroup(
-    pSecurityDescriptor : in out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : in out {!?}SECURITY_DESCRIPTOR; 
     pGroup          : in p_SID; 
     bGroupDefaulted : in BOOL)
                       return BOOL;
@@ -8411,7 +8409,7 @@ procedure GetSecurityDescriptorGroup(
 #pragma import(GetSecurityDescriptorGroup,'GetSecurityDescriptorGroup','advapi32.dll');
 
 procedure SetSecurityDescriptorRMControl(
-    SecurityDescriptor : in out {!}PSECURITY_DESCRIPTOR; 
+    SecurityDescriptor : in out {!?}SECURITY_DESCRIPTOR; 
     RMControl       : in {out optional} PUCHAR)
                       return DWORD;
 #pragma convention(SetSecurityDescriptorRMControl,system);
@@ -8506,7 +8504,7 @@ procedure SetPrivateObjectSecurityEx(
 procedure GetPrivateObjectSecurity(
     ObjectDescriptor : in PSECURITY_DESCRIPTOR; 
     SecurityInformation : in SECURITY_INFORMATION; 
-    ResultantDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    ResultantDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     DescriptorLength : in DWORD; 
     ReturnLength    : out DWORD )
                       return BOOL;
@@ -8521,7 +8519,7 @@ procedure DestroyPrivateObjectSecurity(
 
 procedure MakeSelfRelativeSD(
     pAbsoluteSecurityDescriptor : in PSECURITY_DESCRIPTOR; 
-    pSelfRelativeSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pSelfRelativeSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     lpdwBufferLength : out DWORD )
                       return BOOL;
 #pragma convention(MakeSelfRelativeSD,system);
@@ -8529,15 +8527,15 @@ procedure MakeSelfRelativeSD(
 
 procedure MakeAbsoluteSD(
     pSelfRelativeSecurityDescriptor : in PSECURITY_DESCRIPTOR; 
-    pAbsoluteSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pAbsoluteSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     lpdwAbsoluteSecurityDescriptorSize : out DWORD ; 
     pDacl           : out ACL ; 
     lpdwDaclSize    : out DWORD ; 
     pSacl           : out ACL ; 
     lpdwSaclSize    : out DWORD ; 
-    pOwner          : out {!}p_SID; 
+    pOwner          : in {!?}p_SID; 
     lpdwOwnerSize   : out DWORD ; 
-    pPrimaryGroup   : out {!}p_SID; 
+    pPrimaryGroup   : in {!?}p_SID; 
     lpdwPrimaryGroupSize : out DWORD )
                       return BOOL;
 #pragma convention(MakeAbsoluteSD,system);
@@ -8579,7 +8577,7 @@ procedure SetFileSecurityW(
 procedure GetFileSecurityA(
     lpFileName      : in LPCSTR; 
     RequestedInformation : in SECURITY_INFORMATION; 
-    pSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     nLength         : in DWORD; 
     lpnLengthNeeded : out DWORD )
                       return BOOL;
@@ -8589,7 +8587,7 @@ procedure GetFileSecurityA(
 procedure GetFileSecurityW(
     lpFileName      : in LPCWSTR; 
     RequestedInformation : in SECURITY_INFORMATION; 
-    pSecurityDescriptor : out {!}PSECURITY_DESCRIPTOR; 
+    pSecurityDescriptor : out {!?}SECURITY_DESCRIPTOR; 
     nLength         : in DWORD; 
     lpnLengthNeeded : out DWORD )
                       return BOOL;
@@ -8804,7 +8802,7 @@ procedure LookupAccountSidW(
 procedure LookupAccountNameA(
     lpSystemName    : in LPCSTR; 
     lpAccountName   : in LPCSTR; 
-    Sid             : out {!}p_SID; 
+    Sid             : in {!?}p_SID; 
     cbSid           : in out DWORD ; 
     ReferencedDomainName : out CHARSTR ; 
     cchReferencedDomainName : in out DWORD ; 
@@ -8816,7 +8814,7 @@ procedure LookupAccountNameA(
 procedure LookupAccountNameW(
     lpSystemName    : in LPCWSTR; 
     lpAccountName   : in LPCWSTR; 
-    Sid             : out {!}p_SID; 
+    Sid             : in {!?}p_SID; 
     cbSid           : in out DWORD ; 
     ReferencedDomainName : out WCHARSTR ; 
     cchReferencedDomainName : in out DWORD ; 

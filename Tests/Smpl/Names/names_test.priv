@@ -1,0 +1,200 @@
+﻿----------------------------------------------------------------------------------------------------
+module private names_test =
+-- Test of Names library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+procedure test_name (
+    name           : p_file_name;                -- souborové jméno [name] určené k otestování
+    test_case      : in p_test_case) =           -- pointer na test_case, který proceduru volá
+-- Provádí test souborového jména [name]. Jméno [name] je komponováno na jednotlivé složky, kterými
+-- jsou: root ([root_name]), cesta k souboru bez rootu ([pure_path_name]), jméno souboru bez
+-- poslední přípony ([base_name]) a poslední příponu ([extension]). Z těchto složek je následně
+-- pomocí metod [clone], [join_after] a [append_extension] komponováno nové souborové jméno
+-- [expected_name]. Na závěr kontrolujeme, zda text původního jména souboru [original_text] se
+-- shoduje s textem jména [expected_name]. Pokud se texty shodují, byl test jména úspěšný.
+----------------------------------------------------------------------------------------------------
+var
+   root_name       : p_file_name;                -- jméno rootu
+   path_name       : p_file_name;                -- jméno cesty
+   pure_path_name  : p_file_name;                -- jméno cesty bez rootu
+   base_name       : p_file_name;                -- jméno souboru bez poslední přípony
+   extension       : p_text_name;                -- textové jméno poslední přípony souboru
+   expected_name   : p_file_name;                -- očekávané jméno (mělo by se shodovat s [name])
+   original_text   : p_text_name;                -- text původního jména souboru [name] (včetně cesty)
+   expected_text   : p_text_name;                -- text očekávaného jména souboru [name] (včetně cesty)
+
+begin
+  -- alokace paměťových prostorů
+  new root_name;
+  new path_name;
+  new pure_path_name;
+  new base_name;
+  new extension range 100;
+  new expected_name;
+  new original_text range 200;
+  new expected_text range 200;
+
+  -- vstupní jméno komponujeme jako text
+  name^.compose_name(original_text);
+
+  -- zjistíme root
+  name^.get_root(root_name);
+
+  -- zjistíme celou cestu (včetně rootu)
+  name^.get_path_name(path_name);
+
+  -- zjistíme cestu bez rootu (odebereme ho)
+  name^.get_path_name(pure_path_name);
+  pure_path_name^.remove_drive;
+
+  -- zjistíme název souboru bez poslední přípony
+  name^.get_name_without_path(base_name);
+  base_name^.remove_last_extension;
+
+  -- zjistíme poslední příponu souboru
+  name^.get_last_extension(extension);
+
+  -- z jednotlivých komponent sestavíme celé jméno a komponujeme ho jako text
+  expected_name:=root_name^.clone;
+  expected_name^.join_after(p_name(pure_path_name)^);
+  expected_name^.join_after(p_name(base_name)^);
+  if extension^<>'' then expected_name^.append_extension(extension^); end if;
+  expected_name^.compose_name(expected_text);
+
+  -- zkontrolujeme, zda se text vstupního jména shoduje s textem jména [expected]
+  test_case^.fail_if_false(original_text^=expected_text^,'Expected value is not equal');
+
+  -- uvolníme alokované prostory
+  discard root_name;
+  discard path_name;
+  discard pure_path_name;
+  discard base_name;
+  discard extension;
+  discard expected_name;
+  discard original_text;
+  discard expected_text;
+  end test_name;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure test_all_files_in_folder (
+    path           : in p_name;                  -- cesta k souborům
+    files          : in p_names;                 -- seznam jmen souborů
+    test_case      : in p_test_case) =           -- pointer na test_case, který proceduru volá
+-- Test všech jmen souborů v konkrétním adrasáři. Cestu k adresáři udává jméno [path]. Ve [files]
+-- je ulo6en seznam souborů, které se v adresáři vyskytují.
+----------------------------------------------------------------------------------------------------
+var
+    iterator       : c_list_iterator;            -- iterátor pro průchod seznamem souborů
+    file_name      : p_name;                     -- jméno souboru
+    name           : p_name;                     -- jméno, které bude testováno (sloučená cesta
+                                                 -- [path] a jméno souboru [file_name]
+
+begin
+  -- inicializace iterátoru seznamu souborů
+  iterator.init(p_list(files)^,tlwd_forward);
+
+  -- průchod seznamem (všemi soubory v adresáři)
+  while iterator.get(p_item(file_name)) loop
+    -- sloučíme jméno cesty se jménem souboru
+    new name;
+    name:=path^.clone;
+    name^.join_after(file_name^);
+
+    -- testujeme jméno souboru
+    test_name(name,test_case);
+    discard name;
+    end loop;
+  end test_all_files_in_folder;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure list_all_folders (
+    path           : in p_name;                  -- počáteční jméno cesty, odkud provádíme rekruzivní
+                                                 -- scan adresářů
+    test_case      : in p_test_case) =           -- pointer na test_case, který proceduru volá
+-- Rekurzivní scan všech podadresářů adresáře [path]. Pokud adresář neobsahuje žádný podadresář,
+-- dojde k otestování jmen všech souborů, které se v daném adresáři nacházejí pomocí volání
+-- procedury [test_all_files_in_folder].
+----------------------------------------------------------------------------------------------------
+
+var
+    curr_folder    : c_folder;                   -- složka konkrétního adresáře [path] (všechny
+                                                 -- podadresáře a soubory)
+    iterator       : c_list_iterator;            -- iterátor pro průchod seznamem všech podadresářů
+                                                 -- daného adresáře [path]
+    name           : p_name;                     -- jméno podadresáře aktuálního adresáře
+    new_path       : p_name;                     -- sloučené jméno aktuálního adresáře a podadresáře,
+                                                 -- tj.: [path] + '\' + [name]
+
+begin
+  -- inicializujeme všechny složky aktuálního (pod)adresáře
+  curr_folder.init_decomposed_name(path^);
+
+  -- obsahuje aktuální adresář aspoň jeden podadresář?
+  if not curr_folder.folders.is_empty
+    then
+      -- inicializace iterátoru pro průchod seznamu všech podadresářů aktuálního adresáře [path]
+      iterator.init(p_list(^curr_folder.folders)^);
+
+      -- dokud aktuální adresář obsahuje nějaké podadresáře, procházíme je
+      while iterator.get(p_item(name)) loop
+        -- sloučíme cestu k aktuálnímu adresáři [path] se jménem nové podadresáře [name], výsledek
+        -- bude uložen v [new_path]
+        new new_path;
+        new_path:=path^.clone;
+        new_path^.join_after(name^);
+
+        -- scanujeme všechny podadresáře nového adresáře [new_path]
+        list_all_folders(new_path,test_case);
+
+        discard new_path;
+        end loop;
+      end if;
+
+  -- provedeme test jmen všech souborů v adresáři [path]
+  test_all_files_in_folder(path,^curr_folder.files,test_case);
+  end list_all_folders;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_file_names_test =
+-- Testovací třída pro jména souborů a adresářů.
+--
+-- Princip: Test provede rekurzivní scan všech podadresářů jednotky [drive_name]. V posledním
+-- podadresáři, tj. v takovém, který neobsahuje žádné další podadresáře, testuje všechny soubory,
+-- které se v něm nacházejí. Test spočívá v tom, že jméno kasždého souboru (včetně cesty a přípon)
+-- je dekomponováno na následující složky:
+--                      root
+--                      cestu bez souboru
+--                      soubor bez poslední přípony
+--                      poslední příponu.
+-- Z dekomponovaných složek je následně opět složeno jméno souboru, které je porovnáno s původním
+-- jménem. Pokud se obě jména shodují u všech scanovaných souborů, byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Test všech jmen souborů (včetně jejich test) všech adresářů a podaresářů v jednotce [drive_name].
+    ------------------------------------------------------------------------------------------------
+    var
+      drive_name   : aliased c_name;             -- jméno jednotky (resp. cesta k lib. adresáři resp.
+                                                 -- podadresáři resp. souboru), kde požadujeme
+                                                 -- provedení testu
+
+    begin
+      -- inicialiazce jednotky
+      drive_name.decompose_name('d:\',tnt_absolute);
+
+      -- scan všech podadresářů jednotky [drive_name] + provedení testu jmen
+      list_all_folders(^drive_name,^this);
+      end run_test;
+  
+    end c_file_names_test;
+
+  end names_test;

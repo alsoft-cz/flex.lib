@@ -1,0 +1,43 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+----------------------------------------------------------------------------------------------------
+-- Testy pro jména souborů.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.characters,
+  quality,
+  quality.debugging,
+  names_test,
+  standard.names,
+  standard.console;
+
+----------------------------------------------------------------------------------------------------
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- conzolový formatter
+
+begin
+  -- vytvoříme sadu testů a provedeme výstup do konzole
+  new psuite;
+
+
+  -- inicializace konzolového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(c_file_names_test:tag,'File names test');
+
+  -- spuštění všech testů
+  psuite^.run_all_tests;
+
+  -- zobrazení výsledků testů na konzoli
+  psuite^.get_results;
+  discard psuite;
+  end test;

@@ -1,0 +1,190 @@
+﻿----------------------------------------------------------------------------------------------------
+module public binary_trees_test =
+-- Test of Classes library - Binary trees and iterators.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.trees,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+-- Za účelem testování vyváženosti byla implementovaná procedura [test_balance], která všem uzlům
+-- testovaného stromu přiřadí výšky [height], kde výška koncového uzlu je 0 a ostatních uzlů o 1
+-- větší než větší z výšek jeho levého a pravého potomka.
+--
+-- Def. AVL: Strom je vyvážený, jestliže pro každý jeho uzel platí právě jedna z následujících podmínek:
+--         1) uzel je koncový,
+--         2) uzel má právě jednoho následovníka, který je koncový,
+--         3) uzel má 2 následovníky s výškami h1 a h2, které splňují: |h1-h2|<2
+--
+-- Uzel testovacího stromu obsahuje jako supervised položku [depth], která udává hloubku uzlu. Hloubka
+-- uzlu přitom odpovídá výšce uzlu. Tento zdánlivě nesmyslný dvojí výskyt téže hodnoty v každém uzlu
+-- spočívá v tom, že k hodnotě [depth] by se němělo přístupovat "z venku" a slouží pouze pro AVL vyvažování
+-- uvnitř modulu [standard.classes.trees]. Hodnotu [height] v každém uzlu generují testovací třídy
+-- za účelem zjištění, zda je strom skutečně vyvážen dle definice AVL.
+----------------------------------------------------------------------------------------------------
+
+
+-- dopředné deklarace
+class c_test_binary_tree_node;     type p_test_binary_tree_node = ^class c_test_binary_tree_node;
+class c_test_binary_tree;          type p_test_binary_tree = ^class c_test_binary_tree;
+
+----------------------------------------------------------------------------------------------------
+class public c_test_binary_tree_node = extend c_binary_tree_node;
+-- Třída uzlu testovaného binárního stromu. Obsahuje:
+--    proměnnou [value] typu [t_unsigned] udávající hodnotu (libovolnou).
+--    proměnnou [depth] typu [t_unsigned] udávající hloubku uzlu. (Kořen = 0, levý a pravý potomek
+--      kořenu = 1, potomci potomků kořenu = 2, atd...)
+----------------------------------------------------------------------------------------------------
+
+    var
+      value        : t_unsigned;                 -- prvek uzlu
+      height       : t_unsigned;                 -- výška uzlu
+
+    end c_test_binary_tree_node;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_test_binary_tree = extend c_binary_tree;
+-- Třída testovacího stromu obsahující přetíženou metodu [compare] pro porovnání klíčů dvou uzlů
+-- stromu.
+----------------------------------------------------------------------------------------------------
+
+    end c_test_binary_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_inserting_binary_tree_test_case = extend c_test_case;
+-- Testovací třída pro vkládání uzlů do stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí (testuje, zda jsou hodnoty v uzlech
+-- setříděné od nejmenšího k největšímu) a v inverzním infixovém pořadí (testuje, zda jsou hodnoty
+-- v uzlech setříděné od největšího k nejmenšímu).
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- procházíme pomocí iterátoru [tree_iterator] v infixovém pořadí (zleva doprava) testovací strom a
+-- kontrolujeme hodnoty v jeho uzlech. Ty by měly být setříděné od nejmenší k největší a měly by odpovídat
+-- hodnotám v prvcích spojového seznamu [list].
+-- Obdobně procházíme testovací strom v reverzním infixovém pořadí, přičmž hodnoty uzlů budou setříděné
+-- sestupně.
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+    
+    end c_inserting_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_removing_binary_tree_test_case = extend c_test_case;
+-- Testovací třída pro odebírání uzlů ze stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- náhodně vybíráme uzel stromu [tree] za pomocí volání procedury [get_rand_item]. Tento uzel
+-- ze stromu [tree] odebereme voláním metody [tree.remove]. Poté testujeme, zda strom [tree] je
+-- binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+    
+    end c_removing_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_merging_binary_tree_test_case = extend c_test_case;
+-- Testovací třída pro spojení dvou stromů [tree] a [merge_tree] do stromu [tree] typu
+-- [c_test_binary_tree]. Uzel je typu [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a
+-- hloubku ve stromě [depth]. Třída rovněž testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme dva binární testovací stromy [tree], který obsahuje [node_count] uzlů, a
+-- [merge_tree], který obsahuje [merge_count] uzlů. Jednotlivé uzly obsahují náhodně generované
+-- hodnoty. Stromy [tree] a [merge_tree] jsou vyhedávacími binárními stromy, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Stromy vytvoříme voláním procedury [create_tree]. Při vytváření testovacích stromů [tree] a
+-- [merge_tree] jsou vytvořeny pomocné spojové seznamy [list] a [merge_list], které obsahují
+-- setříděné uzly příslušných stromů podle hodnoty [value]. Při testování strom [merge_tree] napojíme
+-- na strom [tree] voláním metody [tree.merge]. Poté testujeme, zda rozšířený strom [tree] je
+-- binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+    
+    end c_merging_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_spliting_binary_tree_test_case = extend c_test_case;
+-- Testovací třída pro odebírání podstromu ze stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- náhodně vybíráme uzel stromu [tree] (ze spojového seznamu [list]) za pomocí volání procedury
+-- [get_rand_item]. Tento uzel bude kořenem nového podstromu [subtree], který bude ze stromu [tree]
+-- odebrán. Poté testujeme, zda zbytek stromu [tree] a nový podstrom [subtree] jsou binární
+-- vyhledávací stromy a zda obsahují očekávaný počet uzlů. Poté pomocí metody [tree.merge] oba
+-- stromy opět spojíme a testujeme, zda výsledný strom je binární vyhledávací a zda obsahuje očekávaný
+-- počet uzlů. V případě, že testovací strom je AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+    
+    end c_spliting_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_deleting_subtree_binary_tree_test_case = extend c_test_case;
+-- Testovací třída pro odebírání a smazání podstromu ze stromu [tree] typu [c_test_binary_tree]. Uzel
+-- je typu [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída
+-- rovněž testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- opakovaně mažeme celý levý podstrom (pokud neexistuje, končíme) stromu [tree]. Pomocí metody
+-- [tree.get_node_count] určíme počet uzlů levého podstromu před odebráním. Poté testujeme, zda strom
+-- [tree] je binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+    
+    end c_deleting_subtree_binary_tree_test_case;
+
+  end binary_trees_test;

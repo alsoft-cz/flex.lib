@@ -1,0 +1,41 @@
+﻿#option warning(all,false);
+#option hint(all,false);
+
+----------------------------------------------------------------------------------------------------
+-- Testy pro obecné (n-ární) stromy
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+program test =
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.characters,
+  quality,
+  quality.debugging,
+  common_trees_test;
+
+var
+  psuite           : p_test_suite;                        -- testsuite pro testování
+  console          : aliased c_console_quality_formatter; -- konzolový formatter
+
+begin
+
+  -- vytvoříme sadu testů a provedeme výstup do souboru
+  new psuite;
+
+  -- inicializace souborového formatteru
+  psuite^.init(^console);
+
+  -- registrace testů
+  psuite^.register_test(c_inserting_common_tree_test_case:tag,'Inserting nodes of common tree test');
+  psuite^.register_test(c_removing_common_tree_test_case:tag,'Removing nodes of common tree test');
+
+  -- spuštění všech testů, 100x opakované
+  psuite^.run_all_tests(100);
+
+
+  -- zobrazení výsledků testů do konzole
+  psuite^.get_results;
+  discard psuite;
+  end test;

@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private streams =
 -- Socket I/O.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -185,7 +185,7 @@ var
     else
       size:=readen;
       if size>0 then
-        create_packet(data,_data,size,t_dps_heap);
+        create_packet(data,_data,size,t_dps_dynamic);
         c_input_stream:(this).add_flow(data);
       else
         discard _data;

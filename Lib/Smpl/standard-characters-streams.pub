@@ -1,15 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
-class public c_stream_text_writer = extend c_stream_generic_writer; expose c_text_writer;
--- implementace zapisovace textu do streamu
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
-  --------------------------------------------------------------------------------------------------
-  static init_text_writer(
-    target         : p_output_stream;               -- vystupni stream
-    encoder        : p_character_encoder:=nil;      -- vystupni kodovani znaku
-    disable_bom    : t_logical:=true);
-  --------------------------------------------------------------------------------------------------
-  end c_stream_text_writer;
-type p_stream_text_writer = ^class c_stream_text_writer;
 
 
 message
@@ -18,13 +10,29 @@ message
 
 
 ----------------------------------------------------------------------------------------------------
+class public c_stream_text_writer = extend c_stream_generic_writer; expose c_text_writer;
+-- implementace zapisovace textu do streamu pomoci interface [c_text_writer]
+----------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  static init_text_writer(
+    target         : p_output_stream;               -- vystupni stream
+    encoder        : p_character_encoder:=nil;      -- vystupni kodovani znaku, nil=UCS4
+    disable_bom    : t_logical:=true);
+  --inicializace
+  --------------------------------------------------------------------------------------------------
+  end c_stream_text_writer;
+type p_stream_text_writer = ^class c_stream_text_writer;
+
+
+----------------------------------------------------------------------------------------------------
 class public c_stream_text_reader = extend c_stream_generic_reader; expose c_text_reader;
--- implementace ctenare textu ze streamu
+-- implementace ctenare textu ze streamu pomoci interface [c_text_reader]
 ----------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------
   static init_text_reader(
     source         : p_input_stream;                -- zdrojovy stream
-    decoder        : p_character_decoder:=nil);     -- kodovani vstupnich znaku
+    decoder        : p_character_decoder:=nil);     -- kodovani vstupnich znaku, nil=UCS4
+  --inicializace
   --------------------------------------------------------------------------------------------------
   end c_stream_text_reader;
 type p_stream_text_reader = ^class c_stream_text_reader;
@@ -33,15 +41,17 @@ type p_stream_text_reader = ^class c_stream_text_reader;
 
 ----------------------------------------------------------------------------------------------------
 class public c_input_stream_text_recoder = extend c_stream_reader_filter;
--- implementace prekodovavace znaku
+-- implementace prekodovavaciho filtru znaku, ktery taha data
 ----------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------
   static init_recoder(
     source         : p_input_stream;
-    decoder        : p_character_decoder:=nil;
-    encoder        : p_character_encoder:=nil);
+    decoder        : p_character_decoder:=nil;   -- nil=UCS4
+    encoder        : p_character_encoder:=nil);  -- nil=UCS4
+  --inicializace
   --------------------------------------------------------------------------------------------------
   static disable_byte_order_mark;
+  -- zakazani automaticky vlozit BOM znak
   --------------------------------------------------------------------------------------------------
   end c_input_stream_text_recoder;
 type p_input_stream_text_recoder = ^class c_input_stream_text_recoder;
@@ -50,15 +60,17 @@ type p_input_stream_text_recoder = ^class c_input_stream_text_recoder;
 
 ----------------------------------------------------------------------------------------------------
 class public c_output_stream_text_recoder = extend c_stream_writer_filter;
--- implementace prekodovavace znaku
+-- implementace prekodovavaciho filtru znaku, ktery tlaci data
 ----------------------------------------------------------------------------------------------------
   --------------------------------------------------------------------------------------------------
   static init_recoder(
     target         : p_output_stream;
-    decoder        : p_character_decoder:=nil;
-    encoder        : p_character_encoder:=nil);
+    decoder        : p_character_decoder:=nil;   -- nil=UCS4
+    encoder        : p_character_encoder:=nil);  -- nil=UCS4
+  --inicializace
   --------------------------------------------------------------------------------------------------
   static disable_byte_order_mark;
+  -- zakazani automaticky vlozit BOM znak
   --------------------------------------------------------------------------------------------------
   end c_output_stream_text_recoder;
 type p_output_stream_text_recoder = ^class c_output_stream_text_recoder;

@@ -1,11 +1,16 @@
 ----------------------------------------------------------------------------------------------------
 module public random =
+-- %%TODO(COMMENT)
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
 message
-    random_generator_error extend numeric_error;
+  random_generator_error extend numeric_error;
 
 ----------------------------------------------------------------------------------------------------
 procedure random_unsigned return t_unsigned;
+-- generator nahodneho cisla v rozsahu t_unsigned
 ----------------------------------------------------------------------------------------------------
 
 end random;

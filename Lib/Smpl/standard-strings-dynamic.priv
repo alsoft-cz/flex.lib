@@ -1,0 +1,236 @@
+﻿----------------------------------------------------------------------------------------------------
+module private dynamic =
+-- Dynamic strings.
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private abstract c_abstract_string =
+-- An abstract string, i.e. an automatically (re)allocated string. The base type is not specified
+-- in this abstract class.
+-- All methods' implementations in this class are generic, subclasses are invited to implemented
+-- more tailored (optimized) versions of these methods.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual is_empty =
+    -- Returns whether this string is empty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=get_length=0;
+      end is_empty;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_capacity =
+    -- Returns the capacity of this string, i.e. the length of the longest string that could fit
+    -- in it without reallocation.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- With no further information, we may assume that the string may contain only the number
+      -- it currently holds, no more.
+      result:=get_length;
+      end get_capacity;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual reserve =
+    -- Tries to make sure that [capacity] items will fit into the string without further reallocation.
+    -- Though, the method does not guarantee that.
+    ------------------------------------------------------------------------------------------------    
+    begin
+      -- This generic implementation does nothing.
+      -- The subclasses will probably want to override that.
+      end reserve;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual assign_str =
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      
+      -- check that we are assigning the same string type
+      if source:tag<>this:tag then
+        raise string_error;
+        end if;
+
+      -- clear current contents
+      clear;
+
+      -- append the source to this (currently empty) string
+      append_str(source);
+      }
+      end assign_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual clear =
+    -- Clear this string, i.e. make it empty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- In this generic version, just remove all elements.
+      while not is_empty loop
+        remove(1, get_length);
+        end loop;
+      end clear;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual replace_str =
+    -- Replaces [count] items beginning with the item at [position] with the contents of [str].
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      
+      -- Check range
+      if position<1 or position+count-1>get_length then
+        raise string_error;
+        end if;
+
+      -- In this generic (unoptimized) version, just [remove] and [insert]
+      remove(position, count);
+      insert_str(position, str);
+      }
+      end replace_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual compare =
+    -- Compares this string to [str2] lexicographically.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- the default implementation -- strings cannot be compared
+      result:=scr_unordered;
+      end compare;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual is_equal =
+    -- Returns whether this string is equal to [str2].
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=compare(str2)=scr_equal;
+      end is_equal;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_equal_to =
+    -- left=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=left.is_equal(right);
+      end op_equal_to;
+
+    
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_not_equal_to =
+    -- left<>right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=not left.is_equal(right);
+      end op_not_equal_to;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_less_than =
+    -- left<right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=left.compare(right)=scr_less;
+      end op_less_than;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_less_or_equal =
+    -- left<=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=left.compare(right) in t_string_compare_result_set:[scr_less,scr_equal];
+      end op_less_or_equal;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_greater_or_equal =
+    -- left>=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=left.compare(right) in t_string_compare_result_set:[scr_greater,scr_equal];
+      end op_greater_or_equal;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_greater_than =
+    -- left>right
+    ------------------------------------------------------------------------------------------------
+    begin
+      raise feature_not_implemented;
+      --%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:
+      --result:=left.compare(right)=scr_greater;
+      end op_greater_than;
+
+    end c_abstract_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+#expand extend_string_private;
+----------------------------------------------------------------------------------------------------
+
+  #for class_name use; c_abstract_char32_string
+  #for item_type  use; t_char32
+
+  #end extend_string_private;
+
+
+
+----------------------------------------------------------------------------------------------------
+#expand basic_extend_string_private;
+----------------------------------------------------------------------------------------------------
+
+  #for class_name use; c_string
+  #for base_class use; c_abstract_char32_string
+
+  #for declarations use;
+
+    ------------------------------------------------------------------------------------------------
+    static get_hash =
+    -- Returns a hash of the string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=str_hash(data^);
+      end get_hash;
+
+
+  #end basic_extend_string_private;
+
+
+
+end dynamic;

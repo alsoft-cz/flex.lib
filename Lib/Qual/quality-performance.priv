@@ -1,0 +1,48 @@
+﻿----------------------------------------------------------------------------------------------------
+module private performance =
+-- Timer support
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+class private c_elapsed_time_meter =
+-- Třída umožňuje měřit čas (v tickách). Inicializační metoda [entry], stejně jako metoda [start]
+-- nastaví proměnnou [timer_start] na hodnotu systémového počítadla v době volání metdy. Metoda
+-- [get_elapsed_time] určí výsledný čas, tj. rozdíl hodnoty systémového počítadla s původním
+-- stavem uloženým v [timer_start].
+----------------------------------------------------------------------------------------------------
+    
+    ------------------------------------------------------------------------------------------------
+    virtual start =
+    -- Zjistí počáteční hodnotu stavu systémového počítadla a uloží ji do [timer_start].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- zjistíme počáteční hodnotu stavu systémového počítadla
+      timer_start:=dt_provider.get_machine_uptime;
+      end start;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_elapsed_time =
+    -- Vrací rozdíl hodnoty aktuálního stavu interního počítadla a hodnoty stavu v době posledního
+    -- volání metody [start] (uložené v proměnné [timer_start]).
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=dt_provider.get_machine_uptime-timer_start;
+      end get_elapsed_time;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Zjistí počáteční hodnotu stavu systémového počítadla a uloží ji do [timer_start] voláním
+    -- metody [start].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- zjistíme počáteční hodnotu stavu systémového počítadla
+      start;
+      end entry;
+
+    end c_elapsed_time_meter;
+  end performance;

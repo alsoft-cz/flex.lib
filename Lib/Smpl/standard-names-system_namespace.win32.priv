@@ -1,6 +1,6 @@
 ﻿----------------------------------------------------------------------------------------------------
 -- System namespace implementation.
--- Flex Standard Library
+-- Flex Standard Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- This file contains implementation of [c_namespace_system], which is a namespace for the current 
@@ -220,7 +220,7 @@ class private c_namespace_system =
             name   : out p_text_name;            -- separated subcomponent name
             is_folder : out t_logical;           -- [true] if the subcomponent represents a folder 
                                                  -- for sure
-            can_have_quotes : in t_logical := false) = -- příznak, zda jméno může být v uvozovkách
+            can_have_quotes : in t_logical := false) = -- príznak, zda jméno muže být v uvozovkách
         -- Separates the name of a subcomponent starting at position [start] from the [text_name].
         --------------------------------------------------------------------------------------------
 
@@ -507,7 +507,8 @@ class private c_namespace_system =
 
       -- store that this is the namespaced used for the name
       name^.namespace:=^this;
-      name^.namespace_tag:=this:tag;
+      -- %%TODO(TAG) az se opravi this:tag, zrusit strechy
+      name^.namespace_tag:=(^this)^:tag;
     leave
       -- discard any unfreed memory
       discard comp_name;
@@ -583,10 +584,12 @@ class private c_namespace_system =
         var
           component      : p_name_component;                -- the component actually being processed
           first          : t_logical;                       -- T-this is the first component
+          last_comp      : p_name_component;                -- the last processed component
 
         begin
           component:=first_file_or_folder;
           first:=true;
+          last_comp:=nil;
           while (component<>nil) {and then (component^:tag<>c_name_component_stream:tag)} loop
             if component^:tag=c_name_component_stream:tag then break; end if;
             -- %%TODO(COMPILER) az se odstrani ten bug, tak presunout zpatky do te while podminky
@@ -601,8 +604,17 @@ class private c_namespace_system =
             append_file_or_folder_name(p_name_component_file_or_folder(component));
 
             -- get next entry
+            last_comp:=component;
             name^.components.set_next(p_list_item(component));
             end loop;
+
+          -- append a '\' if the last component is definitively a folder
+          -- %%TODO(96) Az se opravi internal error 96, do jedne podminky
+          if last_comp<>nil then
+            if last_comp^:tag>=c_name_component_folder:tag then
+              text_name^ & "\";
+              end if;
+            end if;
 
           -- append stream specification if present
           if (component<>nil) then

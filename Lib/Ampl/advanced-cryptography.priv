@@ -1,6 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private cryptography =
 -- Base cryptographic support (message digests, encryption, etc.)
+-- Flex Advanced Multi-Platform Library
 -- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 

@@ -1,15 +1,19 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public tasks =
 -- Tasks.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
+
 with
   synchronization;
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_task = 
 ----------------------------------------------------------------------------------------------------
+
   --------------------------------------------------------------------------------------------------
   virtual abstract run(
     userdata       : t_pointer);
@@ -19,8 +23,17 @@ class public abstract c_task =
   --------------------------------------------------------------------------------------------------
   static wait;
   --------------------------------------------------------------------------------------------------
+  static try_wait (
+      timeout      : t_unsigned)                 -- timeout (milliseconds)
+      return t_logical;
+  -- Waits until the task terminates, but no longer than [timeout] ms. If the task has terminated
+  -- before the timeout, returns true, in case of timeout, the function returns false.
+  --------------------------------------------------------------------------------------------------
   static kill;
   --------------------------------------------------------------------------------------------------
+  
   end c_task;
+  
 type p_task = ^class c_task;
+
 end tasks;

@@ -1,0 +1,69 @@
+﻿program base_n_test =
+
+with
+  standard,
+  standard.console,
+  advanced.characters.base_n;
+
+var
+  data: string 5000 of t_char32 :=
+    '77u/U2hybnV0w60gaW5zdGFsYWNlIHBybyB0ZXN0b3bDoW7DrSBtb2RGbGV4dQ0KKioqKioqKioq' &
+    'KioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKg0KDQpPYnNhaCBhcmNow612dQ0KLS0tLS0t' &
+    'LS0tLS0tLQ0KYXBhY2hlCS0gc291Ym9yeSBzb3V2aXNlasOtY8OtIHMgQXBhY2hlbQ0KZmppdGMJ' &
+    'LSBKSVQgcMWZZWtsYWRhxI0gRmxleHUNCmhvc3RpbmcJLSB2aXogcG9zdHVwIGluc3RhbGFjZQ0K' &
+    'bGliCS0ga25paG92bnkgRmxleHUsIHBvdMWZZWJuw6kgcHJvIGtvbXBpbGFjaSBhIGLEm2ggRmxl' &
+    'eG92c2vDvWNoIHByb2dyYW3Frw0KbWZ3ZWIJLSB0ZXN0b3ZhY8OtIEhUVFAgc2VydmVyDQpzYW1w' &
+    'bGUJLSB1a8OhemtvdsOpIHByb2dyYW15DQpzcmMJLSB6ZHJvam92w6kgdGV4dHkga25paG92ZW4N' &
+    'CnBocGRsbAktIERMTGthIHogUEhQDQoNCg0KUG9zdHVwIGluc3RhbGFjZQ0KLS0tLS0tLS0tLS0t' &
+    'LS0tLQ0KKiBBZHJlc8OhxZkgaG9zdGluZyBpIHMgcG9kYWRyZXPDocWZb3ZvdSBzdHJ1a3R1cm91' &
+    'IG7Em2thbSByb3piYWzDrW1lIChuYXDFmS4NCmRvIGFkcmVzw6HFmWUgQzpcaG9zdGluZykuDQoq' &
+    'IERvIG1vZHVsZXMgYWRyZXPDocWZZSBBcGFjaGUgdW3DrXN0w61tZSBzb3Vib3IgbW9kX2ZsZXgu' &
+    'c28uDQoqIERvIGJpbiBhZHJlc8OhxZllIEFwYWNoZSB1bcOtc3TDrW1lIHNvdWJvciBtb2RmbGV4' &
+    'LmluaSwgdmUga3RlcsOpbSBwxZnDrXBhZG7Emw0KdXByYXbDrW1lIGNlc3R5Lg0KKiBCdcSPIHDF' &
+    'mWlkw6FtZSBhZHJlc8OhxZkgQzpcaG9zdGluZ1xsaWIgZG8gcHJvbcSbbm7DqSBQQVRILCBuZWJv' &
+    'IHprb3DDrXJ1amVtZQ0KdsWhZWNobnkgdiBuxJttIHNlIG5hbMOpemFqw61jw60gRExMIHNvdWJv' &
+    'cnkgZG8gYWRyZXPDocWZZSBBcGFjaGVcbW9kdWxlcyAoayBzb3Vib3J1DQptb2RfZmxleC5zbyks' &
+    'IHBvcMWZLiBkbyBqaW7DqWhvIGFkcmVzw6HFmWUgdiBwcm9txJtubsOpIFBBVEguDQoqIFVwcmF2' &
+    'w61tZSBBcGFjaG92c2tvdSBrb25maWd1cmFjaSAoY29uZi9odHRwZC5jb25mKSBuw6FzbGVkdWrD' &
+    'rWPDrW0genDFr3NvYmVtOg0KCS0gdXByYXZpdCBob2Rub3R1IFRocmVhZHNQZXJDaGlsZCBuYSBu' &
+    'acW+xaHDrSwgbmFwxZkuIDI1DQoJLSBwxZllZCB2xaFlY2hueSBvc3RhdG7DrSBwxZnDrWthenkg' &
+    'TG9hZE1vZHVsZSBwxZlpZMOhbWUgxZnDoWRlaw0KCSAgTG9hZE1vZHVsZSBtb2RfZmxleCBtb2R1' &
+    'bGVzL21vZF9mbGV4LnNvDQoqIEplbGlrb8W+IG1vZEZsZXggdnnFvmFkdWplIHJlbGF0aXZuxJsg' &
+    'dmVsa8O9IHrDoXNvYm7DrWssIG5lbXVzw60gc3RhxI1pdCBpbXBsaWNpdG7DrQ0KaG9kbm90YSBu' &
+    'YXN0YXZlbsOhIHYgYsSbxb5uw6ltIEFwYWNoZS5leGUuIFBva3VkIHNlIG9iamV2w60gbsSbamFr' &
+    'w6kgcHJvYmzDqW15LCBqZQ0KdmhvZG7DqSB6a3VzaXQgQXBhY2hlIHMgdsSbdMWhw61tIHrDoXNv' &
+    'Ym7DrWtlbSAtLSBzdGHEjcOtIHDFmWVwc2F0IEFwYWNoZS5leGUgZG9kYW7DvW0NCnNvdWJvcmVt' &
+    'Lg0KKiBETExrYSB6IFBIUCBqZSB0xZllYmEgdW3DrXN0aXQgbsSba2FtLCBrZGUgamUgd29rbmEg' &
+    'bmFqZG91LCB0em4uIG5lamzDqXBlIG7Em2thbQ0KbmEgUEFUSC4NCg0KDQpQcsOhY2UgcyBtb2RG' &
+    'bGV4ZW0NCi0tLS0tLS0tLS0tLS0tLS0tDQpEbyBhZHJlc8OhxZllIGM6XGhvc3RpbmdcZnRwXHVz' &
+    'ZXJcc3JjXHBhZ2VzIHBhdMWZw60gemRyb2rDoWt5IHNrcmlwdMWvLiBQbyByb3piYWxlbsOtDQpq' &
+    'ZSB0YW0gdWvDoXprb3bDvSBza3JpcHQgc2hvdy5zcmMsIGt0ZXLDvSB6b2JyYXrDrSBjZWzDvSBy' &
+    'ZXF1ZXN0IHDFmWVkYW7DvSBtdQ0KcHJvaGzDrcW+ZcSNZW0uDQpWIHTDqXRvIGNodsOtbGkgbmVs' &
+    'emUgQXBhY2hlIHMgbW9kRmxleGVtIHNwb3XFoXTEm3QgamFrbyBzbHXFvmJ1IChzZXJ2aWNlKS4g' &
+    'SmUNCnTFmWViYSBobyBzcG91xaF0xJt0IG5vcm3DoWxuw61tIG9kc3RhcnRvdsOhbsOtbSBhcGFj' &
+    'aGUuZXhlIChiZXogcGFyYW1ldHLFrywgbmVibw0KcyBwYXJhbWV0cnkgLUQgREVCVUcpLg0KUMWZ' &
+    'aSB6YWTDoW7DrSBodHRwOi8vMTI3LjAuMC4xOjgwODAvdXNlci9zaG93LnNyYyBzZSB6a29tcGls' &
+    'dWplIGEgc3B1c3TDrSBza3JpcHQNCnNob3cuc3JjIChzYW1vesWZZWptxJsgcMWZw61wYWRuxJsg' &
+    'amUgdMWZZWJhIHVwcmF2aXQgYWRyZXN1L3BvcnQpLiBTdGVqbsSbIHNlIHNwb3XFoXTDrQ0KaSBs' &
+    'aWJvdm9sbsOpIGppbsOpIHNrcmlwdHksIHBva3VkIHNlIHDFmWlkYWrDrSBkbyB6bcOtbsSbbsOp' &
+    'aG8gYWRyZXPDocWZZS4NClprb21waWxvdmFuw6kgYmluw6Fya3kgc2UgdWtsw6FkYWrDrSBkbyBj' &
+    'Olxob3N0aW5nXGZ0cFx1c2VyXGJpbiwga2R5a29saSAoa2R5xb4NCm5lYsSbxb7DrSBtb2RGbGV4' &
+    'KSBqZSBtb8W+bsOpIGNlbMO9IG9ic2FoIGFkcmVzw6HFmWUgc21hemF0Lg0K';
+  decoder: c_base64_decoder;
+  c : t_char32;
+  ready: t_logical;
+
+begin
+  for i in data:range loop
+    decoder.put_character(data[i],ready);
+    while ready loop
+      decoder.get_character(c,ready);
+      write_char(c);
+      end loop;
+    end loop;
+  ready:=decoder.finalize_input;
+  while ready loop
+    decoder.get_character(c,ready);
+    write_char(c);
+    end loop;
+  end base_n_test;

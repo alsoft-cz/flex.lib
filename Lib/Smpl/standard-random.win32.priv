@@ -1,6 +1,9 @@
 ----------------------------------------------------------------------------------------------------
 module private random =
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+
 with
   standard.console,
   standard.conversions,
@@ -10,15 +13,44 @@ with
   system.windows.wincrypt;
 
 var
-  provider         : aliased t_HCRYPTPROV;
+  provider         : aliased t_HCRYPTPROV;       --%%TODO zamykat proti threadum ?
+  context_acquired : t_logical;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure acquire_context =
+-- inicializuje generator nahodneho cisla
+----------------------------------------------------------------------------------------------------
+var
+  err              : DWORD;
+
+begin
+  -- pridel defaultni CryptoAPI context
+  if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,0) then
+    -- pokud se nepodarilo, vytvor
+    if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,CRYPT_NEWKEYSET) then
+      raise random_generator_error;
+      end if;
+    end if;
+
+  context_acquired:=true;
+  end acquire_context;
+
+
 
 ----------------------------------------------------------------------------------------------------
 procedure random_unsigned =
+-- generuje nahodne cislo
 ----------------------------------------------------------------------------------------------------
 var
   rnd              : aliased t_unsigned;
 
 begin
+  if not context_acquired then
+    acquire_context;
+    end if;
+
   if not CryptGenRandom(provider,rnd:size,^rnd:unchecked) then
     raise random_generator_error;
     end if;
@@ -28,27 +60,14 @@ begin
 
 
 ----------------------------------------------------------------------------------------------------
-entry =
-----------------------------------------------------------------------------------------------------
-var
-  err              : DWORD;
-
-begin
-  if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,0) then
-    if not CryptAcquireContextW(^provider,nil,nil,PROV_RSA_FULL,CRYPT_NEWKEYSET) then
-      --raise random_generator_error;
-      end if;
-    end if;
-  end entry;
-
-
-
-----------------------------------------------------------------------------------------------------
 exit =
 ----------------------------------------------------------------------------------------------------
 begin
-  if not CryptReleaseContext(provider,0) then
-    --raise random_generator_error;
+  -- uvolni context
+  if context_acquired then
+    if not CryptReleaseContext(provider,0) then
+      --raise random_generator_error;
+      end if;
     end if;
   end exit;
 

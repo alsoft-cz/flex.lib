@@ -1,0 +1,572 @@
+﻿----------------------------------------------------------------------------------------------------
+module private dynamic_strings_test =
+-- Test of Classes library - Dynamic strings.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.strings.dynamic,
+  standard.random,
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+procedure get_rand_unsigned (
+    min            : in t_unsigned;              -- minimální hodnota
+    max            : in t_unsigned)              -- maximální hodnota
+    return t_unsigned =
+-- Vrací náhodně generované číslo z intervalu <[min], [max]>. Je-li [max]<[min], vrací 0.
+----------------------------------------------------------------------------------------------------
+begin
+  if max>=min then
+    result:=min+(random_unsigned mod (max-min+1));
+    end if; 
+  end get_rand_unsigned;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_string (
+    str            : in p_string;                -- ukazatel na třídu instance řetězce
+    length         : in t_unsigned;              -- délka řetězce
+    count          : in t_unsigned)              -- počet různých znaků v řetězci [str]
+    return t_logical =                           -- návratová hodnota, [true] jsou-li všechny testy OK
+-- Vytvoří řetězec [str] o délce [length] náhodně generovanými znaky (ASCII 65-[count]). Procedura testuje,
+-- zda délka řetězce je shodná se zadanou délkou [length].
+----------------------------------------------------------------------------------------------------
+var
+  char             : t_char32;                   -- složka řetězce
+
+begin
+  -- vyprázdníme řetězec
+  str^.clear;
+
+  -- vytvoření řetězce
+  for i in 1..length loop
+    char:ord:=get_rand_unsigned(65,65+count);
+    str^.append_item(char);
+    end loop;
+
+  -- test délky řetězce [str]
+  if str^.get_length=length then result:=true; end if;
+  end create_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_rnd_position (
+    str            : in p_string;                -- ukazatel na řetězec
+    pos            : out t_unsigned;             -- náhodně generovaná pozice v [str]
+    len            : out t_unsigned) =           -- náhodně generovaná délka podřetězce v [str]
+-- Náhodně generuje pozici v řetězci [str] a vrací ji v parametru [pos]. Zároveň v parametru [len]
+-- vrací náhodnou délku podřetězce nenulové délky začínající na pozici [pos].
+----------------------------------------------------------------------------------------------------
+begin
+  -- náhodné určení pozice
+  pos:=get_rand_unsigned(1,str^.get_length-1);
+
+  -- dokud neurčíme náhodnou nenulovou délku...
+  while len=0 loop
+    -- ... určujeme náhodnou délku
+    len:=get_rand_unsigned(0,str^.get_length-pos);
+    end loop;
+  end get_rnd_position;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_rnd_substring (
+    str            : in p_string)                -- vstupní řetězec
+    return c_string =
+-- Z řetězce [str] vybere podřetězec náhodné délky.
+----------------------------------------------------------------------------------------------------
+var
+    pos            : t_unsigned;                 -- náhodně generovaná pozice v řetězci [str]
+    sub_len        : t_unsigned;                 -- náhodně generovaná délka nového podřetězce
+
+begin
+    -- generujeme náhodně pozici [pos] v řetězci [str] a délku podřetězce [sub_len] tak, aby bylo
+    -- možné z řetězce [str] určit podřetězec začínající na pozici [pos] o délce [sub_length]
+    pos:=get_rand_unsigned(1,str^.get_length);
+    sub_len:=get_rand_unsigned(0,str^.get_length-pos)+1;
+
+    -- určíme podřetězec v řetězci [str]     
+    result:=str^.substr(pos,sub_len);
+  end get_rnd_substring;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_rnd_chars (
+    count          : in t_unsigned)              -- počet znaků
+    return c_string =
+-- Generuje posloupnost [count] náhodných ASCII znaků (32-255), přičemž se žádný znak nesmí opakovat.
+-- Vytvořené znaky ukládá do výstupního řetězce [result].
+-- Pro ukládání řetězce procedura využívá metodu [append_item], pro kontrolu, zda se znak neopakuje
+-- metodu [find_first_item].
+----------------------------------------------------------------------------------------------------
+var
+    char           : t_char32;                   -- náhodně generovaný znak
+    exist          : t_logical;                  -- [true] pokud byl znak [char] již generován
+
+begin
+  -- v cyklu vytvoříme [count] náhodných ASCII znaků
+  for i in 1..count loop
+    exist:=true;
+    while exist loop
+      -- vytvoříme náhodný znak    
+      --char:ord:=get_rand_unsigned(32,255);
+      char:ord:=get_rand_unsigned(65,120);
+
+      -- zkontrolujeme, zda se znak [char] v řetězci [result] vyskytuje
+      if result.find_first_item(char)=0 then exist:=false; end if;
+      end loop;
+    result.append_item(char);
+    end loop;
+  end create_rnd_chars;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private substring_manipulation_test_case =
+-- Testovací třída dynamických řetězců pro manipulace s podřetězci. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [original] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [or_length]
+-- (minimální délka je 10 znaků, maximální [max_length]).
+-- Dále je vytvořena kopie [copy] testovaného řetězce a následuje test shodnosti obou řetězců. Poté
+-- pomocí metod [get_substring] a [substr] vytvoříme dynamicky resp. staticky podřetězec [psubstring]
+-- resp. [substring] o náhodně generované délce a počáteční pozici v řetězci [original]. Následuje
+-- test shodnosti. Poté podřetězec [substring] pomocí metody [remove] z kopie [copy] vyjmeme a
+-- následně jej vložíme na původní místo pomocí [insert_str] a testujeme, zda se řetězce [copy] a
+-- [original] shodují. Na závěr testovaný řetězec [original] vyprázdníme (pomocí metody [clear]) a
+-- testujeme, zda je skutečně prázdný.
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_length   : t_unsigned;                 -- maximální délka testovaného řetězce
+      ascii_count  : t_unsigned;                 -- počet opakujících se ASCII znaků od "A"
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      original     : aliased c_string;           -- testovací řetězec
+      copy         : c_string;                   -- kopie řetězce original
+      or_length    : t_unsigned;                 -- délka řetězce [original]
+      pos          : t_unsigned;                 -- náhodně generovaná pozice v řetězci [original]
+      substring    : c_string;                   -- podřetězec řetězce [original]
+      psubstring   : p_string;                   -- ukazatel podřetězec řetězce [original]
+      sub_length   : t_unsigned;                 -- délka řetězce [psubstring]
+
+    begin
+      -- nastavíme velikost testovacího řetězce a vytvoříme řetězec z náhodných znaků (přičemž testujeme
+      -- metody [clear], [append_item] a [get_length]
+      or_length:=get_rand_unsigned(10,max_length);
+      fail_if_false(create_string(^original,or_length,10),'String has not expected length');
+
+      -- vytvoříme kopii řetězce [original]
+      copy:=original;
+
+      -- testujeme, zda se kopie a původní řetězec shodují
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:}
+      -- fail_if_false(original=copy,'Original string and its copy are not equal');
+      {zatím se to řeší takhle:}
+      fail_if_false(original.is_equal(copy),'Original string and its copy are not equal');
+
+      -- generujeme náhodně pozici [pos] v řetězci [original] a délku podřetězce [sub_length] tak,
+      -- aby bylo možné z řetězce [original] určit podřetězec [psubstring] začínající na pozici [pos]
+      -- o délce [sub_length]
+      get_rnd_position(^original,pos,sub_length);
+
+      -- určíme podřetězec [psubstring] v řetězci [original]
+      psubstring:=original.get_substring(pos,sub_length);
+
+      -- určíme podřetězec [substring] v řetězci [original]      
+      substring:=original.substr(pos,sub_length);
+
+      -- testujeme, zda se podřetězce [substring] a [psubstring] shodují
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:}
+      -- fail_if_false(substring=psubstring^,'Substrings are not equal');
+      {zatím se to řeší takhle:}
+      fail_if_false(substring.is_equal(psubstring^),'Substrings are not equal');
+
+      -- testujeme, zda má podřetězec [psubstring] očekávanou délu
+      fail_if_false(psubstring^.get_length=sub_length,'Substring has not expected length');
+
+      -- z kopie [copy] vyjmeme podřetězec [psubstring] (tj. [sub_length] složek od pozice [pos])
+      copy.remove(pos,sub_length);
+
+      -- testujeme velikost oříznutého řetězce [copy]
+      fail_if_false(copy.get_length=original.get_length-sub_length,
+                        'String copy after removing has not expected length');
+
+      -- vyjmutý řetězec [psubstring] vložíme zpět do kopie [copy] na původní pozici
+      copy.insert_str(pos,psubstring^);
+
+      -- testujeme, zda se řetězce [copy] a [original] shodují
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:}
+      -- fail_if_false(copy=original,'Strings are not equal');
+      {zatím se to řeší takhle:}
+      fail_if_false(copy.is_equal(original),'Strings are not equal');
+
+      -- odstraníme všechny složky řetězce [original]
+      original.clear;
+
+      -- testujeme, zda je řetězec [original] prázdný
+      fail_if_false(original.is_empty,'String is not empty');
+
+      -- odstraníme dynamicky vytvořené řetězce
+      discard psubstring;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - inicializace interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_length:=5000;
+      ascii_count:=20;
+      end entry;
+
+  end substring_manipulation_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private finding_strings_test_case =
+-- Testovací třída dynamických řetězců pro vyhledávání řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž vytvoříme kopii [copy] testovaného
+-- řetězce [str].
+-- Pomocí procedury [get_rnd_substring] vytvoříme podřetězec [str_to_find] řetězce [str] o náhodně
+-- generované délce a počáteční pozici v [str].
+-- Test je založen na vyhledávání řetězce [str_to_find] v testovaném řetězci pomocí metod
+-- [find_first_str] a [find_last_str]. Nejprve v [str] testujeme, zda je pomocí obou metod nalezen
+-- podřetězec v testovacím řetězci. Poté pomocí metody [find_first_str] opakovaně vyhledáváme
+-- [str_to_find] v [str] a po každém nalezení tento podřetězec ze [str] odstraníme. Po odstranění
+-- všech výskytů pomocí [find_last_str] testujeme, zda testovaný řetězec [str] skutečně podřetězec
+-- [str_to_find] neobsahuje. Totéž provádíme pro kopii [copy], kdy všechny výskyty řetězce 
+-- [str_to_find] vyhledáváme pomocí metody [find_last_str].
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_length   : t_unsigned;                 -- maximální délka testovaného řetězce
+      ascii_count  : t_unsigned;                 -- počet opakujících se ASCII znaků od "A"
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      str          : aliased c_string;           -- testovací řetězec
+      copy         : c_string;                   -- kopie řetězce [str]
+      str_to_find  : aliased c_string;           -- řetězec, který se má v řetězci [str] vyhledávat
+      pos          : t_unsigned;                 -- pozice v řetězci [str] resp. [copy]
+      length       : t_unsigned;                 -- délka řetězce [str]
+      find_length  : t_unsigned;                 -- délka řetězce [str_to_find]
+
+    begin
+      -- nastavíme velikost testovacího řetězce [str] a vytvoříme řetězec z náhodných znaků (přičemž
+      -- testujeme metody [clear], [append_item] a [get_length]
+      length:=get_rand_unsigned(10,max_length);
+      fail_if_false(create_string(^str,length,ascii_count),'String has not expected length');
+
+      -- vytvoříme kopii řetězce [str]
+      copy:=str;
+
+      -- v řětězci [str] vybereme náhodný řetězec [str_tp_find] a určíme jeho délku
+      str_to_find:=get_rnd_substring(^str);
+      find_length:=str_to_find.get_length;
+
+      -- testujeme, zda v řetězci [str] nalezneme řetězec [str_to_find] - a to pomocí [find_first_str]
+      -- a [find_last_str]
+      fail_if_false(str.find_first_str(str_to_find)<>0,'find_first_str - substring not found');
+      fail_if_false(str.find_last_str(str_to_find)<>0,'find_last_str - substring not found');
+
+      -- postupně nalezneme  všechny výskyty řetězce [str_to_find] v řetězci [str] od začátku do konce
+      -- (pomocí [find_first_str]), přitom každý nalezený řetězec ze [str] odstraníme
+      pos:=1;
+      while pos<>0 loop
+        pos:=str.find_first_str(str_to_find);
+        if pos<>0 then
+          str.remove(pos,str_to_find.get_length);
+          end if;
+        end loop;
+
+      -- pomocí metody [find_last_str] testujeme, zda jsme nalezli všechny výskyty [str_to_find] v [str]
+      fail_if_false(str.find_last_str(str_to_find)=0,'Not all substrings found (forward)');
+
+      -- postupně nalezneme  všechny výskyty řetězce [str_to_find] v řetězci [copy] od konce do začátku
+      -- (pomocí [find_last_str]), přitom každý nalezený řetězec ze [str] odstraníme
+      pos:=1;
+      while pos<>0 loop
+        pos:=copy.find_last_str(str_to_find);
+        if pos<>0 then
+          copy.remove(pos,str_to_find.get_length);
+          end if;
+        end loop;
+
+      -- pomocí metody [find_first_str] testujeme, zda jsme nalezli všechny výskyty [str_to_find] v [copy]
+      fail_if_false(str.find_first_str(str_to_find)=0,'Not all substrings found (backward)');
+      end run_test;
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - inicializace interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_length:=5000;
+      ascii_count:=20;
+      end entry;
+
+  end finding_strings_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private finding_items_test_case =
+-- Testovací třída dynamických řetězců pro vyhledávání složek řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]).
+-- Dále dochází k náhodnému generování [item_count] znaků, které jsou vloženy do řetězce [items].
+-- Následuje test metod [find_first_of] a [find_last_of], kdy nejprve dochází k vyhledání prvního
+-- výskytu znaku v řetězci [str] ručně (pomocí brute-force) a poté výsledek porovnáváme s výsledkem
+-- metody [find_first_of]. Obdobně dochází k vyhledání posledního výskytu jednoho ze znaků v [str] a
+-- následuje porovnání výsledku metody [find_last_of].
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_length   : t_unsigned;                 -- maximální délka testovaného řetězce
+      ascii_count  : t_unsigned;                 -- počet opakujících se ASCII znaků od "A"
+      item_count   : t_unsigned;                 -- počet náhodných znaků
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      str          : aliased c_string;           -- testovací řetězec
+      items        : aliased c_string;           -- náhodné znaky uložené v řetězci
+      length       : t_unsigned;                 -- délka řetězce [str]
+      pos          : t_unsigned;                 -- pozice v řetězci [str]
+      char         : t_char32;                   -- znak v řetězci [items]
+      found        : t_logical;                  -- [true], byl-li znak [char] nalezen v řetězci [str]
+      j            : t_unsigned;                 -- pomocná proměnná pro cyklus
+
+    begin
+      -- nastavíme velikost testovacího řetězce [str] a vytvoříme řetězec z náhodných znaků (přičemž
+      -- testujeme metody [clear], [append_item] a [get_length]
+      length:=get_rand_unsigned(10,max_length);
+      fail_if_false(create_string(^str,length,ascii_count),'String has not expected length');
+
+      -- náhodně vytvoříme znaky, které budeme v řetězci [str] vyhledávat
+      items:=create_rnd_chars(item_count);
+
+      -- pokusíme se nalézt jeden ze znaků řetězce [items] v řetězci [str] a to zleva doprava
+      for i in 1..item_count loop
+        j:=1;
+        found:=false;
+        char:=items.get_item(i);
+        while j<=str.get_length loop
+          if char=str.get_item(j) then
+            found:=true;
+            break;
+            end if;
+          j+1;
+          end loop;
+
+        if found and (j<pos or pos=0) then pos:=j; end if;
+        end loop;
+
+      -- testujeme shodnost výsledku s metodou [find_first_of]
+      fail_if_false(str.find_first_of(items)=pos,'Items did not find in test string (forward)');
+
+      pos:=0;
+
+      -- pokusíme se nalézt jeden ze znaků řetězce [items] v řetězci [str] a to zprava doleva
+      for i in 1..item_count loop
+        j:=str.get_length;
+        found:=false;
+        char:=items.get_item(i);
+        while j>0 loop
+          if char=str.get_item(j) then
+            found:=true;
+            break;
+            end if;
+          j-1;
+          end loop;
+
+        if found and j>pos then pos:=j; end if;
+        end loop;
+
+      -- testujeme shodnost výsledku s metodou [find_last_of]
+      fail_if_false(str.find_last_of(items)=pos,'Items did not find in test string (backward)');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - inicializace interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_length:=5000;
+      ascii_count:=20;
+      item_count:=10;
+      end entry;
+
+  end finding_items_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private assigning_test_case =
+-- Testovací třída dynamických řetězců pro přiřazení řetězce. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž dojde k vytvoření nového řetězce
+-- [new_string].
+-- Při testu dochází pomocí metody [assign_str] k přiřazení řetězce [new_string] řetězci [str] a ná-
+-- slednému testu shodnosti obou řetězců.
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_length   : t_unsigned;                 -- maximální délka testovaného řetězce
+      ascii_count  : t_unsigned;                 -- počet opakujících se ASCII znaků od "A"
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      str          : aliased c_string;           -- testovací řetězec
+      new_string   : aliased c_string;           -- nový náhodný řetězec
+      length       : t_unsigned;                 -- délka řetězce [str]
+
+    begin
+      -- nastavíme velikost testovacího řetězce [str] a vytvoříme řetězec z náhodných znaků (přičemž
+      -- testujeme metody [clear], [append_item] a [get_length]
+      length:=get_rand_unsigned(10,max_length);
+      fail_if_false(create_string(^str,length,ascii_count),'String str has not expected length');
+
+      -- vytvoříme řetězec [new_string]
+      fail_if_false(create_string(^new_string,length,ascii_count),'String new_string has not expected length');
+
+      -- řetězci [str] přiřadíme obsah řetězce [new_string]
+      str.assign_str(new_string);
+
+      -- testujeme, zda jsou řetězce [str] a [new_string] shodné
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:}
+      -- fail_if_false(new_string=str,'Strings are not equal');
+      {zatím se to řeší takhle:}
+      fail_if_false(new_string.is_equal(str),'Strings are not equal');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - inicializace interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_length:=5000;
+      ascii_count:=50;
+      end entry;
+
+  end assigning_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private replacing_test_case =
+-- Testovací třída dynamických řetězců pro záměnu řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž dojde k vytvoření nového řetězce
+-- [new_string] a ke kopii řetězce [copy].
+-- Myšlenka testu je následující: Pomocí procedury [get_rnd_position] určíme náhodně generovanou
+-- pozici [pos] v řetězci [str] a rovněž náhodnou délku jeho podřetězce o délce [sub_length].
+-- Tento podřetězec nahradíme pomocí metody [replace_str] novým řetězcem [new_string]. V kopii
+-- [copy] pomocí metody [remove] podřetězec vyjmeme a na jeho pozici pomocí metody [insert_string]
+-- vložíme nový řetězec [new_string]. Pokud se řetězce [copy] a [str] shodují, byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+    var
+      max_length   : t_unsigned;                 -- maximální délka testovaného řetězce
+      ascii_count  : t_unsigned;                 -- počet opakujících se ASCII znaků od "A"
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      str          : aliased c_string;           -- testovací řetězec
+      copy         : c_string;                   -- kopie řetězce [str]
+      new_string   : aliased c_string;           -- nový náhodný řetězec
+      length       : t_unsigned;                 -- délka řetězce [str]
+      new_length   : t_unsigned;                 -- délka řetězce [new_string]
+      pos          : t_unsigned;                 -- pozice v řetězci [str]
+      sub_length   : t_unsigned;                 -- náhodná délka podřetězce v řetězci [str]
+
+    begin
+      -- nastavíme velikost testovacího řetězce [str] a vytvoříme řetězec z náhodných znaků (přičemž
+      -- testujeme metody [clear], [append_item] a [get_length]
+      length:=get_rand_unsigned(10,max_length);
+      fail_if_false(create_string(^str,length,ascii_count),'String str has not expected length');
+
+      new_length:=get_rand_unsigned(10,max_length);
+      new_length:=get_rand_unsigned(10,30);
+      fail_if_false(create_string(^new_string,new_length,ascii_count),'String new_string has not expected length');
+
+      -- vytvoříme kopii řetězce [str]
+      copy:=str;
+
+      -- určíme náhodnou pozici v řetězci [str], náhodnou délku podřetězce začínajícíc na pozici [pos]
+      get_rnd_position(^str,pos,sub_length);
+
+      -- v [str] nahradíme podřetězec na offsetu ([pos], [sub_length]) novým řetězce [new_string]
+      str.replace_str(pos,sub_length,new_string);
+
+      -- v kopii [copy] vyjmeme řetězec na offsetu ([pos], [sub_length]) a vložíme na pozici [pos]
+      -- nový řetězec [new_string]
+      copy.remove(pos,sub_length);
+      copy.insert_str(pos,new_string);
+
+      -- testujeme, zda jsou řetězce [str] a [copy] shodné
+      {%%TODO(COMPILER) az se opravi ten bug kolem "in class", staci odkomentovat:}
+      -- fail_if_false(copy=str,'Strings are not equal');
+      {zatím se to řeší takhle:}
+      fail_if_false(copy.is_equal(str),'Strings are not equal');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda - inicializace interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      max_length:=5000;
+      ascii_count:=20;
+      end entry;
+
+    end replacing_test_case;
+
+  end dynamic_strings_test;

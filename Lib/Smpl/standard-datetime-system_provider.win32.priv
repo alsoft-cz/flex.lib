@@ -1,0 +1,134 @@
+﻿----------------------------------------------------------------------------------------------------
+-- Date/time.
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+class private c_system_datetime_provider =
+-- Systémový provider času a datumu využívající WIN32 API
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    -- Vyhodit v případě použití 64b architektury
+    {"%%TODO(64b architektura) - odstranit - celou metodu"}
+    static get_us32_from_64 (
+        input      : t_unsigned64)
+        return t_unsigned32 =
+    -- Vrací 32b číslo z čísla 64b, resp. jeho dolní 4 bajty. Tato metoda nemá smysl v případě
+    -- použití 64b architektury.
+    ------------------------------------------------------------------------------------------------
+    var
+      mul          : t_mod_unsigned32 :=1;       -- multiplikativní konstanta
+      res          : t_mod_unsigned32;           -- pomocná proměnná pro uložení výsledku (operátor
+                                                 -- [or] nelze aplikovat na proměnnou typu
+                                                 -- [t_unsigned32])
+
+    begin
+      -- v cyklu určíme výslednou hodnotu, která je typu [t_mod_unsigned32]
+      for i in 0..3 loop
+        res or (t_mod_unsigned32(input[i])*mul);
+        mul*$100;
+        end loop;
+
+      -- vracíme výslednou hodnotu [res] přetypovanou na [t_unsigned32]
+      result:=t_unsigned32(res);
+      end get_us32_from_64;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_machine_uptime =
+    -- Vrací počet ticků od startu systému.
+    -- Pro výpočet použijeme volání WIN32 API funkce [QueryPerformanceCounter], která udává aktuální
+    -- stav high-resolution (64b) systémového časovače. Jeho hodnotu je však zapotřebí dělit
+    -- frekvencí sytémového časovače voláním WIN32 API [QueryPerfomanceFrequency].
+    -- V případě, že systém nemá instalovanou hardwarovou podporu high-resolution časovače, gene-
+    -- ruje metoda výjimku [calendar_error]. Ta je volaná i v případě selhání volání
+    -- [QueryPerformanceCounter].
+    -- Pozn.: pro 32b architekturu je použito volání WIN32 API [GetTickCount], která vrací počet
+    -- milisekund od startu systému (32b hodnota). K jejímu přetečení dojde jednou za 49.7 dní.
+    ------------------------------------------------------------------------------------------------
+    with
+      system.windows.windef,
+      system.windows.windef.winnt,
+      system.windows.winbase;
+
+      -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+      {"%%TODO(64b architektura) - odkomentovat"}
+{    var
+      freq         : LARGE_INTEGER;
+      counter      : LARGE_INTEGER;}
+
+      -- Vyhodit v případě použití 64b architektury
+      {"%%TODO(64b architektura) - odstranit"}
+
+    begin
+      -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+      {"%%TODO(64b architektura) - odkomentovat"}
+{      -- zjistíme frekvenci high-resolution časocvače (pokud není podporován, generujeme výjimku
+      -- [calendar_error])
+      if QueryPerformanceFrequency(freq)=false then
+        raise calendar_error;
+        end if;
+
+      -- zjistíme hodnotu časovače (pokud volání selže, generujeme výjimku [calendar_error])
+      if QueryPerformanceCounter(counter)=false then
+        raise calendar_error;
+        end if;
+
+      -- vracíme počet ticků od počátku startu systému
+      result:unsigned:=t_timebasic((counter div freq)*LARGE_INTEGER(t_dtl_milisec));}
+
+      -- Vyhodit v případě použití 64b architektury
+      {"%%TODO(64b architektura) - odstranit"}
+      -- pro 32b použijeme volání WIN32 API [GetTickCount]
+      result:unchecked:=GetTickCount;
+
+      end get_machine_uptime;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_datetime =
+    -- Vrací nedekoponovaný datum [t_datetime] (systémový čas)
+    ------------------------------------------------------------------------------------------------
+    with
+      system.windows.windef,
+      system.windows.winbase;
+
+    const
+      -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+      {"%%TODO(64b architektura) - odkomentovat"}
+{      shift        : t_unsigned64 = $1BA5D463F7780000;   -- počet ticků mezi 1.1. 4713 p.n.l. 00:00:00.0
+                                                         -- a 1.1. 1601 00:00:00.0}
+
+      -- Vyhodit v případě použití 64b architektury
+      {"%%TODO(64b architektura) - odstranit"}
+      shift        : t_unsigned64 = [$00,$80,$3E,$D5,$DE,$B1,$9D,$01]; -- počet ticků mezi 1.1.1601
+                                                                       -- a 1.1.1970 (oba UTC, oba
+                                                                       -- v 00:00:00.0)
+      seconds      : t_unsigned64 = [$80,$96,$98,$00,$00,$00,$00,$00]; -- 10000000 ticků v sekundě
+
+    var
+      time         : t_unsigned64;               -- systémový čas
+      { až sem }
+  
+    begin
+      -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+      {"%%TODO(64b architektura) - odkomentovat"}
+      -- zjistíme systémový čas
+{      GetSystemTimeAsFileTime(_FILETIME(result));}
+
+      -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+      {"%%TODO(64b architektura) - odstranit - celé až do konce"}
+      -- zjistíme systémový čas
+      GetSystemTimeAsFileTime(_FILETIME(time:unchecked));
+
+      -- systémový čas v tickách převedeme na sekundy od počátku a vrátíme
+      time:=(time-shift) div seconds;
+      result:=t_datetime(get_us32_from_64(time));
+      end get_datetime;
+
+    end c_system_datetime_provider;

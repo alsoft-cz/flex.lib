@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public strings =
 -- Character strings' manipulation.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- change the return types of all subprograms to unconstrained string,
@@ -11,6 +11,10 @@ module public strings =
 --   -- declaring arrays of unconstrained strings
 --   -- properly implement [str_compare_case_insensitive], the actual semantics is much simplified
 ----------------------------------------------------------------------------------------------------
+
+with
+  standard.common.structures;
+
 
 type
 {
@@ -257,10 +261,12 @@ procedure str_format (
 procedure str_copy (
     str            : in t_char32ustr;
     _start         : in t_unsigned;
-    _end           : in t_unsigned)
-    return t_char32str;
--- Returns a substring of string [str] from position [_start] to position [_stop].
+    _end           : in t_unsigned;
+    result         : in out t_char32ustr);
+-- Copies a substring of string [str] from position [_start] to position [_stop] into [result].
 --
+-- %%X NOTE: result is "in out" in order to allow the user to call str_copy(str,_,_,str), i.e. use
+-- identical strings as input and output.
 -- This subprogram is only temprorary and needs to be removed.
 ----------------------------------------------------------------------------------------------------
 procedure str_create_copy (
@@ -296,160 +302,15 @@ procedure str_compare_case_insensitive (
 -- Result:
 --   The return value is [true], if the strings are equal except for casing, and [false] otherwise.
 ----------------------------------------------------------------------------------------------------
+procedure str_hash (
+    str            : in t_char32ustr)            -- The string whose hash is to be computed.
+    return t_hash_item_id;
+-- Returns a hash of the string.
+----------------------------------------------------------------------------------------------------
+
 
 ----------------------------------------------------------------------------------------------------
-class public c_string =
--- Class for handling automatically allocated and deallocated unconstrained strings of t_char32
--- characters.
-----------------------------------------------------------------------------------------------------  
-
-    ------------------------------------------------------------------------------------------------
-    static set_string (
-      source       : in t_char32ustr);           -- source to be put in
-    -- Sets string to store value of t_char32ustr given the value as [source].
-    -- Exapmle:
-    --    Setting string to ''-empty string would delete its content.
-    ------------------------------------------------------------------------------------------------
-    static add_char (
-      char         : in t_char32);               -- character to be add
-    -- Adds character to the end of this string value.
-    ------------------------------------------------------------------------------------------------
-    static add_string (
-      str          : in t_char32ustr);           -- string to be add
-    -- Adds character to the end of this string value.
-    ------------------------------------------------------------------------------------------------
-    static get_string return p_char32ustr;       -- resulting string
-    -- Gets poiter to the string represented by this class.
-    ------------------------------------------------------------------------------------------------
-    static get_char (
-      position       : in t_unsigned)              -- position of required character
-      return  t_char32;              -- character to be add
-    -- Gets the string of t_char32ustr represented by this class.
-    ------------------------------------------------------------------------------------------------
-    static del_char (
-      position       : in t_unsigned);             -- position of character to be deleted
-    -- Removes character at position [position] from the string.
-    ------------------------------------------------------------------------------------------------
-    static del_string (
-      position       : in t_unsigned;              -- position of first deleted character
-      count          : in t_unsigned);             -- number of deleted charactes
-    -- Removes [count] number of character starting at position [position] from the string.
-    ------------------------------------------------------------------------------------------------
-    static length return t_unsigned;
-    -- Returns length of string repsesented by instance of this class
-    ------------------------------------------------------------------------------------------------
-    procedure op_assign_cs_ts (
-      A            : out c_string;
-      B            : in t_char32ustr);
-    -- A := B
-    ------------------------------------------------------------------------------------------------
-    procedure op_assign_ts_cs (
-        A          : out t_char32ustr;
-        B          : in c_string);
-    -- A := B
-    ------------------------------------------------------------------------------------------------}
-    {%% overload is unimplemented
-    overload := : op_assign;}
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs (
-      A            : in out c_string;
-      B            : in c_string);
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts (
-      A            : in out c_string;
-      B            : in t_char32ustr);
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs (
-      A            : in out t_char32ustr;
-      B            : in c_string);
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc (
-      A            : in out c_string;
-      B            : in t_char32);
-    -- A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts_cs (
-      A            : in c_string;
-      B            : in t_char32ustr) 
-      return c_string;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_ts_ps (
-      A            : in c_string; 
-      B            : in t_char32ustr) 
-      return p_char32ustr;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs_cs (
-      A            : in c_string; 
-      B            : in c_string) 
-      return c_string;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_cs_ps (
-      A            : in c_string; 
-      B            : in c_string) 
-      return p_char32ustr;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs_cs (
-      A            : in t_char32ustr; 
-      B            : in c_string) 
-      return c_string;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_ts_cs_ps (
-      A            : in t_char32ustr; 
-      B            : in c_string) 
-      return p_char32ustr;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc_cs (
-      A            : in c_string; 
-      B            : in t_char32) 
-      return c_string;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_cs_tc_ps (
-      A            : in c_string; 
-      B            : in t_char32) 
-      return p_char32ustr;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_tc_cs_cs (
-      A            : in t_char32; 
-      B            : in c_string) 
-      return c_string;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    procedure op_concat_tc_cs_ps (
-      A            : in t_char32; 
-      B            : in c_string) 
-      return p_char32ustr;
-    -- X := A & B
-    ------------------------------------------------------------------------------------------------
-    {%% overload is unimplemented
-    overload & : op_concat_cs_cs,
-                 op_concat_cs_cs,
-                 op_concat_ts_cs,
-                 op_concat_cs_ts;
-                 op_concat_cs_uc_cs,
-                 op_concat_cs_uc_ps,
-                 op_concat_cs_cs_cs,
-                 op_concat_cs_cs_ps,
-                 op_concat_ts_cs_cs,
-                 op_concat_ts_cs_ps,
-                 op_concat_cs_tc_cs,
-                 op_concat_cs_tc_ps,
-                 op_concat_tc_cs_cs,
-                 op_concat_tc_cs_ps;}
-    ------------------------------------------------------------------------------------------------
-
-
-  end c_string;
-
+#separate public dynamic;
+----------------------------------------------------------------------------------------------------
 
 end strings;

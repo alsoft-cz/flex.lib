@@ -1,4 +1,9 @@
-﻿var
+﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+var
   crlf           : static const string 2 of t_char32 := \$0d\$0a;
   cr             : static const t_char32             := \$0d;
   lf             : static const t_char32             := \$0a;
@@ -298,7 +303,7 @@ begin
 
     _outsize:=_insize;
     new _outdata range _outsize;  --predpoklad
-    create_packet(data,_outdata,_outsize,t_dps_heap);
+    create_packet(data,_outdata,_outsize,t_dps_dynamic);
 
     if not endian then
       endian:=true;
@@ -338,7 +343,7 @@ begin
 
     _outsize:=_insize*t_char32:size;  -- predpoklad
     new _outdata range _outsize;
-    create_packet(data,_outdata,_outsize,t_dps_heap);
+    create_packet(data,_outdata,_outsize,t_dps_dynamic);
 
     for i in 1..(_insize) loop
       decoder^.put_byte (t_unsigned8(_indata^[i-1]),done);
@@ -361,7 +366,7 @@ begin
 
     _outsize:=_insize div (t_char32:size-1);  -- predpoklad
     new _outdata range _outsize;
-    create_packet(data,_outdata,_outsize,t_dps_heap);
+    create_packet(data,_outdata,_outsize,t_dps_dynamic);
 
     if not endian then
       endian:=true;
@@ -417,6 +422,7 @@ var
   --split long packet
   longpacket       : t_data_packet;
   longpos          : t_offset;
+  _isinitialized   : t_logical;
 
 
   --------------------------------------------------------------------------------------------------
@@ -426,6 +432,7 @@ var
     init_reader(source);
     this.decoder:=decoder;
     this.encoder:=encoder;
+    _isinitialized:=true;
     end init_recoder;
 
 
@@ -446,8 +453,10 @@ var
     if closed then
       raise stream_already_closed;
       end if;
-    _source^.close;
-    closed:=true;
+    if _isinitialized then
+      _source^.close;
+      closed:=true;
+      end if;
     end close;
 
 
@@ -467,6 +476,9 @@ var
     if eod then
       raise stream_end_of_data;
       end if;
+    if not _isinitialized then
+      raise stream_error;
+      end if;
 
     if longpos<>0 then
       size:=packet_size(longpacket)-longpos;
@@ -475,7 +487,7 @@ var
         end if;
 
       new data.data range size;
-      data.style:=t_dps_heap;
+      data.style:=t_dps_dynamic;
       copy_from_packet(longpacket,longpos,data.data,data.size,size);
       if packet_size(longpacket)=longpos then
         discard_packet(longpacket);
@@ -498,7 +510,7 @@ var
       if size>options.maximal_size then
         size:=options.maximal_size;
         new data.data range size;
-        data.style:=t_dps_heap;
+        data.style:=t_dps_dynamic;
         copy_from_packet(longpacket,longpos,data.data,data.size,size);
       else
         data:=longpacket;
@@ -549,6 +561,8 @@ var
   --Byte Order Mark control
   endian_bom       : t_logical;
 
+  _isinitialized   : t_logical;
+
   --------------------------------------------------------------------------------------------------
   static init_recoder =
   --------------------------------------------------------------------------------------------------
@@ -556,6 +570,7 @@ var
     init_writer(target);
     this.encoder:=encoder;
     this.decoder:=decoder;
+    _isinitialized:=true;
     end init_recoder;
 
 
@@ -576,8 +591,10 @@ var
     if closed then
       raise stream_already_closed;
       end if;
-    _target^.close;
-    closed:=true;
+    if _isinitialized then
+      _target^.close;
+      closed:=true;
+      end if;
     end close;
 
 

@@ -1,0 +1,74 @@
+﻿----------------------------------------------------------------------------------------------------
+module public list_test =
+-- Test of Classes library - List, list iterator and stack.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public c_inserting_list_test_case = extend c_test_case;
+-- Třída pro test pro metody [insert] seznamu [c_list].
+--
+-- Princip: Ve čtyřech sériích (počet kroků v každé sérii udává [series_count]) postupně vytvoříme
+-- spojový seznam, který bude obsahovat hodnoty 1..4*[series_count], přičemž využíváme metod
+-- [insert_first], [insert_last], [insert_after] a [insert_before]. Po vytvoření seznamu 2x
+-- testujeme, zda seznam skutečně obsahuje rostoucí hodnoty 1..4*[series_count], přitom v prvním
+-- testu procházíme seznam od začátku do konce a v druhém testu od konce do začátku.
+----------------------------------------------------------------------------------------------------
+
+    end c_inserting_list_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_removing_list_test_case = extend c_test_case;
+-- Třída pro test pro metody [remove] a [delete] seznamu [c_list].
+--
+-- Princip: Vytvoříme spojový seznam o [item_count] složkách, přičemž první složka bude obsahovat
+-- hodnotu 1, 2. hodnotu 2, ..., poslední hodnotu [item_count].
+-- Pozor! Implicitně předpokládáme, že [item_count]>=6.
+-- Dále určíme první, druhou, třetí, čtvrtou, předposlední a poslední složku seznamu. Ze seznamu
+-- [list] vyjmeme čtvrtou složku a kontrolujeme počet prvků v seznamu (měl by být [item_count]-1).
+-- Poté ze seznamu odstraníme třetí složku a kontrolujeme počet prvků v seznamu (měl by být
+-- [item_count]-2). Dále vyjmeme první a poslední prvek a kontrolujeme, zda jsme skutečně vyjmuli
+-- první a poslední prvek a počet prvků v seznamu. Dále odstraníme první a poslední prvek v seznamu
+-- a kontrolujeme počet prvků v seznamu. Na závěr projdeme celý seznam od začátku do konce a
+-- testujeme, zda hodnoty ve složkách postupně odpovádají hodnotám 5, 6, 7, ..., [item_count]-1.
+----------------------------------------------------------------------------------------------------
+
+    end c_removing_list_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_list_iterator_test_case = extend c_test_case;
+-- Třída pro test iterátoru [c_list_iterator] seznamu [c_list].
+--
+-- Princip: Vytvoříme spojový seznam o [item_count] složkách, přičemž první složka bude obsahovat
+-- hodnotu 1, 2. hodnotu 2, ..., poslední hodnotu [item_count].
+-- Dále inicializujeme iterátor [iterator] pro průchod seznamu [list] od první k poslední složce,
+-- přičemž testujeme, zda hodnoty [value] složek vybraných ze seznamu postupně odpovídají hodnotám
+-- 1, 2, 3, ..., [item_count]. Totéž provedeme pro iteráor inicializovaný pro průchod od poslední
+-- k první složce.
+----------------------------------------------------------------------------------------------------
+
+    end c_list_iterator_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_stack_test_case = extend c_test_case;
+-- Třída pro test zásobníku [c_stack].
+--
+-- Princip: Vytvoříme zásobník a postupně ho naplníme hodnotami 1..[stack_count] pomocí metody
+-- [push]. Zkontrolujeme, zda poslední (vrchní) hodnota na zásobníku odpovídá hodnotě [stack_count].
+-- Poté z něj postupně odebíráme (pomocí metody [pop]) hodnoty a kotrnolujeme, zda jsou v obráceném
+-- pořadí, tj. [stack_count]..1.
+----------------------------------------------------------------------------------------------------
+
+    end c_stack_test_case;
+
+  end list_test;

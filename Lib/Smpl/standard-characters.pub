@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public characters =
 -- Character manipulation for different code page standards (ASCII, UNICODE, ISO 10646)
--- Flex Standard Library                                   
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- Add:
@@ -128,7 +128,6 @@ class public c_character_decoder_ascii = extend c_character_decoder;
     ------------------------------------------------------------------------------------------------
 
     end c_character_decoder_ascii;
-
 
 
 ----------------------------------------------------------------------------------------------------

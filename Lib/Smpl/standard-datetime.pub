@@ -1,335 +1,1336 @@
-﻿----------------------------------------------------------------------------------------------------
+﻿{"%%TODO(ABS) Změnit na použití operátoru ABS."}
+----------------------------------------------------------------------------------------------------
 module public datetime =
 -- Date/time.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
+with
+  standard.conversions;
 
 type
-  -- 100-nanosekundovy interval = 1 tick
-  t_timespan = t_signed64;
-  p_timespan = ^t_timespan;
+  -- Odkomentovat v případě použití 64b architektury!!!!!!!!!!!!!! 
+  {"%%TODO(64b architektura) - odkomentovat"}
+{  t_timebasic      = t_unsigned64;               -- 64b neznaménkový typ
+  t_timebasic_s    = t_signed64;                 -- 64b znaménkový typ}
 
-  -- ticku od     pondeli 1. ledna (-)4713 BCE 12:00:00.0 (UTC)
-  -- kladny rozsah konci kus po roku 24000 CE             (UTC)
-  t_datetime = t_signed64{protected t_timespan};
-  p_datetime = ^t_datetime;
+  -- Vyhoditt v případě použití 64b architektury!!!!!!!!!!!!!!
+  {"%%TODO(64b architektura) - odstranit"}
+  {"%%TODO(t_unsigned32) - nefunkční násobení (hlásí přetečení, ačkoliv k němu nedojde), proto
+                           t_unsigned32 nahrazen t_mod_unsigned32"}
+  --  Nefunkční násobění vysokých hodnot typu t_unsigned32 konstantou nebo jinou proměnnou - i v
+  --  případě nepřetečení háže výjimku Array bounds exceeded - zatím vyřešeno zavedením modulární-
+  --  ho typu t_mod_unsigned32. U něho však nedochází ke generování výjimky [constraint_error] v
+  --  případě přetečení.
+  t_timebasic      = t_mod_unsigned32;           -- veškeré základní časové typy jsou odvozeny od
+                                                 -- 32b neznaménkového typu. V budoucny se počítá
+                                                 -- s rozšířením na 64b.
+  t_timebasic_s    = t_signed32;
 
+  t_timespan       = t_timebasic;                -- 1 tick
+  p_timespan       = ^t_timespan;
+  t_datetime       = t_timebasic;                -- pocet ticku od ct. 1. ledna 1970 AD 00:00:00.0
+  p_datetime       = ^t_datetime;
 
-const
-  t_dtc_julian_zero              : t_datetime = [$00,$00,$00,$00,$00,$00,$00,$00];--pondeli  1. ledna  (-)4713 BCE 12:00:00.0 (UTC)
-  --t_dtc_modified_julian_zero     17 Nov 1858 at 00:00:00 UTC. 
-  --t_dtc_lilian_zero              14 Oct 1582 at 00:00:00 UTC. 
-  t_dtc_common_era_zero : t_datetime = [$00,$00,$0C,$D8,$DE,$FC,$A3,$14];--sobota   1. ledna        1 CE  12:00:00.0 (UTC)
-  t_dtc_win32_zero      : t_datetime = [$00,$A0,$21,$BA,$23,$CC,$A5,$1B];--pondeli  1. ledna     1601 CE  00:00:00.0 (UTC)
-  t_dtc_unix_zero       : t_datetime = [$00,$20,$60,$8F,$02,$7E,$43,$1D];--ctvrtek  1. ledna     1970 CE  00:00:00.0 (UTC)
-  t_dtc_21century_ce    : t_datetime = [$00,$60,$BF,$82,$A9,$3F,$66,$1D];--pondeli  1. ledna     2001 CE  00:00:00.0 (UTC)
-  t_dtc_flex_zero       : t_datetime = [$00,$82,$CB,$B0,$B0,$7E,$69,$1D];--pondeli 21. listopadu 2003 CE  13:15:00.0 (UTC)
+message
+  calendar_error   : exception;
 
-message 
-    calendar_error;
-
---------------------------------------------------------------------------------------------------
-procedure get_timespan(
-  a              : in t_datetime;
-  b              : in t_datetime)
-  return t_timespan;
--- a<b
---------------------------------------------------------------------------------------------------
-procedure add_timespan(
-  a              : in t_datetime;
-  span           : in t_timespan)
-  return t_datetime;
---------------------------------------------------------------------------------------------------
-procedure substract_timespan(
-  a              : in t_datetime;
-  span           : in t_timespan)
-  return t_datetime;
---------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+procedure get_timespan (
+    a              : in t_datetime;              -- nedekomponovaný datum
+    b              : in t_datetime)              -- nedekomponovaný datum
+    return t_timespan;
+-- Vrací rozdíl dvou časových údajů [a] a [b] jako interval [t_timespan]. Rozdíl se chová jako
+-- absolutní hodnota rozdílu dvou čísel, tj. [a]-[b] = [b]-[a].
+----------------------------------------------------------------------------------------------------
+procedure add_timespan (
+    a              : in t_datetime;              -- nedekomponovaný datum
+    span           : in t_timespan)              -- nedekomponovaný časový interval
+    return t_datetime;
+-- K časovému údaji [a] přičte interval [span]
+----------------------------------------------------------------------------------------------------
+procedure substract_timespan (
+    a              : in t_datetime;              -- nedekomponovaný datum
+    span           : in t_timespan)              -- nedekomponovaný časový interval
+    return t_datetime;
+-- Od časového údaje [a] odečte interval [span]
+----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_calendar =
+-- Abstraktní třída kalendář [c_calendar], předek všech odvozených kalednářů
 ----------------------------------------------------------------------------------------------------
-  --------------------------------------------------------------------------------------------------
-  virtual abstract datim_to_string(
-    datim          : in t_datetime)
-    return         t_char32ustr;
-  --------------------------------------------------------------------------------------------------
-  virtual get_timespan(
-    a              : in t_datetime;
-    b              : in t_datetime)
-    return t_timespan;
-  --------------------------------------------------------------------------------------------------
-  virtual add_timespan(
-    a              : in t_datetime;
-    span           : in t_timespan)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual substract_timespan(
-    a              : in t_datetime;
-    span           : in t_timespan)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  end c_calendar;
 
+    ------------------------------------------------------------------------------------------------
+    virtual composed_datim_to_string (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return     t_char32str;
+    -- Převádí datum typu [t_datetime] na řetězec dle Formátovacího pravdila.
+    ------------------------------------------------------------------------------------------------
+    virtual get_timespan (
+        a          : in t_datetime;              -- nedekomponovaný datum
+        b          : in t_datetime)              -- nedekomponovaný datum
+        return t_timespan;
+    -- Vrací rozdíl dvou časových údajů [a] a [b] jako interval [t_timespan]
+    ------------------------------------------------------------------------------------------------
+    virtual add_timespan (
+        a          : in t_datetime;              -- nedekomponovaný datum
+        span       : in t_timespan)              -- nedekomponovaný časový interval
+        return t_datetime;
+    -- K časovému údaji [a] přičte interval [span]
+    ------------------------------------------------------------------------------------------------
+    virtual substract_timespan (
+        a          : in t_datetime;              -- nedekomponovaný datum
+        span       : in t_timespan)              -- nedekomponovaný časový interval
+        return t_datetime;
+    -- Od časového údaje [a] odečte interval [span]
+    ------------------------------------------------------------------------------------------------
+
+    end c_calendar;
 
 
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_earth_calendar = extend c_calendar;
+-- Pozemský kalendář
 ----------------------------------------------------------------------------------------------------
+-- Třída definuje 2 základní typy:
+--     1) t_decomposed_timespan - dekoponovaný časový interval na ticky, sekundy, minuty, hodiny,
+--                                dny, měsíce a roky
+--     2) t_decomposed_datetime - dekoponovaný datum na ticky, sekundy, minuty, hodiny, dny, měsíce,
+--                                roky a epochy
+-- Dále poskytje základní operace s datumy, jako rozklad nedekoponovaného datumu na dekomponovaný a
+-- naopak, přičtení resp. odečtení časového intervalu k resp. od datumu, získání dekomponovaného
+-- časového intervalu ze dvou datumů, atd...
+----------------------------------------------------------------------------------------------------
+
+    type      
+      -- Složky dekomponovaného časového intervalu
+      t_ts_ticks   = t_timebasic;                -- tick
+      t_ts_seconds = t_timebasic;                -- sekunda
+      t_ts_minutes = t_timebasic;                -- minuta
+      t_ts_hours   = t_timebasic;                -- hodina
+      t_ts_days    = t_timebasic;                -- den
+      t_ts_weeks   = t_timebasic;                -- týden
+      t_ts_months  = t_timebasic;                -- měsíc
+      t_ts_years   = t_timebasic;                -- rok
+      t_ts_eras    = t_timebasic;                -- epocha
+
+      -- Dekomponovaný časový interval
+      t_decomposed_timespan = record
+          ticks    : t_ts_ticks;                 -- ticky
+          seconds  : t_ts_seconds;               -- sekundy
+          minutes  : t_ts_minutes;               -- minuty
+          hours    : t_ts_hours;                 -- hodiny
+          days     : t_ts_days;                  -- dny
+          months   : t_ts_months;                -- měsíce
+          years    : t_ts_years;                 -- roky
+          end record;
+
+      -- Dny v týdnu
+      t_dw_days_in_week = enum
+          t_dw_mon;                              -- pondělí
+          t_dw_tue;                              -- úterý
+          t_dw_wed;                              -- středa
+          t_dw_thu;                              -- čtvrtek
+          t_dw_fri;                              -- pátek
+          t_dw_sat;                              -- sobota
+          t_dw_sun;                              -- neděle
+          end enum;
+
+      -- V případě použití 64b architektury odkomentovat!!!!!!!!!!!!!!!!!!!!!!!!!!
+      {"%%TODO(64b architektura) - odkomentovat"}
+{      -- Složky dekomponovaného datumu
+      t_dt_tick        = protected t_timebasic range 0..9999999 := 0; -- tick (ve 32b nemá smysl)
+      t_dt_second      = protected t_timebasic range 0..60      := 0; -- sekunda
+      t_dt_minute      = protected t_timebasic range 0..59      := 0; -- minuta
+      t_dt_hour        = protected t_timebasic range 0..23      := 0; -- hodina
+      t_dt_week_day    = protected t_dw_days_in_week;                 -- den v týdnu
+      t_dt_month_day   = protected t_timebasic range 1..31      := 1; -- den v měsíci
+      t_dt_year_day    = protected t_timebasic range 1..366     := 1; -- den v roce
+      t_dt_month_week  = protected t_timebasic range 1..6       := 1; -- týden v měsíci
+      t_dt_year_week   = protected t_timebasic range 1..53      := 1; -- týden v roce
+      t_dt_month       = protected t_timebasic range 1..12      := 1; -- měsíc v roce
+      t_dt_year        = protected t_timebasic                  := 4713; -- rok
+      t_dt_era         = protected t_timebasic range 0..1       := 0; -- epocha}
+
+      -- V případě použití 64b architektury vyhodit!!!!!!!!!!!!!!!!!!!!!!!!!!
+      -- Složky dekomponovaného datumu
+      {"%%TODO(64b architektura) - odstranit"}
+      t_dt_tick        = protected t_timebasic range 0..9999999; -- tick (ve 32b nemá smysl)
+      t_dt_second      = protected t_timebasic range 0..60;      -- sekunda
+      t_dt_minute      = protected t_timebasic range 0..59;      -- minuta
+      t_dt_hour        = protected t_timebasic range 0..23;      -- hodina
+      t_dt_week_day    = protected t_dw_days_in_week;            -- den v týdnu
+      t_dt_month_day   = protected t_timebasic range 1..31;      -- den v měsíci
+      t_dt_year_day    = protected t_timebasic range 1..366;     -- den v roce
+      t_dt_month_week  = protected t_timebasic range 1..6;       -- týden v měsíci
+      t_dt_year_week   = protected t_timebasic range 1..53;      -- týden v roce
+      t_dt_month       = protected t_timebasic range 1..12;      -- měsíc v roce
+      t_dt_year        = protected t_timebasic;                  -- rok
+      t_dt_era         = protected t_timebasic range 0..1;       -- epocha
+  
+      -- Dekomponovaný datum
+      t_decomposed_datetime = record
+          tick     : t_dt_tick;                  -- tick
+          second   : t_dt_second;                -- sekunda
+          minute   : t_dt_minute;                -- minuta
+          hour     : t_dt_hour;                  -- hodina
+          day      : t_dt_month_day;             -- den v měsíci
+          month    : t_dt_month;                 -- měsíc v roce
+          year     : t_dt_year;                  -- rok
+          era      : t_dt_era;                   -- epocha
+          end record;
+
+      -- 4 možnosti vyhledávání (např. minut v hodinách - viz metody [find_second_of_minute], atd..)
+      t_dt_find_direction = enum
+          t_dtf_prev;                            -- nejbližší větší
+          t_dtf_prev_or_same;                    -- nejbližší větší nebo stejné
+          t_dtf_next_or_same;                    -- nejbližší nižší
+          t_dtf_next;                            -- nejbližší nižší nebo stejné
+          end enum;
+  
+      -- Popis typů, na které lze dekomponovat časový interval mezi 2 datumy (viz metoda
+      -- [get_decomposed_timespan])
+      t_ts_decomposition = enum
+          t_tsd_ticks;                           -- ticky
+          t_tsd_seconds;                         -- sekundy
+          t_tsd_minutes;                         -- minuty
+          t_tsd_hours;                           -- hodiny
+          t_tsd_days;                            -- dny
+          t_tsd_months;                          -- měsíce
+          t_tsd_years;                           -- roky
+          end enum;
+
+      -- Zaokrouhlování při získávání dekomponovaného intervalu
+      t_ts_rounding = enum
+          t_tsr_none;                            -- žádné zaokrouhlování
+          t_tsr_truncate;                        -- zaokrouhlení dolů
+          t_tsr_ceil;                            -- zaokrouhlení nahoru
+          t_tsr_nearest;                         -- standardní zaokrouhlení
+          end enum;
+
+    ------------------------------------------------------------------------------------------------
+    virtual decompose_datetime (
+        datim_in   : in t_datetime;              -- vstupní nedekomponovaný datum
+        datim_out  : out t_decomposed_datetime); -- výstupní dekomponovaný datum 
+    -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
+    ------------------------------------------------------------------------------------------------
+    virtual compose_datetime (
+        datim_in   : in t_decomposed_datetime;   -- vstupní dekomponovaný datum
+        datim_out  : out t_datetime);            -- výstupní nedekomponovaný datum 
+    -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out]
+    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
+    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
+    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
+    -- tj. např. 30.2. nebo 31.4., atd...
+    ------------------------------------------------------------------------------------------------
+    virtual add_decomposed_timespan (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        timespan   : in t_decomposed_timespan)   -- interval určený k přičtení
+        return t_datetime;
+    -- Vrací součet nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výsledkem je
+    -- nedekomponovaný datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem sčítání datumu s časovým
+    -- intervalem je datum větší než maximální hodnota.
+    -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
+    -- postupujeme od největších složek k nejmenším.
+    ------------------------------------------------------------------------------------------------
+    virtual substract_decomposed_timespan (
+        datim          : in t_datetime;              -- nedekomponovaný datum
+        timespan       : in t_decomposed_timespan)   -- interval určený k odečtení
+        return t_datetime;
+    -- Vrací rozdíl nedekomponovaného datumu [datim] a časového intervalu [timespan]. Výslekdem je
+    -- nedekomponovaný datum.
+    -- Metoda generuje výjimku [calendar_error] v případě, kdy výsledkem odečítání časového inter-
+    -- valu od datumu je datum menší než minimální hodnota.
+    -- Pozn.: Obecně nemusí platit ([datim]+[span])-[span]=[datim], neboť při sčítání i odečítání
+    -- postupujeme od největších složek k nejmenším.
+    ------------------------------------------------------------------------------------------------
+    virtual get_decomposed_timespan (
+        a          : in t_datetime;                          -- vstupní nedekomponovaný datum
+        b          : in t_datetime;                          -- vstupní nedekomponovaný datum
+        smallest   : in t_ts_decomposition:=t_tsd_seconds;   -- nejmenší nenulová složka
+        largest    : in t_ts_decomposition:=t_tsd_years;     -- největší nenulová složka 
+        rounding   : in t_ts_rounding:=t_tsr_truncate)       -- typ zaokrouhlování
+        return t_decomposed_timespan;
+    -- Vrací rozdíl (dekomponovaný časový intreval) dvou nedekomponovaných datumů [a] a [b]. Volba
+    -- parametrů [smallest] a [largest] udává nejmenší a největší složku dekomponovaného intervalu. 
+    -- Parametr [rounding] udává typ zaokrouhlování u nejnižší složky dekomponovaného časového
+    -- inetrvalu a je možnost následující volby:
+    --     t_tsr_none        = bez zaokrouhlování
+    --     t_tsr_truncate    = zaokrouhlení dolů
+    --     t_tsr_ceil        = zaokrouhlení nahoru
+    --     t_tsr_nearest     = standardní zaokrouhlení (viz Pravidlo standardního zaokrouhlování)
+    --
+    -- V případě, že se ve výsledku vyskytuje nenulová složka menší než daná parametrem [smallest]
+    -- [largest], a zaokrouhlování je nastaveno na hodnotu [t_tsr_none], generuje metoda výjimku
+    -- [callendar_error] - tzv. Základní požadavek pro zaokrouhlování. Ta je generovaná i v
+    -- i v případě, že [largest]<[smallest]. Dekomponovaný rozdíl je v absolutní hodnotě,
+    -- tj. |[a]-[b]| = |[b]-[a]|
+    ------------------------------------------------------------------------------------------------
+    virtual get_tick (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_tick;
+    -- Vrací tick v sekundě v datumu [datim]. Ve 32 bitové architektuře vrací sekundy.
+    ------------------------------------------------------------------------------------------------
+    virtual get_second (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_second;
+    -- Vrací sekundy v minutě v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_minute (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_minute;
+    -- Vrací minuty v hodině v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_hour (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_hour;
+    -- Vrací hodiny ve dni v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_day_of_week (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_week_day;
+    -- Vrací den v týdnu v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_day_of_month (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_month_day;
+    -- Vrací den v měsíci v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_day_of_year (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_year_day;
+    -- Vrací den v roce v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_week_of_month (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_month_week;
+    -- Vrací týden v měsíci v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_week_of_year (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_year_week;
+    -- Vrací týden v roce v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_month (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_month;
+    -- Vrací měsíc v roce v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_year (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_year;
+    -- Vrací rok v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_era (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_dt_era;
+    -- Vrací epochu v datumu [datim]
+    -- 0 = před Kristem, 1 = po Kristu
+    -- Vzhledem k použité 32 bitové architektuře je epocha vždy 1 (počáteční rok odpovídá roku 1970)
+    ------------------------------------------------------------------------------------------------
+    virtual is_leap_second (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_logical;
+    -- Vrací true v případě, že sekunda v datumu [datim] je přestupná, jinak false
+    ------------------------------------------------------------------------------------------------
+    virtual is_leap_day (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_logical;
+    -- Vrací true v případě, že den v datumu [datim] je přestupný, jinak false
+    ------------------------------------------------------------------------------------------------
+    virtual is_leap_month (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_logical;
+    -- Vrací true v případě, že měsíc v datumu [datim] je přestupný, jinak false
+    ------------------------------------------------------------------------------------------------
+    virtual is_leap_year (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_logical;
+    -- Vrací true v případě, že rok v datumu [datim] je přestupný, jinak false
+    ------------------------------------------------------------------------------------------------
+    virtual find_tick_of_second (
+        datim          : in t_datetime;
+        tick           : in t_dt_tick;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje tick [tick]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- tick vypočten:
+    --     [t_dtf_next] - nejbližší vyšší tick [tick] v sekundě v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejný tick [tick] v sekundě v datumu [datim]
+    --     [t_dft_prev] - nejbližší nižší tick [tick] v dekundě v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejný tick [tick] v sekundě v datumu [datim].
+    --
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než ticky) dekomponova-
+    -- ného výsledného datumu vynulovat. V případě 32b architektury je nejnižší složkou dekomponova-
+    -- ného datumu sekunda, proto tento parametr výsledek neovlivňuje.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    --
+    -- Jelikož v 32b architektuře je nejmenší složkou datumu sekunda, vrací tato metoda stejnou
+    -- hodnotu, jako vstupní parametr [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual find_second_of_minute (
+        datim          : in t_datetime;
+        second         : in t_dt_second;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje sekundu [second]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- sekunda vypočtena:
+    --     [t_dtf_next] - nejbližší vyšší sekunda [second] v minutě v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejná sekunda [second] v minutě v datumu
+    --                            [datim]
+    --     [t_dft_prev] - nejbližší nižší sekunda [second] v minutě v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejná sekunda [second] v minutě v datumu
+    --                            [datim].
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než sekundy) dekomponova-
+    -- ného výsledného datumu vynulovat. V případě 32b architektury je nejnižší složkou dekomponova-
+    -- ného datumu sekunda, proto tento parametr výsledek neovlivňuje.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual find_minute_of_hour (
+        datim          : in t_datetime;
+        minute         : in t_dt_minute;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje minutu [minute]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- minuta vypočtena:
+    --     [t_dtf_next] - nejbližší vyšší minuta [minute] v hodině v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejná minuta [minute] v hodině v datumu
+    --                            [datim]
+    --     [t_dft_prev] - nejbližší nižší minuta [minute] v hodině v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejná minuta [minute] v hodině v datumu
+    --                            [datim].
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než minuty) dekomponova-
+    -- ného výsledného datumu vynulovat.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual find_hour_of_day (
+        datim          : in t_datetime;
+        hour           : in t_dt_hour;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje hodinu [hour]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- hodina vypočtena:
+    --     [t_dtf_next] - nejbližší vyšší hodina [hour] ve dni v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejná hodina [hour] ve dni v datumu
+    --                            [datim]
+    --     [t_dft_prev] - nejbližší nižší hodina [hour] ve dni v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejná hodina [hour] ve dni v datumu
+    --                            [datim].
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než hodiny) dekomponova-
+    -- ného výsledného datumu vynulovat.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual find_day_of_week (
+        datim          : in t_datetime;
+        day            : in t_dt_week_day;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+    return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje den v týdnu [day]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- den v týdnu vypočtena:
+    --     [t_dtf_next] - nejbližší vyšší den [day] v týdnu v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejný den [day] v týdnu v datumu
+    --                            [datim]
+    --     [t_dft_prev] - nejbližší nižší den [day] v týdnu v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejný den [day] v týdnu v datumu [datim].
+    --
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než dny) dekomponova-
+    -- ného výsledného datumu vynulovat.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual find_day_of_month (
+        datim          : in t_datetime;
+        day            : in t_dt_month_day;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje den v měsíci [day]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- den v měsíci vypočten:
+    --     [t_dtf_next] - nejbližší vyšší den [day] v měsíci v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejný den [day] v měsíci v datumu [datim]
+    --     [t_dft_prev] - nejbližší nižší den [day] v měsíci v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejný den [day] v měsíci v datumu [datim].
+    --
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než dny) dekomponovaného
+    -- výsledného datumu vynulovat.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual find_day_of_year (
+        datim          : in t_datetime;
+        day            : in t_dt_year_day;
+        direction      : in t_dt_find_direction:=t_dtf_next;
+        reset_lower    : in t_logical:=true)
+        return t_datetime;
+    -- Vrací nedekomponovaný datum, které obsahuje den v roce [day]. Výsledný datum se odvíjí od
+    -- zadaného nedekomponovaného datumu [datim]. Parametr [direction] udává, jak má být nejbližší
+    -- den v měsíci vypočten:
+    --     [t_dtf_next] - nejbližší vyšší den [day] v roce v datumu [datim]
+    --     [t_dtf_next_or_same] - nejbližší vyšší nebo stejný den [day] v roce v datumu [datim]
+    --     [t_dft_prev] - nejbližší nižší den [day] v roce v datumu [datim]
+    --     [t_dtf_prev_or_same] - nebližší nižší nebo stejný den [day] v roce v datumu [datim].
+    --
+    -- Parametr [reset_lower] udává, zda se mají či nemají nižší složky (než dny) dekomponovaného
+    -- výsledného datumu vynulovat.
+    -- V případě, že výsledný datum není ohraničen nejnižší a nejvyšší hodnotou datumu, generuje
+    -- metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual get_days_in_week return t_ts_days;
+    -- Vrací počet dní v týdnu v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_days_in_month_composed (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_ts_days;
+    -- Vrací počet dní v měsíci v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_days_in_month_decomposed (
+        year       : in t_signed32;              -- znaménkový rok
+        month      : in t_timebasic)             -- měsíc
+        return t_ts_days;
+    -- Vrací počet dní v měsíci [month] znaménkového roku [year]
+    ------------------------------------------------------------------------------------------------
+    virtual get_days_in_year_composed (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_ts_days;
+    -- Vrací počet dní v roce v datumu [datim]
+    ------------------------------------------------------------------------------------------------
+    virtual get_days_in_year_decomposed (
+        year       : in t_signed32)              -- znaménkový rok
+        return t_ts_days;
+    -- Vrací počet dní ve znaménkovém roce [year]
+    ------------------------------------------------------------------------------------------------
+    virtual get_date (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_decomposed_datetime;
+    -- Vrací dekomponovaný datum zadaného nedekomponovaného datumu [datim], přičemž časová složka
+    -- je vynulovaná, tj. vrací epochu, rok, měsíc a den.
+    ------------------------------------------------------------------------------------------------
+    virtual get_time (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_decomposed_datetime;
+    -- Vrací dekomponovaný datum zadaného nedekomponovaného datumu [datim], přičemž datumová složka
+    -- je vynulovaná, tj. vrací hodinu, minutu, sekundu a tick.
+    -- Nulováním datumové složky rozumíme nastavení jednotlivých složek na jejich nejmenší hodnoty,
+    -- tj. [era] = 0, [year] = 0, [month] = 1, [day] = 1
+    ------------------------------------------------------------------------------------------------
+    virtual set_tick (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        tick       : in t_dt_tick)               -- tick
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
+    -- tick hodnotou [tick]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_second (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        second     : in t_dt_second)             -- sekunda
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
+    -- sekunda hodnotou [second]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_minute (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        minute     : in t_dt_minute)             -- minuta
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
+    -- minuta hodnotou [minute]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_hour (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        hour       : in t_dt_hour)               -- hodina
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
+    -- hodina hodnotou [hour]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_day (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        day        : in t_dt_month_day)          -- den v měsíci
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
+    -- den v měsíci hodnotou [day]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_month (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        month      : in t_dt_month)              -- měsíc v roce
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
+    -- měsíc v roce hodnotou [month]. Pokud výsledný datum neodpovídá skutečnosti, generujeme
+    -- výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_year (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        year       : in t_dt_year)               -- rok
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byl nahrazen
+    -- rok hodnotou [year]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+    virtual set_era (
+        datim      : in t_datetime;              -- nedekomponovaný datum
+        era        : in t_dt_era)                -- epocha
+        return t_datetime;
+    -- Vrací nedekomponovaný datum zadaného nedekomponovaného datumu [datim], v němž byla nahrazena
+    -- epocha hodnotou [era]. Pokud výsledný datum neodpovídá skutečnosti, generujeme výjimku
+    -- [calendar_error].
+    ------------------------------------------------------------------------------------------------
+
+    end c_earth_calendar;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_common_calendar = extend c_earth_calendar;
+-- Společný předek Juliánského a Gregoriánského kalednáře, který obsahuje metody společné oběma
+-- odvozeným kalendářům
+----------------------------------------------------------------------------------------------------
+
+    type
+      
+      -- výčet časových zón
+      t_time_zones = enum
+          tz_utc;                                --   0.00  Greenwichský čas (Dublin, Edinburgh, Londýn, Lisabon)
+          tz_cet;                                --  +1.00  Středoevropský čas (Berlín, Stockholm, Řím, Brusel, Vídeň, Paříž, Madrid, Praha, Bratislava, Varšava)
+          tz_eet;                                --  +2.00  Východnoevropský čas (Athény, Helsinky, Istanbul, Harrare, Pretoria, Izrael, Káhira, Bukurešť)
+          tz_msk;                                --  +3.00  Moskevský čas (Bagdád, Kuvajt, Nairobi, Rijád, Moskva, San Peťenburg)
+          tz_thr;                                --  +3.30  Íránský čas (Teherán)
+          tz_usz3;                               --  +4.00  Ruský čas, zóna 3 (Abú Dhabi, Muskat, Tbilisi, Kazaň, Volgograd)
+          tz_kst;                                --  +4.30  Kábulský čas (Kábul)
+          tz_usz4;                               --  +5.00  Ruský čas, zóna 4 (Karáčí, Taškent, Jekatěringburg, Islámábád)
+          tz_ist;                                --  +5.30  Indický čas (Bombaj, Kalkata, Madrás, Nové Dillí, Kolobmo)
+          tz_usz5;                               --  +6.00  Ruský čas, zóna 5 (Alma-Ata, Dháká)
+          tz_nsut;                               --  +6.30  čas Severní Sumatry
+          tz_ssut;                               --  +7.00  čas Jižní Sumatry (Bangkok, Jakarta, Hanoj)
+          tz_jt;                                 --  +7.30  Javanský čas
+          tz_awst;                               --  +8.00  Západoaustralský čas (Hongkong, Perth, Singapur, Tai-pei, Peking, Čchung-čching, Ürümqi)
+          tz_jap;                                --  +9.00  Japonský čas (Tókio, Ósaka, Sapporo, Soul, Jakutsk)
+          tz_sat;                                --  +9.30  Jihoaustralsý čas (Adelaide, Darwin)
+          tz_aet;                                -- +10.00  Východoaustralsý čas (Brisbane, Canberra, Melbourne, Sydney, Guam, Port Moresby, Vladivostok, Hobart)
+          tz_nou;                                -- +11.00  (Magadan, Šalamounovy ostrovy, Nová Kaledonie)
+          tz_nzt;                                -- +12.00  Novozélandský čas (Fidži, Kamčatka, Marshallovy ostrovy, Wellington, Auckland)
+          tz_bet;                                -- -11.00  Beringský čas (Midwayské ostrovy, Samoa)
+          tz_hst;                                -- -10.00  Havajské ostrovy (Honolulu)
+          tz_yst;                                --  -9.00  Yukonsý čas (Aljaška, Yukon)
+          tz_pst;                                --  -8.00  Tichomořský čas v USA a Kanadě (Los Angeles, Tijuana)
+          tz_mst;                                --  -7.00  Horský čas v USA a Kanadě (Arizona, Denver)
+          tz_cst;                                --  -6.00  Centrální čas v USA a Kanadě (Chicago, Mexico, Saskatchewan)
+          tz_est;                                --  -5.00  Východní čas v USA a Kanadě (Bogota, Lima, Indiana)
+          tz_ast;                                --  -4.00  Atlantický čas (Caracas, La Paz)
+          tz_nst;                                --  -3.30  Newfoundlandský čas 
+          tz_bzt;                                --  -3.00  Brazilsý čas (Buenos Aires, Rio de Janeiro, Georgetown)
+          tz_fst;                                --  -2.00  Středoatlantický čas
+          tz_wat;                                --  -1.00  Západoafrický čas (Azory, Kapverdské ostrovy)
+          end enum;
+
+      -- Dekomponovaný datum (oproti pozemskému kalendáři navíc obsahuje časovou zónu)
+      t_decomposed_datetime = record
+          tick     : t_dt_tick;                  -- tick
+          second   : t_dt_second;                -- sekunda
+          minute   : t_dt_minute;                -- minuta
+          hour     : t_dt_hour;                  -- hodina
+          day      : t_dt_month_day;             -- den v měsíci
+          month    : t_dt_month;                 -- měsíc v roce
+          year     : t_dt_year;                  -- rok
+          era      : t_dt_era;                   -- epocha
+          time_zone: t_time_zones;               -- časová zóna
+          end record;
+
+    const
+      -- Konstanty pro 64b architekturu
+     {"%%TODO(64b architektura) - odkomentovat"}
+  {    t_zero_year        : t_signed32 = -4712;       -- počáteční rok (4713 p.n.l.)
+      t_first_lyear      : t_signed32 = -4712;       -- první přestupný rok (musí být shodná s
+                                                     -- [t_zero_year])
+      t_days_to_1stleap  : t_timebasic = 0;          -- počet dní od počátku k prvnímu přestupnému
+                                                     -- roku
+      t_year_days        : t_timebasic = 365;        -- počet dní v běžném roce
+      t_lyear_days       : t_timebasic = 366;        -- počet dní v přestupném roce
+      t_4year_days       : t_timebasic = 1461;       -- počet dní ve čtyřletí, kde 1. rok je přes-
+                                                     -- tupný
+      t_1st_day_in_week  : t_dt_week_day = t_dw_mon; -- první den v roce 0 (tj. 1.1. 4713 p.n.l.)
+                                                     --  - je to pondělí
+      t_last_year        : t_timebasic = 50000;      -- nejvyšší možný rok
+
+      t_dtl_milisec  : t_timebasic = $0000000000002710;  --           10000 ticku
+      t_dtl_second   : t_timebasic = $0000000000989680;  --        10000000 tick
+      t_dtl_minute   : t_timebasic = $0000000023C34600;  --       600000000 ticku
+      t_dtl_hour     : t_timebasic = $0000000861C46800;  --     36000000000 ticku
+      t_dtl_day      : t_timebasic = $000000C92A69C000;  --    864000000000 ticku
+      t_dtl_year     : t_timebasic = $00011ED178C6C000;  -- 315360000000000 ticku (365 dní)
+      t_dtl_leap_year: t_timebasic = $00011F9AA3308000;  -- 316224000000000 ticku (366 dní)
+      t_tick_in_sec  : t_timebasic = t_dtl_second;       --  ticků v sekundě}
+
+      -- Konstanty pro 32b architekturu
+      {"%%TODO(64b architektura) - odstranit"}
+      t_zero_year        : t_signed32 = 1970;    -- počáteční rok
+      t_first_lyear      : t_signed32 = 1972;    -- první přestupný rok
+      t_days_to_1stleap  : t_timebasic = 730;    -- počet dní od počátku k prvnímu přestupnému roku
+      t_year_days        : t_timebasic = 365;    -- počet dní v běžném roce
+      t_lyear_days       : t_timebasic = 366;    -- počet dní v přestupném roce
+      t_4year_days       : t_timebasic = 1461;   -- počet dní ve čtyřletí
+      t_last_year        : t_timebasic = 2106;   -- nejvyšší možný rok
+
+      t_dtl_milisec  : t_timebasic = $00002710;  --     10000 ticku
+      t_dtl_second   : t_timebasic = $00000001;  --         1 tick
+      t_dtl_minute   : t_timebasic = $0000003C;  --        60 ticku
+      t_dtl_hour     : t_timebasic = $00000E10;  --      3600 ticku
+      t_dtl_day      : t_timebasic = $00015180;  --     86400 ticku
+      t_dtl_month    : t_timebasic = $0028DE80;  --   2678400 ticku (před., že měsíc obsahuje 31 dní)
+      t_dtl_year     : t_timebasic = $01E13380;  --  31536000 ticku (365 dní)
+      t_dtl_leap_year: t_timebasic = $01E28500;  --  31622400 ticku (366 dní)
+
+      -- Ostatní konstanty
+      t_sec_in_min   : t_timebasic = 60;         --  počet sekund v minutě
+      t_min_in_hour  : t_timebasic = 60;         --  počet minut v hodině
+      t_hour_in_day  : t_timebasic = 24;         --  počet hodin v dni
+      t_mon_in_year  : t_timebasic = 12;         --  počet měsíců v roce
+      t_days_in_week : t_timebasic =  7;         --  počet dní v týdnu
+      t_dte_bc       : t_dt_era = 0;             --  označení roků před Kristem
+      t_dte_ad       : t_dt_era = 1;             --  označení roků po Kristu
+
+      -- Počet dní v jednotlivých měsících v nepřestupném roce
+      t_monthdays365   : array 0..12 of t_timebasic  = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31,
+                                                        30, 31];
+      -- Počet dní od počátku nepřestupného roku v jednotlivých měsících
+      t_monthdays365s  : array 0..12 of t_timebasic  = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273,
+                                                        304, 334, 365];
+      -- Počet dní v jednotlivých měsících v přestupném roce
+      t_monthdays366   : array 0..12 of t_timebasic  = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31,
+                                                        30, 31];
+      -- Počet dní od počátku přestupného roku v jednotlivých měsících
+      t_monthdays366s  : array 0..12 of t_timebasic  = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274,
+                                                        305, 335, 366];
+
+      -- rozdíl (v minutách) mezi časovými zónamy od UTC (Greenwichský čas) podle výčtu [t_time_zones]
+      t_time_difference : array 0..30 of t_signed32 = [
+          0,   60,  120,  180,  210,  240,  270,   -- [tz_utc]  .. [tz_thr]
+        300,  330,  360,  390,  420,  450,  480,   -- [tz_usz4] .. [tz_awst]
+        540,  570,  600,  660,  720, -660, -600,   -- [tz_jap]  .. [tz_hst]
+       -540, -480, -420, -360, -300, -240, -210,   -- [tz_yst]  .. [tz_nst]
+       -180, -120, -60];                           -- [tz_bzt]  .. [tz_wat]
+
+      -- řetězcové konstanty dnů v týdnu
+      t_days_name      : array 0..6 of t_char32str = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+      -- řetězcové konstanty pro rozlišení epoch (BC - před Kristem, AD - po Kristu)
+      t_era_name       : array 0..1 of t_char32str = ['BC', 'AD'];
+
+    ------------------------------------------------------------------------------------------------
+    static normalize_timespan (
+        timespan   : in out t_decomposed_timespan;   -- časový interval určený k normalizaci
+        rule       : in t_logical:=true);            -- použití Normovacího pravidla
+    -- Provádí normování časového intervalu dle Normovacího prvadila, je-li [rule] nastaven na
+    -- [true]. Je-li [rule] nastaveno na [false], pak celý časový interval je vyjádřen v tickách,
+    -- přičmž se přepokládá, že měsíc osbahuje 31 dní.
+    ------------------------------------------------------------------------------------------------
+    virtual decompose_datetime (
+        datim_in   : in t_datetime;              -- vstupní dekomponovaný datum
+        datim_out  : out t_decomposed_datetime;  -- výstupní nedekomponovaný datum 
+        time_zone  : in t_time_zones:=tz_utc);   -- časová zóna
+    -- Nedekomponovaný datum [datim_in] převede na dekomponovaný datum [datim_out].
+    -- Metoda generuje výjimku [calendar_error] v případě, že požadujeme dekomponovaný datum
+    -- s ohledem na časovou zónu, které je menší než minimální nebo maximální datum.
+    -- Př.: v případě 32b architektury: Minimální datum je 1.1. 1970 00:00:00.0. Požadujeme převést
+    --   čas 130 (1.1. 1970 00:02:10.0) na středoatlantický čas (-2 hodiny). Výsledkem je datum
+    --   31.12. 1969 22:02:10.0, což je nepřípustný datum.
+    -- Př.: v případě 64b architektury: Minimální datum je 1.1. 4713 před. n.l. 00:00:00:0. Poža-
+    --   dujeme převést čas 1300000000 (1.1. 4713 p.n.l. 00:02:10.0) na středoatlantický čas
+    --   (-2 hod.). Výsledkem je datum 31.12. 4714 p.n.l. 22:02:10.00, což je nepřípustný datum.}
+    ------------------------------------------------------------------------------------------------
+    virtual compose_datetime (
+        datim_in   : in t_decomposed_datetime;   -- vstupní dekomponovaný datum
+        datim_out  : out t_datetime);            -- výstupní nedekomponovaný datum 
+    -- Dekomponovaný datum [datim_in] převede na nedekomponovaný datum [datim_out]
+    -- Metoda generuje výjimku [calendar_error] v případě, že vstupní datum [datim_in] obsahuje rok,
+    -- který je menší než počáteční rok nebo datum je větší než horní hranice datumu. Stejná výjimka
+    -- je generovaná i v případě, že den v měsíci v zadaném vstupním datumu neodpovídá skutečnosti,
+    -- tj. např. 30.2. nebo 31.4., atd...
+    ------------------------------------------------------------------------------------------------
+    virtual get_date (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_decomposed_datetime;
+    -- Vrací dekomponovaný datum zadaného nedekomponovaného datumu [datim], přičemž časová složka
+    -- je vynulovaná, tj. vrací epochu, rok, měsíc a den.
+    ------------------------------------------------------------------------------------------------
+    virtual get_time (
+        datim      : in t_datetime)              -- nedekomponovaný datum
+        return t_decomposed_datetime;
+    -- Vrací dekomponovaný datum zadaného nedekomponovaného datumu [datim], přičemž datumová složka
+    -- je vynulovaná, tj. vrací hodinu, minutu, sekundu a tick.
+    -- Nulováním datumové složky rozumíme nastavení jednotlivých složek na jejich nejmenší hodnoty,
+    -- tj. [era] = 0, [year] = 0, [month] = 1, [day] = 1
+    ------------------------------------------------------------------------------------------------
+    virtual decomposed_datim_to_string (
+        datim      : in t_decomposed_datetime;
+        time_zone  : t_logical:=true)
+        return t_char32str;
+    -- Převádí dekomponovaný datum [datim] na řetězec dle Formátovacího pravdila:
+    --       YYYY-MM-DD hh:mm:ss.s (UTC shh.ss), kde význam písmen je následující
+    --
+    --     YYYY - rok                        (1970 .. 2106)
+    --       MM - měsíc v roce               (01 .. 12)
+    --       DD - den v měsíci               (01 .. 31)
+    --       hh - hodiny ve dni              (00 .. 23)
+    --       mm - minuty v hodině            (00 .. 59)
+    --       ss - sekundy v minutě           (00 .. 60)
+    --        s - desetiny dekundy           (0  ..  9)
+    --      UTC - světový (Greenwichský čas) (konst.)
+    --        s - znaménko                   (+/-)
+    --       hh - hodiny posunu              (0  .. 12)
+    --       ss - minuty posunu              (00/30)
+    --
+    --  Je-li hodnota parametru [time_zone] nastavena na [true], pak dojde k zobrazení časového
+    --  posunu, je-li hodnota [false], pak nikoli.
+    --
+    --  Jedná-li se o rok před Kristem, pak před rokem je zobrazeno znaménko mínus.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    ------------------------------------------------------------------------------------------------
+    static get_signed_year (
+        datim      : in t_decomposed_datetime)   -- vstupní datum
+        return t_signed32;
+    -- Vrací znamínkový rok. Jestliže je vstupní rok [datim.year] po Kristu, vrací tutéž hodnotu.
+    -- Jestliže je před Kristem, vrací zápornou hodnotu, kde roku 1 p.n.l. odpovídá 0, roku
+    -- 2 p.n.l. odpovídá -1, atd...
+    ------------------------------------------------------------------------------------------------
+    static decompose_year (
+        year       : in t_signed32;                  -- vstupní znaménkový rok
+        datim      : in out t_decomposed_datetime);  -- dekomponovaný datum
+    -- V zadaném datumu [datim] určí rok [datim.year] a epochu [datim.era] podle zadaného
+    -- znaménkového roku [year].
+    ------------------------------------------------------------------------------------------------
+    static date_correction (
+        datim      : in out t_decomposed_datetime)   -- dekoponovaný datum, které bude opraveno
+        return t_logical;
+    -- Podle Korekčního pravidla opravuje datumy, které mají nepřípustný den v měsíci.
+    -- Pro nepřestupný rok je např. nepřípustný datum 29.2, 30.2, 31.2., 31.4., atd... Metoda tyto
+    -- nepřípustné dny nahrazuje dny, ktere jim ve skutečnosti odpovídají, tj. 29.2. -> 1.3.,
+    -- 31.4. -> 1.5, atd...
+    --
+    -- Vrací [true] v případě, že datum [datim] nebylo korektní, jinak [false]
+    ------------------------------------------------------------------------------------------------
+    static get_month_and_day_365 (
+      datim        : in out t_decomposed_datetime;   -- výstupní měsíc a den  
+      day_in_year  : in t_timebasic);                -- pořadí dne v roce
+    -- Určí datum v nepřestupném roce, který odpovídá dni v roce [day_in_year].
+    ------------------------------------------------------------------------------------------------
+    static get_month_and_day_366 (
+        datim      : in out t_decomposed_datetime;   -- výstupní měsíc a den
+        day_in_year: in t_timebasic);                -- pořadí dne v roce
+    -- Určí datum v přestupném roce, který odpovídá dni v roce [day_in_year].
+    ------------------------------------------------------------------------------------------------
+    static utc_to_time_zone (
+      datim        : in t_datetime;              -- vstupní komponovaný datum
+      time_zone    : in t_time_zones)            -- časová zóna
+      return t_datetime;
+    -- Provede přičtení resp. odečtení příslušného počtu minut při převádění komponovaného UTC času
+    -- [datim] na komponovaný čas v časové zóně [time_zone].
+    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
+    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    ------------------------------------------------------------------------------------------------
+    static time_zone_to_utc (
+      datim        : in t_datetime;              -- vstupní komponovaný datum
+      time_zone    : in t_time_zones)            -- časová zóna
+      return t_datetime;
+    -- Provede odečtení resp. přičtení příslušného počtu minut při převádění komponovaného času
+    -- [datim] v časové zóně [time_zone] na komponovaný čas v UTC.
+    -- Metoda generuje výjimku [calendar_error] v případě, že výsledný komponovaný datum je záporný
+    -- nebo větší než maximální hodnota ([t_timebasic:last]).
+    ------------------------------------------------------------------------------------------------
+    static round_func (
+        what       : in out t_timebasic;         -- hodnota, kterou chceme zaokrouhlit
+        rounding   : in t_ts_rounding;           -- jak chceme zaokrouhlit
+        kind       : in t_ts_decomposition;      -- typ hodnoty, kterou zaokrouhlujeme
+        smallest   : in t_ts_decomposition)      -- nejmenší nenulová složka
+        return t_timebasic;
+    -- Zaokrouhlovací funkce. Zaokrouhluje parametr [what], který může reprezentovat ticky, sekundy,
+    -- minuty, hodiny, dny nebo měsíce, což je obsahem parametru [kind]. Parametr [rounding]
+    -- udává způsob zaokrouhlení:
+    --     t_tsr_truncate = zaokrouhlení dolů
+    --     t_tsr_ceil     = zaokrouhlení nahoru
+    --     t_tsr_nearest  = standardní zaokrouhlení - viz Pravidlo standardního zaokrouhlování
+    --
+    -- Vrací 0 v případě, že došlo k zaokrouhlení dolů, 1 v případě, že došlo k zaokrouhlení
+    -- nahoru, tj. k přenosu směrem k vyššímu řádu. Při zaokrouhlování dojde ke změně hodnoty
+    -- parametru [what] na 0, pokud [rounding] není roven [t_tsr_none].
+    --
+    -- Funkce generuje výjimku [calendar_error] v případě, že zaokrouhlujeme nenulové číslo [what]
+    -- typu [kind], přitom [smallest]>[kind] a způsob zaokrouhlování je nastaven na [t_tsr_none]
+    --   - viz Základní požadavek pro zaokrouhlování.
+    --
+    -- Zaokrouhlování provádíme jen tehdy, je-li [kind]<[smallest], tj. nejmenší nenulová složka
+    -- musí být větší než [kind] typ hodnoty [what]
+    --
+    -- Příklad:
+    --     typ zaokrouhlování = [t_tsr_none],
+    --     zaokrouhlujeme 100 min a 10 sec na minuty -> výjimka [calendar_error]
+    --  - aby to bylo korektní, musí být zvolen typ [t_tsr_truncate] -> 100 min 0 sec,
+    --                                              [t_tsr_ceil]     -> 101 min 0 sec, nebo
+    --                                              [t_tsr_nearest]  -> 100 min 0 sec
+    ------------------------------------------------------------------------------------------------
+    static get_date_in_4years (
+        lyear      : in t_signed32;              -- přestupný rok, od něhož určujeme datum
+        days       : in t_timebasic)             -- počet dní, které uplynuly od roku [lyear]
+        return t_decomposed_datetime;
+    -- Určí datum ve čtyřletí na základě zadaného počtu dnů [days] od zadaného roku [lyear].
+    -- Pozor, zadaný rok [lyear] musí být přestupný. Jelikož metodu implementujeme v předkovi
+    -- tříd [c_julian_calendar] a [c_gregorian_calendar], kde juliánský kalendář obsahuje zpravidla
+    -- více přeastupných roků než gregoriánksý, není možné provádět kontrolu, zda zadaný rok
+    -- [lyear] je skutčně přestupný. Jelikož jde o metodu, které se používá pouze uvnitř private
+    -- části třídy, je na programátorovi, aby uvážil, zda zadaný rok [lyear] je skutčně přestupný.
+    --
+    -- Pracujeme s pomocnou proměnnou [year], do níž ukládáme rok. Tato proměnná je se znaménkem a
+    -- záporné roky včetně 0 odpovídají rokům před Kristem, tj.: 0=1 p.n.l., -1=2 p.n.l., atd...
+    ------------------------------------------------------------------------------------------------
+
+    end c_common_calendar;
+
+
+-- dopředné deklarace
+class c_julian_calendar;        type p_julian_calendar    = ^class c_julian_calendar;
+class c_gregorian_calendar;     type p_gregorian_calendar = ^class c_gregorian_calendar;
+
+----------------------------------------------------------------------------------------------------
+class public c_julian_calendar = extend c_common_calendar;
+-- Julliánský kalendář
+----------------------------------------------------------------------------------------------------
+-- Kalendář je založen na 32 bitové architektuře. Jako počátčení (nulový) datum je bráno 1.1. 1970,
+-- čas 00:00:00 a den středa. Proč středa? K datu 1.1.1970 00:00:00 uběhlo od počátku Juliánského
+-- kalendáře 2440587,5 dní. Bylo-li prní den pondělí, pak 1.1. 1970 odpovídá středa.
+-- Nejmenší časovou jednotkou je jedna sekunda, které odpovídá jeden tick.
+--
+-- Kalendář používá standardní převodové konvence pro typ [t_decomposed_datetime], tj.:
+--    1 sekunda         = 1 tick
+--    1 minuta          = 60 sekund
+--    1 hodina          = 60 minut
+--    1 den             = 24 hodin
+--    1 měsíc           = viz konstanty [t_monthdays365], [t_monthdays365s], [t_monthdays366],
+--                                      [t_monthdays366s]           
+--    1 nepřestupný rok = 365 dní 
+--    1 přestupný rok   = 366 dní
+--
+-- Nulovému datumu odpovídá čas 0 sekund, maximálnímu datumu čas $FFFFFFFF sekund, tj.:
+--    6.2.2106  06:28:15
+--
+-- V Juliánském kalendáři se nenacházejí žádné přestupné sekundy, pouze 1 přestupný den (29. únor),
+-- 1 přestupný měsíc (únor) a přestupný rok je každý čtvrtý rok. Prvním přestupným rokem je rok
+-- 1972.
+--
+-- Kalendář používá následující Normovací pravidlo pro dekomponovaný časový interval
+-- (viz [t_decomposed_timespan]):
+--    dny převede na hodiny     -> dny     = 0
+--    hodiny převede na minuty  -> hodiny  = 0
+--    minuty převede na sekundy -> minuty  = 0
+--    sekundy převede na ticky  -> sekundy = 0
+--    0 <= ticky                - neomezená horní hranice
+--    1 <= měsíce < 12
+--    0 <= roky                 - neomezená horní hranice
+--
+-- Kalendář používá následující Pravidla standardního zaokrouhlování pro dekomponovaný časový
+-- interval (viz [t_decomposed_timespan]):
+--    ticky:           0 <= tick <  500000   ->       0 ticků
+--                500000 <= tick <  1000000  -> 1000000 ticků = 1 sec
+--    sekundy:         0 <= s    <  30       ->       0 hod
+--                    30 <= s    <  60       ->      60 min   = 1 min
+--    minuty:          0 <= min  <  30       ->       0 hod
+--                    30 <= min  <  60       ->      60 min   = 1 hod
+--    hodiny:          0 <= hod  <  12       ->       0 hod
+--                    12 <= hod  <  24       ->      24 hod   = 1 den
+--    dny:             1 <= d    <  16       ->       1 d
+--                    16 <= d    <= 31       ->      31 d     = 1 měsíc
+--    měsíce:          1 <= mes  <=  6       ->       0 mes
+--                     7 <= mes  <= 12       ->      12 mes   = 1 rok
+--    roky:            nezaokrouhlují se
+-- Zaokrouhlování je prováděno v metodě [get_decomposed_timespan] a je nutné, aby byl splněn tzv.
+-- Základní požadavek pro zaokrouhlování (viz komentář k metodě [get_decomposed_timespan]).
+--
+-- V kalendáři pracujeme s termínem čtyřletí. Jedná se o posloupnost, jejíž každý člen obsahuje
+-- čtyři po sobě jdoucí roky, z nichž první rok je vždy přestupný a následující tři nepřestupné.
+-- Každé čtyřletí tak obsahuje 1461 dní. Rok v Juliánském kalendář lze tedy vhodně reprezentovat
+-- pomocí čtyřletí + ofsetu roku ve čtyřletí.
+--
+-- Každý nový týden začíná pondělkem.
+--
+-- Kalendář používá následující Formátovací pravidlo pro převod datumu na řetězec:
+--       YYYY-MM-DD hh:mm:ss.s, kde význam písmen je následující
+--                 YYYY - rok                   (1970 - 2106)
+--                  MM - měsíc v roce          (01 .. 12)
+--                  DD - den v měsíci          (01 .. 31)
+--                  hh - hodiny ve dni         (00 .. 23)
+--                  mm - minuty v hodině       (00 .. 59)
+--                  ss - sekundy v minutě      (00 .. 60)
+--                   s - desetiny dekundy      (0  ..  9)
+--  Jedná-li se o rok před Kristem, pak před rokem je zobrazeno znaménko mínus.
+--
+-- Kalendář využívá Korekční pravidlo, kdy datum, které neodpovídá skutčnosti, převede na odpoví-
+-- dajíjící reálný datum.
+--   Př.:  v případě nepřestupného roku není přípustný 29.2., 30.2., 31.2, dále např. 31.4., 31.6.,
+--         atd... Korekční pravidlo tyto datumy převede po řadě na 1.3, 2.3., 3.3., 1.5., 1.7.,...
+--
+-- Kalednář využává následující Pravidlo přičítání resp. Pravidlo odečítání dekomponovaného
+-- časového intervalu [t_decomposed_timespan] k resp. od datumu [datim]:
+--    Přičítání i odečítání provádíme s normovaným časovým intervalem (viz Normovací pravidlo pro
+--    dekomponovaný časový interval) tak, že při přičítání resp. odečítání postupujeme od vyšších
+--    složek časového intervalu směrem k nižším. V takovém případě může nastat situace, kdy
+--    ([datim]+[span])-[span] <> [datim].
+--  Př.:    Uvažujme nepřestupný rok a za datum [datim] zvolme 29.1. a za časový interval [span]
+--          zvolme 1 měsíc a 3 dny.
+--          [datim]+[span]          = 4.3. (neboť 29. únor odpovídá 1.3. - viz Korekční pravidlo)
+--          ([datim]+[span]-[span]  = 1.2.
+--
+-- Metoda [get_decomposed_timespan] udávající rozdíl dvou datumů [a] a [b] ve formě dekomponovaného
+-- časového intervalu [t_decomposed_timespan], tj. [span]:=[b]-[a], je implementovaná tak, aby
+--    [a]+[span] = [b]. Díky Pravidlu přičítání a Pravidlu odečítání tak nemusí obecně platit
+--    [b]-[span] = [a].
+--
+-- V případě použití modulárního typu [t_mod_unsigned32] nedochází ke generování výjimky
+-- [constraint_error], proto v řadě případů nedojde k přetečení a ani k odhalení případných chyb.
+-- Je proto nutné, aby v ostré verzi byl modulární typ nahrazen nemodulárním. V současnosti je
+-- modulární typ použit z důvodu chybné implementace násobení nemodulárního neznaménkového typu.
+--
+--
+-- Kalendář podporuje časové zóny, kterých je 31 a jejich výčet lze nalézt v definici předka,
+-- tj. [c_common_calendar]. Komponovaný datum je uváděn jako počet ticků od počátku v UTC, dekompo-
+-- novaný datum lze vyjádřit v libovolné časové zóně, přičemž jako implicitní je zvolen UTC.
+----------------------------------------------------------------------------------------------------
+
+    end c_julian_calendar;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_gregorian_calendar = extend c_common_calendar;
+-- Gregoriánský kalednář
+----------------------------------------------------------------------------------------------------
+-- Kalendář je založen na 32 bitové architektuře. Jako počátčení (nulový) datum je bráno 1.1. 1970,
+-- čas 00:00:00 a den čtvrtek.
+-- Nejmenší časovou jednotkou je jedna sekunda, které odpovídá jeden tick.
+--
+-- Kalendář používá standardní převodové konvence pro typ [t_decomposed_datetime], tj.:
+--    1 sekunda         = 1 tick
+--    1 minuta          = 59 sekund v případě, že byla jedna sekunda odebraná (velmi ojedinelý jev, dosud nezaznamenán)
+--                      = 61 sekund v případě, že byla přidaná jedna přestupná sekunda
+--                        60 sekund v ostatních případech
+--    1 hodina          = 60 minut
+--    1 den             = 24 hodin
+--    1 měsíc           = viz konstanty [t_monthdays365], [t_monthdays365s], [t_monthdays366],
+--                                      [t_monthdays366s]           
+--    1 nepřestupný rok = 365 dní 
+--    1 přestupný rok   = 366 dní
+--
+-- Nulovému datumu odpovídá čas 0 sekund, maximálnímu datumu čas $FFFFFFFF sekund, tj.:
+--    7.2.2106  06:27:53
+--
+-- V Gregoriánském kalendáři byla zavedena časová korekce 10 dnů v roce 1582 dne 4.10., kdy došlo
+-- k přeskočení 10 dnů. Díky tomu neexistuje den 5.10., který odpovídá 15.10.1582.
+-- Gregoriánský kalendář obsahuje přestupné sekundy, které se vkládají od roku 1972. Vkládají se
+-- buď do poslední sekundy 30.6. nebo 31.12. Poslední sekundou ve dni je tak čas 23:59:60. Obdobně
+-- je možné jednu sekundu odebrat (ve stejných dnech jako přidání přestupné sekundy), čímž poslední
+-- sekunda ve dni bude 23:59:58.
+-- V Gregoriánském kalendáři se nacházejí přestupné dny - je jím 29. únor. Do roku 1582 n.l. je
+-- přestupný každý 4. rok (tj. rok, který je dělitelný 4 - u roků před n.l. uvažujeme záporné
+-- znaménko roku inkrementovaného o 1). Po roku 1582 je přestupný každý rok dělitelný 4. Výjimku
+-- tvoří století. To je přestupné právě tehdy, je-li dělitelné 400.
+-- Ve 32b architektuře je první přestupný rok 1972, v 64b rok 4713 před n.l. (-4712).
+--
+-- Kalendář používá následující Normovací pravidlo pro dekomponovaný časový interval
+-- (viz [t_decomposed_timespan]):
+--    dny převede na hodiny     -> dny     = 0
+--    hodiny převede na minuty  -> hodiny  = 0
+--    minuty převede na sekundy -> minuty  = 0
+--    sekundy převede na ticky  -> sekundy = 0
+--    0 <= ticky                - neomezená horní hranice
+--    1 <= měsíce < 12
+--    0 <= roky                 - neomezená horní hranice
+--
+-- Kalendář používá následující Pravidla standardního zaokrouhlování pro dekomponovaný časový
+-- interval (viz [t_decomposed_timespan]):
+--    ticky:           0 <= tick <  500000   ->       0 ticků
+--                500000 <= tick <  1000000  -> 1000000 ticků = 1 sec
+--    sekundy:         0 <= s    <  30       ->       0 hod
+--                    30 <= s    <  60       ->      60 min   = 1 min
+--    minuty:          0 <= min  <  30       ->       0 hod
+--                    30 <= min  <  60       ->      60 min   = 1 hod
+--    hodiny:          0 <= hod  <  12       ->       0 hod
+--                    12 <= hod  <  24       ->      24 hod   = 1 den
+--    dny:             1 <= d    <  16       ->       1 d
+--                    16 <= d    <= 31       ->      31 d     = 1 měsíc
+--    měsíce:          1 <= mes  <=  6       ->       0 mes
+--                     7 <= mes  <= 12       ->      12 mes   = 1 rok
+--    roky:            nezaokrouhlují se
+-- Zaokrouhlování je prováděno v metodě [get_decomposed_timespan] a je nutné, aby byl splněn tzv.
+-- Základní požadavek pro zaokrouhlování (viz komentář k metodě [get_decomposed_timespan]).
+--
+-- V kalendáři pracujeme s termínem čtyřletí. Jedná se o posloupnost, jejíž každý člen obsahuje
+-- čtyři po sobě jdoucí roky, z nichž první rok je vždy přestupný a následující tři nepřestupné.
+-- Každé čtyřletí tak obsahuje 1461 dní. Všechny roky do roku 1600 lze v Gregoriánském kalendář
+-- tedy vhodně reprezentovat pomocí čtyřletí + ofsetu roku ve čtyřletí.
+-- Dále pracujeme s termínem čtyřsetletí. Jedná se o posloupnost 400 let, kde první rok (první
+-- století) v této posloupnosti je přestupný a zbylé tři století nepřestupná. Celé čtyřletí tak
+-- obsahuje 146097 dní. Všechny roky po roce 1600 lze tak vhodně reprezentovat pomocí čtyřsetletí,
+-- kdy určíme pořadí čtyřsetletí, v rámci čtyřsetletí století a v rámci století můžeme používat
+-- čtyřletí.
+--
+-- Každý nový týden začíná pondělkem.
+--
+-- Kalendář používá následující Formátovací pravidlo pro převod datumu na řetězec:
+--       YYYY-MM-DD hh:mm:ss.s (UTC shh.ss), kde význam písmen je následující
+--                 YYYY - rok                        (1970 .. 2106)
+--                   MM - měsíc v roce               (01 .. 12)
+--                   DD - den v měsíci               (01 .. 31)
+--                   hh - hodiny ve dni              (00 .. 23)
+--                   mm - minuty v hodině            (00 .. 59)
+--                   ss - sekundy v minutě           (00 .. 60)
+--                    s - desetiny dekundy           (0  ..  9)
+--                  UTC - světový (Greenwichský čas) (konst.)
+--                    s - znaménko                   (+/-)
+--                   hh - hodiny posunu              (0  .. 12)
+--                   ss - minuty posunu              (00/30)
+--  Jedná-li se o rok před Kristem, pak před rokem je zobrazeno znaménko mínus.
+--
+-- Kalendář využívá Korekční pravidlo, kdy datum, které neodpovídá skutčnosti, převede na odpoví-
+-- dajíjící reálný datum.
+--   Př.:  v případě nepřestupného roku není přípustný 29.2., 30.2., 31.2, dále např. 31.4., 31.6.,
+--         atd... Korekční pravidlo tyto datumy převede po řadě na 1.3, 2.3., 3.3., 1.5., 1.7.,...
+--   Př.:    Uvažujme datum, které neobsahuje přestupnou sekundu a mějme datum 30.6. 23:59:60. To
+--           není korektní a je korekčním pravidlem převedeno na 1.7. 00:00:00.
+--
+-- Kalednář využává následující Pravidlo přičítání resp. Pravidlo odečítání dekomponovaného
+-- časového intervalu [t_decomposed_timespan] k resp. od datumu [datim]:
+--    Přičítání i odečítání provádíme s normovaným časovým intervalem (viz Normovací pravidlo pro
+--    dekomponovaný časový interval) tak, že při přičítání resp. odečítání postupujeme od vyšších
+--    složek časového intervalu směrem k nižším. V takovém případě může nastat situace, kdy
+--    ([datim]+[span])-[span] <> [datim].
+--  Př.:    Uvažujme nepřestupný rok a za datum [datim] zvolme 29.1. a za časový interval [span]
+--          zvolme 1 měsíc a 3 dny.
+--          [datim]+[span]          = 4.3. (neboť 29. únor odpovídá 1.3. - viz Korekční pravidlo)
+--          ([datim]+[span]-[span]  = 1.2.
+--
+-- Jelikož Gregoriánksý kalendář pracuje s přestupnými sekundami, které nelze bez měření odchylek
+-- při rotaci Země predikovat, je nutné, aby uživatel sám zadával přestupné resp. odebrané sekundy
+-- za pomocí volání metody [add_leap_second]. Kalendář obsahuje histogram přestupných sekund,
+-- v němž jsou implicitně přednastaveny přestupné sekundy od roku 1972 do 1999. Mezi roky 1999-2003
+-- nebyly žádné přestupné sekundy ani vloženy, ani odebrány.
+-- Díky tomu mohou vznikat nepřesnoti při přičátíní časového intervalu k datumu.
+-- Př.: Uvažujme 30.06. 1997 23:59:60. Přičtením 10 roků v současné době (r. 2004) obdržíme datum
+--      30.06. 2007 23:59:60. Jelikož v současnosti nemáme informaci o tom, zda je tento datum
+--      korektrní (zda byla přidaná přestupná sekunda), je považován za nepřestupný a výsledek
+--      převeden na odpovídající datum, což je 01.07. 2007 00:00:00.0. V případě, že v budoucnu
+--      tento datum bude obsahovat přestupnou sekundu, pak výsledek bude 30.06. 2007 23:59:60.
+--
+-- Metoda [get_decomposed_timespan] udávající rozdíl dvou datumů [a] a [b] ve formě dekomponovaného
+-- časového intervalu [t_decomposed_timespan], tj. [span]:=[b]-[a], je implementovaná tak, aby
+--    [a]+[span] = [b]. Díky Pravidlu přičítání a Pravidlu odečítání tak nemusí obecně platit
+--    [b]-[span] = [a].
+--  Výraz [a]+[span] = [b] však neplatí v následujícím případě: Uvažujme rok obsahující přestupnou
+--  sekundu, tedy následující datum: 23:59:60. Požadujeme časový rozdíl toho času a času 23:59:00.
+--  Ten očividně činní 60 sekund, což odpovídá 1 minutě (každý časový interval je normován).
+--  Přičteme-li nyní výsledný interval (1 min) k nižšímu z datumů (23:59:00), obdržíme výsledek
+--  00:00:00, který zřejmě neodpovídá původní hodnotě. Tato nepřesnost je způsobena normováním a
+--  je korektní.
+-- 
+--
+-- V případě použití modulárního typu [t_mod_unsigned32] nedochází ke generování výjimky
+-- [constraint_error], proto v řadě případů nedojde k přetečení a ani k odhalení případných chyb.
+-- Je proto nutné, aby v ostré verzi byl modulární typ nahrazen nemodulárním. V současnosti je
+-- modulární typ použit z důvodu chybné implementace násobení nemodulárního neznaménkového typu.
+--
+-- Kalendář podporuje časové zóny, kterých je 31 a jejich výčet lze nalézt v definici předka,
+-- tj. [c_common_calendar]. Komponovaný datum je uváděn jako počet ticků od počátku v UTC, dekompo-
+-- novaný datum lze vyjádřit v libovolné časové zóně, přičemž jako implicitní je zvolen UTC.
+-- Přestupné sekundy jsou přidávány resp. odebírány vždy poslední sekundu ve dni. Tak např. ve
+-- středoevropské časové zoně (CET) byla přidaná přestupná sekunda ve 23:59:60. Tomu odpovídá
+-- čas 23:00:00 (UTC). Další sekunda je 00:00:00 (CET), což je 23:00:01 (UTC). Časový rozdíl v
+-- tomto případě nečiní 1 hod (3600 sec), ale 3599 sec. Tento rozdíl bude patrný až do okamžiku,
+-- kdy v (UTC) neuplyne přestupná sekunda, tj. 23:59:60 (UTC) odpovídá 00:59:59 (CET) a
+-- 00:00:00 (UTC) již správně odpovídá 01:00:00 (CET).
+--
+-- Reprezentace přestupných sekund je provedena pomocí histogramu pro každý měsíc (červen resp.
+-- prosinec) zvlášť (viz [hist_june] resp. [hist_dec]). Histogramy přestupných sekund jsou
+-- statické, tj. společné pro všechny insatnce třídy. K jejich reprezentaci (vzhledem k možnému
+-- nastvení přestupných sekund 2x do roka ve všech následujících rocích od r. 1972) je použito
+-- dynamické pole. Pro výpočet dekomponovaných datumů je zapotřebí mít k dispozici kumulativní histo-
+-- gramy přestupných sekund (viz [cumul_hist_june] resp. [cumul_hist_dec]). K jejich reprezentaci
+-- je rovněž použito dynamické pole.
+--   {%%TODO(Gregorian_calendar_intance_counter) - prozatímní řešení}
+-- Z toho důvodu je prozatím ve třídě deklarováno statické počítadlo [greg_counter] instancí třídy,
+-- jehož prostřednictvím v případě vytvoření první insatnce proběhne dynamická alokace histogramů
+-- přestupných sekund (v inicializační metodě [entry]) a v případě uvolnění podlední instance
+-- dealokace histogramů (v ukončovací metodě [exit]).
+----------------------------------------------------------------------------------------------------
+
 type
-  -- 0 based,timespan values (wait for 123456 seconds)
-  t_ts_ticks       = t_timespan;                 -- count of ticks and timespan is equal
-  t_ts_seconds     = t_signed64;                 -- last tick in second is 9999999th tick
-  t_ts_minutes     = t_signed64;                 -- last tick in minute is 59 seconds and 9999999 ticks
-  t_ts_hours       = t_signed64;                 -- last tick in minute is 59 minutes and 59 seconds and 9999999 ticks
-  t_ts_days        = t_signed;
-  t_ts_weeks       = t_signed;
-  t_ts_months      = t_signed;
-  t_ts_years       = t_signed;
-  t_ts_eras        = t_signed;
+    -- Udává měsíc, do něhož přidáváme/odebíráme přestupnou sekundu
+    t_ls_month = enum
+        ls_june;
+        ls_december;
+        end enum;
 
-  -- ordinal number (day of week,month,year)
-  t_dt_tick        = protected t_unsigned range 0..9999999;
-  t_dt_second      = protected t_unsigned range 0..60;
-  t_dt_minute      = protected t_unsigned range 0..59;
-  t_dt_hour        = protected t_unsigned range 0..23;
-  t_dt_week_day    = protected t_unsigned range 1..7;
-  t_dt_month_day   = protected t_unsigned range 1..31;
-  t_dt_year_day    = protected t_unsigned range 1..366;
-  t_dt_month_week  = protected t_unsigned range 1..6;
-  t_dt_year_week   = protected t_unsigned range 1..53;
-  t_dt_month       = protected t_unsigned range 1..12;
-  t_dt_year        = protected t_unsigned;
-  t_dt_era         = protected t_unsigned;
+    ------------------------------------------------------------------------------------------------
+    static add_leap_second (
+        year       : t_timebasic;                -- rok, do něhož přidáváme/odebíráme přestupnou sekundu
+        month      : t_ls_month;                 -- měsíc, do něhož přidáváme/odebíráme přestupnou sekundu
+        second     : t_signed8);                 -- přestupná sekunda: 1 = přidat přest. sekundu
+                                                 --                    0 = nepřidá, neodebere nic
+                                                 --                   -1 = odebrat přest. sekundu
+    -- Přidá ([second] = 1) resp. odebere ([second] = -1) jednu přestupnou sekundu v roce [year]
+    -- buď do měsíce června nebo prosince (podle hodnoty parametru [month]).
+    -- Generuje výjimku [calendar_error] v případě, že parametr [second] není jednou z hodnot
+    -- -1, 0, 1, nebo v případě, že zadaný rok [year] je menší než rok, v němž byla použita první
+    -- přestupná sekunda nebo větší než maximální rok [t_last_year].
+    ------------------------------------------------------------------------------------------------
 
-  t_decomposed_timespan = record
-    ticks          : t_ts_ticks;
-    seconds        : t_ts_seconds;
-    minutes        : t_ts_minutes;
-    hours          : t_ts_hours;
-    days           : t_ts_days;
-    months         : t_ts_months;
-    years          : t_ts_years;
-    end record;
-
-  
-  t_decomposed_datetime = record
-    tick           : t_dt_tick;
-    second         : t_dt_second;
-    minute         : t_dt_minute;
-    hour           : t_dt_hour;
-    day            : t_dt_month_day;
-    month          : t_dt_month;
-    year           : t_dt_year;
-    era            : t_dt_era;
-    end record;
-
-
-  t_dt_find_direction = enum
-    t_dtf_prev;
-    t_dtf_prev_or_same;
-    t_dtf_next_or_same;
-    t_dtf_next;
-    end enum;
-  
-  t_ts_decomposition = enum
-    t_tsd_ticks;
-    t_tsd_seconds;
-    t_tsd_minutes;
-    t_tsd_hours;
-    t_tsd_days;
-    t_tsd_months;
-    t_tsd_years;
-    end enum;
-
-
-  t_ts_rounding = enum
-    t_tsr_none;
-    t_tsr_truncate;
-    t_tsr_nearest;
-    end enum;
-
-  --------------------------------------------------------------------------------------------------
-  virtual abstract decompose_datetime(
-    datim          : in t_datetime)
-    return t_decomposed_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract compose_datetime(
-    datim          : in t_decomposed_datetime)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract add_decomposed_timespan(
-    datim          : in t_datetime;
-    timespan       : in t_decomposed_timespan)
-    return         t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract substract_decomposed_timespan(
-    datim          : in t_datetime;
-    timespan       : in t_decomposed_timespan)
-    return         t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_decomposed_timespan(
-    a              : in t_datetime;
-    b              : in t_datetime;
-    smallest       : in t_ts_decomposition:=t_tsd_ticks;
-    largest        : in t_ts_decomposition:=t_tsd_years;
-    rounding       : in t_ts_rounding:=t_tsr_none)
-    return         t_decomposed_timespan;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_tick(
-    datim          : in t_datetime)
-    return t_dt_tick;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_second(
-    datim          : in t_datetime)
-    return t_dt_second;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_minute(
-    datim          : in t_datetime)
-    return t_dt_minute;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_hour(
-    datim          : in t_datetime)
-    return t_dt_hour;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_day_of_week(
-    datim          : in t_datetime)
-    return t_dt_week_day;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_day_of_month(
-    datim          : in t_datetime)
-    return t_dt_month_day;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_day_of_year(
-    datim          : in t_datetime)
-    return t_dt_year_day;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_week_of_month(
-    datim          : in t_datetime)
-    return t_dt_month_week;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_week_of_year(
-    datim          : in t_datetime)
-    return t_dt_year_week;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_month(
-    datim          : in t_datetime)
-    return t_dt_month;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_year(
-    datim          : in t_datetime)
-    return t_dt_year;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_era(
-    datim          : in t_datetime)
-    return t_dt_era;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract is_leap_second(
-    datim          : in t_datetime)
-    return t_logical;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract is_leap_day(
-    datim          : in t_datetime)
-    return t_logical;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract is_leap_month(
-    datim          : in t_datetime)
-    return t_logical;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract is_leap_year(
-    datim          : in t_datetime)
-    return t_logical;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_tick_of_second(
-    datim          : in t_datetime;
-    second         : in t_dt_tick;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_second_of_minute(
-    datim          : in t_datetime;
-    second         : in t_dt_second;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_minute_of_hour(
-    datim          : in t_datetime;
-    second         : in t_dt_minute;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_hour_of_day(
-    datim          : in t_datetime;
-    second         : in t_dt_hour;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_day_of_week(
-    datim          : in t_datetime;
-    day            : in t_dt_week_day;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_day_of_month(
-    datim          : in t_datetime;
-    second         : in t_dt_month_day;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract find_day_of_year(
-    datim          : in t_datetime;
-    second         : in t_dt_year_day;
-    direction      : in t_dt_find_direction:=t_dtf_next;
-    reset_shorter  : in t_logical:=true)
-    return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_days_in_week(
-    datim          : in t_datetime)
-    return t_ts_days;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_days_in_month(
-    datim          : in t_datetime)
-    return t_ts_days;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_days_in_year(
-    datim          : in t_datetime)
-    return t_ts_days;
-  --------------------------------------------------------------------------------------------------
-  end c_earth_calendar;
+    end c_gregorian_calendar;
 
 
 
 ----------------------------------------------------------------------------------------------------
-#separate public julian;
+procedure is_datetime_greater (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný datum [a] je větší než [b]
 ----------------------------------------------------------------------------------------------------
---#separate public gregorian;
+procedure is_datetime_greater_or_equal (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný datum [a] je větší nebo roven než [b]
+----------------------------------------------------------------------------------------------------
+procedure is_datetime_smaller (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný datum [a] je menší než [b]
+----------------------------------------------------------------------------------------------------
+procedure is_datetime_smaller_or_equal (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný datum [a] je menší nebo roven než [b]
+----------------------------------------------------------------------------------------------------
+procedure is_datetime_equal (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponované datumy [a] a [b] jsou stejné
+----------------------------------------------------------------------------------------------------
+procedure is_datetime_different (
+    a              : in c_common_calendar.t_decomposed_datetime; -- vstupní dekomponovaný datum
+    b              : in c_common_calendar.t_decomposed_datetime) -- vstupní dekomponovaný datum
+    return t_logical;
+-- Vrací [true] v případě, že dekomponované datumy [a] a [b] jsou rozdílné
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_greater (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný časový interval [a] je větší než [b], přičemž předpo-
+-- kládáme, že měsíc obsahuje 31 dní.
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_greater_or_equal (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný časový interval [a] je větší nebo roven než [b], přičemž
+-- předpokládáme, že měsíc obsahuje 31 dní.
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_smaller (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný časový interval [a] je menší než [b], přičemž předpo-
+-- kládáme, že měsíc obsahuje 31 dní.
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_smaller_or_equal (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponovaný časový interval [a] je menší nebo roven než [b], přičemž
+-- předpokládáme, že měsíc obsahuje 31 dní.
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_equal (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponované časové intervaly [a] a [b] jsou stejné.
+----------------------------------------------------------------------------------------------------
+procedure is_timespan_different (
+    a              : in c_common_calendar.t_decomposed_timespan; -- vstupní časový interval
+    b              : in c_common_calendar.t_decomposed_timespan) -- vstupní časový interval
+    return t_logical;
+-- Vrací [true] v případě, že dekomponované časové intervaly [a] a [b] jsou rodílné.
 ----------------------------------------------------------------------------------------------------
 
 
+-- Přetížené operátory
+overload > :
+    is_datetime_greater, is_timespan_greater;
+
+overload >= :
+    is_datetime_greater_or_equal, is_timespan_greater_or_equal;
+
+overload < :
+    is_datetime_smaller, is_timespan_smaller;
+
+overload <= :
+    is_datetime_smaller_or_equal, is_timespan_smaller_or_equal;
+
+overload = :
+    is_datetime_equal, is_timespan_equal;
+
+overload <> :
+    is_datetime_different, is_timespan_different;
 
 ----------------------------------------------------------------------------------------------------
 class abstract c_datetime_provider =
-----------------------------------------------------------------------------------------------------
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_datetime return t_datetime;
-  --------------------------------------------------------------------------------------------------
-  virtual abstract get_machine_uptime return t_timespan;
-  --------------------------------------------------------------------------------------------------
-  end c_datetime_provider;
-
-
-
-----------------------------------------------------------------------------------------------------
-#separate public os;
+-- Abstraktní provider času a datumu
 ----------------------------------------------------------------------------------------------------
 
+    ------------------------------------------------------------------------------------------------
+    virtual abstract get_datetime return t_datetime;
+    -- Vrací nedekoponovaný datum [t_datetime] (systémový čas)
+    ------------------------------------------------------------------------------------------------
+
+    end c_datetime_provider;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_system_datetime_provider = extend c_datetime_provider;
+-- Systémový provider času a datumu využívající WIN32 API
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_machine_uptime return t_timespan;
+    -- Vrací počet ticků od startu systému.
+    -- V případě, že systém nemá instalovanou hardwarovou podporu high-resolution časovače, gene-
+    -- ruje metoda výjimku [calendar_error].
+    ------------------------------------------------------------------------------------------------
+
+    end c_system_datetime_provider;
 
 end datetime;

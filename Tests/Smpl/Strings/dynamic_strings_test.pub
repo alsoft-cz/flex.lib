@@ -1,0 +1,103 @@
+﻿----------------------------------------------------------------------------------------------------
+module public dynamic_strings_test =
+-- Test of Classes library - Dynamic strings.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public substring_manipulation_test_case = extend c_test_case;
+-- Testovací třída dynamických řetězců pro manipulace s podřetězci. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [original] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [or_length]
+-- (minimální délka je 10 znaků, maximální [max_length]).
+-- Dále je vytvořena kopie [copy] testovaného řetězce a následuje test shodnosti obou řetězců. Poté
+-- pomocí metod [get_substring] a [substr] vytvoříme dynamicky resp. staticky podřetězec [psubstring]
+-- resp. [substring] o náhodně generované délce a počáteční pozici v řetězci [original]. Následuje
+-- test shodnosti. Poté podřetězec [substring] pomocí metody [remove] z kopie [copy] vyjmeme a
+-- následně jej vložíme na původní místo pomocí [insert_str] a testujeme, zda se řetězce [copy] a
+-- [original] shodují. Na závěr testovaný řetězec [original] vyprázdníme (pomocí metody [clear]) a
+-- testujeme, zda je skutečně prázdný.
+----------------------------------------------------------------------------------------------------
+
+  end substring_manipulation_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public finding_strings_test_case = extend c_test_case;
+-- Testovací třída dynamických řetězců pro vyhledávání řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž vytvoříme kopii [copy] testovaného
+-- řetězce [str].
+-- Pomocí procedury [get_rnd_substring] vytvoříme podřetězec [str_to_find] řetězce [str] o náhodně
+-- generované délce a počáteční pozici v [str].
+-- Test je založen na vyhledávání řetězce [str_to_find] v testovaném řetězci pomocí metod
+-- [find_first_str] a [find_last_str]. Nejprve v [str] testujeme, zda je pomocí obou metod nalezen
+-- podřetězec v testovacím řetězci. Poté pomocí metody [find_first_str] opakovaně vyhledáváme
+-- [str_to_find] v [str] a po každém nalezení tento podřetězec ze [str] odstraníme. Po odstranění
+-- všech výskytů pomocí [find_last_str] testujeme, zda testovaný řetězec [str] skutečně podřetězec
+-- [str_to_find] neobsahuje. Totéž provádíme pro kopii [copy], kdy všechny výskyty řetězce 
+-- [str_to_find] vyhledáváme pomocí metody [find_last_str].
+----------------------------------------------------------------------------------------------------
+
+  end finding_strings_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public finding_items_test_case = extend c_test_case;
+-- Testovací třída dynamických řetězců pro vyhledávání složek řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]).
+-- Dále dochází k náhodnému generování [item_count] znaků, které jsou vloženy do řetězce [items].
+-- Následuje test metod [find_first_of] a [find_last_of], kdy nejprve dochází k vyhledání prvního
+-- výskytu znaku v řetězci [str] ručně (pomocí brute-force) a poté výsledek porovnáváme s výsledkem
+-- metody [find_first_of]. Obdobně dochází k vyhledání posledního výskytu jednoho ze znaků v [str] a
+-- následuje porovnání výsledku metody [find_last_of].
+----------------------------------------------------------------------------------------------------
+
+  end finding_items_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public assigning_test_case = extend c_test_case;
+-- Testovací třída dynamických řetězců pro záměnu řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž dojde k vytvoření nového řetězce
+-- [new_string] a ke kopii řetězce [copy].
+----------------------------------------------------------------------------------------------------
+
+  end assigning_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public replacing_test_case = extend c_test_case;
+-- Testovací třída dynamických řetězců pro záměnu řetězců. Na počátku dojde pomocí procedury
+-- [create_string] k vytvoření testovaného řetězce [str] (přesněji k jeho datové části).
+-- Vytvoření spočívá v generování sekvence náhodných znaků z podmnožiny ASCII znaků od "A" až po
+-- parametr [ascii_count]. Délka řetězce je rovněž náhodně určena a udává ji proměnná [length]
+-- (minimální délka je 10 znaků, maximální [max_length]). Rovněž dojde k vytvoření nového řetězce
+-- [new_string] a ke kopii řetězce [copy].
+-- Myšlenka testu je následující: Pomocí procedury [get_rnd_position] určíme náhodně generovanou
+-- pozici [pos] v řetězci [str] a rovněž náhodnou délku jeho podřetězce o délce [sub_length].
+-- Tento podřetězec nahradíme pomocí metody [replace_str] novým řetězcem [new_string]. V kopii
+-- [copy] pomocí metody [remove] podřetězec vyjmeme a na jeho pozici pomocí metody [insert_string]
+-- vložíme nový řetězec [new_string]. Pokud se řetězce [copy] a [str] shodují, byl test úspěšný.
+----------------------------------------------------------------------------------------------------
+
+  end replacing_test_case;
+
+  end dynamic_strings_test;

@@ -1,4 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
 class private abstract c_stream_reader_filter = 
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
@@ -186,16 +191,17 @@ var
     if closed then
       raise stream_already_closed;
       end if;
+    if _isinitialized then
+      -- zabiju pomocne cerpadlo
+      c_task:(this).kill;
+      
+      --zavru zdroj
+      _source^.close();
+      
+      -- uvolnim packety v bufferu
+      drop_packets;
+      end if;
     closed:=true;
-
-    -- zabiju pomocne cerpadlo
-    c_task:(this).kill;
-    
-    --zavru zdroj
-    _source^.close();
-    
-    -- uvolnim packety v bufferu
-    drop_packets;
     end close;
 
 
@@ -237,7 +243,7 @@ var
         end if;
 
       new data.data range size;
-      data.style:=t_dps_heap;
+      data.style:=t_dps_dynamic;
       copy_from_packet(longpacket,longpos,data.data,data.size,size);
       if packet_size(longpacket)=longpos then
         discard_packet(longpacket);
@@ -259,7 +265,7 @@ var
       if size>options.maximal_size then
         size:=options.maximal_size;
         new data.data range size;
-        data.style:=t_dps_heap;
+        data.style:=t_dps_dynamic;
         copy_from_packet(longpacket,longpos,data.data,data.size,size);
       else
         data:=longpacket;
@@ -302,7 +308,7 @@ var
           create_bad_data(packet^);
       commit
         -- zkopiruju handle pripadne i data packetu
-        if packet^.style=t_dps_temporary then
+        if packet^.style=t_dps_callstack then
           copy_to_packet(packet^,data.data,data.size);
         else
           packet^:=data;
@@ -368,22 +374,24 @@ var
       raise stream_already_closed;
       end if;
 
-    -- jestli druha strana stale cte
-    if isreading then
-      -- pockam az cerpadlo vytlaci packety ven
-      c_output_stream:(this).flush;
-      c_output_stream:(this).write_eod;
-      -- zastavim cerpadlo
-      c_task:(this).wait;
+    if _isinitialized then 
+      -- jestli druha strana stale cte
+      if isreading then
+        -- pockam az cerpadlo vytlaci packety ven
+        c_output_stream:(this).flush;
+        c_output_stream:(this).write_eod;
+        -- zastavim cerpadlo
+        c_task:(this).wait;
+        end if;
+
+      -- uvolnit packety a data ktere druha strana odmitla precist
+      drop_packets;
+
+      -- zavrit cil
+      _target^.close;
+
+      closed:=true;
       end if;
-
-    closed:=true;
-
-    -- uvolnit packety a data ktere druha strana odmitla precist
-    drop_packets;
-
-    -- zavrit cil
-    _target^.close;
     end close;
 
 
@@ -426,7 +434,7 @@ var
     new packet;
 
     -- zkopiruju handle nebo i data packetu
-    if data.style=t_dps_temporary then
+    if data.style=t_dps_callstack then
       copy_to_packet(packet^,data.data,data.size);
     else
       packet^:=data;
@@ -504,6 +512,134 @@ var
   end c_output_stream_buffer;
 
 
+
+----------------------------------------------------------------------------------------------------
+class private c_output_stream_passive_buffer =
+----------------------------------------------------------------------------------------------------
+var
+  que              : c_queue;
+  closed           : t_logical;
+
+  --------------------------------------------------------------------------------------------------
+  static drop_packets =
+  --------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    -- dokud je neco ve fronte, zahazuju to
+    while que.try_accept_any_msg(packet,t_wait_immediate) loop
+      data:=p_data_packet(packet)^;
+      discard packet;
+      discard_packet(data);
+      end loop;
+    end drop_packets;
+
+  
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.close =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+
+    -- uvolnit packety a data
+    drop_packets;
+
+    closed:=true;
+    end close;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.is_reading =
+  ------------------------------------------------------------------------------------------------
+  begin
+    if closed then
+      raise stream_already_closed;
+      end if;
+    result:=true;
+    end is_reading;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  override c_output_stream.write_packet =
+  ------------------------------------------------------------------------------------------------
+  var
+    packet       : p_data_packet;
+
+  begin
+    -- zjistim opravnenost pozadavku
+    if closed then
+      raise stream_already_closed;
+      end if;
+
+    -- vytvorim handle na packet
+    new packet;
+
+    -- zkopiruju handle nebo i data packetu
+    if data.style=t_dps_callstack then
+      copy_to_packet(packet^,data.data,data.size);
+    else
+      packet^:=data;
+      end if;
+
+    --%%TODO join short packets
+    
+    que.append_msg(packet);
+
+    -- jestli to byl flush, cekam az cerpadlo vytlaci data ven
+    if data.style=t_dps_signal and then data.signal=t_dpss_flush then
+      que.wait_empty;
+      end if;
+
+    --zapocitam prutok
+    c_output_stream:(this).add_flow(data);
+    --data:=nil;
+    end write_packet;
+
+
+
+  ------------------------------------------------------------------------------------------------
+  static transfer_buffered_packets =
+  -- pomocne cerpadlo
+  ------------------------------------------------------------------------------------------------
+  var
+    packet         : t_pointer;
+    data           : t_data_packet;
+
+  begin
+    loop
+      -- cekam na packet
+      que.accept_any_msg(packet);
+      data:=p_data_packet(packet)^;
+
+      -- uvolnim handle packetu
+      discard packet;
+
+      -- jestli byl posledni koncim
+      if data.style=t_dps_signal and then data.signal=t_dpss_eod then
+        if transfer_eod then
+          target^.write_packet(data);
+          end if;
+        break;
+      else
+        -- tlacim packet na cil
+        target^.write_packet(data);
+        end if;
+      end loop;
+  leave
+    -- uvolnit packety a data ktere druha strana odmitla precist
+    drop_packets;
+    end transfer_buffered_packets;
+  end c_output_stream_passive_buffer;
+
+
+
 ---------------------------------------------------------------------------------------------------
 class private c_input_stream_redirector =
 ----------------------------------------------------------------------------------------------------
@@ -511,7 +647,9 @@ class private c_input_stream_redirector =
   override c_input_stream.close =
   ------------------------------------------------------------------------------------------------
   begin
-    _source^.close();
+    if _isinitialized then
+      _source^.close();
+      end if;
     end close;
 
   
@@ -520,6 +658,10 @@ class private c_input_stream_redirector =
   override c_input_stream.read_packet =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
+      
     _source^.read_packet(data,options);
     c_input_stream:(this).add_flow(data);
     end read_packet;
@@ -530,6 +672,10 @@ class private c_input_stream_redirector =
   override c_input_stream.is_eod =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
+
     result:=_source^.is_eod();
     end is_eod;
 
@@ -561,7 +707,9 @@ class private c_output_stream_redirector =
   override c_output_stream.close =
   ------------------------------------------------------------------------------------------------
   begin
-    _target^.close();
+    if _isinitialized then
+      _target^.close();
+      end if;
     end close;
 
   
@@ -570,6 +718,10 @@ class private c_output_stream_redirector =
   override c_output_stream.write_packet =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
+
     _target^.write_packet(data);
     c_output_stream:(this).add_flow(data);
     end write_packet;
@@ -580,6 +732,10 @@ class private c_output_stream_redirector =
   override c_output_stream.is_reading =
   ------------------------------------------------------------------------------------------------
   begin
+    if not _isinitialized then
+      raise stream_error;
+      end if;
+
     result:=_target^.is_reading();
     end is_reading;
 
@@ -605,7 +761,7 @@ class private c_output_stream_redirector =
 
 
 ---------------------------------------------------------------------------------------------------
-class private c_input_substream =
+class private c_input_stream_frame =
 ----------------------------------------------------------------------------------------------------
 var
     eod            : t_logical;
@@ -657,18 +813,18 @@ var
   
   
   ------------------------------------------------------------------------------------------------
-  static init_input_substream =
+  static init_input_stream_frame =
   ------------------------------------------------------------------------------------------------
   begin
     init_reader(source);
     this.maxlength:=max_length;
-    end init_input_substream;
-  end c_input_substream;
+    end init_input_stream_frame;
+  end c_input_stream_frame;
 
 
 
 ----------------------------------------------------------------------------------------------------
-class private c_output_substream =
+class private c_output_stream_frame =
 ----------------------------------------------------------------------------------------------------
 var
     isreading      : t_logical;
@@ -718,14 +874,14 @@ var
   
   
   ------------------------------------------------------------------------------------------------
-  static init_output_substream =
+  static init_output_stream_frame =
   ------------------------------------------------------------------------------------------------
   begin
     init_writer(target);
     this.maxlength:=max_length;
     isreading:=true;
-    end init_output_substream;
-  end c_output_substream;
+    end init_output_stream_frame;
+  end c_output_stream_frame;
 
 
 

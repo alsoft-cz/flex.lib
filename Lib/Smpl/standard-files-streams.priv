@@ -1,4 +1,10 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------------------------------
 class private c_file_output_stream =
 ----------------------------------------------------------------------------------------------------
 var
@@ -7,6 +13,7 @@ var
   ofs              : t_file_pointer;
   closed           : t_logical;
   eod              : t_logical;
+  _isinitialized   : t_logical;
 
   ------------------------------------------------------------------------------------------------
   static init =
@@ -14,6 +21,8 @@ var
   begin
     this.pf:=file;
     autoclose:=false;
+    ofs:=init_ofs;
+    _isinitialized:=true;
     end init;
 
 
@@ -26,6 +35,7 @@ var
     pf^.init_text_name(name);
     pf^.create(tfms_write,tfa_sequential,sharing,always);
     autoclose:=true;
+    _isinitialized:=true;
     end create;
 
 
@@ -38,6 +48,7 @@ var
     pf^.init_text_name(name);
     pf^.open(tfms_write,tfa_sequential,sharing,always);
     autoclose:=true;
+    _isinitialized:=true;
     end open;
 
 
@@ -58,7 +69,7 @@ var
     if closed then
       raise stream_already_closed;
       end if;
-    if autoclose then
+    if _isinitialized and autoclose then
       pf^.close;
       discard pf;
       end if;
@@ -69,12 +80,14 @@ var
 
   ------------------------------------------------------------------------------------------------
   override c_output_stream.write_packet =
+  -- implementace stream interface
   ------------------------------------------------------------------------------------------------
   var
     _data           : p_data_array;
     _size           : t_offset;
 
   begin
+    --asserts
     if closed then
       raise stream_already_closed;
       end if;
@@ -82,6 +95,7 @@ var
       raise stream_end_of_data;
       end if;
 
+    -- signal ?
     if data.style=t_dps_signal then 
       -- flush packet
       if data.signal=t_dpss_flush then
@@ -92,8 +106,10 @@ var
         eod:=true;
         end if;
     else
+      -- data packet
       read_packet(data,_data,_size);
       if _size>0 then
+        -- write data
         pf^.write(ofs,p_data_array_long(_data:unchecked)^,_size);
         end if;
       end if;
@@ -126,6 +142,7 @@ var
   closed           : t_logical;
   eod              : t_logical;
   autoclose        : t_logical;
+  _isinitialized   : t_logical;
 
   ------------------------------------------------------------------------------------------------
   static init =
@@ -133,6 +150,8 @@ var
   begin
     this.pf:=file;
     autoclose:=false;
+    ofs:=init_ofs;
+    _isinitialized:=true;
     end init;
 
 
@@ -145,6 +164,7 @@ var
     pf^.init_text_name(name);
     pf^.open(tfms_read,tfa_sequential,sharing,always);
     autoclose:=true;
+    _isinitialized:=true;
     end open;
 
 
@@ -165,7 +185,7 @@ var
     if closed then
       raise stream_already_closed;
       end if;
-    if autoclose then
+    if _isinitialized and autoclose then
       pf^.close;
       discard pf;
       end if;
@@ -190,8 +210,10 @@ var
     if eod then
       raise stream_end_of_data;
       end if;
+    --compute size of packet
     filesize:=pf^.get_size();
     size:=filesize-ofs;
+    -- zbyvaji v souboru nejake data ?
     if size>0 then
       get_optimal_packet_size(optimal_size);
       if size>optimal_size then
@@ -201,10 +223,11 @@ var
         size:=options.maximal_size;
         end if;
 
+      -- read data into buffer
       new _data range size;
       pf^.read(ofs,p_data_array_long(_data:unchecked)^,size);
       ofs + size;
-      create_packet(data,_data,size,t_dps_heap);
+      create_packet(data,_data,size,t_dps_dynamic);
       add_flow(data);
     else
       eod:=true;
@@ -238,6 +261,7 @@ var
   static init =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni bufferu a souboru
     filestream.init(file);
     init_output_buffer(^filestream);
     end init;
@@ -248,6 +272,7 @@ var
   static open =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni bufferu a souboru
     filestream.open(name,sharing,always);
     init_output_buffer(^filestream);
     end open;
@@ -258,6 +283,7 @@ var
   static create =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni bufferu a souboru
     filestream.create(name,sharing,always);
     init_output_buffer(^filestream);
     end create;
@@ -284,6 +310,7 @@ var
   static init =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni bufferu a souboru
     filestream.init(file);
     init_input_buffer(^filestream);
     end init;
@@ -294,6 +321,7 @@ var
   static open =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni bufferu a souboru
     filestream.open(name,sharing,always);
     init_input_buffer(^filestream);
     end open;
@@ -321,6 +349,7 @@ var
   static init =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni souboru a formateru
     filestream.init(file);
     this.init_text_reader(p_input_stream(^filestream),decoder);
     end init;
@@ -331,6 +360,7 @@ var
   static open =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni souboru a formateru
     filestream.open(name,sharing,always);
     this.init_text_reader(p_input_stream(^filestream),decoder);
     end open;
@@ -358,6 +388,7 @@ var
   static init =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni souboru a formateru
     filestream.init(file);
     this.init_text_writer(p_output_stream(^filestream),encoder);
     end init;
@@ -368,6 +399,7 @@ var
   static open =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni souboru a formateru
     filestream.open(name,sharing,always);
     this.init_text_writer(p_output_stream(^filestream),encoder);
     end open;
@@ -378,6 +410,7 @@ var
   static create =
   ------------------------------------------------------------------------------------------------
   begin
+    -- vytvorit zretezeni souboru a formateru
     filestream.create(name,sharing,always);
     this.init_text_writer(p_output_stream(^filestream),encoder);
     end create;

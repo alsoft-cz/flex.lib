@@ -1,5 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private streams =
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -34,6 +36,7 @@ var
   ----------------------------------------------------------------------------------------------------
   static set_foreground_color (
       color          : in t_console_color)=
+  -- nastavi barvu popredi
   ----------------------------------------------------------------------------------------------------
   var
     attr           : WORD;
@@ -55,6 +58,7 @@ var
   ----------------------------------------------------------------------------------------------------
   static set_background_color (
       color          : in t_console_color)=
+  -- nastavi barvu pozadi
   ----------------------------------------------------------------------------------------------------
   var
     attr           : WORD;
@@ -77,6 +81,7 @@ var
   static set_cursor_position (
     x              : in t_cursor_position_x;     -- horizontal position
     y              : in t_cursor_position_y) =   -- vertical position
+  -- nastavi pozici kurzoru
   ----------------------------------------------------------------------------------------------------
   var
     crd            : COORD;
@@ -96,6 +101,7 @@ var
 
   ----------------------------------------------------------------------------------------------------
   static clear_console =
+  -- vycisti okono konzole
   ----------------------------------------------------------------------------------------------------
   var
     crd            : COORD;
@@ -119,6 +125,7 @@ var
   ----------------------------------------------------------------------------------------------------
   procedure write(
     s              : in t_char32ustr)  =
+  -- zapise na consolu nebo do presmerovani
   ----------------------------------------------------------------------------------------------------
   var
     wstr         : windows.windef.winnt.pwstr;
@@ -183,6 +190,7 @@ var
   
   ------------------------------------------------------------------------------------------------
   override c_output_stream.write_packet =
+  -- implementace stream interaface
   ------------------------------------------------------------------------------------------------
   var
     text           : p_char32ustr;
@@ -195,29 +203,42 @@ var
     color          : p_console_color;
 
   begin 
+    -- asserts
     if closed then
       raise stream_already_closed;
       end if;
     add_flow(data);
-    if data.style=t_dps_temporary and then data.phint=t_dph_flex_string then
+
+    -- handle packet type
+    if data.style=t_dps_callstack and then data.phint=t_dph_flex_string then
+      -- flex text
       read_temporary_text(data,text);
       write(text^);
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_clear then
+      -- clear command
       clear_console;
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_fgcolor then
+      -- color command
       color:unchecked:=data.other;
       set_foreground_color(color^);
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_bgcolor then
+      -- color command
       color:unchecked:=data.other;
       set_background_color(color^);
     elsif data.style=t_dps_signal and then data.signal=t_dpss_con_set_pos then
+      -- position command
       coord:unchecked:=data.other;
       set_cursor_position(coord^.x,coord^.y);
+    elsif data.style=t_dps_signal then
+      -- unknown signal
+
     else
+      --data packet
       read_packet(data,_data,_size);
       _len:=(_size+len) div t_char32:size;
       _max:=_len*t_char32:size;
       
+      --spojovani bytu do znaku
       if _len>0 then
         new text range _len;
         _text:unchecked:=text:unchecked;
@@ -258,12 +279,17 @@ var
     else
       handle:=getstdhandle(std_output_handle);
       end if;
-    if GetFileType(handle)<>FILE_TYPE_CHAR then
+    -- rozpoznani presmerovani
+    if (handle=INVALID_HANDLE_VALUE or handle=0) or else GetFileType(handle)<>FILE_TYPE_CHAR then
       handle_redir:=true;
     else
       -- get window size
       if not GetConsoleScreenBufferInfo(handle,info) then
-        raise console_error;
+        if GetLastError=ERROR_INVALID_HANDLE
+          then handle_redir:=true;
+          else raise console_error;
+          end if;
+          return;
         end if;
       co_console_width:=t_unsigned(info.srwindow.right)+1;
       co_console_height:=t_unsigned(info.srwindow.bottom)+1;
@@ -805,7 +831,7 @@ var
        end loop;
       if size>0 then
         size * t_char32:size;
-        create_packet(data,_data,size,t_dps_heap);
+        create_packet(data,_data,size,t_dps_dynamic);
         add_flow(data);
       else
         discard _data;

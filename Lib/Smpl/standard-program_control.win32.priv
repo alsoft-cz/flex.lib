@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private program_control =
--- Flex Standard Library
 -- General program execution control.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 with 
@@ -377,30 +377,33 @@ with
   flex.tasks;
 
 begin
-  rtl_set_task_exitcode(t_rtl_native_unsigned(exitcode));
+--  rtl_set_task_exitcode(t_rtl_native_unsigned(exitcode));
   end set_task_exit_code;
 
 
 
 ----------------------------------------------------------------------------------------------------
 procedure run_external_program = 
+-- Runs an external program as a child process of the current process and optinaly waits for its
+-- completion.
 ----------------------------------------------------------------------------------------------------
 var
   ps_params        : windows.windef.winnt.pwstr;
   ps_directory     : windows.windef.winnt.pwstr;
   ps_eviron        : windows.windef.lpvoid;
-   s_st_info       : aliased windows.winbase._STARTUPINFOW;
-   s_pr_info       : windows.winbase._PROCESS_INFORMATION;
+  s_st_info        : aliased windows.winbase._STARTUPINFOW;
+  s_pr_info        : windows.winbase._PROCESS_INFORMATION;
   f_params         : p_char32ustr;
 
 begin
-  -- convert params
-  if cmd_line<>nil then
-    compose_command_line_parameters(f_params,cmd_line,false);
-    to_system_string(f_params^,ps_params);
-  else
+  -- the command line has to be supplied
+  if cmd_line=nil then
     raise process_start_error;
     end if;
+
+  -- convert the command line into a system string representation
+  compose_command_line_parameters(f_params,cmd_line,false);
+  to_system_string(f_params^,ps_params);
 
   -- convert environment
   if env_vars<>nil then
@@ -417,23 +420,25 @@ begin
   s_st_info.cb:=s_st_info:size;
 
   -- create process
-  if windows.winbase.CreateProcessW(nil,ps_params,nil,nil,false,windows.winbase.NORMAL_PRIORITY_CLASS,ps_eviron,ps_directory,^s_st_info,s_pr_info) then
-    if exitcode<>nil then
-      -- Wait until child process exits.
-      if windows.winbase.WaitForSingleObject(s_pr_info.hProcess,windows.winbase.INFINITE)<>windows.winbase.WAIT_OBJECT_0 then
-        raise tasking_error;
-        end if;
-      
-      -- get exitcode
-      if not windows.winbase.GetExitCodeProcess(s_pr_info.hProcess,windows.windef.DWORD(exitcode^:unchecked)) then
-        raise process_start_error;
-        end if;
-      end if;
-  else
+  if not windows.winbase.CreateProcessW(nil,ps_params,nil,nil,false,windows.winbase.NORMAL_PRIORITY_CLASS,ps_eviron,ps_directory,^s_st_info,s_pr_info) then
     raise process_start_error;
     end if;
 
+  -- wait for child process termination, if requested
+  if exit_code<>nil then
+    -- wait until child process exits
+    if windows.winbase.WaitForSingleObject(s_pr_info.hProcess,windows.winbase.INFINITE)<>windows.winbase.WAIT_OBJECT_0 then
+      raise tasking_error;
+      end if;
+    
+    -- retrieve exit code
+    if not windows.winbase.GetExitCodeProcess(s_pr_info.hProcess,windows.windef.DWORD(exit_code^:unchecked)) then
+      raise process_start_error;
+      end if;
+    end if;
+
 leave 
+  -- close all handles
   if s_pr_info.hProcess<>nil then
     if not windows.winbase.CloseHandle(s_pr_info.hProcess) then
       raise process_start_error;
@@ -442,9 +447,14 @@ leave
       raise process_start_error;
       end if;
     end if;
+
+  -- free memory
   discard ps_params;
   discard ps_directory;
   discard ps_eviron;
   discard f_params;
   end run_external_program;
+
+
+
 end program_control;

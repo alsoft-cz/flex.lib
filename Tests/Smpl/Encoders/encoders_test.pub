@@ -1,0 +1,72 @@
+﻿----------------------------------------------------------------------------------------------------
+module public encoders_test =
+-- Test of Characters library - Encoders/decoders.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+-- Poznámka: Všechny testovací metody [run_test] testovacích tříd jsou téměř totožné, liší se pouze
+-- výběrem přípustných znaků. Možná by bylo lepší (a efektivnější), kdyby existovala procedura,
+-- v níž by byl vytvořen příslušný kodér a dekodér a kterou by volaly jednotlivé testovací metody
+-- v testovacích třídách. Přitom kódování jednotlivých znaků provádí metoda [put_character],
+-- která generuje výjimku [character_coder_error] např. v případě, že kódovaný znak není přípustný.
+-- Pak by byly tedy testovány všechny Unicode znaky (od $0000-$ffff), přičemž by test zachycoval
+-- pouze při kódování znaku výjimku [character_coder_error] a test by byl úspěšný v případě, že:
+--   a) daný znak byl úspěšně kódován a dekódován a původní a dekódovaný znak se shodují
+--   b) kódování znaku bylo neúspěšné (generování [character_coder_error].
+-- V ostatních případech, tj. non a) nebo generovaná libovolná výjimka (mimo [character_coder_error]
+-- při kódování znaku) by byl test označen za chybný nebo neúspěšný.
+--
+-- (Já se přikláním k 2. variantě, tj. společná procedura přo všechny testy)
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.characters,
+  quality;
+
+----------------------------------------------------------------------------------------------------
+class public c_ascii_encoder_decoder_case = extend c_test_case;
+-- Test pro ASCII kódování/dekódování.
+{%%TODO(ASCII encoder test case) - implementovat}
+----------------------------------------------------------------------------------------------------
+  
+    end c_ascii_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_utf8_encoder_decoder_case = extend c_test_case;
+-- Test pro UTF-8 kódování/dekódování.
+----------------------------------------------------------------------------------------------------
+  
+    end c_utf8_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_utf16_encoder_decoder_case = extend c_test_case;
+-- Test pro UTF-16 kódování/dekódování.
+----------------------------------------------------------------------------------------------------
+  
+    end c_utf16_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_ucs2_encoder_decoder_case = extend c_test_case;
+-- Test pro UCS-2 kódování/dekódování.
+----------------------------------------------------------------------------------------------------
+  
+    end c_ucs2_encoder_decoder_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public c_ucs4_encoder_decoder_case = extend c_test_case;
+-- Test pro UCS-4 kódování/dekódování.
+----------------------------------------------------------------------------------------------------
+  
+    end c_ucs4_encoder_decoder_case;
+
+  end encoders_test;

@@ -1,4 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
 class private c_passive_buffered_stream_connector =
 ----------------------------------------------------------------------------------------------------
 var
@@ -15,6 +20,7 @@ var
 
   --------------------------------------------------------------------------------------------------
   static drop_packets =
+  -- zahodi vsechny packety
   --------------------------------------------------------------------------------------------------
   var
     packet         : t_pointer;
@@ -61,6 +67,10 @@ var
       raise stream_end_of_data;
       end if;
 
+    --
+    -- Zde je to slozite proto aby volajici dostal spravnou delku packetu
+    --
+
     if longpos<>0 then
       size:=packet_size(longpacket)-longpos;
       if size>options.maximal_size then
@@ -68,7 +78,7 @@ var
         end if;
 
       new data.data range size;
-      data.style:=t_dps_heap;
+      data.style:=t_dps_dynamic;
       copy_from_packet(longpacket,longpos,data.data,data.size,size);
       if packet_size(longpacket)=longpos then
         discard_packet(longpacket);
@@ -90,7 +100,7 @@ var
       if size>options.maximal_size then
         size:=options.maximal_size;
         new data.data range size;
-        data.style:=t_dps_heap;
+        data.style:=t_dps_dynamic;
         copy_from_packet(longpacket,longpos,data.data,data.size,size);
       else
         data:=longpacket;
@@ -164,7 +174,7 @@ var
     new packet;
 
     -- zkopiruju handle nebo i data packetu
-    if data.style=t_dps_temporary then
+    if data.style=t_dps_callstack then
       copy_to_packet(packet^,data.data,data.size);
     else
       packet^:=data;

@@ -1,13 +1,15 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public console =
 -- Console I/O.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- <heading>Console Coordinate System</heading>
 -- The console coordinate system is zero-based two-dimensional. A position is specified by two
 -- unsigned numbers - the horizontal (x) and vertical (y) coordinate.
 ----------------------------------------------------------------------------------------------------
+
+#option required_security(100);
 
 with
   standard.characters,

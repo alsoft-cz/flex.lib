@@ -1,28 +1,36 @@
 ﻿----------------------------------------------------------------------------------------------------
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------------------------------
 class public c_file_output_stream = extend c_output_stream;
 -- zapisujici stream s ukoncenim v souboru
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   static init ( 
-    file           : in p_file);
+    file           : in p_file;
+    init_ofs       : in t_file_pointer:=0);      -- file offset of the beginning of the stream
   -- pripoji otevreny podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static create ( 
     name           : in t_text_name;
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
-    always         : in t_logical:=true);       -- T-create new file even when one exists
+    always         : in t_logical:=true);        -- T-create new file even when one exists
   -- vytvori podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
-    always         : in t_logical:=true);       -- T-create new file even when one exists
+    always         : in t_logical:=true);        -- T-create new file even when one exists
   -- otevre podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static get_file(
     file           : out p_file);
+  -- vrati objekt souboru
   ------------------------------------------------------------------------------------------------
   end c_file_output_stream;
 type p_file_output_stream = ^class c_file_output_stream;
@@ -35,18 +43,20 @@ class public c_file_input_stream = extend c_input_stream;
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   static init ( 
-    file           : in p_file);
+    file           : in p_file;
+    init_ofs       : in t_file_pointer:=0);      -- file offset of the beginning of the stream
   -- pripoji otevreny podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
-    always         : in t_logical:=true);       -- T-create new file even when one exists
+    always         : in t_logical:=true);        -- T-create new file even when one exists
   -- otevre podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static get_file(
     file           : out p_file);
+  -- vrati pointer na podrizeny file
   ------------------------------------------------------------------------------------------------
   end c_file_input_stream;
 type p_file_input_stream = ^class c_file_input_stream;
@@ -60,6 +70,7 @@ class public c_buffered_file_output_stream = extend c_output_stream_buffer;
   ------------------------------------------------------------------------------------------------
   static init ( 
     file           : in p_file);
+  -- inicializace pomoci souboru
   ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
@@ -90,6 +101,7 @@ class public c_buffered_file_input_stream = extend c_input_stream_buffer;
   ------------------------------------------------------------------------------------------------
   static init ( 
     file           : in p_file);
+  -- inicializace pomoci souboru
   ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
@@ -100,6 +112,7 @@ class public c_buffered_file_input_stream = extend c_input_stream_buffer;
   ------------------------------------------------------------------------------------------------
   static get_file(
     file           : out p_file);
+  -- vrati pointer na podrizeny soubor
   ------------------------------------------------------------------------------------------------
   end c_buffered_file_input_stream;
 type p_buffered_file_input_stream = ^class c_buffered_file_input_stream;
@@ -112,11 +125,12 @@ class public c_text_file_reader = extend c_stream_text_reader;
   ------------------------------------------------------------------------------------------------
   static init ( 
     file           : in p_file;
-    decoder        : p_character_decoder:=nil);  -- kodovani vstupnich znaku
+    decoder        : p_character_decoder:=nil);  -- kodovani vstupnich znaku, nil=UCS4
+  -- inicializace pomoci souboru
   ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
-    decoder        : p_character_decoder:=nil;   -- kodovani vstupnich znaku
+    decoder        : p_character_decoder:=nil;   -- kodovani vstupnich znaku, nil=UCS4
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
     always         : in t_logical:=true);       -- T-create new file even when one exists
@@ -124,6 +138,7 @@ class public c_text_file_reader = extend c_stream_text_reader;
   ------------------------------------------------------------------------------------------------
   static get_file(
     file           : out p_file);
+  -- vrati pointer na podrizeny soubor
   ------------------------------------------------------------------------------------------------
   end c_text_file_reader;
 type p_text_file_reader = ^class c_text_file_reader;
@@ -137,19 +152,20 @@ class public c_text_file_writer = extend c_stream_text_writer;
   ------------------------------------------------------------------------------------------------
   static init ( 
     file           : in p_file;
-    encoder        : p_character_encoder:=nil);  -- vystupni kodovani znaku
-   ------------------------------------------------------------------------------------------------
+    encoder        : p_character_encoder:=nil);  -- vystupni kodovani znaku, nil=UCS4
+  -- inicializace pomoci souboru
+  ------------------------------------------------------------------------------------------------
   static open ( 
     name           : in t_text_name;
-    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku
+    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku, nil=UCS4
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
-    always         : in t_logical:=true);       -- T-create new file even when one exists
+    always         : in t_logical:=true);        -- T-create new file even when one exists
   -- otevre podrizeny soubor
   ------------------------------------------------------------------------------------------------
   static create ( 
     name           : in t_text_name;
-    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku
+    encoder        : p_character_encoder:=nil;   -- vystupni kodovani znaku, nil=UCS4
     sharing        : in t_file_sharing_set       -- requested sharing mode
                         := tfss_not_shared;
     always         : in t_logical:=true);        -- T-create new file even when one exists
@@ -157,6 +173,7 @@ class public c_text_file_writer = extend c_stream_text_writer;
   ------------------------------------------------------------------------------------------------
   static get_file(
     file           : out p_file);
+  -- vrati pointer na podrizeny soubor
   ------------------------------------------------------------------------------------------------
   end c_text_file_writer;
 type p_text_file_writer = ^class c_text_file_writer;

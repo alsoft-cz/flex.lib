@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public long_arithmetic =
 -- Long signed integer arithmetic operations.
--- Advanced Multi-platform Library.
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- vyřešit práci s dynamickými atributy z inline assembleru. V současné době je nutno používat

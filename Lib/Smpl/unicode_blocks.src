@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 -- Information about groups into which belongs characters.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- Sets of character code values have names and are ordered. Folowing array provides names of the 
 -- blocks and starting values of their ranges.

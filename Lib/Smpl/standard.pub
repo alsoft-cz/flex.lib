@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public standard =
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
 --   -- unconstrained array and string types of all elementary types,
@@ -20,14 +20,6 @@ Datove struktury:
   -- nejaky univerzalni (ne)deterministicky automat
 }
 
-#if #environment target_os_family;='WIN32' then;
-use
-  system,
-  system.windows,
-  system.windows.windef,
-  system.windows.windef.winnt;
-#end if;
-
 const
   -- library version and revision information
   smpl_version     = 1;
@@ -42,18 +34,11 @@ message
   parameter_error  : exception;
 
 type
-{%%TODO(ABSTRACT)
-  -- root type
-  t_root_type      = abstract;
-
-  -- abstract type
-  t_abstract       = t_root_type;
-}
   -- integer types
-  t_signed8        = {%%TODO(ABSTRACT) t_root_type extend} signed 8;
-  t_signed16       = {%%TODO(ABSTRACT) t_root_type extend} signed 16;
-  t_signed32       = {%%TODO(ABSTRACT) t_root_type extend} signed 32;
-  t_signed         = {%%TODO(ABSTRACT) t_root_type extend} signed #environment target_machine_bits;;
+  t_signed8        = signed 8;
+  t_signed16       = signed 16;
+  t_signed32       = signed 32;
+  t_signed         = signed #environment target_machine_bits;;
   t_unsigned8      = unsigned 8;
   t_unsigned16     = unsigned 16;
   t_unsigned32     = unsigned 32;
@@ -133,16 +118,12 @@ type
   t_char8ustr      = string of t_char8;
   t_char16ustr     = string of t_char16;
   t_char32ustr     = string of t_char32;
+  t_char8uarray    = array of t_char8;
+  t_char16uarray   = array of t_char16;
   t_char32uarray   = array of t_char32;
-#if #environment compiler_version;='4.0.3.14' then;
-  t_char8str       = t_char8ustr  range 100;
-  t_char16str      = t_char16ustr range 100;
-  t_char32str      = t_char32ustr range 100;
-#else;
   t_char8str       = t_char8ustr  range 200;
   t_char16str      = t_char16ustr range 200;
   t_char32str      = t_char32ustr range 200;
-#end if;                                  
   t_char8lstr      = t_char8ustr  range 1000;
   t_char16lstr     = t_char16ustr range 1000;
   t_char32lstr     = t_char32ustr range 1000;
@@ -152,6 +133,8 @@ type
   p_char8ustr      = ^t_char8ustr;
   p_char16ustr     = ^t_char16ustr;
   p_char32ustr     = ^t_char32ustr;
+  p_char8uarray    = ^t_char8uarray;
+  p_char16uarray   = ^t_char16uarray;
   p_char32uarray   = ^t_char32uarray;
 
   -- logical types
@@ -173,7 +156,7 @@ type
   p_float80        = ^t_float80;
 
   -- pointers
-  t_pointer        = ^unchecked {%%FLEX t_abstract};
+  t_pointer        = ^unchecked;
   p_pointer        = ^t_pointer;
 
   -- type tag
@@ -181,40 +164,7 @@ type
   p_tag            = ^t_tag;
 
   -- file and stream offset
-  t_offset         = t_unsigned;                 --%%TODO change to double native unsigned (64bit on windows)
-
-  -- system used constants
-const
-#if #environment target_os_family;='WIN32' then;
-  null_handle      = system.windows.windef.winnt.t_handle(0);
-#end if;
-{
-%%TODO c_class návrh 
-----------------------------------------------------------------------------------------------------
-class c_class =
--- generic ancestor for all classes
-----------------------------------------------------------------------------------------------------
-
-    var
-      uuid         : protected t_unsigned128;
-
-    private
-     
-    entry =
-      -- compute uuid
-      end entry;
-
-    end c_class;
-
-
-----------------------------------------------------------------------------------------------------
-class c_triggered_class = extend c_class; expose c_trigger_container;
--- generic ancestor for all classes
-----------------------------------------------------------------------------------------------------
-
-
-    end c_triggered_class;}
-
+  t_offset         = protected t_unsigned;       --%%TODO change to double native unsigned (64bit on windows)
 
 ----------------------------------------------------------------------------------------------------
 #separate templates;
@@ -238,9 +188,6 @@ class c_triggered_class = extend c_class; expose c_trigger_container;
 #separate public characters;
 -- Support for different character coding schemes (ASCII/UNICODE/ISO 10646).
 ----------------------------------------------------------------------------------------------------
-#separate public datetime;
--- Date/time.
-----------------------------------------------------------------------------------------------------
 #separate public strings;
 -- Character strings' manipulation.
 ----------------------------------------------------------------------------------------------------
@@ -261,6 +208,9 @@ class c_triggered_class = extend c_class; expose c_trigger_container;
 ----------------------------------------------------------------------------------------------------
 #separate public conversions;
 -- Miscellaneous conversion routines.
+----------------------------------------------------------------------------------------------------
+#separate public datetime;
+-- Date/time.
 ----------------------------------------------------------------------------------------------------
 #separate public numerics;
 -- Mathematical computations.

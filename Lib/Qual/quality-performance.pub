@@ -1,0 +1,34 @@
+﻿----------------------------------------------------------------------------------------------------
+module public performance =
+-- Timer support
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+    standard,
+    standard.datetime;
+
+----------------------------------------------------------------------------------------------------
+class public c_elapsed_time_meter =
+-- Třída umožňuje měřit čas (v tickách). Inicializační metoda [entry], stejně jako metoda [start]
+-- nastaví proměnnou [timer_start] na hodnotu systémového počítadla v době volání metdy. Metoda
+-- [get_elapsed_time] určí výsledný čas, tj. rozdíl hodnoty systémového počítadla s původním
+-- stavem uloženým v [timer_start].
+----------------------------------------------------------------------------------------------------
+    
+    var
+      timer_start  : t_timespan;                 -- stav systémového počítadla v okamžiku volání metody [start]
+      dt_provider  : c_system_datetime_provider; -- systémový provider datumu a času
+
+    ------------------------------------------------------------------------------------------------
+    virtual start;
+    -- Zjistí počáteční hodnotu stavu systémového počítadla a uloží ji do [timer_start].
+    ------------------------------------------------------------------------------------------------
+    virtual get_elapsed_time return t_timespan;
+    -- Vrací rozdíl hodnoty aktuálního stavu interního počítadla a hodnoty stavu v době posledního
+    -- volání metody [start] (uložené v proměnné [timer_start]).
+    ------------------------------------------------------------------------------------------------
+
+    end c_elapsed_time_meter;
+
+  end performance;

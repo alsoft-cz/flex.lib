@@ -1,0 +1,108 @@
+﻿----------------------------------------------------------------------------------------------------
+module public strings_test =
+-- Test of Classes library - strings.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  quality,
+  quality.debugging;
+
+----------------------------------------------------------------------------------------------------
+class public removing_and_replacing_substring_test_case = extend c_test_case;
+-- Testovací třída pro odstraňování podřetězců a nahrazování podřetězců jinými řetězci.
+-- Na počátku dojde k vytvoření testovacího řetězce (přesněji k zaplnění jeho datové části) pomocí
+-- procedury [create_string], která řetězci [str] přiřadí náhodný počet (max. [max_length]) náhodně
+-- genrovaných ASCII znaků (65-65+[ascii_count]) - pozor, je zapotřebí, abychom počtem [ascii_count]
+-- nepřevýšili počet náhodně generovaných ASCII znaků, tj. hodnotu 256!!
+-- Dále dojde k vytvoření nového řetězce [new_str] a k vytvoření kopie řetězce [copy]. V řetězci
+-- [str] náhodně vybereme podřetězec [substr] a spočteme počet jeho výskytů [occur] v řetězci [str].
+-- Tento řetězec pomocí procedury [str_replace_substring] nahradíme novým řetězcem [new_str] za
+-- předpokladu, že výsledný řetězec nebude větší než maximální délka řetězce [str]. Pokud tedy
+-- provedeme nahrazení, určíme počet znaků v řetězci [str] a testujeme, zda má řetězec očekávanou
+-- délku. Dále všechny výskyty nového řetězce [new_str] v [str] nahradíme prázdným řetězcem '' a 
+-- všechny výskyty původního podřetězce [substr] v kopii [copy] odstraníme pomocí procedury
+-- [str_remove_substring]. Poté testujeme, zda délka řetězce [copy] odpovídá očekávané délce a zda se
+-- řetězec [copy] shoduje s řetězcem [str].
+----------------------------------------------------------------------------------------------------
+
+    end removing_and_replacing_substring_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public removing_and_replacing_chars_test_case = extend c_test_case;
+-- Testovací třída pro odstraňování podřetězců a nahrazování podřetězců jinými řetězci.
+-- Na počátku dojde k vytvoření testovacího řetězce (přesněji k zaplnění jeho datové části) pomocí
+-- procedury [create_string], která řetězci [str] přiřadí náhodný počet (max. [max_length]) náhodně
+-- genrovaných ASCII znaků (65-65+[ascii_count]) - pozor, je zapotřebí, abychom počtem [ascii_count]
+-- nepřevýšili počet náhodně generovaných ASCII znaků, tj. hodnotu 256!!
+-- Dále dojde k vytvoření kopie [copy] řetězce [str], k náhodnému určení znaku [char] řetězce [str]
+-- a k vytvoření nového znaku [new_char].
+-- Poté pomocí procedury [str_count_character] určíme počet výskytů znaku [char] v kopii [copy],
+-- výskyt všech znaků [char] v kopii odstraníme pomocí [str_remove_character] a testujeme, zda
+-- délka výsledného řetězce odpovídá očekávané délce. Dále nahradíme výskyt všech znaků [char]
+-- v řetězci [str] znakem [new_char] (pomocí procedury [str_replace_character]) a testujeme, zda se
+-- počet výskytů znaku [new_char] v řetězci [str] rovná očekávanému počtu.
+----------------------------------------------------------------------------------------------------
+
+    end removing_and_replacing_chars_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public separating_test_case = extend c_test_case;
+-- Testovací třída pro rozštěpení řetězce podle separátoru do řetězce řetězců a následnou zpětnou
+-- kompozici.
+-- Na počátku dojde k vytvoření testovacího řetězce (přesněji k zaplnění jeho datové části) pomocí
+-- procedury [create_string], která řetězci [str] přiřadí náhodný počet (max. [max_length]) náhodně
+-- genrovaných ASCII znaků (65-65+[ascii_count]) - pozor, je zapotřebí, abychom počtem [ascii_count]
+-- nepřevýšili počet náhodně generovaných ASCII znaků, tj. hodnotu 256!!
+-- Dále dojde k vytvoření kopie [copy] řetězce [str] a k náhodnému určení znaku [char] - budoucího
+-- separátoru - řetězce [str].
+-- Poté řetězec [str] rozštěpíme podle separátoru [char] do řetězce řetězců [pstring] pomocí proce-
+-- dury [str_separate]. Testujeme, zda délka (počet řetěců) řetězce [pstring] se rovná očekávané
+-- délce. Následně zpětně vytvoříme řetězec [str] z řetězců [pstring] pomocí procedury [str_combine].
+-- Totéž provedeme "ručně" a výsledek uložíme do řetězce [expected]. Na závěr testujeme, zda se
+-- shodují řetězce [str] a [copy] a [str] a [expected].
+----------------------------------------------------------------------------------------------------
+
+    end separating_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public to_lower_test_case = extend c_test_case;
+-- Testovací třída pro převod řetězce na lower-case a upper-case.
+-- Na počátku dojde k vytvoření testovacího řetězce (přesněji k zaplnění jeho datové části) pomocí
+-- procedury [create_string], která řetězci [str] přiřadí náhodný počet (max. [max_length]) náhodně
+-- genrovaných ASCII znaků (65-65+[ascii_count]) - pozor, je zapotřebí, aby počet [ascii_count]
+-- nepřevýšil počet velkých písmen anglické abecedy!!
+-- Při testu pomocí procedury [str_to_lower] vytvoříme řetězec [lower] obsahující malá písmena ře-
+-- tězce [str]. Tyto řetězce porovnáme pomocí procedury [str_compare_case_insensitive]. Jsou-li 
+-- shodné, je test zatím OK. Dále pomocí procedury [to_upper_case] řetězec [lower] převedeme na
+-- řetězec [upper] složený z velkých písmen znaků řetězce [lower]. Následuje test shodnoti obou
+-- řetězců [upper] a [str].
+----------------------------------------------------------------------------------------------------
+
+    end to_lower_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public trimming_test_case = extend c_test_case;
+-- Testovací třída pro oříznutí řetězce.
+-- Na počátku dojde k vytvoření testovacího řetězce (přesněji k zaplnění jeho datové části) pomocí
+-- procedury [create_string], která řetězci [str] přiřadí náhodný počet (max. [max_length]) náhodně
+-- genrovaných ASCII znaků (65-65+[ascii_count]) - pozor, je zapotřebí, abychom počtem [ascii_count]
+-- nepřevýšili počet náhodně generovaných ASCII znaků, tj. hodnotu 256!!
+-- Dále dochází k vytvoření náhodného znaku [char], který bude reprezentovat znak určený k oříznutí.
+-- Test pomocí procedury [str_trim] ořízne celý souvislý výskyt znaku [char] zleva i zprava za
+-- předpokladu, že první nebo poslední znak řetězce [str] je shodný se znakem [char]. Výsledek oříznutí
+-- je uložen v [trim]. Totéž oříznutí provedeme "ručně" a výsledek uložíme do [expected]. Následuje
+-- test shodnosti obou řetězců [trim] a [expected].
+----------------------------------------------------------------------------------------------------
+
+    end trimming_test_case;
+
+  end strings_test;

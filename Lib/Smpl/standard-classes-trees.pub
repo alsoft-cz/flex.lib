@@ -1,8 +1,11 @@
-﻿----------------------------------------------------------------------------------------------------
+﻿{%%TODO(homogenous) - vyřešit případ vkládání nehomogenních dat, kdy ve stromě smějí být pouze
+                      homogenní data}
+
+----------------------------------------------------------------------------------------------------
 module public trees =
 -- Data structures - binary trees.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 extend           
@@ -19,12 +22,6 @@ class c_tree_iterator;             type p_tree_iterator        = ^class c_tree_i
 
 
 type
-  -- výsledek operace porovnání dvou uzlů
-  t_compare_node = enum
-      cn_equal;                                  -- uzly si jsou rovny
-      cn_bigger;                                 -- uzel je větší
-      cn_smaller;                                -- uzel je menší
-      end enum for size use 4;
 
   -- výsledek operace porovnání dvou uzlů
   t_insert_direction = enum
@@ -37,6 +34,7 @@ type
       end enum;
 
 
+
 ----------------------------------------------------------------------------------------------------
 class public abstract c_binary_tree_node = extend c_item;
 -- Uzel stromu.
@@ -45,9 +43,11 @@ class public abstract c_binary_tree_node = extend c_item;
   supervised
 
     var
+
       left         : p_binary_tree_node:=nil;    -- levý uzel
       right        : p_binary_tree_node:=nil;    -- pravý uzel
-      weight       : t_unsigned:=1;              -- váha uzlu
+      weight       : t_signed:=0;                -- váha uzlu
+      depth        : t_unsigned:=0;              -- hlubka uzlu
       up           : p_binary_tree_node:=nil;    -- předek
 
     end c_binary_tree_node;
@@ -71,35 +71,44 @@ class public abstract c_binary_tree = extend c_container;
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
     ------------------------------------------------------------------------------------------------
     static has_node (
-        node       : in p_binary_tree_node)             -- hledaný uzel
+        node       : in p_binary_tree_node)      -- hledaný uzel
         return t_logical;                        -- T-uzel nalezen
     -- Vrací [true], pokud je [node] prvkem stromu.
     ------------------------------------------------------------------------------------------------
     static get_root return p_binary_tree_node;
     -- Vrátí kořenový uzel. Pokud uzel není definován, vrací NIL.
     ------------------------------------------------------------------------------------------------
+    static get_node_count (
+        node       : in p_binary_tree_node;      -- aktuální uzel 
+        count      : in out t_unsigned);         -- počet uzlů (pod)stromu
+    -- Spočítá počet uzlů v podstromu včetně uzlu [node].
+    ------------------------------------------------------------------------------------------------
     static merge_subtree (
-        tree       : in out c_binary_tree);             -- přidávané uzly stromu
+        tree       : in out class c_binary_tree);-- přidávané uzly stromu
     -- Spojí dva stromy do jednoho. Stom [tree] reprezentuje strom přidávaných uzlů do stromu
     -- reprezentovanou instancí této třídy. Pokud existují dva uzly se stejným klíčem, je uzel 
     -- do stromu vložen v závislosti na parametru [unique_key].
     ------------------------------------------------------------------------------------------------
     static split_subtree (
         node       : in out p_binary_tree_node;  -- rušená větev
-        subtree    : out c_binary_tree);         -- nový strom
+        subtree    : out class c_binary_tree);   -- nový strom
     -- Vyjme ze stromu podstrom včetně uzlu [node] a vytvoří a inicializuje novou instance 
-    -- trídy [c_tree]. Pokud uzel není nalezen, vrací prázdný strom se stejnými parametry jako
-    -- má instace tohoto stromu.
+    -- trídy [c_tree]. Pokud uzel není nalezen generuje výjimku [tree_error].
     ------------------------------------------------------------------------------------------------
     static delete_subtree (  
         node       : in out p_binary_tree_node); -- rušený uzel včetně jeho následníků
-    -- Smaže podstrom včetně uzlu [node] ze stromu a uvolní pamět.
+    -- Smaže podstrom včetně uzlu [node] ze stromu a uvolní pamět. Pokud není uzel [node] ve stromu
+    -- nalezen, generuje metoda výjimku [tree_error].
+    -- Pozn.: Uzel [node] po ukončení metody nemusí být nutně [nil]. V případě AVL vyvažování mohl
+    -- být vnitřek (datová část) uzlu (který nebyl odstřaněn, ozn U) vložen na místo odstraněného uzlu
+    -- [node], přičemž datová část uzlu [node] byla vložena do uzlu U a tento uzel byl následně
+    -- odstraněn.
     ------------------------------------------------------------------------------------------------
     static find (
         node       : in p_binary_tree_node)      -- pomocný uzel stromu, má vyplněné klíčové položky
                                                  -- aby byl plnohodnotným parametrem procedury [compare]
         return p_binary_tree_node;               -- nil, pokud uzel nebyl nalezen
-    -- Vyhledá uzel, který je rovný [node]
+    -- Vyhledá první uzel, který má klíč rovný [node]. Pokud takový uzel nenalezne, vrací [false].
     ------------------------------------------------------------------------------------------------
 
   protected
@@ -111,7 +120,7 @@ class public abstract c_binary_tree = extend c_container;
     virtual abstract compare (
         node_a     : in p_binary_tree_node;             -- uzel 1 pro porovnání klíčů
         node_b     : in p_binary_tree_node)             -- uzel 2 pro porovnání klíčů
-        return t_compare_node;                   -- výsledek porovnání uzlů
+        return t_compare_result;                   -- výsledek porovnání uzlů
     -- Vrátí výsledek porovnání dvou uzlů.
     ------------------------------------------------------------------------------------------------
 
@@ -162,6 +171,11 @@ class public c_tree = extend c_container;
         homogenous : in t_logical:=true);        -- T-stejný typ uzlů
     -- Inicializace stromu.
     --   Pokud je [homogenous] nastaven na true, ve stromě mohou být jen uzly typu [item_type].
+    ------------------------------------------------------------------------------------------------
+    static get_node_count (
+        node       : in p_tree_node)             -- podstrom
+        return t_unsigned;
+    -- Spočítá počet uzlů v podstromě určeném [node]
     ------------------------------------------------------------------------------------------------
     static has_node (
         node       : in p_tree_node)             -- hledaný uzel

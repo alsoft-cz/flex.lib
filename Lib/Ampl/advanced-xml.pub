@@ -1,7 +1,9 @@
 ﻿----------------------------------------------------------------------------------------------------
 module public xml =
--- Advanced Multi-platform Library: XML support
--- Copyright (C) 1999-2003 A && L soft
+-- XML Support.
+-- Flex Advanced Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
 -- This library conforms to:
 --   -- Extensible Markup Language (XML) 1.0 (Second Edition), W3C Recommendation 6 October 2000
 ----------------------------------------------------------------------------------------------------

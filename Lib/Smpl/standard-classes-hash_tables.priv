@@ -1,8 +1,8 @@
 ﻿----------------------------------------------------------------------------------------------------
 module private hash_tables =
 -- Data structures - hash tables.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
@@ -525,4 +525,47 @@ class private c_incremental_hash_table =
 
 
 
+----------------------------------------------------------------------------------------------------
+class private c_hash_table_iterator = 
+-- Hash table iterator.
+----------------------------------------------------------------------------------------------------
+
+    var
+      curr_item    : p_hash_table_item;          -- current item
+      next_item    : p_hash_table_item;          -- next item
+
+    ------------------------------------------------------------------------------------------------
+    static init =
+    -- Initializes an iterator used for walking through a hash table.
+    ------------------------------------------------------------------------------------------------
+    begin
+      container:=^hash_table;
+      end init;
+
+
+
+    ------------------------------------------------------------------------------------------------   
+    override get =
+    ------------------------------------------------------------------------------------------------   
+    begin
+      -- check for first item
+      if curr_item=nil then
+        next_item:=p_hash_table(container)^.get_first;
+        end if;
+
+      -- get item
+      curr_item:=next_item;
+      item:=curr_item;
+      if curr_item<>nil then
+        next_item:=p_hash_table(container)^.get_next(curr_item);
+        end if;
+        
+      -- set result
+      result:=item<>nil;
+      end get;
+    
+    end c_hash_table_iterator;
+    
+    
+    
 end hash_tables;

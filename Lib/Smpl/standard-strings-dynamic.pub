@@ -1,0 +1,1794 @@
+﻿----------------------------------------------------------------------------------------------------
+module public dynamic =
+-- Dynamic strings.
+----------------------------------------------------------------------------------------------------
+-- todo:
+--     consider moving compare functions below the c_abstract_char32_string level.
+--     overload write_line(c_string) ??
+--     consider using standard.strings.str_xxx functions in the implementation
+--     c_string specializations (w/o using get_item) for find_first_str,find_last_str,...
+--     better algorithms for find_last (and maybe also find_first)
+--
+--  more functions?
+--     adjust_size (other name?) ==check_resize_down
+--     swap(string)????
+--     tokenizer (strtok) ??
+----------------------------------------------------------------------------------------------------
+
+with
+  standard.common.structures;
+
+
+message
+  string_error: exception;                       -- exception signalling invalid operation with strings
+
+
+-- forward declarations
+class abstract c_abstract_string;        type p_abstract_string        = ^class c_abstract_string;
+class abstract c_abstract_char32_string; type p_abstract_char32_string = ^class c_abstract_char32_string;
+class          c_string;                 type p_string                 = ^class c_string;
+
+
+
+type
+  t_string_compare_result = enum                 -- result of a string comparison
+      scr_equal;                                 -- the strings are equal
+      scr_greater;                               -- left operand is greater than the second
+      scr_less;                                  -- left operand is less than the second
+      scr_unordered;                             -- the given strings cannot be ordered
+      end enum;
+  t_string_compare_result_set = set of t_string_compare_result;
+
+
+
+----------------------------------------------------------------------------------------------------
+class public abstract c_abstract_string =
+-- An abstract string, i.e. an automatically (re)allocated string. The base type is not specified
+-- in this abstract class.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    virtual abstract get_substring (
+        from       : in t_unsigned;              -- the position of the start of the substring
+        count      : in t_unsigned)              -- the length of the substring
+        return p_abstract_string;
+    -- Extracts a substring of this string, beginning at [from] and containing [count] items.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract get_length return t_unsigned;
+    -- Returns the length of this string.
+    ------------------------------------------------------------------------------------------------
+    virtual is_empty return t_logical;
+    -- Returns whether this string is empty.
+    ------------------------------------------------------------------------------------------------
+    virtual get_capacity return t_unsigned;
+    -- Returns the capacity of this string, i.e. the length of the longest string that could fit
+    -- in it without reallocation.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract get_max_size return t_unsigned;
+    -- Returns the biggest possible length of the string.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_first_str (
+        str        : in class c_abstract_string; -- the string to be searched for
+        search_from: in t_unsigned := 1)         -- position of the first compared item
+        return t_unsigned;
+    -- Finds the first occurrence of the given substring, starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_last_str (
+        str        : in class c_abstract_string; -- the string to be searched for
+        search_from: in t_unsigned := 0)         -- position of the last compared item (0=the whole string)
+        return t_unsigned;
+    -- Finds the last occurrence of the given substring, starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_first_of (
+        items      : in class c_abstract_string; -- the items to be searched for
+        search_from: in t_unsigned := 1)         -- position of the first compared item
+        return t_unsigned;
+    -- Finds the first occurrence of one of the [items] in the given string, starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_last_of (
+        items      : in class c_abstract_string; -- the items to be searched for
+        search_from: in t_unsigned := 0)         -- position of the last compared item (0=the whole string)
+        return t_unsigned;
+    -- Finds the last occurrence of one of the [items] in the given string, starting at [start_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_first_not_of (
+        items      : in class c_abstract_string; -- the items to be searched for
+        search_from: in t_unsigned := 1)         -- position of the first compared item
+        return t_unsigned;
+    -- Finds the first item that is not equal to any of the [items], starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract find_last_not_of (
+        items      : in class c_abstract_string; -- the items to be searched for
+        search_from: in t_unsigned := 1)         -- position of the first compared item
+        return t_unsigned;
+    -- Finds the last item that is not equal to any of the [items], starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    virtual reserve (
+        capacity   : in t_unsigned);             -- the required capacity
+    -- Tries to make sure that [capacity] items will fit into the string without further reallocation.
+    -- Though, the method does not guarantee that.
+    ------------------------------------------------------------------------------------------------
+    virtual assign_str (
+        source     : in class c_abstract_string);-- the string to be assigned to this instance
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract append_str (
+        str2       : in class c_abstract_string);-- the appended string
+    -- Appends [str2] to this string.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract insert_str (
+        position   : in t_unsigned;              -- the position to be inserted to
+        str        : in class c_abstract_string);-- the string to be inserted
+    -- Insert the [str] string into this string, to the specified [position].
+    -- The item that was originally at the specified [position] will be after the inserted string
+    -- when the method returns.
+    ------------------------------------------------------------------------------------------------
+    virtual clear;
+    -- Clear this string, i.e. make it empty.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract remove (
+        from       : in t_unsigned;              -- the position of the first item to be removed
+        count      : in t_unsigned := 1);        -- the number of items to be removed
+    -- Removes [count] items beginning with the item at [from] from the string.
+    ------------------------------------------------------------------------------------------------
+    virtual replace_str (
+        position   : in t_unsigned;              -- the position of the first replaced item
+        count      : in t_unsigned;              -- the number of items to be replaced
+        str        : in class c_abstract_string);-- the string with which should the items be replaced
+    -- Replaces [count] items beginning with the item at [position] with the contents of [str].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract swap_items (
+        pos1       : in t_unsigned;              -- the position of the first item
+        pos2       : in t_unsigned);             -- the position of the second item
+    -- Exchanges two items in the string.
+    ------------------------------------------------------------------------------------------------
+    virtual compare (
+        str2       : in class c_abstract_string) -- the string to be compared with
+        return t_string_compare_result;
+    -- Compares this string to [str2] lexicographically.
+    ------------------------------------------------------------------------------------------------
+    virtual is_equal (
+        str2       : in class c_abstract_string) -- the string to be compared with
+        return t_logical;
+    -- Returns whether this string is equal to [str2].
+    ------------------------------------------------------------------------------------------------
+
+    ----- overloaded operators ---------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_equal_to (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_not_equal_to (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left<>right
+    ------------------------------------------------------------------------------------------------
+    procedure op_less_than (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left<right
+    ------------------------------------------------------------------------------------------------
+    procedure op_less_or_equal (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left<=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_greater_or_equal (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left>=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_greater_than (
+        left       : in class c_abstract_string;
+        right      : in class c_abstract_string)
+        return t_logical;
+    -- left>right
+    ------------------------------------------------------------------------------------------------
+
+    end c_abstract_string;
+
+
+
+----------------------------------------------------------------------------------------------------
+#template extend_string_public(class_name,item_type,public_declarations,protected_declarations);
+----------------------------------------------------------------------------------------------------
+  class public abstract class_name = extend c_abstract_string;
+
+    type
+      t_item_type  = item_type;                  -- the type of the items in this string
+      t_string     = string of item_type;        -- the corresponding string type
+      p_string     = ^t_string;                  -- pointer to the corresponding string type
+
+    -- further declarations from the template parameters
+    public_declarations
+    --
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_string_copy return p_string;
+    -- Create a plain string with the contents of this string.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    virtual assign_to (
+        str        : in out t_string);           -- the string to be assigned to
+    -- Assigns this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    virtual append_to_plain_str (
+        str        : in out t_string);           -- the string to be appended to
+    -- Appends this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract get_item (
+        position   : in t_unsigned)              -- the position of the item to retrieve
+        return item_type;
+    -- Returns the item at the specified [position].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract set_item (
+        position   : in t_unsigned;              -- the position of the item to retrieve
+        item       : in item_type);              -- the new item
+    -- Changes the item at [position] to [item].
+    ------------------------------------------------------------------------------------------------
+    virtual find_first_item (
+        item       : in item_type;               -- the item to be found
+        search_from: in t_unsigned := 1)         -- position of the first compared item
+        return t_unsigned;
+    -- Finds the position of the first occurrence of the given [item], starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    virtual find_last_item (
+        item       : in item_type;               -- the item to be found
+        search_from: in t_unsigned := 0)         -- position of the last compared item (0=the whole string)
+        return t_unsigned;
+    -- Finds the position of the last occurrence of the given [item], starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    virtual count_occurrences (
+        item       : in item_type)               -- the item whose occurrences are to be counted
+        return t_unsigned;
+    -- Counts the number of occurrences of the given [item].
+    ------------------------------------------------------------------------------------------------
+    virtual assign_from (
+        source     : in t_string);               -- the string to be assigned to this instance
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    virtual create_from_item (
+        item       : in item_type;               -- the item that should be used to create the string
+        count      : in t_unsigned := 1);        -- the number of repetitions of the [item]
+    -- Sets this string to contain [count] copies of [item].
+    ------------------------------------------------------------------------------------------------
+    virtual abstract append_item (
+        item       : item_type);                 -- the item to be appended to the string
+    -- Appends the specified [item] to this string.
+    ------------------------------------------------------------------------------------------------
+    virtual append_plain_str (
+        str2       : in t_string);               -- the string to be appended
+    -- Appends a plain string to this string.
+    ------------------------------------------------------------------------------------------------
+    virtual abstract insert_item (
+        position   : in t_unsigned;              -- the position to be inserted to
+        item       : in item_type);              -- the item to be inserted
+    -- Insert the specified [item] into this string, to the specified [position].
+    -- The item that was originally at the specified [position] (if any) will be moved one place to
+    -- the right-hand side.
+    -- Position must be in range [1;length+1]. insert(length+1,item) is equivalent to append(item).
+    ------------------------------------------------------------------------------------------------
+    virtual replace_item (
+        position   : in t_unsigned;              -- the position of the replaced item
+        item       : in item_type);              -- the item with which should the item be replaced
+    -- Replaces the item at the specified [position] with the given [item].
+    ------------------------------------------------------------------------------------------------
+    virtual replace_all_with_item (
+        orig_item  : in item_type;               -- the item that should be replaced
+        new_item   : in item_type);              -- the item with which should the items be replaced
+    -- Replaces all occurrences of [orig_item] with [new_item].
+    ------------------------------------------------------------------------------------------------
+    virtual replace_all_with_str (
+        orig_item  : in item_type;               -- the item that should be replaced
+        new_str    : in class class_name);       -- the string with which should the items be replaced
+    -- Replaces all occurrences of [orig_item] with [new_str].
+    ------------------------------------------------------------------------------------------------
+    virtual resize (
+        new_size   : in t_unsigned;              -- the desired size
+        item       : in item_type);              -- the item that will be appended if enlarging
+    -- Appends items, or removes items from the end, as necessary to make the string's length
+    -- exactly [new_size].
+    ------------------------------------------------------------------------------------------------
+
+
+
+    {%%TODO(OVERLOAD)
+    ----- overloaded functions ---------------------------------------------------------------------
+
+    overload assign : assign_str, assign_from;
+    overload append : append_str, append_item, append_plain_str;
+    overload replace : replace_str, replace_item;
+    overload insert : insert_str, insert_item;
+    overload find_first : find_first_str, find_first_item;
+    overload find_last : find_last_str, find_last_item;}
+
+
+
+    ----- overloaded operators ---------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_cstr (
+        left       : in out class class_name;
+        right      : in class class_name);
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_str_cstr (
+        left       : in out class t_string;
+        right      : in class class_name);
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_str (
+        left       : in out class class_name;
+        right      : in t_string);
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_item (
+        left       : in out class class_name;
+        right      : in item_type);
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_cstr (
+        left       : in out class class_name;
+        right      : in class class_name);
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_str_cstr (
+        left       : in out t_string;
+        right      : in class class_name);
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_str (
+        left       : in out class class_name;
+        right      : in t_string);
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_item (
+        left       : in out class class_name;
+        right      : in item_type);
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+
+
+  protected
+
+    -- further declarations from the template parameters
+    protected_declarations
+    --
+
+    end class_name;
+
+
+  #end extend_string_public;
+
+
+
+----------------------------------------------------------------------------------------------------
+#template extend_string_private(class_name,item_type,declarations);
+----------------------------------------------------------------------------------------------------
+  class private abstract class_name =
+  -- All methods' implementations in this class are generic, subclasses are invited to implemented
+  -- more tailored (optimized) versions of these methods.
+  --------------------------------------------------------------------------------------------------
+
+    -- further declarations from the template parameters
+    declarations
+    --
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override append_str =
+    -- Appends [str2] to this string.
+    ------------------------------------------------------------------------------------------------
+    var
+      str2_typed   : ^class class_name;          -- a properly typed [str2]
+
+    begin
+      -- check if concatenating identical string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str2:tag then
+        raise string_error;
+        end if;
+
+      -- get a properly typed version of [str2]
+      str2_typed := ^str2;
+
+      -- enlarge this string so that [str2] fits
+      reserve(get_length+str2_typed^.get_length);
+
+      -- append the [str2]'s contents
+      for i in 1..str2_typed^.get_length loop
+        append_item(str2_typed^.get_item(i));
+        end loop;
+      end append_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_substring =
+    -- Extracts a substring of this string, beginning at [from] and containing [count] items.
+    -- The created substring has identical type as this string.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    var
+      result_typed : ^class class_name;
+    begin
+      -- check range
+      if from<1 or from+count-1>get_length then
+        raise string_error;
+        end if;
+
+      -- create the result and reserve enough space
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      new result_typed tag (^this)^:tag;
+      result:=result_typed;
+      result_typed^.reserve(count);
+
+      -- store the substring to the result
+      for i in from..from+count-1 loop
+        result_typed^.append_item(get_item(i));
+        end loop;
+      end get_substring;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override find_first_str =
+    -- Finds the first occurrence of the given substring, starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    var
+      str_len      : t_unsigned;                 -- length of [str]
+      this_len     : t_unsigned;                 -- length of this string
+      str_typed    : ^class class_name;          -- [str], only properly typed
+      found        : t_logical;                  -- has the substring been found?
+      from         : t_unsigned;                 -- lower loop limit
+      max_i        : t_unsigned;                 -- upper loop limit
+      shift_k      : t_unsigned;                 -- K-shift size
+      shift_l      : t_unsigned;                 -- L-shift size
+      i            : t_unsigned;                 -- loop control variable
+
+    begin
+      -- check if strings have identical types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str:tag then
+        raise string_error;
+        end if;
+
+      -- store lengths
+      this_len:=get_length;
+      str_len:=str.get_length;
+
+      -- check lengths
+      if this_len<str_len then
+        -- "substring" is longer the [str], it cannot be contained within...
+        return;
+        end if;
+
+      -- check range
+      from:=search_from;
+      if from<1 then
+        from:=1;
+        end if;
+
+      -- get properly typed [str]
+      str_typed:=^str;
+
+      -- special case (searching for one item)
+      if str_len=1 then
+        result:=find_first_item(str_typed^.get_item(1));
+        return;
+        end if;
+
+      -- compute shifts
+      if str_typed^.get_item(1)=str_typed^.get_item(2)
+        then
+          shift_k:=2;
+          shift_l:=1;
+        else
+          shift_k:=1;
+          shift_l:=2;
+          end if;
+
+      --%%TODO maybe some better algorithm (BM, KMP, ...)
+      -- "Not So Naive" algorithm (http://www-igm.univ-mlv.fr/~lecroq/string/node13.html)
+      i:=from;
+      max_i:=this_len-str_len+1;
+      while i<=max_i loop
+        if get_item(i+1)<>str_typed^.get_item(2)
+          then
+            -- mismatch at the second item
+            i + shift_k;
+          else
+            found:=true;
+            for j in 3..str_len loop
+              if get_item(i+j-1)<>str_typed^.get_item(j) then
+              found:=false;
+              break;
+              end if;
+            end loop;
+            if found and then get_item(i)=str_typed^.get_item(1) then
+              result:=i;
+              return;
+              end if;
+            i + shift_l;
+            end if;
+        end loop;
+      end find_first_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override find_last_str =
+    -- Finds the last occurrence of the given substring, starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    var
+      str_len      : t_unsigned;                 -- length of [str]
+      this_len     : t_unsigned;                 -- length of this string
+      str_typed    : ^class class_name;          -- [str], only properly typed
+      found        : t_logical;                  -- has the substring been found?
+      from         : t_unsigned;
+
+    begin
+      -- check if strings have identical types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str:tag then
+        raise string_error;
+        end if;
+
+      -- store lengths
+      this_len:=get_length;
+      str_len:=str.get_length;
+
+      -- check lengths
+      if this_len<str_len then
+        -- "substring" is longer the [str], it cannot be contained within...
+        return;
+        end if;
+
+      -- check range
+      from:=search_from;
+      if from>this_len-str_len+1 or from=0 then
+        from:=this_len-str_len+1;
+        end if;
+
+      -- get properly typed [str]
+      str_typed:=^str;
+
+      --%%TODO Better algorithm! (BM, KMP, ...)
+      -- brute force algorithm
+      for i in reverse 1..from loop
+        found:=true;
+        for j in 1..str_len loop
+          if get_item(i+j-1)<>str_typed^.get_item(j) then
+          found:=false;
+          break;
+          end if;
+        end loop;
+        if found then
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_last_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override find_first_of =
+    -- Finds the first occurrence of one of the [items] in the given string, starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    var
+      items_typed  : ^class class_name;          -- [items], only properly typed
+      from         : t_unsigned;
+
+    begin
+      -- check if equal string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if items:tag<>(^this)^:tag then
+        raise string_error;
+        end if;
+
+      -- check range
+      from:=search_from;
+      if from<1 then
+        from:=1;
+        end if;
+
+      -- get properly typed [items]
+      items_typed:=^items;
+
+      -- generic implementation, take item by item and check if it is in [items]
+      for i in from..get_length loop
+        if items_typed^.find_first_item(get_item(i))<>0 then
+          -- found!
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_first_of;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override find_last_of =
+    -- Finds the last occurrence of one of the [items] in the given string, starting at [start_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    var
+      items_typed  : ^class class_name;          -- [items], only properly typed
+      from         : t_unsigned;
+
+    begin
+      -- check if equal string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if items:tag<>(^this)^:tag then
+        raise string_error;
+        end if;
+
+      -- check range, interpret the special 0 value
+      from:=search_from;
+      if from>get_length or from=0 then
+        from:=get_length;
+        end if;
+
+      -- get properly typed [items]
+      items_typed:=^items;
+
+      -- plain linear search
+      for i in reverse 1..from loop
+        if items_typed^.find_first_item(get_item(i))<>0 then
+          -- found!
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_last_of;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override swap_items =
+    -- Exchanges two items in the string.
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp          : t_item_type;                -- temporary storage
+    begin
+      tmp:=get_item(pos1);
+      set_item(pos1, get_item(pos2));
+      set_item(pos2, tmp);
+      end swap_items;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override find_first_not_of =
+    -- Finds the first item that is not equal to any of the [items], starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    var
+      items_typed  : ^class class_name;          -- [items], only properly typed
+      from         : t_unsigned;
+
+    begin
+      -- check if equal string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if items:tag<>(^this)^:tag then
+        raise string_error;
+        end if;
+
+      -- check range
+      from:=search_from;
+      if from<1 then
+        from:=1;
+        end if;
+
+      -- get properly typed [items]
+      items_typed:=^items;
+
+      -- generic implementation, take item by item and check if it is in [items]
+      for i in from..get_length loop
+        if items_typed^.find_first_item(get_item(i))=0 then
+          -- found!
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_first_not_of;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    override find_last_not_of =
+    -- Finds the last item that is not equal to any of the [items], starting at [search_from].
+    -- Returns 0 when no such item found.
+    ------------------------------------------------------------------------------------------------
+    var
+      items_typed  : ^class class_name;          -- [items], only properly typed
+      from         : t_unsigned;
+
+    begin
+      -- check if equal string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if items:tag<>(^this)^:tag then
+        raise string_error;
+        end if;
+
+      -- check range, interpret the special 0 value
+      from:=search_from;
+      if from>get_length or from=0 then
+        from:=get_length;
+        end if;
+
+      -- get properly typed [items]
+      items_typed:=^items;
+
+      -- plain linear search
+      for i in reverse 1..from loop
+        if items_typed^.find_first_item(get_item(i))=0 then
+          -- found!
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_last_not_of;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual get_string_copy =
+    -- Create a plain string with the contents of this string.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- allocate result
+      new result range get_length;
+
+      -- copy the contents
+      for i in 1..get_length loop 
+        result^ & get_item(i);
+        end loop;
+      end get_string_copy;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual assign_to =
+    -- Assigns this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- clear the destination
+      str:=[];
+
+      -- append all items, item by item
+      for i in 1..get_length loop
+        str & get_item(i);
+        end loop;
+      end assign_to;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual append_to_plain_str =
+    -- Appends this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- append all items, item by item
+      for i in 1..get_length loop
+        str & get_item(i);
+        end loop;
+      end append_to_plain_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual assign_from =
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- clear current contents
+      clear;
+
+      -- reserve enough space
+      reserve(source:length);
+
+      -- append item by item
+      for i in source:range loop
+        append_item(source[i]);
+        end loop;
+      end assign_from;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual create_from_item =
+    -- Sets this string to contain [count] copies of [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- clear the current contents
+      clear;
+
+      -- append the required number of items
+      for i in 1..count loop
+        append_item(item);
+        end loop;
+      end create_from_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual append_plain_str =
+    -- Appends a plain string to this string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- reserve enough space
+      reserve(get_length+str2:length);
+
+      -- append item by item
+      for i in str2:range loop
+        append_item(str2[i]);
+        end loop;
+      end append_plain_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual find_first_item =
+    -- Finds the position of the first occurrence of the given [item], starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    var 
+      from         : t_unsigned;
+    begin
+      -- check range
+      from:=search_from;
+      if from<1 then
+        from:=1;
+        end if;
+
+      -- plain linear search
+      for i in from..get_length loop
+        if get_item(i)=item then
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_first_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual find_last_item =
+    -- Finds the position of the last occurrence of the given [item], starting at [search_from].
+    -- Returns 0 when not found.
+    ------------------------------------------------------------------------------------------------
+    var
+      from         : t_unsigned;
+    
+    begin
+      -- check range, interpret the special 0 value
+      from:=search_from;
+      if from>get_length or from=0 then
+        from:=get_length;
+        end if;
+
+      -- plain linear search
+      for i in reverse 1..from loop
+        if get_item(i)=item then
+          result:=i;
+          return;
+          end if;
+        end loop;
+      end find_last_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual count_occurrences =
+    -- Counts the number of occurrences of the given [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- go item by item and count
+      for i in 1..get_length loop
+        if get_item(i)=item then
+          succ result;
+          end if;
+        end loop;
+      end count_occurrences;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual replace_item =
+    -- Replaces the item at the specified [position] with the given [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- Check range
+      if position<1 or position>get_length then
+        raise string_error;
+        end if;
+
+      -- In this generic (unoptimized) version, just [remove] and [insert]
+      remove(position);
+      insert_item(position, item);
+      end replace_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual replace_all_with_item =
+    -- Replaces all occurrences of [orig_item] with [new_item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      for i in 1..get_length loop
+        if get_item(i)=orig_item then
+          replace_item(i, new_item);
+          end if;
+        end loop;
+      end replace_all_with_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual replace_all_with_str =
+    -- Replaces all occurrences of [orig_item] with [new_str].
+    ------------------------------------------------------------------------------------------------
+    var
+      i            : t_unsigned;                 -- loop control variable
+      len          : t_unsigned;                 -- [this.get_length]
+      new_str_len  : t_unsigned;                 -- [new_str.get_length]
+    begin
+      -- buffer the lengths
+      len:=get_length;
+      new_str_len:=new_str.get_length;
+
+      -- main loop -- check items one by one
+      i:=1;
+      while i<=len loop
+        if get_item(i)=orig_item
+          then
+            replace_str(i, 1, new_str);
+            i + new_str_len;
+            len + new_str_len-1;
+          else
+            i + 1;
+            end if;
+        end loop;
+      end replace_all_with_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    virtual resize =
+    -- Appends items, or removes items from the end, as necessary to make the string's length
+    -- exactly [new_size].
+    -- This is a generic (unoptimized) implementation of this method. Subclasses are invited to
+    -- override it with a more tailored version.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- should we shrink or enlarge the string?
+      if new_size>get_length then
+        -- we should enlarge it, by appending the proper number of [item]s
+        for i in 1..new_size-get_length loop
+          append_item(item);
+          end loop;
+
+      elsif new_size<get_length then
+        -- we should shrink it, by removing the proper number of items off the end of the list
+        remove(new_size+1, get_length-new_size);
+        end if;
+      end resize;
+
+
+
+    ----- overloaded operators ---------------------------------------------------------------------
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_cstr =
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.assign_str(right);
+      end op_assign_cstr_cstr;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_str_cstr =
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      right.assign_to(left);
+      end op_assign_str_cstr;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_str =
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.assign_from(right);
+      end op_assign_cstr_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    procedure op_assign_cstr_item =
+    -- left:=right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.create_from_item(right);
+      end op_assign_cstr_item;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_cstr =
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.append_str(right);
+      end op_append_cstr_cstr;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_str_cstr =
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    begin
+      right.append_to_plain_str(left);
+      end op_append_str_cstr;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_str =
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.append_plain_str(right);
+      end op_append_cstr_str;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    procedure op_append_cstr_item =
+    -- left & right
+    ------------------------------------------------------------------------------------------------
+    begin
+      left.append_item(right);
+      end op_append_cstr_item;
+
+
+    end class_name;
+
+
+  #end extend_string_private;
+
+
+
+----------------------------------------------------------------------------------------------------
+#template basic_extend_string_public(class_name,base_class,public_declarations,protected_declarations);
+----------------------------------------------------------------------------------------------------
+  class public class_name = extend base_class;
+
+    var
+      data         : protected base_class.p_string; -- THIS contains the data of this string.
+
+    -- further declarations from the template parameters
+    public_declarations
+    --
+
+    ------------------------------------------------------------------------------------------------
+    static substr (
+        from       : in t_unsigned;              -- 
+        count      : in t_unsigned)
+        return class_name;
+    -- Extracts a substring of this string, beginning at [from] and containing [count] items.
+    ------------------------------------------------------------------------------------------------
+
+  protected
+
+    -- further declarations from the template parameters
+    protected_declarations
+    --
+
+    end class_name;
+
+  #end basic_extend_string_public;
+
+
+
+----------------------------------------------------------------------------------------------------
+#template basic_extend_string_private(class_name,base_class,declarations);
+----------------------------------------------------------------------------------------------------
+  class private class_name =
+
+    const
+      allocation_delta_bits = 3;
+      allocation_delta = 1 shl allocation_delta_bits;
+      allocation_delta_lo_mask = allocation_delta-1;
+      allocation_delta_hi_mask = t_mod_unsigned:last and not allocation_delta_lo_mask;
+
+
+
+    -- further declarations from the template parameters
+    declarations
+    --
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static check_resize_down =
+    -- Private method that checks if a reallocation to a smaller size should be done.
+    ------------------------------------------------------------------------------------------------
+    with standard.console, standard.conversions;
+    var
+      oversize     : t_unsigned;                 -- (empty) reserve at the end of the string,
+                                                 -- in [allocation_delta] units
+      _            : data:type;
+
+    begin
+      --%%TODO(FLEX) data^:last ma evidentne rozsah 1-, coz zpusobuje, ze tady musi byt takovehle B&D:
+      oversize:=t_unsigned((t_mod_unsigned(data^:last)-t_mod_unsigned(data^:length)) shr allocation_delta_bits);
+      if oversize>1 then
+        -- if there is more than one [allocation_delta] reserve, reallocate down to the proper size
+        --%%TODO(ADJUST) t_unsigned(t_mod_unsigned(data^:length+allocation_delta_lo_mask) and allocation_delta_hi_mask);
+        new _ range t_unsigned(t_mod_unsigned(data^:length+allocation_delta_lo_mask) and allocation_delta_hi_mask);
+        _^:=data^;
+        discard data;
+        data:=_;
+        end if;
+      end check_resize_down;
+
+
+
+    {%%TODO(COMPILER) az pujde navratova hodnota predat jako in class parametr, tak tohle mozna pujde
+     zkompilovat
+    ------------------------------------------------------------------------------------------------
+    override get_substring =
+    ------------------------------------------------------------------------------------------------
+    begin
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      new result tag (^this)^:tag;
+      result^.assign_str(substr(from,count));
+      --nebo: result^:=substr(from,count);
+      end get_substring;
+    }
+
+
+
+    ------------------------------------------------------------------------------------------------
+    static substr =
+    -- Extracts a substring of this string, beginning at [from] and containing [count] items.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- check range
+      if from<1 or from+count-1>get_length then
+        raise string_error;
+        end if;
+
+      -- reserve enough space for the result
+      result.reserve(count);
+
+      -- store the substring to the result
+      for i in from..from+count-1 loop
+        result.data^ & data^[i];
+        end loop;
+      end substr;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_length =
+    -- Returns the length of this string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=data^:length;
+      end get_length;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_capacity =
+    -- Returns the capacity of this string, i.e. the length of the longest string that could fit
+    -- in it without reallocation.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=data^:last;
+      end get_capacity;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_max_size =
+    -- Returns the biggest possible length of the string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=t_unsigned:last div t_item_type:size;
+      end get_max_size;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override reserve =
+    -- Tries to make sure that [capacity] items will fit into the string without further reallocation.
+    -- In this class, this method _guarantees_ the result (if the methods succeeds).
+    ------------------------------------------------------------------------------------------------
+    var
+      _            : data:type;
+      aligned      : t_unsigned;
+
+    begin
+      -- check if reallocation needed
+      if capacity>data^:last then
+        -- reallocate, ensuring the required granularity
+        aligned:=t_unsigned(t_mod_unsigned(capacity+allocation_delta_lo_mask) and allocation_delta_hi_mask);
+        --%%TODO(ADJUST) adjust data range aligned;
+        new _ range aligned;
+        _^:=data^;
+        discard data;
+        data:=_;
+        end if;
+      end reserve;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override assign_str =
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    var
+      source_typed : ^class class_name;          -- a properly typed [source]
+
+    begin
+      -- check if assigning identical string type
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if source:tag<>(^this)^:tag then
+        raise string_error;
+        end if;
+
+      -- get a properly typed version of [source]
+      source_typed := ^source;
+
+      -- enlarge this string so that [source] fits
+      reserve(source_typed^.data^:length);
+
+      -- copy the data
+      data^:=source_typed^.data^;
+
+      -- check for possible reallocation
+      check_resize_down;
+      end assign_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override append_str =
+    -- Appends [str2] to this string.
+    ------------------------------------------------------------------------------------------------
+    var
+      str2_typed   : ^class class_name;          -- a properly typed [str2]
+
+    begin
+      -- check if concatenating identical string types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str2:tag then
+        raise string_error;
+        end if;
+
+      -- get a properly typed version of [str2]
+      str2_typed := ^str2;
+
+      -- enlarge this string so that [str2] fits
+      reserve(data^:length+str2_typed^.data^:length);
+
+      -- append the [str2]'s contents
+      data^ & str2_typed^.data^;
+      end append_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert_str =
+    -- Insert the [str] string into this string, to the specified [position].
+    -- The item that was originally at the specified [position] will be after the inserted string
+    -- when the method returns.
+    ------------------------------------------------------------------------------------------------
+    var
+      str_typed    : ^class class_name;          -- a properly typed [str]
+      curr_len     : t_unsigned;                 -- the length before insertion
+
+    begin
+      -- check for special case -- an insertion to length+1 is really an append.
+      if position=data^:length+1 then
+        append_str(str);
+        return;
+        end if;
+
+      -- check if inserting identical string type
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str:tag then
+        raise string_error;
+        end if;
+
+      -- store the current length
+      curr_len:=data^:length;
+
+      -- check range
+      if position<1 or position>curr_len then
+        raise string_error;
+        end if;
+
+      -- get a properly typed version of [str]
+      str_typed := ^str;
+
+      -- enlarge this string so that [str] fits
+      reserve(curr_len+str_typed^.data^:length);
+      data^:length+str_typed^.data^:length;
+
+      -- shift the items up the proper number of positions
+      for i in reverse position..curr_len loop
+        data^[i+str_typed^.data^:length]:=data^[i];
+        end loop;
+
+      -- store the contents of the inserted string to its place in this string
+      for i in str_typed^.data^:range loop
+        data^[position+i-1]:=str_typed^.data^[i];
+        end loop;
+      end insert_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override clear =
+    -- Clear this string, i.e. make it empty.
+    ------------------------------------------------------------------------------------------------
+    begin
+      data^:=[];
+      end clear;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override remove =
+    -- Removes [count] items beginning with the item at [from] from the string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- check the range
+      if from<1 or from+count-1>data^:length then
+        raise string_error;
+        end if;
+
+      -- shift the data down the proper number of positions, removing the chosen items
+      for i in from+count..data^:length loop
+        data^[i-count]:=data^[i];
+        end loop;
+
+      -- shorten the string and check for reallocation
+      data^:length-count;
+      check_resize_down;
+      end remove;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override replace_str =
+    -- Replaces [count] items beginning with the item at [position] with the contents of [str].
+    ------------------------------------------------------------------------------------------------
+    with
+      standard.numerics;
+
+    var
+      str_typed    : ^class class_name;          -- [str], only properly typed
+      remain       : t_unsigned;                 -- length of the unchanged suffix of the string
+      offset       : t_unsigned;                 -- length of the remaining string to be inserted
+
+    begin
+      -- check if the string types are identical
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str:tag then
+        raise string_error;
+        end if;
+
+      -- check range
+      if position<1 or position+count-1>data^:length then
+        raise string_error;
+        end if;
+
+      -- get a properly typed [str]
+      str_typed := ^str;
+
+      -- reserve the required space
+      reserve(data^:length-count+str_typed^.data^:length);
+
+      -- replace the common part of the strings
+      for i in 1..min_unsigned(count,str_typed^.data^:length) loop
+        data^[position+i-1]:=str_typed^.data^[i];
+        end loop;
+
+      -- insert or remove the remaining part
+      if count>str_typed^.data^:length then
+        -- replacing a longer substring with a shorter one => we have to remove something
+        remove(position+str_typed^.data^:length, count-str_typed^.data^:length);
+
+      elsif count<str_typed^.data^:length then
+        -- replacing a shorter substring with a longer one => we have to add something
+
+        -- 1. shift the rest of this string by the required number of positions
+        remain:=data^:length-position+1-count;
+        offset:=str_typed^.data^:length-count;
+        data^:length+offset;
+        for i in reverse 1..remain loop
+          data^[position+count+i-1+offset]:=data^[position+count+i-1];
+          end loop;
+
+        -- 2. store the rest of [str] into the created space
+        for i in 1..offset loop
+          data^[position+count+i-1]:=str_typed^.data^[count+i];
+          end loop;
+        end if;
+      end replace_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override swap_items =
+    -- Exchanges two items in the string.
+    ------------------------------------------------------------------------------------------------
+    var
+      tmp          : t_item_type;                -- temporary storage
+    begin
+      tmp:=data^[pos1];
+      data^[pos1]:=data^[pos2];
+      data^[pos2]:=tmp;
+      end swap_items;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override compare =
+    -- Compares this string to [str2] lexicographically.
+    ------------------------------------------------------------------------------------------------
+    with
+      standard.numerics;
+
+    var
+      str2_typed   : ^class class_name;          -- [str2], only properly typed
+
+    begin
+      -- check equality of types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str2:tag then
+        result:=scr_unordered;
+        return;
+        end if;
+
+      -- get a properly typed [str2]
+      str2_typed := ^str2;
+
+      -- compare the common part, part by part
+      for i in 1..min_unsigned(data^:length, str2_typed^.data^:length) loop
+        if data^[i]<>str2_typed^.data^[i] then
+          if data^[i]<str2_typed^.data^[i]
+          then result:=scr_less;
+          else result:=scr_greater;
+          end if;
+          return;
+          end if;
+        end loop;
+
+      -- compare if the lengths differ
+      if data^:length<str2_typed^.data^:length then
+        result:=scr_less;
+      elsif data^:length>str2_typed^.data^:length then
+        result:=scr_greater;
+      else
+        result:=scr_equal;
+        end if;
+      end compare;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override is_equal =
+    -- Returns whether this string is equal to [str2].
+    ------------------------------------------------------------------------------------------------
+    var
+      str2_typed   : ^class class_name;          -- [str2], only properly typed
+
+    begin
+      -- check equality of types
+      --%%TODO(COMPILER) az se opravi this:tag, tak zrusit ty strechy...
+      if (^this)^:tag<>str2:tag then return; end if;
+
+      -- get a properly typed [str2]
+      str2_typed := ^str2;
+
+      -- compare the lengths
+      if data^:length<>str2_typed^.data^:length then return end if;
+
+      -- compare the items, one by one
+      for i in 1..data^:length loop
+        if data^[i]<>str2_typed^.data^[i] then return end if;
+        end loop;
+
+      -- all comparisons passed => equal
+      result:=true;
+      end is_equal;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override get_string_copy =
+    -- Create a plain string with the contents of this string.
+    -- The caller is responsible for freeing the memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      new result range data^:length;
+      result^:=data^;
+      end get_string_copy;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override assign_to =
+    -- Assigns this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      str:=data^;
+      end assign_to;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override append_to_plain_str =
+    -- Appends this string to a plain string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      str & data^;
+      end append_to_plain_str;
+
+
+    
+    ------------------------------------------------------------------------------------------------
+    override get_item =
+    -- Returns the item at the specified [position].
+    ------------------------------------------------------------------------------------------------
+    begin
+      result:=data^[position];
+      end get_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override set_item =
+    -- Changes the item at [position] to [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      data^[position]:=item;
+      end set_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override assign_from =
+    -- Assign the [source] string to this instance.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- reserve enough space
+      reserve(source:length);
+
+      -- change the contents
+      data^:=source;
+
+      -- check for desirable reallocation
+      check_resize_down;
+      end assign_from;
+
+    
+    
+    ------------------------------------------------------------------------------------------------
+    override append_item =
+    -- Appends the specified [item] to this string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      reserve(data^:length+1);
+      data^ & item;
+      end append_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override append_plain_str =
+    -- Appends a plain string to this string.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- reserve enough space
+      reserve(data^:length+str2:length);
+      data^ & str2;
+      end append_plain_str;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override insert_item =
+    -- Insert the specified [item] into this string, to the specified [position].
+    -- The item that was originally at the specified [position] will be moved one place to the
+    -- right-hand side.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- make space for the inserted item
+      reserve(data^:length+1);
+      data^:length+1;
+
+      -- shift all items from [position] right
+      for i in reverse position+1..data^:length loop
+        data^[i]:=data^[i-1];
+        end loop;
+
+      -- store the item into the created space
+      data^[position]:=item;
+      end insert_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override replace_item =
+    -- Replaces the item at the specified [position] with the given [item].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- check range
+      if position<1 or position>data^:length then
+        raise string_error;
+        end if;
+
+      -- replace
+      data^[position]:=item;
+      end replace_item;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    override resize =
+    -- Appends items, or removes items from the end, as necessary to make the string's length
+    -- exactly [new_size].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- should we shrink or enlarge the string?
+      if new_size>data^:length then
+        -- we should enlarge it, by appending the proper number of [item]s
+        reserve(new_size);
+        for i in data^:length+1..new_size loop
+          data^ & item;
+          end loop;
+
+      elsif new_size<data^:length then
+        -- we should shrink it, by removing the proper number of items off the end of the list
+        data^:length:=new_size;
+        check_resize_down;
+        --adjust data range new_size;
+        end if;
+      end resize;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry = 
+    -- Initialization, allocates [data].
+    ------------------------------------------------------------------------------------------------
+    begin
+      new data range allocation_delta;
+      end entry;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    exit =
+    -- Finalization, frees the allocated memory.
+    ------------------------------------------------------------------------------------------------
+    begin
+      discard data;
+      end exit;
+
+
+
+    end class_name;
+
+
+  #end basic_extend_string_private;
+
+
+
+----------------------------------------------------------------------------------------------------
+#expand extend_string_public;
+----------------------------------------------------------------------------------------------------
+
+  #for class_name use; c_abstract_char32_string
+  #for item_type  use; t_char32
+
+  #end extend_string_public;
+
+
+
+----------------------------------------------------------------------------------------------------
+#expand basic_extend_string_public;
+----------------------------------------------------------------------------------------------------
+
+  #for class_name use; c_string
+  #for base_class use; c_abstract_char32_string
+
+  #for public_declarations use;
+
+    ------------------------------------------------------------------------------------------------
+    static get_hash return t_hash_item_id;
+    -- Returns a hash of the string.
+    ------------------------------------------------------------------------------------------------
+
+  #end basic_extend_string_public;
+
+
+
+
+----- overloaded operators -------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------------------------
+overload := :
+    c_string.op_assign_cstr_cstr,
+    c_string.op_assign_str_cstr,
+    c_string.op_assign_cstr_str,
+    c_string.op_assign_cstr_item;
+----------------------------------------------------------------------------------------------------
+overload & :
+    c_string.op_append_cstr_cstr,
+    c_string.op_append_str_cstr,
+    c_string.op_append_cstr_str,
+    c_string.op_append_cstr_item;
+----------------------------------------------------------------------------------------------------
+overload = :
+    c_abstract_string.op_equal_to;
+----------------------------------------------------------------------------------------------------
+overload <> :
+    c_abstract_string.op_not_equal_to;
+----------------------------------------------------------------------------------------------------
+overload < :
+    c_abstract_string.op_less_than;
+----------------------------------------------------------------------------------------------------
+overload <= :
+    c_abstract_string.op_less_or_equal;
+----------------------------------------------------------------------------------------------------
+overload >= :
+    c_abstract_string.op_greater_or_equal;
+----------------------------------------------------------------------------------------------------
+overload > :
+    c_abstract_string.op_greater_than;
+----------------------------------------------------------------------------------------------------
+
+
+
+end dynamic;

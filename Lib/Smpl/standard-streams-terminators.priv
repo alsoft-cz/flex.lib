@@ -1,5 +1,6 @@
 ﻿----------------------------------------------------------------------------------------------------
-module private terminators =
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
@@ -32,11 +33,13 @@ var
       if closed then
         raise stream_already_closed
         end if;
+      -- nastavim velikost
       size:=dp_optimal_packet_size;
       if size>options.maximal_size then
         size:=options.maximal_size;
         end if;
-      create_packet(data,^null_data,size,t_dps_immortal);
+      -- vytvorim packet
+      create_packet(data,^null_data,size,t_dps_static);
       end read_packet;
 
 
@@ -83,6 +86,7 @@ var
       if eod then
         raise stream_end_of_data;
         end if;
+      -- vratim eod jako prvni packet
       eod:=true;
       create_eod(data);
       end read_packet;
@@ -125,6 +129,7 @@ var
       if closed then
         raise stream_already_closed
         end if;
+      -- zahodim vsechny packety
       discard_packet(data);
       end write_packet;
 
@@ -141,4 +146,3 @@ var
       result:=true;
       end is_reading;
     end c_null_output_stream;
-end terminators;

@@ -1,0 +1,1196 @@
+﻿----------------------------------------------------------------------------------------------------
+module private binary_trees_test =
+-- Test of Classes library - Binary trees and iterators.
+-- Copyright (C) 1999-2004 A && L soft
+----------------------------------------------------------------------------------------------------
+
+with
+  standard,
+  standard.classes,
+  standard.classes.lists,
+  standard.classes.trees,
+  standard.random,
+  quality,
+  quality.debugging;
+
+var
+  stack            : c_stack;                    -- stack pro výpočet hloubky uzlů testovacího stromu
+
+-- dopředné deklarace
+class c_test_list_item;     type p_test_list_item = ^class c_test_list_item;
+class c_stack_item;         type p_stack_item = ^class c_stack_item;
+
+----------------------------------------------------------------------------------------------------
+class private c_test_binary_tree_node =
+-- Třída uzlu testovaného binárního stromu. Obsahuje:
+--    proměnnou [value] typu [t_unsigned] udávající hodnotu (libovolnou).
+--    proměnnou [depth] typu [t_unsigned] udávající hloubku uzlu. (Kořen = 0, levý a pravý potomek
+--      kořenu = 1, potomci potomků kořenu = 2, atd...)
+----------------------------------------------------------------------------------------------------
+
+    end c_test_binary_tree_node;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_test_list_item = extend c_list_item;
+-- Třída složky spojového seznamu. Obsahuje proměnnou [value] typu [t_unsigned].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node         : p_test_binary_tree_node;    -- pointer na uzel stromu
+
+    end c_test_list_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+class c_stack_item = extend c_list_item;
+-- Třída složky zásobníku [stack] určeného pro výpočet výšky uzlu ve stromu za použití procedury
+-- [set_height].
+----------------------------------------------------------------------------------------------------
+    var
+      height       : t_unsigned; 
+
+    end c_stack_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure get_rand_item (
+    list           : p_list)                     -- seznam
+    return p_test_list_item =
+-- Vrátí složku seznamu [list], která je uložená na náhodně generované pozici [pos]. Pokud neexistuje
+-- žádná složka, generuje procedura výjimku [test_error]. To by však nikdy nastat nemělo.
+----------------------------------------------------------------------------------------------------
+var
+  pos              : t_unsigned;                 -- náhodně generovaná pozice, na níž vybíráme složku seznamu
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod spojovým seznamem [list]
+
+begin
+  -- určíme pozici složky v seznamu
+  pos:=(random_unsigned mod list^.count)+1;
+
+  -- inicializujeme seznam na průchod od první k poslední složce
+  list_iterator.init(list^,tlwd_forward);
+
+  -- projdeme seznamem [list] dokud nenarazíme na složku na pozici [pos]
+  for i in 1..pos loop
+    if not list_iterator.get(result) then
+      raise test_error;
+      end if;
+    end loop;
+  end get_rand_item;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure reset_height (
+    node           : in p_test_binary_tree_node) = -- pointer na uzel testovacího stromu [tree]
+-- Nastaví výšku [height] všech uzlů testovacího stromu na 0. Nejprve projdeme všechny levé
+-- následníky, poté všechny pravé následníky a na závěr resetujeme výšku [height] (postfixový průchod
+-- stromem).
+----------------------------------------------------------------------------------------------------
+use
+  supervised c_test_binary_tree_node;
+
+begin
+  -- pokud je uzel [nil], končíme
+  if node=nil then return; end if;
+
+  -- osbahuje-li uzel [node] levého potomka, přesměrujeme se na něho
+  if node^.left<>nil then reset_height(node^.left); end if;
+
+  -- osbahuje-li uzel [node] pravého potomka, přesměrujeme se na něho
+  if node^.right<>nil then reset_height(node^.right); end if;
+
+  -- resetujeme výšku
+  node^.height:=0;
+  end reset_height;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure set_height (
+    node           : in p_test_binary_tree_node) = -- pointer na uzel testovacího stromu [tree]
+-- Nastaví hloubky jednotlivých uzlů ve stromě [tree].
+-- Kořen = 0, levý a pravý potomek kořenu = 1, poromci potomků kořenů = 2, atd...
+-- Pro zjištění výšky všech uzlů používáme zásobník [stack], přičemž smazání jeho složek provádí
+-- procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+use
+  supervised c_test_binary_tree_node;
+
+var
+  new_height       : t_unsigned;                 -- nová výška (ta, co je na vrcholu zásobníku [stack]
+                                                 -- inkrementovaná o 1)
+  item             : p_stack_item;               -- složka zásobníku [stack] obsahující výšku [height]
+                                                                           
+begin
+  -- pokud uzel neexistuje (jen v případě, že strom neobsahuje kořen, tj. je prázdný) => konec
+  if node=nil then
+    return;
+    end if;
+
+  -- obsahuje uzel [node] levého potomka?
+  if node^.left<>nil then
+    -- ano => přesměrujeme se na něho
+    set_height(node^.left);
+
+    -- ze zásobníku [stack] získáme posledně uloženou výšku, inkrementujeme ji o 1 a přiřadíme ji
+    -- uzlu [node]
+    stack.pop(item);
+    item^.height+1;
+    node^.height:=item^.height;
+
+    -- obsahuje uzel [node] pravého potomka?
+    if node^.right<>nil
+      -- ano => dealokujeme složku [item]
+      then discard item;
+
+      -- ne => složka [item] obsahuje novou hodnotu výšky [height] => uložíme ji na vrchol zásobníku [stack]
+      else stack.push(item);
+      end if;
+    end if;
+
+  -- pokud je uzel [node] koncový, přiřadíme mu výšku [height] 0 a vložíme ji zároveň na vrchol zásobníku [stack]
+  if node^.left=nil and node^.right=nil then
+    new item;
+    item^.height:=0;
+    node^.height:=item^.height;
+    stack.push(item);
+    end if;
+
+  -- obsahuje uzel [node] pravého potomka?
+  if node^.right<>nil then
+    -- ano => přesměrujeme se na něho
+    set_height(node^.right);
+
+
+    -- ze zásobníku [stack] získáme posledně uloženou výšku, uložíme do [new_height] a inkrementujeme o 1
+    stack.pop(item);
+    new_height:=item^.height+1;
+
+    -- je nová výška [new_height] větší než výška uzlu [node]?
+    if new_height>node^.height
+      -- ano => uzlu [node] přiřadíme novou výšku [new_height] a vložíme ji zároveň na vrchol zásobníku [stack]
+      then
+        node^.height:=new_height;
+        item^.height:=new_height;
+
+      -- ne => na vrchol zásobníku [stack] vložíme výšku uzlu [node]
+      else item^.height:=node^.height;
+      end if;
+    stack.push(item);
+    end if;
+  end set_height;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure merge_test_lists (
+    list1          : in p_list;                  -- původní seznam
+    list2          : in p_list) =                -- seznam určený k napojení
+-- Spojí dva testovací seznamy [list1] a [list2], přičemž provede zatřídění jednotlivých složek podle
+-- hodnoty [value] od nejmenší po největší.
+----------------------------------------------------------------------------------------------------
+var
+  item             : p_test_list_item;           -- první složka seznamu [list2]
+  item_h           : p_test_list_item;           -- pomocný pointer na složku seznamu [list1]
+
+begin
+    -- dokud není seznam [list2] prázdný, vybítáme první složku a zatřiďujeme ji do seznamu [list1]
+    item:=list2^.remove_first;
+    while item<>nil loop
+      -- je seznam [list1] prázdný
+      if list1^.is_empty
+        -- ano => vložíme složku [item] ji jako poslední do [list1]
+        then
+          item:=list2^.remove_first;
+          list1^.insert_last(item);
+
+        -- ne => projdeme seznam od začátku a hledáme místo, kam ho vložíme
+        else
+          item_h:=list1^.get_first;
+          while true loop
+            if item^.node^.value<item_h^.node^.value then
+              list1^.insert_before(item_h,item);
+              break;
+              end if;
+            item_h:=list1^.get_next(item_h);
+            if item_h=nil then
+              list1^.insert_last(item);
+              break;
+              end if;
+            end loop;
+        end if;
+
+      item:=list2^.remove_first;
+      end loop;
+  end merge_test_lists;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure create_tree (
+    tree           : in p_binary_tree;           -- pointer na testovací strom
+    list           : in p_list;                  -- seznam obsahující setříděná náhodně generovaná čísla
+    node_count     : in t_unsigned) =            -- počet uzlů ve stromě [tree] (odpovídá počtu
+                                                 -- generovaných čísel v seznamu [list])
+-- Vyplní strom [tree] náhodně generovanými čísly, přičemž tato čísla uložíme setříděná od nejmenšího
+-- k největšímu do spojového seznamu [list]. 
+----------------------------------------------------------------------------------------------------
+var
+   node            : p_test_binary_tree_node;    -- nový uzel testovaného binárního stromu [tree]
+   item            : p_test_list_item;           -- nová složka spojového seznamu [list]
+   item_h          : p_test_list_item;           -- pomocná složka spojového seznamu [list] (pro zatřídění
+                                                 -- nové složky [item])
+
+begin
+  -- postupně generujeme [node_count] čísel
+  for i in 1..node_count loop
+    -- vytvoříme nový uzel stromu a vložíme ho do stromu [tree]
+    new node;
+    node^.value:=random_unsigned mod 100;
+    tree^.insert(node);
+
+    -- vytvoříme nový prvek seznamu a přiřadíme mu stejnou hodnotu [value], kterou má uzel [node]
+    -- vytvořený prvek zatřídíme do seznamu [list]
+    new item;
+    item^.node:=node;
+
+    -- zatřiďujeme první prvek do seznamu?
+    if i=1
+      -- ano => vložíme jej na konec
+      then list^.insert_last(item);
+
+      -- ne => projdeme seznam od začátku a hledáme místo, kam ho vložíme
+      else
+        item_h:=list^.get_first;
+        while true loop
+          if item^.node^.value<item_h^.node^.value then
+            list^.insert_before(item_h,item);
+            break;
+            end if;
+          item_h:=list^.get_next(item_h);
+          if item_h=nil then
+            list^.insert_last(item);
+            break;
+            end if;
+          end loop;
+      end if;
+    end loop;
+  end create_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_test_binary_tree =
+-- Třída testovacího stromu obsahující přetíženou metodu [compare] pro porovnání klíčů dvou uzlů
+-- stromu.
+----------------------------------------------------------------------------------------------------
+
+    ------------------------------------------------------------------------------------------------
+    override compare =
+    -- Porovnává dva uzly [node_a] a [node_b]. Uzel [node_a] je větší než uzel [node_b] v případě,
+    -- že hodnota [value] uzlu [node_a] je větší než hodnota uzlu [node_b].
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- porovnáme uzly
+      -- mají uzly stejný klíč?
+      if p_test_binary_tree_node(node_a)^.value=p_test_binary_tree_node(node_b)^.value
+        then result:=cr_equal;
+
+      -- je klíč uzlu [node_a] větší než klíč uzlu [node_b]?
+      elsif p_test_binary_tree_node(node_a)^.value>p_test_binary_tree_node(node_b)^.value
+        then result:=cr_bigger;
+
+      -- je klíč uzlu [node_a] menší než klíč uzlu [node_b]?
+      elsif p_test_binary_tree_node(node_a)^.value<p_test_binary_tree_node(node_b)^.value
+        then result:=cr_smaller;
+        end if;
+      end compare;
+
+    end c_test_binary_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure test_binary_tree (
+    tree           : in p_test_binary_tree;      -- pointer na testovací strom
+    list           : in p_list;                  -- pointer na seznam obsahující setříděnou posloupnost
+                                                 -- hodnot uzlů stromu [tree]
+    node_count     : in t_unsigned;              -- počet uzlů v testovacím stromě [tree]
+    tree_direction : in t_tree_walking_direction;-- směr pro průchod testovacím stromem [tree]
+    list_direction : in t_list_walking_direction)-- směr pro průchod seznamem [list]
+    return t_logical =
+-- Testuje, zda binární strom [tree] obsahuje složky setříděné podle seznamu [list]. Průchod
+-- testovacím stromem zajišťuje iterátor [tree_iterator]. Pokud se hodnoty všech uzlů stromu [tree]
+-- shodují s hodnotami v seznamu [list], vrací procedura [true], jinak [false].
+----------------------------------------------------------------------------------------------------
+var
+  tree_iterator    : c_binary_tree_iterator;     -- iterátor pro průchod testovacím stromem [tree]
+  list_iterator    : c_list_iterator;            -- iterátor pro průchod seznamem [list]
+  node             : p_test_binary_tree_node;    -- uzel testovacího stromu [tree]
+  test_node_h      : p_test_binary_tree_node;    -- pomocný pointer na uzel testovacího stromu
+  item             : p_test_list_item;           -- prvek seznamu
+  not_empty        : t_logical;                  -- [true] v případě, že seznam [list] obsahuje
+                                                 -- aspoň jeden prvek
+  count            : t_unsigned;                 -- počet uzlů ve stromě [tree]
+
+begin
+  -- inicializace iterátoru [tree_iterator] pro průchod testovacího stromu [tree] v pořadí udaném
+  -- parametrem [tree_direction]
+  tree_iterator.init(tree^,tree_direction);
+
+  -- inicializace iterátoru [list_iterator] pro průchod pomocného seznamu [list] v pořadí udaném
+  -- parametrem [list_direction]
+  list_iterator.init(list^,list_direction);
+
+  -- průchod testovacím stromem
+  while tree_iterator.get(node) loop
+    count+1;
+    not_empty:=list_iterator.get(item);
+
+    -- pokud je seznam prázdný, pak obsahuje méně prvků než strom => chyba
+    if not not_empty then
+      result:=false;
+      return;
+      end if;
+
+    -- pokud hodnota prvku v seznamu [list] neodpovídá hodnotě v uzlu [node] stromu [tree] => chyba
+    if node^.value<>item^.node^.value then
+      result:=false;
+      return;
+      end if;
+    end loop;
+
+    -- pokud počet prvků získaných iterátorem [tree_iterator] neodpovídá počtu prvků ve stromě
+    -- [tree] => chyba
+    if count<>tree^.count then
+      result:=false;
+      return;
+      end if;
+
+    result:=true;
+  end test_binary_tree;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure test_search (
+    tree           : in p_test_binary_tree)
+    return t_logical =
+-- Testuje, zda strom [tree] je binární vyhledávací strom. Pomocí iterátoru [tree_iterator] projde-
+-- me v infixovém pořadí všechny uzly stromu [tree], přičemž všechny uzly musí být seřazeny dle
+-- klíče od nejmenšího po největší. Zároveň počítáme uzly (, které vrací iterátor. Jejich počet se
+-- musí shodovat s počtem uzlů stromu [tree]. Je-li vše OK, procedura vrací [true], jinak [false].
+----------------------------------------------------------------------------------------------------
+var
+  tree_iterator    : c_binary_tree_iterator;     -- iterátor pro průchod stromem
+  node             : p_test_binary_tree_node;    -- pointer na uzel testovacího stromu [tree]
+  count            : t_unsigned;                 -- počet uzlů, které vrací iterátor [tree_iterator]
+  prev_val         : t_unsigned;                 -- hodnota uzlu stromu v předchozím průchodu
+
+begin
+  -- na počátku předpokládáme, že je vše OK
+  result:=true;
+
+  -- inicializace iterátoru v infixovém pořadí
+  tree_iterator.init(tree^,ttwd_infix);
+
+  -- nulujeme počítadlo průchodů, pomocí iterátoru získáme první hodnotu uzlu ze stromu a vložíme ji
+  -- do [pred_val]
+  count:=0;
+  if tree_iterator.get(node) then
+    prev_val:=node^.value;
+    count:=1;
+    end if;
+
+  -- testujeme, zda strom [tree] je vyhledávací
+  while tree_iterator.get(node) loop
+    count+1;
+
+    -- pokud hodnoty uzlů nejsou setříděny od nejmenšího po největší, končíme a vracíme [false]
+    if node^.value<prev_val then
+      result:=false;
+      return;
+      end if;
+
+    -- uchováme si novou hodnotu
+    prev_val:=node^.value;
+    end loop;
+
+  -- pokud počet uzlů ve stromě [tree] není roven počtu uzlů, které jsme obdrželi od iterátoru
+  -- [tree_iterator], vracíme [false]
+  if count<>tree^.count then result:=false; end if;
+  end test_search;
+
+
+
+----------------------------------------------------------------------------------------------------
+procedure test_balance (
+    tree           : in p_test_binary_tree)      -- pointer na testovaný strom
+    return t_logical =
+-- Testuje, zda je strom [tree] vyvážen dle definice AVL.
+-- Nejprve resetujeme výšky všech uzlů stromu [tree] a následně všechny uzly ohodnotíme příslušnými
+-- výškami pomocí procedury [set_height]. Poté pomocí iterátoru [tree_iterator] procházíme jednotlivé
+-- uzly stromu [tree] a testujeme, zda výška uzlu odpovídá definici AVL. Pokud ne, procedura vrací
+-- [false].
+----------------------------------------------------------------------------------------------------
+use
+  supervised c_test_binary_tree_node;
+
+var
+  tree_iterator    : c_binary_tree_iterator;     -- iterátor pro průchod testovacím stromem [tree]
+  node             : p_test_binary_tree_node;    -- uzel testovacího stromu [tree]
+  node_h           : p_test_binary_tree_node;    -- pomocný pointer na uzel testovacího stromu [tree]
+  weight           : t_signed;                   -- váha uzlu
+  stack_item       : p_stack_item;               -- pointer na složku zásobníku [stack] pro určení
+                                                 -- výšky všech uzlů stromu [tree]
+
+begin
+  -- inicializace iterátoru [tree_iterator] pro průchod testovacího stromu [tree] v prefixovém pořadí
+  tree_iterator.init(tree^,ttwd_prefix);
+
+  -- resetujeme výšku včech uzlů ve stromě [tree] (na nulu)
+  reset_height(tree^.get_root);
+
+  -- všem uzlům stromu [tree] přiřadíme výšku
+  set_height(tree^.get_root);
+
+  -- průchod testovacím stromem
+  while tree_iterator.get(node) loop
+
+    -- test vyváženosti, podmínka 1 (jde-li o koncový uzel, pak musí mít výšku 0)
+    if node^.left=nil and node^.right=nil then
+
+      -- není výška nulová?
+      if node^.height<>0 then
+        result:=false;
+        return;
+        end if;
+    
+    -- test vyváženosti, podmínka 2a (má-li uzel pravého potomka, pak pravý potomek musí být koncový uzel)
+    elsif node^.left=nil and node^.right<>nil then
+      node_h:=node^.right;
+
+      -- není uzel koncový?
+      if node_h^.height<>0 then
+        result:=false;
+        return;
+        end if;
+
+    -- test vyváženosti, podmínka 2b (má-li uzel levého potomka, pak levý potomek musí být koncový uzel)
+    elsif node^.left<>nil and node^.right=nil then
+      node_h:=node^.left;
+
+      -- není uzel koncový?
+      if node_h^.height<>0 then
+        result:=false;
+        return;
+        end if;
+
+    -- test vyváženosti, podmínka 3 (váha uzlu, který má levého i pravého potomka musí být -1 resp. 0 resp. 1)
+    elsif node^.left<>nil and node^.right<>nil then
+      -- určíme váhu uzlu (rozdíl výšky levého a pravého potomka)
+      node_h:=node^.left;
+      weight:=t_signed(node_h^.height);
+      node_h:=node^.right;
+      weight-t_signed(node_h^.height);
+
+      -- není očekávaná váha?
+      if weight<>-1 and weight<>0 and weight<>1 then
+        result:=false;
+        return;
+        end if;
+      end if;
+    end loop;
+
+  -- test vyváženosti byl OK, vracíme [true]
+  result:=true;
+
+  -- smažeme všechny složky na zásobníku [stack]
+  stack.pop(stack_item);
+  while stack_item<>nil loop
+    discard stack_item;
+    stack.pop(stack_item);
+    end loop;
+  end test_balance;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_inserting_binary_tree_test_case =
+-- Testovací třída pro vkládání uzlů do stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí (testuje, zda jsou hodnoty v uzlech
+-- setříděné od nejmenšího k největšímu) a v inverzním infixovém pořadí (testuje, zda jsou hodnoty
+-- v uzlech setříděné od největšího k nejmenšímu).
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- procházíme pomocí iterátoru [tree_iterator] v infixovém pořadí (zleva doprava) testovací strom a
+-- kontrolujeme hodnoty v jeho uzlech. Ty by měly být setříděné od nejmenší k největší a měly by odpovídat
+-- hodnotám v prvcích spojového seznamu [list].
+-- Obdobně procházíme testovací strom v reverzním infixovém pořadí, přičmž hodnoty uzlů budou setříděné
+-- sestupně.
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node_count   : t_unsigned;                 -- počet uzlů v testovacím stromě [tree]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      tree         : aliased c_test_binary_tree; -- testovací strom
+      list         : aliased c_list;             -- pomocný spojový seznam
+
+    begin
+      -- Test nevyváženého stromu:
+      -- inicializujeme nevyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- test nevyváženého stromu v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into binary tree (No AVL, infix order)');
+
+      -- test nevyváženého stromu v inverzním infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_inv_infix,tlwd_backward),
+                    'Bad inserting into binary tree (No AVL, reverse infix order)');
+
+      -- odstraníme všechny uzly ve stromu [tree] a prvky seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+
+      -- testujeme, zda je strom [tree] prázdný
+      fail_if_false(tree.count=0,'Binary tree (no AVL) is not empty');
+
+      -- Test vyváženého stromu:
+      -- inicializujeme vyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,true,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- test vyváženého stromu v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into binary tree (AVL, infix order)');
+
+      -- test vyváženého stromu v inverzním infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_inv_infix,tlwd_backward),
+                    'Bad inserting into binary tree (AVL, reverse infix order)');
+
+      -- test vyváženosti stromu [tree]
+      fail_if_false(test_balance(^tree),'Tree is not balanced');
+
+      -- odstraníme všechny uzly ve stromu [tree] a prvky seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+
+      -- testujeme, zda je strom [tree] prázdný
+      fail_if_false(tree.count=0,'Binary tree (AVL) is not empty');
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      node_count:=200;
+      end entry;
+
+    end c_inserting_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_removing_binary_tree_test_case =
+-- Testovací třída pro odebírání uzlů ze stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- náhodně vybíráme uzel stromu [tree] za pomocí volání procedury [get_rand_item]. Tento uzel
+-- ze stromu [tree] odebereme voláním metody [tree.remove]. Poté testujeme, zda strom [tree] je
+-- binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node_count   : t_unsigned;                 -- počet uzlů v testovacím stromě [tree]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      tree         : aliased c_test_binary_tree; -- testovací strom
+      list         : aliased c_list;             -- pomocný spojový seznam
+      count        : t_unsigned;                 -- počet uzlů ve stromu [tree]
+      rem_node     : p_test_binary_tree_node;    -- uzel stromu, který chceme odstranit
+      item         : p_test_list_item;           -- prvek spojového seznamu [list]
+
+    begin
+      -- Test nevyváženého stromu:
+      -- inicializujeme nevyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- určíme počet uzlů ve stromu [tree]
+      count:=tree.count;
+
+      -- dokud nevyprázdníme seznam [list], vybíráme z něj pointery na uzly stromu [tree]
+      while not list.is_empty loop
+        -- vybereme náhodně složku seznamu [list] a určíme z ní pointer na uzel stromu [tree]
+        item:=get_rand_item(^list);
+        rem_node:=item^.node;
+
+        -- vyjmeme uzel [node] ze stromu [tree]
+        tree.remove(rem_node);
+
+        -- dealokujeme složku seznamu [item] a odebraný uzel [rem_node]
+        discard rem_node;
+        list.delete(item);
+
+        -- dekrementujeme počet uzlů ve stromě [tree]
+        count-1;
+
+        -- test vyváženého stromu v infixovém pořadí
+        fail_if_false(test_binary_tree(^tree,^list,count,ttwd_infix,tlwd_forward),
+                     'Binary tree is not a search tree (not AVL)');
+
+        -- test počtu uzlů ve vyváženém stromě [tree]
+        fail_if_false(count=tree.count,'Expected count of nodes is not equal (not AVL)');
+        end loop;
+
+      -- testujeme, zda jsme odebrali všechny uzly testovacího stromu [tree]
+      fail_if_false(tree.count=0,'Binary tree is not empty (not AVL)');
+
+      -- testujeme, zda je seznam [list] prázdný
+      fail_if_false(list.count=0,'Test list is not empty (not AVL)');
+
+      -- odstraníme všechny prvky seznamu [list]
+      list.delete_all;
+
+      -- Test vyváženého stromu:
+      -- inicializujeme vyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,true,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- určíme počet uzlů ve stromu [tree]
+      count:=tree.count;
+
+      -- dokud nevyprázdníme seznam [list], vybíráme z něj pointery na uzly stromu [tree]
+      while not list.is_empty loop
+        -- vybereme náhodně složku seznamu [list] a určíme z ní pointer na uzel stromu [tree]
+        item:=get_rand_item(^list);
+        rem_node:=item^.node;
+
+        -- vyjmeme uzel [node] ze stromu [tree]
+        tree.remove(rem_node);
+
+        -- dealokujeme složku seznamu [item] a odebraný uzel [rem_node]
+        discard rem_node;
+        list.delete(item);
+
+        -- dekrementujeme počet uzlů ve stromě [tree]
+        count-1;
+
+        -- test vyváženého stromu v infixovém pořadí
+        fail_if_false(test_binary_tree(^tree,^list,count,ttwd_infix,tlwd_forward),
+                     'Binary tree is not a search tree (AVL)');
+
+        -- test počtu uzlů ve vyváženém stromě [tree]
+        fail_if_false(count=tree.count,'Expected count of nodes is not equal (AVL)');
+        
+        -- test vyváženosti stromu [tree]
+        fail_if_false(test_balance(^tree),'Tree is not balanced (AVL)');
+        end loop;
+
+      -- testujeme, zda jsme odebrali všechny uzly testovacího stromu [tree]
+      fail_if_false(tree.count=0,'Binary tree is not empty (AVL)');
+
+      -- testujeme, zda je seznam [list] prázdný
+      fail_if_false(list.count=0,'Test list is not empty (AVL)');
+
+      -- odstraníme všechny prvky seznamu [list]
+      list.delete_all;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      node_count:=7;
+      end entry;
+  
+    end c_removing_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_merging_binary_tree_test_case =
+-- Testovací třída pro spojení dvou stromů [tree] a [merge_tree] do stromu [tree] typu
+-- [c_test_binary_tree]. Uzel je typu [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a
+-- hloubku ve stromě [depth]. Třída rovněž testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme dva binární testovací stromy [tree], který obsahuje [node_count] uzlů, a
+-- [merge_tree], který obsahuje [merge_count] uzlů. Jednotlivé uzly obsahují náhodně generované
+-- hodnoty. Stromy [tree] a [merge_tree] jsou vyhedávacími binárními stromy, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Stromy vytvoříme voláním procedury [create_tree]. Při vytváření testovacích stromů [tree] a
+-- [merge_tree] jsou vytvořeny pomocné spojové seznamy [list] a [merge_list], které obsahují
+-- setříděné uzly příslušných stromů podle hodnoty [value]. Při testování strom [merge_tree] napojíme
+-- na strom [tree] voláním metody [tree.merge]. Poté testujeme, zda rozšířený strom [tree] je
+-- binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node_count   : t_unsigned;                 -- počet uzlů v testovacím stromě [tree]
+      merge_count  : t_unsigned;                 -- počet uzlů ve stromě, který přimergujeme [merge_tree]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      tree         : aliased c_test_binary_tree; -- testovací strom
+      merge_tree   : aliased c_test_binary_tree; -- strom, který přimergujeme
+      list         : aliased c_list;             -- pomocný testvací spojový seznam
+      merge_list   : aliased c_list;             -- pomocný testvací spojový seznam určený ke
+                                                 -- spojení se seznamem [list]
+
+    begin
+      -- Test nevyváženého stromu
+      -- inicializujeme nevyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- test nevyváženého stromu [tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into test binary tree (not AVL)');
+
+      -- inicializujeme nevyvážený strom určený k mergování [merge_tree]
+      merge_tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme mergovací strom [merge_tree] se spojovým seznamem [list]
+      create_tree(^merge_tree,^merge_list,merge_count);
+
+      -- test nevyváženého stromu [merge_tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into merged test binary tree (not AVL)');
+
+      -- spojíme pomocný testovací seznam [list] a mergovací seznam [merge_list]
+      merge_test_lists(^list,^merge_list);
+
+      -- spojíme testovací strom [tree] a mergovací strom [merge_tree]
+      tree.merge_subtree(merge_tree);
+
+      -- test nevyváženého stromu [tree] po mergování stromu [merge_tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into test binary tree after merge (not AVL)');
+
+      -- test počtu uzlů v mergovaném stromě
+      fail_if_false(node_count+merge_count=tree.count,
+                    'Expected count of nodes after merging is not equal (AVL tree');
+
+      -- mergovací [merge_tree] strom by měl být prázdný
+      fail_if_false(merge_tree.is_empty,'Merge tree is not empty (not AVL)');
+
+      -- odstraníme všechny uzly stromů a složky seznamů
+      tree.delete_all;
+      merge_tree.delete_all;
+      list.delete_all;
+      merge_list.delete_all;
+
+      -- Test vyváženého stromu:
+      -- inicializujeme vyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,true,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- test vyváženého stromu [tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into test binary tree (AVL, infix order)');
+
+      -- inicializujeme vyvážený strom určený k mergování [merge_tree]
+      merge_tree.init(c_test_binary_tree:tag,true,false);
+
+      -- vytvoříme mergovací strom [merge_tree] se spojovým seznamem [list]
+      create_tree(^merge_tree,^merge_list,merge_count);
+
+      -- test vyváženého stromu [merge_tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into merged test binary tree (AVL, infix order)');
+
+      -- spojíme pomocný testovací seznam [list] a mergovací seznam [merge_list]
+      merge_test_lists(^list,^merge_list);
+
+      -- spojíme testovací strom [tree] a mergovací strom [merge_tree]
+      tree.merge_subtree(merge_tree);
+
+      -- test vyváženého stromu [tree] po mergování stromu [merge_tree] v infixovém pořadí
+      fail_if_false(test_binary_tree(^tree,^list,node_count,ttwd_infix,tlwd_forward),
+                    'Bad inserting into test binary tree after merge (AVL, infix order)');
+
+      -- test počtu uzlů v mergovaném stromě
+      fail_if_false(node_count+merge_count=tree.count,
+                    'Expected count of nodes after merging is not equal (AVL tree');
+
+      -- test vyváženosti stromu po mergování
+      fail_if_false(test_balance(^tree),'Test tree after merge is not balanced');
+
+      -- mergovací [merge_tree] strom by měl být prázdný
+      fail_if_false(merge_tree.is_empty,'Merge tree is not empty (not AVL)');
+
+      -- odstraníme všechny uzly stromů a složky seznamů
+      tree.delete_all;
+      merge_tree.delete_all;
+      list.delete_all;
+      merge_list.delete_all;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      node_count:=200;
+      merge_count:=100;
+      end entry;
+    
+    end c_merging_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_spliting_binary_tree_test_case =
+-- Testovací třída pro odebírání podstromu ze stromu [tree] typu [c_test_binary_tree]. Uzel je typu
+-- [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída rovněž
+-- testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- náhodně vybíráme uzel stromu [tree] (ze spojového seznamu [list]) za pomocí volání procedury
+-- [get_rand_item]. Tento uzel bude kořenem nového podstromu [subtree], který bude ze stromu [tree]
+-- odebrán. Poté testujeme, zda zbytek stromu [tree] a nový podstrom [subtree] jsou binární
+-- vyhledávací stromy a zda obsahují očekávaný počet uzlů. Poté pomocí metody [tree.merge] oba
+-- stromy opět spojíme a testujeme, zda výsledný strom je binární vyhledávací a zda obsahuje očekávaný
+-- počet uzlů. V případě, že testovací strom je AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node_count   : t_unsigned;                 -- počet uzlů v testovacím stromě [tree]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    var
+      tree         : aliased c_test_binary_tree; -- testovací strom
+      node         : p_test_binary_tree_node;    -- pointer na uzel testovacího stromu [tree]
+      subtree      : aliased c_test_binary_tree; -- podstrom, který vyjmeme ze stromu [tree]
+      list         : aliased c_list;             -- pomocný testvací spojový seznam
+      item         : p_test_list_item;           -- prvek spojového seznamu [list]
+
+    begin
+      -- Test nevyváženého stromu:
+      -- inicializujeme nevyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list] a zásobníkem [stack]
+      create_tree(^tree,^list,node_count);
+
+      -- dokud nevyprázdníme seznam [list], vybíráme z něj pointery na uzly stromu [tree]
+      while not list.is_empty loop
+        -- vybereme náhodně složku seznamu [list] a určíme z ní pointer na uzel stromu [tree]
+        item:=get_rand_item(^list);
+        node:=item^.node;
+
+        if item^.node^.value>100 then
+          item:=nil;
+          end if;
+
+        -- vyjmeme ze stromu [tree] podstrom, jehož kořenem bude uzel [node]
+        tree.split_subtree(node,subtree);
+
+        -- testujeme, zda strom [tree] je binární vyhledávací
+        fail_if_false(test_search(^tree),'Test tree is not a search tree (not AVL)');
+
+        -- testujeme, zda nový podstrom [subtree] je binární vyhledávací
+        fail_if_false(test_search(^subtree),'New subtree is not a search tree (not AVL)');
+
+        -- testujeme, zda součet počtu uzlů v testovacím stromě [tree] a novém podstromu [subtree]
+        -- odpovídá počtu v původním stromu [tree]
+        fail_if_false(tree.count+subtree.count=node_count,
+                      'Excpected count of nodes of tree is not equal (not AVL)');
+
+        -- vložíme původní uzly zpět do stromu [tree]
+        tree.merge_subtree(subtree);
+
+        -- testujeme, zda je strom [subtree] prázdný
+        fail_if_false(subtree.is_empty,'New subtree is not empty (not AVL)');
+
+        -- testujeme počet uzlů v obnoveném stromu [tree]
+        fail_if_false(node_count=tree.count,'Expected count of nodes of merged tree is not equal (not AVL)');
+
+        -- testujeme, zda obnovený strom [tree] je vyhledávací
+        fail_if_false(test_search(^tree),'Merged tree is not a search tree (not AVL)');
+
+        -- odstraníme složku seznamu [item]
+        list.delete(item);
+        end loop;
+
+      -- smažeme všechny uzly ve stromu [tree] a složky v seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+
+      -- Test vyváženého stromu:
+      -- inicializujeme vyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,true,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list] a zásobníkem [stack]
+      create_tree(^tree,^list,node_count);
+
+      -- dokud nevyprázdníme seznam [list], vybíráme z něj pointery na uzly stromu [tree]
+      while not list.is_empty loop
+        -- vybereme náhodně složku seznamu [list] a určíme z ní pointer na uzel stromu [tree]
+        item:=get_rand_item(^list);
+        node:=item^.node;
+
+        -- vyjmeme ze stromu [tree] podstrom, jehož kořenem bude uzel [node]
+        tree.split_subtree(node,subtree);
+
+        -- testujeme, zda strom [tree] je binární vyhledávací
+        fail_if_false(test_search(^tree),'Test tree is not a search tree (AVL)');
+
+        -- testujeme, zda strom [tree] je vyvážený
+        fail_if_false(test_balance(^tree),'Test tree is not balanced (AVL)');
+
+        -- testujeme, zda nový podstrom [subtree] je binární vyhledávací
+        fail_if_false(test_search(^subtree),'New subtree is not a search tree (AVL)');
+
+        -- testujeme, zda podstrom [subtree] je vyvážený
+        fail_if_false(test_balance(^subtree),'New subtree is not balanced (AVL)');
+
+        -- testujeme, zda součet počtu uzlů v testovacím stromě [tree] a novém podstromu [subtree]
+        -- odpovídá počtu v původním stromu [tree]
+        fail_if_false(tree.count+subtree.count=node_count,
+                      'Excpected count of nodes of tree is not equal (AVL)');
+
+        -- vložíme původní uzly zpět do stromu [tree]
+        tree.merge_subtree(subtree);
+
+        -- testujeme, zda je strom [subtree] prázdný
+        fail_if_false(subtree.is_empty,'New subtree is not empty (AVL)');
+
+        -- testujeme počet uzlů v obnoveném stromu [tree]
+        fail_if_false(node_count=tree.count,'Expected count of nodes of merged tree is not equal (AVL)');
+
+        -- testujeme, zda obnovený strom [tree] je vyhledávací
+        fail_if_false(test_search(^tree),'Merged tree is not a search tree (AVL)');
+
+        -- testujeme, zda obnovený strom [tree] je vyvážený
+        fail_if_false(test_balance(^tree),'Merged tree is not balanced (AVL)');
+
+        -- odstraníme složku seznamu [item]
+        list.delete(item);
+        end loop;
+
+      -- smažeme všechny uzly ve stromu [tree] a složky v seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      node_count:=200;
+      end entry;
+    
+    end c_spliting_binary_tree_test_case;
+
+
+
+----------------------------------------------------------------------------------------------------
+class private c_deleting_subtree_binary_tree_test_case =
+-- Testovací třída pro odebírání a smazání podstromu ze stromu [tree] typu [c_test_binary_tree]. Uzel
+-- je typu [c_test_binary_tree_node], tj. obsahuje hodnotu [value] a hloubku ve stromě [depth]. Třída
+-- rovněž testuje iterátor pro průchod stromem v infixovém pořadí.
+-- Třída provádí test pro nevyvážené i vyvážené stromy.
+--
+-- Princip: Vytvoříme binární testovací strom [tree], který obsahuje [node_count] uzlů. Jednotlivé
+-- uzly obsahují náhodně generované hodnoty. Strom [tree] je vyhedávacím binárním stromem, tj. hodnoty
+-- [value] uzlů jsou setříděny od nejmenší po největší v infixovém pořadí.
+-- Strom vytvoříme voláním procedury [create_tree]. Při vytváření testovacího stromu [tree] je vytvořen
+-- pomocný spojový seznam, který obsahuje setříděné uzly stromu podle hodnoty [value]. Při testování
+-- opakovaně mažeme celý levý podstrom (pokud neexistuje, končíme) stromu [tree]. Pomocí metody
+-- [tree.get_node_count] určíme počet uzlů levého podstromu před odebráním. Poté testujeme, zda strom
+-- [tree] je binární vyhledávací strom a zda obsahuje očekávaný počet uzlů. V případě, že testovací strom je
+-- AVL strom, testujeme i jeho vyváženost dle definice AVL.
+--
+-- Test je prováděn dvakrát, poprvé pro nevyvážený strom, podruhé pro vyvážený AVL strom. Test
+-- vyváženosti stromu zajišťuje procedura [test_balance].
+----------------------------------------------------------------------------------------------------
+
+    var
+      node_count   : t_unsigned;                 -- počet uzlů v testovacím stromě [tree]
+
+    ------------------------------------------------------------------------------------------------
+    override run_test =
+    -- Testovací metoda.
+    ------------------------------------------------------------------------------------------------
+    use
+      supervised c_test_binary_tree_node;
+
+    var
+      tree         : aliased c_test_binary_tree; -- testovací strom
+      root         : p_test_binary_tree_node;    -- kořen testovacího stromu [tree]
+      list         : aliased c_list;             -- pomocný testvací spojový seznam
+      left_count   : t_unsigned;                 -- počet uzlů v levém podstromu stromu [tree] (od kořene)
+      rem_count    : t_unsigned:=0;              -- počet uzlů, které byly v každém kroku odebrány
+
+    begin
+      -- Test nevyváženého stromu:
+      -- inicializujeme nevyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,false,false);
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- dokud má kořen stromu [tree] levého následníka, provádíme test
+      root:=tree.get_root;
+      while root^.left<>nil loop
+        -- zjistíme počet uzlů v levém podstromu
+        left_count:=0;
+        tree.get_node_count(root^.left,left_count);
+
+        -- inkrementujeme počet odebraných uzlů
+        rem_count+left_count;
+
+        -- smažeme levý podstrom
+        tree.delete_subtree(root^.left);
+
+        -- testujeme počet uzlů ve stromě [tree], kterému jsme odebrali levý podstrom
+        fail_if_false(node_count-rem_count=tree.count,'Expected count of nodes is not equal (AVL)');
+
+        -- testujeme, zda obnovený strom [tree] je vyhledávací
+        fail_if_false(test_search(^tree),'Test tree is not a search tree (AVL)');
+
+        -- získáme nový kořen testovacího stromu [tree] a opakujeme test
+        root:=tree.get_root;
+        end loop;
+
+      -- smažeme všechny uzly ve stromu [tree] a složky v seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+
+      -- Test vyváženého stromu:
+      -- inicializujeme vyvážený strom [tree]
+      tree.init(c_test_binary_tree:tag,true,false);
+
+      -- reset proměnné [rem_count]
+      rem_count:=0;
+
+      -- vytvoříme testovací strom [tree] se spojovým seznamem [list]
+      create_tree(^tree,^list,node_count);
+
+      -- dokud má kořen stromu [tree] levého následníka, provádíme test
+      root:=tree.get_root;
+      while root^.left<>nil loop
+        -- zjistíme počet uzlů v levém podstromu
+        left_count:=0;
+        tree.get_node_count(root^.left,left_count);
+
+        -- inkrementujeme počet odebraných uzlů
+        rem_count+left_count;
+
+        -- smažeme levý podstrom
+        tree.delete_subtree(root^.left);
+
+        -- testujeme počet uzlů ve stromě [tree], kterému jsme odebrali levý podstrom
+        fail_if_false(node_count-rem_count=tree.count,'Expected count of nodes is not equal (AVL)');
+
+        -- testujeme, zda obnovený strom [tree] je vyhledávací
+        fail_if_false(test_search(^tree),'Test tree is not a search tree (AVL)');
+
+        -- testujeme vyváženost stromu [tree]
+        fail_if_false(test_balance(^tree),'Binary tree is not balanced');
+
+        -- získáme nový kořen testovacího stromu [tree] a opakujeme test
+        root:=tree.get_root;
+        end loop;
+
+      -- smažeme všechny uzly ve stromu [tree] a složky v seznamu [list]
+      tree.delete_all;
+      list.delete_all;
+      end run_test;
+
+
+
+    ------------------------------------------------------------------------------------------------
+    entry =
+    -- Inicializační metoda pro inicializaci interních proměnných.
+    ------------------------------------------------------------------------------------------------
+    begin
+      -- inicializace interních proměnných
+      node_count:=200;
+      end entry;
+    
+    end c_deleting_subtree_binary_tree_test_case;
+
+  end binary_trees_test;

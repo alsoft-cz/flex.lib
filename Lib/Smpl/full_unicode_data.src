@@ -1,7 +1,7 @@
 ﻿----------------------------------------------------------------------------------------------------
 -- ISO 10646/UNICODE support.
--- Flex Standard Library
--- Copyright (C) 1999-2003 A && L soft
+-- Flex Standard Multi-Platform Library
+-- Copyright (C) 1999-2004 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- This file has been generated from UnicodeData.txt database and SpecialCasing.txt
 -- and contains data needed for character conversions.
