@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private names =
 -- Object names.
 -- Flex Standard Library
@@ -62,15 +62,15 @@ class private abstract c_name_component =
 -->>>
     ------------------------------------------------------------------------------------------------
     static join_subcomponent =
-    -- P©ipoj° zleva kopii subkomponenty [prefix] a zprava [suffix], pokud je kàkter† z nich nil, nen° p©ipojena
+    -- P≈ôipoj√≠ zleva kopii subkomponenty [prefix] a zprava [suffix], pokud je kƒõkter√° z nich nil, nen√≠ p≈ôipojena
     ------------------------------------------------------------------------------------------------
     begin
-      -- p©id†n° [prefix] na zaá†tek seznamu
+      -- p≈ôid√°n√≠ [prefix] na zaƒç√°tek seznamu
       if prefix<>nil then
         subcomponents.insert_first(prefix^.clone);
         end if;
 
-      -- p©id†n° [suffix] na konec seznamu
+      -- p≈ôid√°n√≠ [suffix] na konec seznamu
       if suffix<>nil then
         subcomponents.insert_last(suffix^.clone);
         end if;
@@ -80,7 +80,7 @@ class private abstract c_name_component =
 
     ------------------------------------------------------------------------------------------------
     static find_item =
-    -- Vr†t° subkomponentu s po©adov†m á°slem [index] v seznamu [components]
+    -- Vr√°t√≠ subkomponentu s po≈ôadov√°m ƒç√≠slem [index] v seznamu [components]
     ------------------------------------------------------------------------------------------------
     var
       i            : t_signed32;                 -- index
@@ -89,8 +89,8 @@ class private abstract c_name_component =
       -- inicializace
       i:=index;
 
---      *** tohle mi p©ijde nàjakò divnò. Hlavnà ta pot©eba pracovat se spojovòm seznamem p©es index
-      -- index kladnò => vr†t° se [i]-tò prvek od zaá†tku
+--      *** tohle mi p≈ôijde nƒõjak√Ω divn√Ω. Hlavnƒõ ta pot≈ôeba pracovat se spojov√Ωm seznamem p≈ôes index
+      -- index kladn√Ω => vr√°t√≠ se [i]-t√Ω prvek od zaƒç√°tku
       if i>0 then
         result:=subcomponents.get_first();
         while i>1 and result<>nil loop
@@ -99,7 +99,7 @@ class private abstract c_name_component =
           end loop;
         end if;
 
-      -- index z†pornò => vr†t° se -[i]-tò prvek od konce
+      -- index z√°porn√Ω => vr√°t√≠ se -[i]-t√Ω prvek od konce
       if i<0 then
         result:=subcomponents.get_last();
         while i<-1 and result<>nil loop
@@ -113,19 +113,19 @@ class private abstract c_name_component =
 
     ------------------------------------------------------------------------------------------------
     static assign_subcomponents =
-    -- P©i©ad° do [subcomponents] komponenty z source, dàl† hlubokÇ kopie
+    -- P≈ôi≈ôad√≠ do [subcomponents] komponenty z source, dƒõl√° hlubok√© kopie
     ------------------------------------------------------------------------------------------------
     var
-      c            : p_name_subcomponent;        -- promànn† pro projit° seznamu [source]
+      c            : p_name_subcomponent;        -- promƒõnn√° pro projit√≠ seznamu [source]
 
     begin
       -- vymazat seznam [subcomponents]
       subcomponents.delete_all;
 
-      -- proj°t seznam [source]
+      -- proj√≠t seznam [source]
       c:=source.get_first;
       while c<>nil loop
-        -- do seznamu [components] p©idat hlubokou kopii prvku seznamu [source]
+        -- do seznamu [components] p≈ôidat hlubokou kopii prvku seznamu [source]
         subcomponents.insert_last(c^.clone);
         c:=source.get_next(c);
         end loop;
@@ -166,10 +166,10 @@ class private abstract c_name_subcomponent =
 -->>>
     ------------------------------------------------------------------------------------------------
     static assign_to =
-    -- Zkop°ruje do tohoto objektu data z [source].
+    -- Zkop√≠ruje do tohoto objektu data z [source].
     ------------------------------------------------------------------------------------------------
     begin
-      -- zkop°ruje jedinÇ pole - name
+      -- zkop√≠ruje jedin√© pole - name
       set_name(source^.name^);
       end assign_to;
 --<<<
@@ -275,10 +275,10 @@ class private c_name =
     -- Joins a prefix and a suffix into this name. 
     ------------------------------------------------------------------------------------------------
     begin
-      -- vloëit [prefix] na zaá†tek seznamu
+      -- vlo≈æit [prefix] na zaƒç√°tek seznamu
       join_before(prefix);
 
-      -- vloëit [suffix] na konec seznamu
+      -- vlo≈æit [suffix] na konec seznamu
       join_after(suffix);
       end join;
 }
@@ -289,13 +289,13 @@ class private c_name =
     -- Prepends a prefix before this name. This name must be a relative name.
     ------------------------------------------------------------------------------------------------
     var
-      component    : p_name_component;           -- promànn† pro projet° seznamu
+      component    : p_name_component;           -- promƒõnn√° pro projet√≠ seznamu
 
     begin 
-      -- proj°t seznam prefix.components
+      -- proj√≠t seznam prefix.components
       component:=prefix.components.get_last();
       while component<>nil loop
-        -- vloëit na zaá†tek seznamu kopii [component]
+        -- vlo≈æit na zaƒç√°tek seznamu kopii [component]
         components.insert_first(component^.clone);
         component:=prefix.components.get_prev(component);
         end loop;
@@ -308,13 +308,13 @@ class private c_name =
     -- Appends a suffix to this name. The [suffix] must be a relative name.
     ------------------------------------------------------------------------------------------------
     var
-      component    : p_name_component;           -- promànn† pro projet° seznamu
+      component    : p_name_component;           -- promƒõnn√° pro projet√≠ seznamu
 
     begin 
-      -- proj°t seznam suffix.components
+      -- proj√≠t seznam suffix.components
       component:=suffix.components.get_first();
       while component<>nil loop
-        -- vloëit na konec seznamu kopii [component]
+        -- vlo≈æit na konec seznamu kopii [component]
         components.insert_last(component^.clone);
         component:=suffix.components.get_next(component);
         end loop;
@@ -353,24 +353,24 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static find_component_from =
-    -- Najde prvn° komponentu typu [atype] nebo potomka [atype]
+    -- Najde prvn√≠ komponentu typu [atype] nebo potomka [atype]
     ------------------------------------------------------------------------------------------------
     var
-      p            : p_name_component;           -- promànn† pro proch†zen° seznamu components
+      p            : p_name_component;           -- promƒõnn√° pro proch√°zen√≠ seznamu components
 
     begin
       -- %% TODO(TAG)
       {
-      -- proj°t seznam
+      -- proj√≠t seznam
       p:=components.get_first();
       while p<>nil loop
-        -- [p] je p©ijatelnÇho typu
+        -- [p] je p≈ôijateln√©ho typu
         if p:tag>=atype then
           result:=p;
           return;
           end if;
 
-        -- p©ej°t na dal®° prvek seznamu
+        -- p≈ôej√≠t na dal≈°√≠ prvek seznamu
         p:=components.get_next(p);
         end loop;
       }
@@ -380,24 +380,24 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static find_last_component =
-    -- Najde posledn° komponentu typu [atype] nebo potomka [atype]
+    -- Najde posledn√≠ komponentu typu [atype] nebo potomka [atype]
     ------------------------------------------------------------------------------------------------
     var
-      p            : p_name_component;           -- promànn† pro proch†zen° seznamu components
+      p            : p_name_component;           -- promƒõnn√° pro proch√°zen√≠ seznamu components
 
     begin
       -- %% TODO(TAG)
       {
-      -- proj°t seznam
+      -- proj√≠t seznam
       p:=components.get_last();
       while p<>nil loop
-        -- [p] je p©ijatelnÇho typu
+        -- [p] je p≈ôijateln√©ho typu
         if p:tag>=atype then
           result:=p;
           return;
           end if;
 
-        -- p©ej°t na p©edchoz° prvek seznamu
+        -- p≈ôej√≠t na p≈ôedchoz√≠ prvek seznamu
         p:=components.get_prev(p);
         end loop;
       }
@@ -427,18 +427,18 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static find_subitem =
-    -- Vr†t° subkomponentu s po©adovovòm á°slem [main_index] v seznamu [components], 
-    -- v r†mci nàho pak subkomponentu s po©adovòm á°slem [sub_index]
-    -- Indexy jsou á°slovanÇ od jedniáky, pokud jsou z†pornÇ, znamen† to, ëe seznam je proch†zen odzadu,
-    -- tzn. ëe pro [sub_index]=-2 to vr†t° druhou subkomponentu odzadu
+    -- Vr√°t√≠ subkomponentu s po≈ôadovov√Ωm ƒç√≠slem [main_index] v seznamu [components], 
+    -- v r√°mci nƒõho pak subkomponentu s po≈ôadov√Ωm ƒç√≠slem [sub_index]
+    -- Indexy jsou ƒç√≠slovan√© od jedniƒçky, pokud jsou z√°porn√©, znamen√° to, ≈æe seznam je proch√°zen odzadu,
+    -- tzn. ≈æe pro [sub_index]=-2 to vr√°t√≠ druhou subkomponentu odzadu
     ------------------------------------------------------------------------------------------------
     var
       c            : p_name_component;           -- komponenta ze seznamu [components]
     begin
-      -- zjistit [main-index]-†tou komponentu
+      -- zjistit [main-index]-√°tou komponentu
       c:=find_item(main_index);
 
-      -- vr†tit [sub_index]-†tou subkomponentu
+      -- vr√°tit [sub_index]-√°tou subkomponentu
       if c<>nil then
         result:=c^.find_item(sub_index);
       else
@@ -450,7 +450,7 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static find_item =
-    -- Vr†t° komponentu s po©adovovòm á°slem [index] v seznamu [components]
+    -- Vr√°t√≠ komponentu s po≈ôadovov√Ωm ƒç√≠slem [index] v seznamu [components]
     ------------------------------------------------------------------------------------------------
     var
       i            : t_signed32;                 -- index
@@ -458,7 +458,7 @@ class private c_name =
       -- inicializace
       i:=index;
 
-      -- index kladnò => vr†tit [i]-tò prvek od zaá†tku
+      -- index kladn√Ω => vr√°tit [i]-t√Ω prvek od zaƒç√°tku
       if i>0 then
         result:=components.get_first();
         while i>1 and result<>nil loop
@@ -467,7 +467,7 @@ class private c_name =
           end loop;
         end if;
 
-      -- index z†pornò => vr†tit -[i]-tò prvek od konce
+      -- index z√°porn√Ω => vr√°tit -[i]-t√Ω prvek od konce
       if i<0 then
         result:=components.get_last();
         while i<-1 and result<>nil loop
@@ -481,17 +481,17 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static equal_to =
-    -- Vr†t°, zda je [name] je stejnÇ jako [this]
+    -- Vr√°t√≠, zda je [name] je stejn√© jako [this]
     ------------------------------------------------------------------------------------------------
     begin
-      --*** no fuj, co je tohle za pras†rnu? í†dnò koment†©, vno©enò blok, kterò prakticky nepot©ebuje®
-      -- %%TODO(MEETING) zjistit pravÇ namespace m°sto [c_namespace_system]
+      --*** no fuj, co je tohle za pras√°rnu? ≈Ω√°dn√Ω koment√°≈ô, vno≈ôen√Ω blok, kter√Ω prakticky nepot≈ôebuje≈°
+      -- %%TODO(MEETING) zjistit prav√© namespace m√≠sto [c_namespace_system]
       declare var
         system_ns  : ^c_namespace_system;
       begin
         new system_ns;
 
-        -- zjistit rovnost, rovnost se zji®üuje vol†n°m namespace
+        -- zjistit rovnost, rovnost se zji≈°≈•uje vol√°n√≠m namespace
         result:=system_ns^.equal_names(components,ns_data,name.components,name.ns_data);
       leave
         discard system_ns;
@@ -505,12 +505,12 @@ class private c_name =
     -- Makes deep copy of source
     ------------------------------------------------------------------------------------------------
     begin
-      -- zkop°rov†t komponenty
+      -- zkop√≠rov√°t komponenty
       assign_components(source.components);
       name_type:=source.name_type;
 
-      -- zkop°rovat pole ns - mus° udàlat p©°slu®nò c_namespace
-      -- %%TODO(MEETING) zjistit pravÇ namespace m°sto [c_namespace_system]
+      -- zkop√≠rovat pole ns - mus√≠ udƒõlat p≈ô√≠slu≈°n√Ω c_namespace
+      -- %%TODO(MEETING) zjistit prav√© namespace m√≠sto [c_namespace_system]
       declare var
         system_ns  : ^c_namespace_system;
       begin
@@ -535,15 +535,15 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static join_component =
-    -- P©ipoj° zleva kopii komponenty prefix a zprava suffix, pokud je nàkter† z nich nil, nen° p©ipojena
+    -- P≈ôipoj√≠ zleva kopii komponenty prefix a zprava suffix, pokud je nƒõkter√° z nich nil, nen√≠ p≈ôipojena
     ------------------------------------------------------------------------------------------------
     begin
-      -- p©idat prefix ma zaá†tek seznamu
+      -- p≈ôidat prefix ma zaƒç√°tek seznamu
       if prefix<>nil then
         components.insert_first(prefix^.clone);
         end if;
 
-      -- p©idat suffix ma konec seznamu
+      -- p≈ôidat suffix ma konec seznamu
       if suffix<>nil then
         components.insert_first(suffix^.clone);
         end if;
@@ -552,10 +552,10 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci a zkop°rovat pole
+      -- vytvo≈ôit novou instanci a zkop√≠rovat pole
       new result;
       result^.assign_to(this);
       end clone;
@@ -563,7 +563,7 @@ class private c_name =
 
     ------------------------------------------------------------------------------------------------
     static assign_components =
-    -- P©i©ad° do [subcomponents] komponenty z source
+    -- P≈ôi≈ôad√≠ do [subcomponents] komponenty z source
     ------------------------------------------------------------------------------------------------
     var
       c            : p_name_component;
@@ -571,10 +571,10 @@ class private c_name =
       -- vymazat seznam components
       components.delete_all;
 
-      -- proj°t seznam source
+      -- proj√≠t seznam source
       c:=source.get_first;
       while c<>nil loop
-        -- do seznamu [components] p©idat hlubokou kopii prvku seznamu [source]
+        -- do seznamu [components] p≈ôidat hlubokou kopii prvku seznamu [source]
         components.insert_last(c^.clone);
         c:=source.get_next(c);
         end loop;
@@ -735,7 +735,7 @@ class private c_namespace_system =
             name   : out p_text_name;            -- separated subcomponent name
             is_folder : out t_logical;           -- [true] if the subcomponent represents a folder 
                                                  -- for sure
-            can_have_quotes : in t_logical:=false) = -- p©°znak, zda jmÇno mñëe bòt v uvozovk†ch
+            can_have_quotes : in t_logical:=false) = -- p≈ô√≠znak, zda jm√©no m≈Ø≈æe b√Ωt v uvozovk√°ch
         -- Separates the name of a subcomponent starting at position [start] from the [text_name].
         --------------------------------------------------------------------------------------------
 
@@ -1092,19 +1092,19 @@ class private c_namespace_system =
     -- Compares two names by their components and returns, whether they are equal
     ------------------------------------------------------------------------------------------------
     var
-      left_name    : p_text_name;                -- ukazatel na dynamickò ©etàzec levÇho jmÇna
-      right_name   : p_text_name;                -- ukazatel na dynamickò ©etàzec pravÇho jmÇna
+      left_name    : p_text_name;                -- ukazatel na dynamick√Ω ≈ôetƒõzec lev√©ho jm√©na
+      right_name   : p_text_name;                -- ukazatel na dynamick√Ω ≈ôetƒõzec prav√©ho jm√©na
       
     begin
       -- compose names
       compose_name(left,left_specific,left_name);
       compose_name(right,right_specific,right_name);
 
-      -- vòsledn† hodnota je true, pokud jsou oba ©etàzce stejnÇ aë na velikost p°smen
+      -- v√Ωsledn√° hodnota je true, pokud jsou oba ≈ôetƒõzce stejn√© a≈æ na velikost p√≠smen
       result:=str_compare_case_insensitive(left_name^,right_name^);
 
     leave
-      -- uvolnit pamàt
+      -- uvolnit pamƒõt
       discard left_name;
       discard right_name;
       end equal_names;
@@ -1116,7 +1116,7 @@ class private c_namespace_system =
     -- makes copy of ns
     ------------------------------------------------------------------------------------------------
     begin
-      -- zkop°rovat namespace-specific data, pokud vstupn° argument nen° nil
+      -- zkop√≠rovat namespace-specific data, pokud vstupn√≠ argument nen√≠ nil
       if ns<>nil then
         new p_namespace_specific_system(result);
         p_namespace_specific_system(result)^:=p_namespace_specific_system(ns)^;
@@ -1135,13 +1135,13 @@ class private c_name_component_server =
 -->>>
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_component_server(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_subcomponents(subcomponents);
       end clone;
 --<<<
@@ -1156,13 +1156,13 @@ class private c_name_component_drive =
 -->>>
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_component_drive(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_subcomponents(subcomponents);
       end clone;
 --<<<
@@ -1427,13 +1427,13 @@ class private c_name_component_file_or_folder =
 
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu.
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_component_file_or_folder(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_subcomponents(subcomponents);
       end clone;
 --<<<
@@ -1449,13 +1449,13 @@ class private c_name_component_file =
 -->>>
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_component_file(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_subcomponents(subcomponents);
       end clone;
 --<<<
@@ -1470,13 +1470,13 @@ class private c_name_component_folder =
 -->>>
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_component_folder(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_subcomponents(subcomponents);
       end clone;
 --<<<
@@ -1491,13 +1491,13 @@ class private c_name_subcomponent_base_name =
 -->>>
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci
+      -- vytvo≈ôit novou instanci
       new p_name_subcomponent_base_name(result);
 
-      -- zkop°rovat data do novÇ instance
+      -- zkop√≠rovat data do nov√© instance
       result^.assign_to(^this);
       end clone;
 --<<<      
@@ -1512,10 +1512,10 @@ class private c_name_subcomponent_extension =
 -->>>    
     ------------------------------------------------------------------------------------------------
     override clone =
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it novou instanci a zkop°rovat do n° data z tohoto objektu
+      -- vytvo≈ôit novou instanci a zkop√≠rovat do n√≠ data z tohoto objektu
       new p_name_subcomponent_extension(result);
       result^.assign_to(^this);
       end clone;
@@ -1524,12 +1524,12 @@ class private c_name_subcomponent_extension =
 
     ------------------------------------------------------------------------------------------------
     static find_in_list =
-    -- vr†t° index p©°pony v ©etàzci exts á°slovanò od 0, -1, pokud tam p©°pona nen°
+    -- vr√°t√≠ index p≈ô√≠pony v ≈ôetƒõzci exts ƒç√≠slovan√Ω od 0, -1, pokud tam p≈ô√≠pona nen√≠
     ------------------------------------------------------------------------------------------------
     var
       i            : t_unsigned32;               -- index do [name]^
-      waseq        : t_logical;                  -- p©°znak, zda pr†và testovan† p©°pona je zat°m rovna name
-      index        : t_signed32;                 -- kolik†t† p©°pona je zpracov†v†na
+      waseq        : t_logical;                  -- p≈ô√≠znak, zda pr√°vƒõ testovan√° p≈ô√≠pona je zat√≠m rovna name
+      index        : t_signed32;                 -- kolik√°t√° p≈ô√≠pona je zpracov√°v√°na
 
     begin
       -- inicializace
@@ -1537,40 +1537,40 @@ class private c_name_subcomponent_extension =
       waseq:=true;
       index:=0;
 
-      -- zpracovat vstupn° ©etàzec
+      -- zpracovat vstupn√≠ ≈ôetƒõzec
       for j in exts:range loop
-        -- aktu†ln° znak je ';' - oddàlovaá znakñ
+        -- aktu√°ln√≠ znak je ';' - oddƒõlovaƒç znak≈Ø
         if exts[j]=";" then
-          -- p©°pona je shodn† s £sekem ©etezce [exts] - vr†tit index p©°pony v seznamu [exts]
+          -- p≈ô√≠pona je shodn√° s √∫sekem ≈ôetezce [exts] - vr√°tit index p≈ô√≠pony v seznamu [exts]
           if waseq and i=name^:length+1 then
             result:=index;
             return;
             end if;
 
-          -- ©etàzec [name] se bude testovat zase od zaá†tku
+          -- ≈ôetƒõzec [name] se bude testovat zase od zaƒç√°tku
           waseq:=true;
           i:=1;
           succ index;
 
-        -- aktu†ln° znak nen° st©edn°k
+        -- aktu√°ln√≠ znak nen√≠ st≈ôedn√≠k
         else
-          -- aktu†ln° znak [name] se li®° od aktu†ln°ho znaku [exts]
+          -- aktu√°ln√≠ znak [name] se li≈°√≠ od aktu√°ln√≠ho znaku [exts]
           if i>name^:length or else exts[j]<>name^[i] then
             waseq:=false;
             end if;
 
-          -- p©ej°t na dal®° znak ©etàzce [name]
+          -- p≈ôej√≠t na dal≈°√≠ znak ≈ôetƒõzce [name]
           succ i;
           end if;
         end loop;
 
-      -- byla nalezena p©°pona?
+      -- byla nalezena p≈ô√≠pona?
       if waseq and i=name^:length+1
-        -- ano => vr†tit index p©°pony
+        -- ano => vr√°tit index p≈ô√≠pony
         then
           result:=index;
 
-        -- ne => vr†tit p©°znak
+        -- ne => vr√°tit p≈ô√≠znak
         else
           result:=-1;
           end if;
@@ -1595,9 +1595,9 @@ procedure operator_c_name_concat_on_s =
 -- Joins names name and joined_name
 ----------------------------------------------------------------------------------------------------
 var 
-  name_tmp         : c_name;                     -- pomocnÇ jmÇno
+  name_tmp         : c_name;                     -- pomocn√© jm√©no
 begin 
-  -- rozparsov†n° a p©id†n° na konec
+  -- rozparsov√°n√≠ a p≈ôid√°n√≠ na konec
   name_tmp.assign_to_string(joined_name);
   name.join_after(name_tmp);
   end operator_c_name_concat_on_s;
@@ -1619,12 +1619,12 @@ procedure operator_c_name_concat_on_u =
 -- Joins names name and joined_name, joined_name is added to last component
 ----------------------------------------------------------------------------------------------------
 var
-  last             : p_name_component;           -- pomocnÇ jmÇno
+  last             : p_name_component;           -- pomocn√© jm√©no
 begin 
-  -- zjistit posledn° komponentu
+  -- zjistit posledn√≠ komponentu
   last:=name.find_item(-1);
 
-  -- pokud existuje = seznam [name.components] nen° pr†zdnò, p©idat [joined_name]
+  -- pokud existuje = seznam [name.components] nen√≠ pr√°zdn√Ω, p≈ôidat [joined_name]
   if last<>nil then
     last^.join_subcomponent(nil,joined_name);
     end if;
@@ -1638,7 +1638,7 @@ procedure operator_c_name_concat_n_n_n =
 -- Joins names left and right and returns left & right
 ----------------------------------------------------------------------------------------------------
 begin
-  -- p©idat na zaá†tek [left] a na konec [right]
+  -- p≈ôidat na zaƒç√°tek [left] a na konec [right]
   result.join(left,right);
   end operator_c_name_concat_n_n_n;
 
@@ -1652,7 +1652,7 @@ begin
   -- inicializovat
   result:=left;
 
-  -- na konec seznamu p©idat [right] 
+  -- na konec seznamu p≈ôidat [right] 
   result.join_string('',right);
   end operator_c_name_concat_n_s_n;
 
@@ -1666,7 +1666,7 @@ begin
   -- inicializovat
   result:=right;
 
-  -- na konec zaá†tek p©idat [left] 
+  -- na konec zaƒç√°tek p≈ôidat [left] 
   result.join_string(left,'');
   end operator_c_name_concat_s_n_n;
 
@@ -1677,7 +1677,7 @@ procedure operator_c_name_pred =
 -- Removes last component.
 ----------------------------------------------------------------------------------------------------
 begin
-  -- odebrat posledn° komponentu
+  -- odebrat posledn√≠ komponentu
   n.remove_last_component;
   end operator_c_name_pred;
 
@@ -1688,7 +1688,7 @@ procedure operator_c_name_equal =
 -- left=right
 ----------------------------------------------------------------------------------------------------
 begin
-  -- zjistit, zda [left] a [right] jsou stejnÇ
+  -- zjistit, zda [left] a [right] jsou stejn√©
   result:=left.equal_to(right);
   end operator_c_name_equal;
 
@@ -1699,7 +1699,7 @@ procedure operator_c_name_not_equal =
 -- left<>right
 ----------------------------------------------------------------------------------------------------
 begin
-  -- zjistit, zda [left] a [right] nejsou stejnÇ
+  -- zjistit, zda [left] a [right] nejsou stejn√©
   result:=not left.equal_to(right);
   end operator_c_name_not_equal;
 
@@ -1710,7 +1710,7 @@ procedure operator_c_name_assign_n_n =
 -- name:=value, makes deep copy
 ----------------------------------------------------------------------------------------------------
 begin
-  -- hlubok† kopie [value] do [name]
+  -- hlubok√° kopie [value] do [name]
   name.assign_to(value);
   end operator_c_name_assign_n_n;
 
@@ -1732,10 +1732,10 @@ procedure operator_c_name_assign_s_n =
 -- value:=name, makes decomposion into components
 ----------------------------------------------------------------------------------------------------
 var 
-  tmp               : p_text_name;               -- pomocn† promànn†
+  tmp               : p_text_name;               -- pomocn√° promƒõnn√°
 
 begin
-  -- konverze z [c_name] na ©etàzec
+  -- konverze z [c_name] na ≈ôetƒõzec
   tmp:=name;
   value:=tmp^;
 
@@ -1749,7 +1749,7 @@ procedure operator_c_name_assign_ps_n =
 -- name:=value, makes composion from components
 ----------------------------------------------------------------------------------------------------
 begin
-  -- konverze z ©etàzce na [c_name]
+  -- konverze z ≈ôetƒõzce na [c_name]
   name.compose_name(value);
   end operator_c_name_assign_ps_n;
 --<<<
@@ -1757,29 +1757,29 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure get_parent_path =
--- Vr†t° rodiáovskò adres†© zadanÇ cesty.
+-- Vr√°t√≠ rodiƒçovsk√Ω adres√°≈ô zadan√© cesty.
 ----------------------------------------------------------------------------------------------------
 var
-  c                : p_name_component;           -- posledn° komponenta
-  p                : p_name_component;           -- p©edposledn° komponenta
+  c                : p_name_component;           -- posledn√≠ komponenta
+  p                : p_name_component;           -- p≈ôedposledn√≠ komponenta
 begin
   -- %%TODO(TAG)
 
 {
-  -- zkop°rovat objekt do vòslednÇ hodnoty
+  -- zkop√≠rovat objekt do v√Ωsledn√© hodnoty
   result:=name.clone;
   c:=result^.components.get_last();
 
-  -- seznam [components] m† posledn° prvek
+  -- seznam [components] m√° posledn√≠ prvek
   if c<>nil then
-    -- je posledn° komponenta jmÇno souboru?
+    -- je posledn√≠ komponenta jm√©no souboru?
     if c:tag>=c_name_component_file_or_folder:tag then
-      -- zjistit p©edposledn° komponentu
+      -- zjistit p≈ôedposledn√≠ komponentu
       p:=result^.get_prev(c);
 
-      -- existuje p©edposledn° komponenta?
+      -- existuje p≈ôedposledn√≠ komponenta?
       if p<>nil then
-        -- pokud je p©edposledn° komponenta jmÇno sloëky, vymazat posledn° komponentu vòsledku
+        -- pokud je p≈ôedposledn√≠ komponenta jm√©no slo≈æky, vymazat posledn√≠ komponentu v√Ωsledku
         if p:tag>=c_name_component_file_or_folder:tag then
           pred result^;
           end if;

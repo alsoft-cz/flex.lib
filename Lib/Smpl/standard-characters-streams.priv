@@ -1,4 +1,4 @@
-var
+﻿var
   crlf           : static const string 2 of t_char32 := \$0d\$0a;
   cr             : static const t_char32             := \$0d;
   lf             : static const t_char32             := \$0a;

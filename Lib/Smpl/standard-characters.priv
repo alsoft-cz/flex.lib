@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private characters =
 -- Character manipulation for different code page standards (ASCII, UNICODE, ISO 10646)
 -- Flex Standard Library                                   
@@ -601,7 +601,7 @@ class private c_character_encoder_ascii =
       
     {  -- raise feature_not_implemented;
       %%TODO translation from 32bit to 8bit basically finish this function
-              nedokonáeno protoëe nen° jistÇ jak se budou mapovat rñznÇ k¢dovÇ str†nky
+              nedokonƒçeno proto≈æe nen√≠ jist√© jak se budou mapovat r≈Øzn√© k√≥dov√© str√°nky
 
       
       -- clear output

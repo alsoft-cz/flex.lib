@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private standard =
 -- Flex Standard Library
 -- Copyright (C) 1999-2003 A && L soft
@@ -92,8 +92,8 @@ procedure to_ascii_string (
 -- Convert standard string to OS 8bit string.
 ----------------------------------------------------------------------------------------------------
 begin
-  -- %%TODO(LIB) Toto je velmi zjednodu®enÇ. Màlo by se to snaëit nap©°klad odh†ákov†vat
-  -- znaky s diakritikou, zohlednit systÇmovou k¢dovou str†nku a podobnà.
+  -- %%TODO(LIB) Toto je velmi zjednodu≈°en√©. Mƒõlo by se to sna≈æit nap≈ô√≠klad odh√°ƒçkov√°vat
+  -- znaky s diakritikou, zohlednit syst√©movou k√≥dovou str√°nku a podobnƒõ.
 
   -- allocate memory
   new sysstr range str:length+1;

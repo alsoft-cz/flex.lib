@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+﻿----------------------------------------------------------------------------------------------------
 module public input =
 -- Input operations routines.
 -- Flex Standard Library
@@ -104,7 +104,7 @@ type
   p_menu_event = ^class t_menu_event;}
 
   -- focus event
-  -- %% tohle snad nebude pot�eba
+  -- %% tohle snad nebude potřeba
   
   -- %% temporary to be replaced by list
   t_queue_data     = string 500 of p_input_event;

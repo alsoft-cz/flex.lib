@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+﻿----------------------------------------------------------------------------------------------------
 module public standard =
 -- Flex Standard Library
 -- Copyright (C) 1999-2003 A && L soft
@@ -183,7 +183,7 @@ const
   null_handle      = system.windows.windef.winnt.t_handle(0);
 #end if;
 {
-%%TODO c_class n�vrh 
+%%TODO c_class návrh 
 ----------------------------------------------------------------------------------------------------
 class c_class =
 -- generic ancestor for all classes

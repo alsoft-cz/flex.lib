@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public hash_tables =
 -- Data structures - hash tables.
 -- Flex Standard Library
@@ -63,53 +63,53 @@ class public abstract c_hash_table = extend c_container;
     --   The [item] shall have its ID already assigned.
     ------------------------------------------------------------------------------------------------
     static find (
-        id         : in t_hash_item_id;          -- id hledanÇho prvku
+        id         : in t_hash_item_id;          -- id hledan√©ho prvku
         item       : out p_hash_table_item);     -- found item
     -- Finds and [item] by its [id]. When there is no item with such an [id] in the hash table, 
     -- sets [item] to NIL.
     ------------------------------------------------------------------------------------------------
     static has_item (
-        item       : in p_hash_table_item)       -- hledanò prvek
+        item       : in p_hash_table_item)       -- hledan√Ω prvek
         return t_logical;
-    -- Vrac°, zda [item] je prvkem hash table. Pokud je, vrac° [true].
+    -- Vrac√≠, zda [item] je prvkem hash table. Pokud je, vrac√≠ [true].
     ------------------------------------------------------------------------------------------------
     static get_first 
-        return p_hash_table_item;                -- vracenò prvn° prvek
-    -- Vrac° prvn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+        return p_hash_table_item;                -- vracen√Ω prvn√≠ prvek
+    -- Vrac√≠ prvn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static set_first (
-        item       : out p_hash_table_item);     -- vracenò prvn° prvek
-    -- Vrac° prvn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+        item       : out p_hash_table_item);     -- vracen√Ω prvn√≠ prvek
+    -- Vrac√≠ prvn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static get_last 
-        return p_hash_table_item;                -- vracenò posledn° prvek
-    -- Vrac° posledn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+        return p_hash_table_item;                -- vracen√Ω posledn√≠ prvek
+    -- Vrac√≠ posledn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static set_last (
-        item       : out p_hash_table_item);     -- vracenò posledn° prvek
-    -- Vrac° posledn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+        item       : out p_hash_table_item);     -- vracen√Ω posledn√≠ prvek
+    -- Vrac√≠ posledn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static get_prev (
-        item       : in p_hash_table_item)       -- prvek, od kterÇho se vrac° prvek p©edch†zej°c°
-        return p_hash_table_item;                -- p©edch†zej°c° prvek
-    -- Vrac° p©edch†zej°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen vrac° NIL.
+        item       : in p_hash_table_item)       -- prvek, od kter√©ho se vrac√≠ prvek p≈ôedch√°zej√≠c√≠
+        return p_hash_table_item;                -- p≈ôedch√°zej√≠c√≠ prvek
+    -- Vrac√≠ p≈ôedch√°zej√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static set_prev (
-        item       : in out p_hash_table_item);  -- prvek, do kterÇho se vrac° prvek p©edch†zej°c°
-    -- Vrac° p©edch†zej°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen vrac° NIL.
+        item       : in out p_hash_table_item);  -- prvek, do kter√©ho se vrac√≠ prvek p≈ôedch√°zej√≠c√≠
+    -- Vrac√≠ p≈ôedch√°zej√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static get_next (
-        item       : in p_hash_table_item)       -- prvek, od kterÇho se vrac° prvek n†sleduj°c°
-        return p_hash_table_item;                -- p©edch†zej°c° prvek
-    -- Vrac° n†sleduj°c° prvek k zadanÇmu prvku v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen, vrac° NIL.
+        item       : in p_hash_table_item)       -- prvek, od kter√©ho se vrac√≠ prvek n√°sleduj√≠c√≠
+        return p_hash_table_item;                -- p≈ôedch√°zej√≠c√≠ prvek
+    -- Vrac√≠ n√°sleduj√≠c√≠ prvek k zadan√©mu prvku v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static set_next (                                   
-        item       : in out p_hash_table_item);  -- prvek, do kterÇho se vrac° prvek n†sleduj°c°
-    -- Vrac° n†sleduj°c° prvek k zadanÇmu prvku v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen, vrac° NIL. 
+        item       : in out p_hash_table_item);  -- prvek, do kter√©ho se vrac√≠ prvek n√°sleduj√≠c√≠
+    -- Vrac√≠ n√°sleduj√≠c√≠ prvek k zadan√©mu prvku v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen, vrac√≠ NIL. 
     ------------------------------------------------------------------------------------------------
 
   protected

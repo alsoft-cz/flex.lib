@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private hash_tables =
 -- Data structures - hash tables.
 -- Flex Standard Library
@@ -49,7 +49,7 @@ class private abstract c_hash_table =
       slot         : p_hash_slot;
 
     begin
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         return;
         end if;
@@ -155,15 +155,15 @@ class private abstract c_hash_table =
     -- Removes and discards all items in the container.
     ------------------------------------------------------------------------------------------------
     var
-      item         : p_hash_table_item;          -- prvn° prvek hash table
+      item         : p_hash_table_item;          -- prvn√≠ prvek hash table
 
     begin
-      -- naá°st prvn° prvek
+      -- naƒç√≠st prvn√≠ prvek
       item:=get_first;
 
-      -- smazat v®echny prvky hash table
+      -- smazat v≈°echny prvky hash table
       while item<>nil loop
-        -- naá°st prvn° prvek a smazat ho
+        -- naƒç√≠st prvn√≠ prvek a smazat ho
         delete(item);
         item:=get_first;
         end loop;
@@ -173,28 +173,28 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static has_item =
-    -- Vrac°, zda [item] je prvkem hash table. Pokud je, vrac° [true].
+    -- Vrac√≠, zda [item] je prvkem hash table. Pokud je, vrac√≠ [true].
     ------------------------------------------------------------------------------------------------
     var 
-      item_in_hash : p_hash_table_item;          -- aktu†ln° prvek v hash table
+      item_in_hash : p_hash_table_item;          -- aktu√°ln√≠ prvek v hash table
 
     begin
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         result:=false;
         return;
         end if;
 
-      -- hledat prvn° prvek ve stejnÇm slotu jako hledanò prvek
+      -- hledat prvn√≠ prvek ve stejn√©m slotu jako hledan√Ω prvek
       item_in_hash:=hash_table^[item^.item_id mod modulus].first;
 
-      -- hledat hledanò prvek od prvn°ho prvku seznamu
+      -- hledat hledan√Ω prvek od prvn√≠ho prvku seznamu
       while item_in_hash<>nil and then item_in_hash<>item loop
-        -- p©echod na dal®° prvek
+        -- p≈ôechod na dal≈°√≠ prvek
         item_in_hash:=item_in_hash^.next;
         end loop;
 
-      -- byl nalezen hledanò prvek ?
+      -- byl nalezen hledan√Ω prvek ?
       result:=item_in_hash=item;
       end has_item;
 
@@ -202,22 +202,22 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static get_first =
-    -- Vrac° prvn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+    -- Vrac√≠ prvn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     var 
       i_slot       : t_unsigned;                 -- ukazatel na slot
 
     begin
-      -- zbavit se trivi†ln°ch p©°padñ
+      -- zbavit se trivi√°ln√≠ch p≈ô√≠pad≈Ø
       if count=0 then return end if;
 
-      -- naj°t prvn° obsazenò slot
+      -- naj√≠t prvn√≠ obsazen√Ω slot
       i_slot:=hash_table^:first;
       while hash_table^[i_slot].first=nil loop
         succ i_slot;
         end loop;
 
-      -- vr†tit prvn° prvek slotu
+      -- vr√°tit prvn√≠ prvek slotu
       result:=hash_table^[i_slot].first;
       end get_first;
     
@@ -225,22 +225,22 @@ class private abstract c_hash_table =
     
     ------------------------------------------------------------------------------------------------
     static set_first =
-    -- Vrac° prvn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+    -- Vrac√≠ prvn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     var 
       i_slot       : t_unsigned;                 -- ukazatel na slot
 
     begin
-      -- zbavit se trivi†ln°ch p©°padñ
+      -- zbavit se trivi√°ln√≠ch p≈ô√≠pad≈Ø
       if count=0 then return end if;
 
-      -- naj°t prvn° obsazenò slot
+      -- naj√≠t prvn√≠ obsazen√Ω slot
       i_slot:=hash_table^:first;
       while hash_table^[i_slot].first=nil loop
         succ i_slot;
         end loop;
 
-      -- vr†tit prvn° prvek slotu
+      -- vr√°tit prvn√≠ prvek slotu
       item:=hash_table^[i_slot].first;
       end set_first;
 
@@ -248,22 +248,22 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static get_last =
-    -- Vrac° posledn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+    -- Vrac√≠ posledn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     var 
       i_slot       : t_unsigned;                 -- ukazatel na slot
 
     begin
-      -- zbavit se trivi†ln°ch p©°padñ
+      -- zbavit se trivi√°ln√≠ch p≈ô√≠pad≈Ø
       if count=0 then return end if;
 
-      -- naj°t prvn° obsazenò slot
+      -- naj√≠t prvn√≠ obsazen√Ω slot
       i_slot:=hash_table^:last;
       while hash_table^[i_slot].last=nil loop
         pred i_slot;
         end loop;
 
-      -- vr†tit prvn° prvek slotu
+      -- vr√°tit prvn√≠ prvek slotu
       result:=hash_table^[i_slot].last;
       end get_last;
     
@@ -271,22 +271,22 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static set_last =
-    -- Vrac° posledn° prvek hash table. Pokud ë†dnò prvek tabulka nem†, vrac° NIL.
+    -- Vrac√≠ posledn√≠ prvek hash table. Pokud ≈æ√°dn√Ω prvek tabulka nem√°, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     var 
       i_slot       : t_unsigned;                 -- ukazatel na slot
 
     begin
-      -- zbavit se trivi†ln°ch p©°padñ
+      -- zbavit se trivi√°ln√≠ch p≈ô√≠pad≈Ø
       if count=0 then return end if;
 
-      -- naj°t prvn° obsazenò slot
+      -- naj√≠t prvn√≠ obsazen√Ω slot
       i_slot:=hash_table^:last;
       while hash_table^[i_slot].last=nil loop
         pred i_slot;
         end loop;
 
-      -- vr†tit prvn° prvek slotu
+      -- vr√°tit prvn√≠ prvek slotu
       item:=hash_table^[i_slot].last;
       end set_last;
 
@@ -294,45 +294,45 @@ class private abstract c_hash_table =
     
     ------------------------------------------------------------------------------------------------
     static get_prev =
-    -- Vrac° p©edch†zej°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen vrac° NIL. 
+    -- Vrac√≠ p≈ôedch√°zej√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen vrac√≠ NIL. 
     ------------------------------------------------------------------------------------------------
     var 
-      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kterÇm by mohl bòt [prev_item]
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter√©m by mohl b√Ωt [prev_item]
 
     begin
-      -- p©edpoklad neexistejce p©edch†zej°c°ho prvku
+      -- p≈ôedpoklad neexistejce p≈ôedch√°zej√≠c√≠ho prvku
       result:=nil;
       
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         return;
         end if;
 
       -- je [item] prvkem hash table ?
       if not has_item(item) then 
-        -- nen° prvkem hash table, vr†tit [result:=nil]
+        -- nen√≠ prvkem hash table, vr√°tit [result:=nil]
         return;
         end if;
 
-      -- existuje v aktu†ln°m slotà p©edch†zej°c° item ?
+      -- existuje v aktu√°ln√≠m slotƒõ p≈ôedch√°zej√≠c√≠ item ?
       if item^.prev<>nil then
-        -- ano, existuje, vr†tit [prev_item]
+        -- ano, existuje, vr√°tit [prev_item]
         result:=item^.prev;
         return;
         end if;
 
-      -- zjistit index slotu aktu†ln°ho prvku
+      -- zjistit index slotu aktu√°ln√≠ho prvku
       i_slot:=item^.item_id mod modulus;
 
-      -- hledat p©edch†zej°c° prvek (proch†zet p©edch†zej°c° sloty, dokud nebude prvek nalezen)
+      -- hledat p≈ôedch√°zej√≠c√≠ prvek (proch√°zet p≈ôedch√°zej√≠c√≠ sloty, dokud nebude prvek nalezen)
       while i_slot<>hash_table^:first loop;
-        -- p©ej°t na p©edch†zej°c° slot
+        -- p≈ôej√≠t na p≈ôedch√°zej√≠c√≠ slot
         pred i_slot;
 
-        -- je slot nepr†zdnò ?
+        -- je slot nepr√°zdn√Ω ?
         if hash_table^[i_slot].last<>nil then
-          -- ne, vr†tit p©edch†zej°c° prvek
+          -- ne, vr√°tit p≈ôedch√°zej√≠c√≠ prvek
           result:=hash_table^[i_slot].last;
           break;
           end if;
@@ -343,46 +343,46 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static set_prev =
-    -- Vrac° p©edch†zej°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen vrac° [item:=nil]. 
+    -- Vrac√≠ p≈ôedch√°zej√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen vrac√≠ [item:=nil]. 
     ------------------------------------------------------------------------------------------------
     var 
-      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kterÇm by mohl bòt [prev_item]
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter√©m by mohl b√Ωt [prev_item]
 
     begin
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         return;
         end if;
 
       -- je [item] prvkem hash table ?
       if not has_item(item) then 
-        -- nen° prvkem hash table, vr†tit [item:=nil]
+        -- nen√≠ prvkem hash table, vr√°tit [item:=nil]
         item:=nil;
         return;
         end if;
 
-      -- existuje v aktu†ln°m slotu p©edch†zej°c° item ?
+      -- existuje v aktu√°ln√≠m slotu p≈ôedch√°zej√≠c√≠ item ?
       if item^.prev<>nil then
-        -- ano, existuje, vr†tit [prev_item]
+        -- ano, existuje, vr√°tit [prev_item]
         item:=item^.prev;
         return;
         end if;
 
-      -- zjistit index slotu aktu†ln°ho prvku
+      -- zjistit index slotu aktu√°ln√≠ho prvku
       i_slot:=item^.item_id mod modulus;
 
-      -- p©edpoklad neexistejce p©edch†zej°c°ho prvku
+      -- p≈ôedpoklad neexistejce p≈ôedch√°zej√≠c√≠ho prvku
       item:=nil;
       
-      -- hledat p©edch†zej°c° prvek (proch†zet p©edch†zej°c° sloty, dokud nebude prvek nalezen)
+      -- hledat p≈ôedch√°zej√≠c√≠ prvek (proch√°zet p≈ôedch√°zej√≠c√≠ sloty, dokud nebude prvek nalezen)
       while i_slot<>hash_table^:first loop;
-        -- p©ej°t na p©edch†zej°c° slot
+        -- p≈ôej√≠t na p≈ôedch√°zej√≠c√≠ slot
         pred i_slot;
 
         -- je prvek nalezen ?
         if hash_table^[i_slot].last<>nil then
-          -- ano, vr†tit p©edch†zej°c° prvek
+          -- ano, vr√°tit p≈ôedch√°zej√≠c√≠ prvek
           item:=hash_table^[i_slot].last;
           break;
           end if;
@@ -393,45 +393,45 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static get_next =
-    -- Vrac° n†sleduj°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen, vrac° [item:=nil]. 
+    -- Vrac√≠ n√°sleduj√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen, vrac√≠ [item:=nil]. 
     ------------------------------------------------------------------------------------------------
     var 
-      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kterÇm by mohl bòt [next_item]
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter√©m by mohl b√Ωt [next_item]
 
     begin
-      -- p©edpoklad neexistejce n†sleduj°c°ho prvku
+      -- p≈ôedpoklad neexistejce n√°sleduj√≠c√≠ho prvku
       result:=nil;
       
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         return;
         end if;
 
       -- je [item] prvkem hash table ?
       if not has_item(item) then 
-        -- nen° prvkem hash table, vr†tit [result:=nil]
+        -- nen√≠ prvkem hash table, vr√°tit [result:=nil]
         return;
         end if;
 
-      -- existuje v aktu†ln°m slotà n†sleduj°c° item ?
+      -- existuje v aktu√°ln√≠m slotƒõ n√°sleduj√≠c√≠ item ?
       if item^.next<>nil then
-        -- ano, existuje, vr†tit [next_item]
+        -- ano, existuje, vr√°tit [next_item]
         result:=item^.next;
         return;
         end if;
 
-      -- zjistit index slotu aktu†ln°ho prvku
+      -- zjistit index slotu aktu√°ln√≠ho prvku
       i_slot:=item^.item_id mod modulus;
 
-      -- hledat n†sleduj°c° prvek (proch†zet n†sleduj°c° sloty, dokud nebude prvek nalezen)
+      -- hledat n√°sleduj√≠c√≠ prvek (proch√°zet n√°sleduj√≠c√≠ sloty, dokud nebude prvek nalezen)
       while i_slot<>hash_table^:last loop;
-        -- p©ej°t na n†sleduj°c° slot
+        -- p≈ôej√≠t na n√°sleduj√≠c√≠ slot
         succ i_slot;
 
         -- je prvek nalezen ?
         if hash_table^[i_slot].first<>nil then
-          -- ano, vr†tit n†sleduj°c° prvek
+          -- ano, vr√°tit n√°sleduj√≠c√≠ prvek
           result:=hash_table^[i_slot].first;
           break;
           end if;
@@ -442,46 +442,46 @@ class private abstract c_hash_table =
 
     ------------------------------------------------------------------------------------------------
     static set_next =
-    -- Vrac° n†sleduj°c° prvek k [item] v hash table. Pokud zadanò prvek nen° v hash table
-    -- nalezen, vrac° [item:=nil]. 
+    -- Vrac√≠ n√°sleduj√≠c√≠ prvek k [item] v hash table. Pokud zadan√Ω prvek nen√≠ v hash table
+    -- nalezen, vrac√≠ [item:=nil]. 
     ------------------------------------------------------------------------------------------------
     var 
-      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kterÇm by mohl bòt [next_item]
+      i_slot       : t_unsigned;                 -- ukazatel na slot, ve kter√©m by mohl b√Ωt [next_item]
 
     begin
-      -- item mus° bòt definov†n
+      -- item mus√≠ b√Ωt definov√°n
       if item=nil then
         return;
         end if;
 
       -- je [item] prvkem hash table ?
       if not has_item(item) then 
-        -- nen° prvkem hash table, vr†tit [next_item:=nil]
+        -- nen√≠ prvkem hash table, vr√°tit [next_item:=nil]
         item:=nil;
         return;
         end if;
 
-      -- existuje v aktu†ln°m slotà n†sleduj°c° item ?
+      -- existuje v aktu√°ln√≠m slotƒõ n√°sleduj√≠c√≠ item ?
       if item^.next<>nil then
-        -- ano, existuje, vr†tit [next_item]
+        -- ano, existuje, vr√°tit [next_item]
         item:=item^.next;
         return;
         end if;
 
-      -- zjistit index slotu aktu†ln°ho prvku
+      -- zjistit index slotu aktu√°ln√≠ho prvku
       i_slot:=item^.item_id mod modulus;
 
-      -- p©edpoklad neexistejce n†sleduj°c°ho prvku
+      -- p≈ôedpoklad neexistejce n√°sleduj√≠c√≠ho prvku
       item:=nil;
 
-      -- hledat n†sleduj°c° prvek (proch†zet n†sleduj°c° sloty, dokud nebude prvek nalezen)
+      -- hledat n√°sleduj√≠c√≠ prvek (proch√°zet n√°sleduj√≠c√≠ sloty, dokud nebude prvek nalezen)
       while i_slot<>hash_table^:last loop;
-        -- p©ej°t na n†sleduj°c° slot
+        -- p≈ôej√≠t na n√°sleduj√≠c√≠ slot
         succ i_slot;
 
         -- je prvek nalezen ?
         if hash_table^[i_slot].first<>nil then
-          -- ano, vr†tit n†sleduj°c° prvek
+          -- ano, vr√°tit n√°sleduj√≠c√≠ prvek
           item:=hash_table^[i_slot].first;
           break;
           end if;

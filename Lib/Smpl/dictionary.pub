@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public dictionary =
 -- Dictionary implementation
 -- Flex Standard Library
@@ -12,7 +12,7 @@ with
 message
   dictionary_error;
 
--- dop©ednÇ deklarace
+-- dop≈ôedn√© deklarace
 class c_dictionary_key;           type p_dictionary_key           = ^class c_dictionary_key;
 class c_dictionary;               type p_dictionary               = ^class c_dictionary;
 class c_string_dictionary;        type p_string_dictionary        = ^class c_string_dictionary;
@@ -20,7 +20,7 @@ class c_string_string_dictionary; type p_string_string_dictionary = ^class c_str
 class c_dictionary_value;         type p_dictionary_value         = ^class c_dictionary_value;
 
 type
-  -- vòsledek porovn†n° kl°áñ
+  -- v√Ωsledek porovn√°n√≠ kl√≠ƒç≈Ø
   t_key_compare_result = enum
       kct_equal;
       kct_bigger;
@@ -36,12 +36,12 @@ type
 
 ----------------------------------------------------------------------------------------------------
 class public c_dictionary_key =
--- Obecnò p©edek pro kl°á do slovn°ku
+-- Obecn√Ω p≈ôedek pro kl√≠ƒç do slovn√≠ku
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     virtual abstract compare (
-        other      : p_dictionary_key)           -- porovn†vanò kl°á
+        other      : p_dictionary_key)           -- porovn√°van√Ω kl√≠ƒç
         return t_key_compare_result;
     -- compares [this] and [other]
     ------------------------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ class public c_dictionary_key =
 
 ----------------------------------------------------------------------------------------------------
 class public c_dictionary_value =
--- Hodnota ukl†dan† do slovn°ku
+-- Hodnota ukl√°dan√° do slovn√≠ku
 ----------------------------------------------------------------------------------------------------
 
     end c_dictionary_value;
@@ -61,37 +61,37 @@ class public c_dictionary_value =
 
 ----------------------------------------------------------------------------------------------------
 class public c_dictionary =
--- Slovn°k - t©°da, kter† uchov†v† seznam dvojic kl°á-hodnota 
--- a pro kaëdò kl°á um° efektivnà naj°t hodnotu
+-- Slovn√≠k - t≈ô√≠da, kter√° uchov√°v√° seznam dvojic kl√≠ƒç-hodnota 
+-- a pro ka≈æd√Ω kl√≠ƒç um√≠ efektivnƒõ naj√≠t hodnotu
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static insert_row (
-        key        : in p_dictionary_key;        -- kl°á
+        key        : in p_dictionary_key;        -- kl√≠ƒç
         value      : in p_dictionary_value);     -- hodnota
-    -- P©id† do slovn°ku dvojici [key,item]
-    -- Pokud uë [key] ve slovn°ku existuje, vyvol† vòjimku [dictionary_error]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,item]
+    -- Pokud u≈æ [key] ve slovn√≠ku existuje, vyvol√° v√Ωjimku [dictionary_error]
     ------------------------------------------------------------------------------------------------
     static delete_row (
-        key        : in p_dictionary_key;        -- kl°á
-        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m† smazat
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku, kl°á i jeho hodnotu uvoln° z pamàti.
+        key        : in p_dictionary_key;        -- kl√≠ƒç
+        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m√° smazat
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku, kl√≠ƒç i jeho hodnotu uvoln√≠ z pamƒõti.
     ------------------------------------------------------------------------------------------------
     static remove_row (
-        key        : in p_dictionary_key);       -- kl°á
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku, kl°á a jeho hodnotu neuvoln° z pamàti.
+        key        : in p_dictionary_key);       -- kl√≠ƒç
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku, kl√≠ƒç a jeho hodnotu neuvoln√≠ z pamƒõti.
     ------------------------------------------------------------------------------------------------
     static find_row (
-        key        : in p_dictionary_key)        -- kl°á
+        key        : in p_dictionary_key)        -- kl√≠ƒç
         return p_dictionary_value;
-    -- Najde hodnotu kl°áe ve slovn°ku.
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku.
     ------------------------------------------------------------------------------------------------
     static delete_all (
-        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m† smazat
-    -- Vymaëe v®echny poloëky slovn°ku
+        what       : in t_dictionary_delete_mode:=ddm_both); -- co se m√° smazat
+    -- Vyma≈æe v≈°echny polo≈æky slovn√≠ku
     ------------------------------------------------------------------------------------------------
     static remove_all;
-    -- Vyáist° slovn°k
+    -- Vyƒçist√≠ slovn√≠k
     ------------------------------------------------------------------------------------------------
 
     end c_dictionary;
@@ -100,24 +100,24 @@ class public c_dictionary =
 
 ----------------------------------------------------------------------------------------------------
 class public c_string_dictionary = extend c_dictionary;
--- Slovn°k s ©etàzcovòmi kl°ái
+-- Slovn√≠k s ≈ôetƒõzcov√Ωmi kl√≠ƒçi
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static insert_value (
-        key        : in t_char32ustr;            -- kl°á
+        key        : in t_char32ustr;            -- kl√≠ƒç
         value      : in p_dictionary_value);     -- hodnota
-    -- P©id† do slovn°ku dvojici [key,value]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,value]
     ------------------------------------------------------------------------------------------------
     static delete_value (
-        key        : in t_char32ustr;            -- kl°á
-        what       : in t_dictionary_delete_mode:=ddm_key); -- co se m† smazat
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku
+        key        : in t_char32ustr;            -- kl√≠ƒç
+        what       : in t_dictionary_delete_mode:=ddm_key); -- co se m√° smazat
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku
     ------------------------------------------------------------------------------------------------
     static find_value (
-        key        : in t_char32ustr)            -- kl°á
+        key        : in t_char32ustr)            -- kl√≠ƒç
         return p_dictionary_value;
-    -- Najde hodnotu kl°áe ve slovn°ku
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku
     ------------------------------------------------------------------------------------------------
 
     end c_string_dictionary;
@@ -126,29 +126,29 @@ class public c_string_dictionary = extend c_dictionary;
 
 ----------------------------------------------------------------------------------------------------
 class public c_string_string_dictionary = extend c_string_dictionary;
--- Slovn°k s ©etàzcovòmi kl°ái a ©etàzcovòmi hodnotami
+-- Slovn√≠k s ≈ôetƒõzcov√Ωmi kl√≠ƒçi a ≈ôetƒõzcov√Ωmi hodnotami
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static insert (
-        key        : in t_char32ustr;            -- kl°á
+        key        : in t_char32ustr;            -- kl√≠ƒç
         value      : in t_char32ustr);           -- hodnota
-    -- P©id† do slovn°ku dvojici [key,item]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,item]
     ------------------------------------------------------------------------------------------------
     static find (
-        key        : in t_char32ustr)            -- kl°á
+        key        : in t_char32ustr)            -- kl√≠ƒç
         return t_char32str;
-    -- Najde hodnotu kl°áe ve slovn°ku
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku
     ------------------------------------------------------------------------------------------------
     static search (
-        key        : in t_char32ustr;            -- kl°á
-        value      : out t_char32ustr)           -- hodnota kl°áe
+        key        : in t_char32ustr;            -- kl√≠ƒç
+        value      : out t_char32ustr)           -- hodnota kl√≠ƒçe
         return t_logical;
-    -- Najde hodnotu kl°áe ve slovn°ku, vr†t°, zda byl kl°á nalezen
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku, vr√°t√≠, zda byl kl√≠ƒç nalezen
     ------------------------------------------------------------------------------------------------
     static delete (
-        key        : in t_char32ustr);           -- kl°á
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku
+        key        : in t_char32ustr);           -- kl√≠ƒç
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku
     ------------------------------------------------------------------------------------------------
 
     end c_string_string_dictionary;

@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public sockets =
 -- Console I/O.
 -- Flex Standard Library
@@ -28,7 +28,7 @@ const
 
 
 message
-  socket_exception;                                      -- obecn† vòjimka p©i pr†ci se sockety
+  socket_exception;                                      -- obecn√° v√Ωjimka p≈ôi pr√°ci se sockety
   socket_initialization_error extend socket_exception;   -- nemuze inicializovat podporu os
   socket_connection_error extend socket_exception;
   socket_shutdown_error extend socket_exception;

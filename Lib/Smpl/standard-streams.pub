@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public streams =
 -- Stream Interface
 -- Flex Standard Library
@@ -102,11 +102,11 @@ with
 
 
 message
-  stream_exception;                              -- obecn† vòjimka p©i pr†ci se streamy
-  stream_error extend stream_exception;          -- obecn† chyba p©i pr†ci se streamy
-  stream_internal_error extend stream_error;     -- intern° chyba
-  stream_read_error extend stream_error;         -- chyba p©i áten°
-  stream_end_of_data extend stream_exception;    -- vòjimka - áten° p©es konec dat
+  stream_exception;                              -- obecn√° v√Ωjimka p≈ôi pr√°ci se streamy
+  stream_error extend stream_exception;          -- obecn√° chyba p≈ôi pr√°ci se streamy
+  stream_internal_error extend stream_error;     -- intern√≠ chyba
+  stream_read_error extend stream_error;         -- chyba p≈ôi ƒçten√≠
+  stream_end_of_data extend stream_exception;    -- v√Ωjimka - ƒçten√≠ p≈ôes konec dat
   stream_other_side extend stream_exception;     -- druha strana prestala cist data
   stream_already_closed extend stream_exception; -- jiz bylo zavreno
 

@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+ï»¿----------------------------------------------------------------------------------------------------
 class private abstract c_stream_generic_writer = 
 ----------------------------------------------------------------------------------------------------
 var
@@ -301,8 +301,8 @@ var
 
   ------------------------------------------------------------------------------------------------
   static read_unchecked_internal (
-      data       : out unchecked;              -- p©e‡ten  data
-      sizebytes  : in static t_offset;                -- velikost dat, kter  se maj¡ p©e‡¡st
+      data       : out unchecked;              -- pÅ™eÄtenÃ¡ data
+      sizebytes  : in static t_offset;                -- velikost dat, kterÃ¡ se majÃ­ pÅ™eÄÃ­st
       readbytes  : out t_offset)               -- velikost ktera byla prectena
       return t_logical =
   ------------------------------------------------------------------------------------------------

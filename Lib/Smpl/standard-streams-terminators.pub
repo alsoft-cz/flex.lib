@@ -1,10 +1,10 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public terminators =
 ----------------------------------------------------------------------------------------------------
 
 ----------------------------------------------------------------------------------------------------
 class public c_null_input_stream = extend c_input_stream;
--- Nulovò stream - vraci nulova data az do close
+-- Nulov√Ω stream - vraci nulova data az do close
 ----------------------------------------------------------------------------------------------------
     end c_null_input_stream;
 
@@ -12,7 +12,7 @@ class public c_null_input_stream = extend c_input_stream;
 
 ----------------------------------------------------------------------------------------------------
 class public c_empty_input_stream = extend c_input_stream;
--- Nulovò stream - vraci end of data jako prvni packet
+-- Nulov√Ω stream - vraci end of data jako prvni packet
 ----------------------------------------------------------------------------------------------------
     end c_empty_input_stream;
 
@@ -21,7 +21,7 @@ class public c_empty_input_stream = extend c_input_stream;
 {
 ----------------------------------------------------------------------------------------------------
 class public c_random_input_stream = extend c_input_stream;
--- Nulovò stream - vrac° pseudan†hodn† data.
+-- Nulov√Ω stream - vrac√≠ pseudan√°hodn√° data.
 ----------------------------------------------------------------------------------------------------
     end c_random_input_stream;
 }
@@ -29,7 +29,7 @@ class public c_random_input_stream = extend c_input_stream;
 
 ----------------------------------------------------------------------------------------------------
 class public c_null_output_stream = extend c_output_stream;
--- Nulovò stream - zahazuje zapsan†data az do close
+-- Nulov√Ω stream - zahazuje zapsan√°data az do close
 ----------------------------------------------------------------------------------------------------
     end c_null_output_stream;
 

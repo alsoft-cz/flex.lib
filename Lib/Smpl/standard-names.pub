@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public names =
 -- Object names.
 -- Flex Standard Library
@@ -114,25 +114,25 @@ class public abstract c_name_component = extend c_list_item;
 
 -->>>
     static find_item (
-        index      : t_signed32)                 -- index v hlavn° £rovni komponent
-                   -- *** je nutnÇ idexovat komponenty? 
-                   -- <*> samoz©ejmà to nen° nutnÇ, ale je to pohodlnàj®° pro uëivatele
-                   -- poá°t† se s t°m, ëe indexy vstupuj°c° do tÇto funkce buduou mal† á°sla, p©ibliënà -3..3
+        index      : t_signed32)                 -- index v hlavn√≠ √∫rovni komponent
+                   -- *** je nutn√© idexovat komponenty? 
+                   -- <*> samoz≈ôejmƒõ to nen√≠ nutn√©, ale je to pohodlnƒõj≈°√≠ pro u≈æivatele
+                   -- poƒç√≠t√° se s t√≠m, ≈æe indexy vstupuj√≠c√≠ do t√©to funkce buduou mal√° ƒç√≠sla, p≈ôibli≈ænƒõ -3..3
         return p_name_subcomponent;
-    -- Vr†t° subkomponentu s po©adov†m á°slem [index] v seznamu [components]
+    -- Vr√°t√≠ subkomponentu s po≈ôadov√°m ƒç√≠slem [index] v seznamu [components]
     ------------------------------------------------------------------------------------------------
     virtual abstract clone
         return p_name_component;
-    -- Vr†t° hlubokou kopii tÇto komponenty.
+    -- Vr√°t√≠ hlubokou kopii t√©to komponenty.
     ------------------------------------------------------------------------------------------------
     static join_subcomponent (
         prefix     : in p_name_subcomponent;     -- prefix of the name
         suffix     : in p_name_subcomponent);    -- suffix of the name
-    -- P©ipoj° zleva kopii subkomponenty [prefix] a zprava [suffix], pokud je kàkter† z nich nil, nen° p©ipojena
+    -- P≈ôipoj√≠ zleva kopii subkomponenty [prefix] a zprava [suffix], pokud je kƒõkter√° z nich nil, nen√≠ p≈ôipojena
     ------------------------------------------------------------------------------------------------
     static assign_subcomponents (
         source     : in c_list);
-    -- P©i©ad° do [subcomponents] komponenty z source, dàl† hlubokÇ kopie
+    -- P≈ôi≈ôad√≠ do [subcomponents] komponenty z source, dƒõl√° hlubok√© kopie
     ------------------------------------------------------------------------------------------------
 --<<<
 
@@ -156,11 +156,11 @@ class public abstract c_name_subcomponent = extend c_list_item;
 -->>>
     virtual abstract clone
         return p_name_subcomponent;
-    -- Vr†t° hlubokou kopii tÇto komponenty.
+    -- Vr√°t√≠ hlubokou kopii t√©to komponenty.
     ------------------------------------------------------------------------------------------------
     static assign_to (
-        source     : in p_name_subcomponent);    -- zdrojovò objekt
-    -- Zkop°ruje do tohoto objektu data z [source].
+        source     : in p_name_subcomponent);    -- zdrojov√Ω objekt
+    -- Zkop√≠ruje do tohoto objektu data z [source].
     ------------------------------------------------------------------------------------------------
 --<<<
     end c_name_subcomponent;
@@ -209,12 +209,12 @@ class public c_name = extend c_list_item;
     static find_component_from (
         atype      : in t_tag;                   -- the type of name to be searched
         component  : out p_name_component);      -- return value
-    -- Najde prvn° komponentu typu [atype] nebo potomka [atype]
+    -- Najde prvn√≠ komponentu typu [atype] nebo potomka [atype]
     ------------------------------------------------------------------------------------------------
     static find_last_component (
         atype      : in t_tag;                   -- the type of name to be searched
         component  : out p_name_component);      -- return value
-    -- Najde posledn° komponentu typu [atype] nebo potomka [atype]
+    -- Najde posledn√≠ komponentu typu [atype] nebo potomka [atype]
     ------------------------------------------------------------------------------------------------
     static remove_last_component;
     -- Removes last component, if it exists    
@@ -223,44 +223,44 @@ class public c_name = extend c_list_item;
     -- Removes last component, if it exists    
     ------------------------------------------------------------------------------------------------
     static find_subitem (
-        main_index : t_signed32;                 -- index v hlavn° £rovni komponent
-        sub_index  : t_signed32)                 -- index v £rovni subkomponent
+        main_index : t_signed32;                 -- index v hlavn√≠ √∫rovni komponent
+        sub_index  : t_signed32)                 -- index v √∫rovni subkomponent
         return p_name_subcomponent;
-    -- Vr†t° subkomponentu s po©adovovòm á°slem [main_index] v seznamu [components], 
-    -- v r†mci nàho pak subkomponentu s po©adovòm á°slem [sub_index]
-    -- Indexy jsou á°slovanÇ od jedniáky, pokud jsou z†pornÇ, znamen† to, ëe seznam je proch†zen odzadu,
-    -- tzn. ëe pro [sub_index]=-2 to vr†t° druhou subkomponentu odzadu
+    -- Vr√°t√≠ subkomponentu s po≈ôadovov√Ωm ƒç√≠slem [main_index] v seznamu [components], 
+    -- v r√°mci nƒõho pak subkomponentu s po≈ôadov√Ωm ƒç√≠slem [sub_index]
+    -- Indexy jsou ƒç√≠slovan√© od jedniƒçky, pokud jsou z√°porn√©, znamen√° to, ≈æe seznam je proch√°zen odzadu,
+    -- tzn. ≈æe pro [sub_index]=-2 to vr√°t√≠ druhou subkomponentu odzadu
     ------------------------------------------------------------------------------------------------
     static find_item (
-        index      : t_signed32)                 -- index v hlavn° £rovni komponent
+        index      : t_signed32)                 -- index v hlavn√≠ √∫rovni komponent
         return p_name_component;
-    -- Vr†t° komponentu s po©adovovòm á°slem [index] v seznamu [components]
+    -- Vr√°t√≠ komponentu s po≈ôadovov√Ωm ƒç√≠slem [index] v seznamu [components]
     ------------------------------------------------------------------------------------------------
     static equal_to (
-        name       : in c_name)                  -- testovanÇ jmÇno
+        name       : in c_name)                  -- testovan√© jm√©no
         return t_logical;
-    -- Vr†t°, zda je [name] je stejnÇ jako [this]
+    -- Vr√°t√≠, zda je [name] je stejn√© jako [this]
     ------------------------------------------------------------------------------------------------
     static assign_to (
-        source     : in c_name);                 -- p©i©azovanÇ jmÇno
+        source     : in c_name);                 -- p≈ôi≈ôazovan√© jm√©no
     -- Makes deep copy of source
     ------------------------------------------------------------------------------------------------
     static join_component (
         prefix    : in p_name_component;         -- prefix of the name
         suffix     : in p_name_component);       -- suffix of the name
-    -- P©ipoj° zleva kopii komponenty prefix a zprava suffix, pokud je kàkter† z nich nil, nen° p©ipojena
+    -- P≈ôipoj√≠ zleva kopii komponenty prefix a zprava suffix, pokud je kƒõkter√° z nich nil, nen√≠ p≈ôipojena
     ------------------------------------------------------------------------------------------------
     static assign_to_string (
         source     : in t_char32ustr);           -- name in plain-text format
     -- Assigns string value
     ------------------------------------------------------------------------------------------------
     static assign_components (
-        source     : in c_list);                 -- seznam objektñ typu [c_name_component]
-    -- P©i©ad° do [subcomponents] hubokÇ kopie komponent z [source], [subcomponents] je p©edt°m vypr†zdnàno
+        source     : in c_list);                 -- seznam objekt≈Ø typu [c_name_component]
+    -- P≈ôi≈ôad√≠ do [subcomponents] hubok√© kopie komponent z [source], [subcomponents] je p≈ôedt√≠m vypr√°zdnƒõno
     ------------------------------------------------------------------------------------------------
     static clone
         return p_name;
-    -- Vr†t° hlubokou kopii tohoto objektu
+    -- Vr√°t√≠ hlubokou kopii tohoto objektu
     ------------------------------------------------------------------------------------------------
 --<<<
 
@@ -514,12 +514,12 @@ class public c_name_subcomponent_extension = extend c_name_subcomponent;
 -->>>
     ------------------------------------------------------------------------------------------------
     static find_in_list (
-        exts       : t_char32ustr)               -- p©°pony oddàlenÇ st©edn°kem
+        exts       : t_char32ustr)               -- p≈ô√≠pony oddƒõlen√© st≈ôedn√≠kem
         return t_signed32;
-    -- vr†t° index p©°pony v ©etàzci exts á°slovanò od 0, -1, pokud tam p©°pona nen°
-    -- nap©°klad pro ©etàzec exts="src;priv;pub" a pro p©°ponu src to vr†t° 0,
-    -- pro p©°ponu priv 1 a pro p©°ponu pub 2, pro p©°ponu jinou -1
-    -- *** vòznam tÇto metody nech†pu
+    -- vr√°t√≠ index p≈ô√≠pony v ≈ôetƒõzci exts ƒç√≠slovan√Ω od 0, -1, pokud tam p≈ô√≠pona nen√≠
+    -- nap≈ô√≠klad pro ≈ôetƒõzec exts="src;priv;pub" a pro p≈ô√≠ponu src to vr√°t√≠ 0,
+    -- pro p≈ô√≠ponu priv 1 a pro p≈ô√≠ponu pub 2, pro p≈ô√≠ponu jinou -1
+    -- *** v√Ωznam t√©to metody nech√°pu
     ------------------------------------------------------------------------------------------------
 --<<<
 
@@ -535,7 +535,7 @@ class public c_name_subcomponent_extension = extend c_name_subcomponent;
 procedure get_parent_path (
     name       : c_name)
     return p_name;
--- Vr†t° rodiáovskò adres†© zadanÇ cesty.
+-- Vr√°t√≠ rodiƒçovsk√Ω adres√°≈ô zadan√© cesty.
 ----------------------------------------------------------------------------------------------------
 --<<<
 

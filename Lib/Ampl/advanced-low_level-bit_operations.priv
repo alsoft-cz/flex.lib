@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private bit_operations =
 -- Bit-level operations.
 -- Advanced Multi-platform Library.
@@ -89,18 +89,18 @@ procedure bit_set =
 -- Sets bit [index] in [x].
 ----------------------------------------------------------------------------------------------------
 begin
-{ %%TODO(CODEGEN) Pokud skuteánò parametr p©edanò do IN REF form†ln°ho parametru
-  je dereferencovanò pointer obsahuj°c° :size, tak se do nàj to :size nep©ed†.
+{ %%TODO(CODEGEN) Pokud skuteƒçn√Ω parametr p≈ôedan√Ω do IN REF form√°ln√≠ho parametru
+  je dereferencovan√Ω pointer obsahuj√≠c√≠ :size, tak se do nƒõj to :size nep≈ôed√°.
 
   if index<0 or t_unsigned(index)>=x:size*8 then
     raise constraint_error;
     end if;
 }
   #syntax asm;
-      -- adresa poëadovanÇho bitu
+      -- adresa po≈æadovan√©ho bitu
       mov    ebx,x
       mov    ecx,index
-      -- nastavit poëadovanò bit
+      -- nastavit po≈æadovan√Ω bit
       bts    [ebx],ecx
       #end asm;
   end bit_set;
@@ -116,10 +116,10 @@ begin
     raise constraint_error;
     end if;
   #syntax asm;
-      -- adresa poëadovanÇho bitu
+      -- adresa po≈æadovan√©ho bitu
       mov    ebx,x
       mov    ecx,index
-      -- nastavit poëadovanò bit
+      -- nastavit po≈æadovan√Ω bit
       btr    [ebx],ecx
       #end asm;
   end bit_reset;

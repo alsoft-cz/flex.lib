@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public protogui =
 -- ProtoGUI Library
 ----------------------------------------------------------------------------------------------------
@@ -56,18 +56,18 @@ class c_style
 class public c_window = extend c_class;
 ----------------------------------------------------------------------------------------------------
 
-    -- ud†losti od my®i
+    -- ud√°losti od my≈°i
     procedure on_mouse_button_down
     procedure on_mouse_button_up
     procedure on_mouse_move
     procedure on_mouse_hover
     procedure on_mouse_leave
 
-    -- ud†losti od kl†vesnice
+    -- ud√°losti od kl√°vesnice
     procedure on_key_down
     procedure on_key_up
 
-    -- ud†lost s oknem
+    -- ud√°lost s oknem
     procedure on_create
     procedure on_close
     procedure on_size_changed
@@ -92,7 +92,7 @@ class public c_graphic_resource = extend c_class;
 class public c_device_context = extend c_class;
 ----------------------------------------------------------------------------------------------------
 
-    -- kreslen°
+    -- kreslen√≠
     procedure draw_line
     procedure draw_frame
     procedure draw_text

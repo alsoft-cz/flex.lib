@@ -1,35 +1,35 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private trees =
 -- Data structures - trees.
 -- Flex Standard Library
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
--- K implemetaci iter†torñ:
--- Nepouë°vaj° z†sobn°k, jedinÇ, co si pamatuj°, je aktu†ln° prvek - [current_node]
--- VòkonnÇ funkce : 
---   reset - ta najde prvn° prvek k iterov†n° a uloë° ho do [current_node]
---   find_next - p©eáte si hodnotu z [current_node] a uloë° do n° dal®° prvek, p©°padnà nil, pokud uë
---     v [current_node] byl posledn° prvek
--- Invarianty proch†zen° - pom†haj° konstruovat algoritmy pro proch†zen°:
--- M†me strom s oá°slovanòmi vrcholy, vrchol á°slo 1 se projde jako prvn°, vrchol á°slo 2 druhò atd.
--- Pak plat°:
+-- K implemetaci iter√°tor≈Ø:
+-- Nepou≈æ√≠vaj√≠ z√°sobn√≠k, jedin√©, co si pamatuj√≠, je aktu√°ln√≠ prvek - [current_node]
+-- V√Ωkonn√© funkce : 
+--   reset - ta najde prvn√≠ prvek k iterov√°n√≠ a ulo≈æ√≠ ho do [current_node]
+--   find_next - p≈ôeƒçte si hodnotu z [current_node] a ulo≈æ√≠ do n√≠ dal≈°√≠ prvek, p≈ô√≠padnƒõ nil, pokud u≈æ
+--     v [current_node] byl posledn√≠ prvek
+-- Invarianty proch√°zen√≠ - pom√°haj√≠ konstruovat algoritmy pro proch√°zen√≠:
+-- M√°me strom s oƒç√≠slovan√Ωmi vrcholy, vrchol ƒç√≠slo 1 se projde jako prvn√≠, vrchol ƒç√≠slo 2 druh√Ω atd.
+-- Pak plat√≠:
 -- Prefix:
--- pro libovolnò podstrom plat°, ëe jeho ko©en m† nejmen®° á°slo z celÇho podstromu
--- pro kaëdÇ dva uzly ve stejnÇ hloubce plat°, ëe ten vlevo m† men®° á°slo
+-- pro libovoln√Ω podstrom plat√≠, ≈æe jeho ko≈ôen m√° nejmen≈°√≠ ƒç√≠slo z cel√©ho podstromu
+-- pro ka≈æd√© dva uzly ve stejn√© hloubce plat√≠, ≈æe ten vlevo m√° men≈°√≠ ƒç√≠slo
 -- Postfix:
--- pro libovolnò podstrom plat°, ëe jeho ko©en m† nejvàt®° á°slo z celÇho podstromu
--- pro kaëdÇ dva uzly ve stejnÇ hloubce plat°, ëe ten vlevo m† men®° á°slo
+-- pro libovoln√Ω podstrom plat√≠, ≈æe jeho ko≈ôen m√° nejvƒõt≈°√≠ ƒç√≠slo z cel√©ho podstromu
+-- pro ka≈æd√© dva uzly ve stejn√© hloubce plat√≠, ≈æe ten vlevo m√° men≈°√≠ ƒç√≠slo
 -- Infix:
--- Oá°slovanò strom je vyhled†vac°, tzn. pro kaëdò podstrom plat°, ëe á°sla v®ech uzlñ levÇho podstromu
--- jsou men®° neë á°slo ko©ene a á°sla v®ech uzlñ pravÇho podstromu jsou vàt®° neë á°slo ko©ene.
--- Inverzn° po©ad°:
--- Staá° vymànit [left] za [right] u bin†rn°m stromñ, p©°padnà [get_last] za [get_first] a [get_next]
--- za [get_prev] u obecnòch stromñ
+-- Oƒç√≠slovan√Ω strom je vyhled√°vac√≠, tzn. pro ka≈æd√Ω podstrom plat√≠, ≈æe ƒç√≠sla v≈°ech uzl≈Ø lev√©ho podstromu
+-- jsou men≈°√≠ ne≈æ ƒç√≠slo ko≈ôene a ƒç√≠sla v≈°ech uzl≈Ø prav√©ho podstromu jsou vƒõt≈°√≠ ne≈æ ƒç√≠slo ko≈ôene.
+-- Inverzn√≠ po≈ôad√≠:
+-- Staƒç√≠ vymƒõnit [left] za [right] u bin√°rn√≠m strom≈Ø, p≈ô√≠padnƒõ [get_last] za [get_first] a [get_next]
+-- za [get_prev] u obecn√Ωch strom≈Ø
 
 ----------------------------------------------------------------------------------------------------
 class private abstract c_binary_tree_node =
--- Uzel bin†rn°ho stromu.
+-- Uzel bin√°rn√≠ho stromu.
 ----------------------------------------------------------------------------------------------------
 
     end c_binary_tree_node;
@@ -38,27 +38,27 @@ class private abstract c_binary_tree_node =
 
 ----------------------------------------------------------------------------------------------------
 class private c_binary_tree =
--- Bin†rn° vyhled†vac° strom s podporou AVL. 
+-- Bin√°rn√≠ vyhled√°vac√≠ strom s podporou AVL. 
 ----------------------------------------------------------------------------------------------------
 
     with
       supervised c_binary_tree_node;
  
     var
-      avl          : t_logical;                  -- T-vyvaëovat
-      unique_key   : t_logical;                  -- T-pouze uzly se stejnòmi kl°ái
+      avl          : t_logical;                  -- T-vyva≈æovat
+      unique_key   : t_logical;                  -- T-pouze uzly se stejn√Ωmi kl√≠ƒçi
 
     ------------------------------------------------------------------------------------------------
     static init =
     -- Inicializace stromu.
-    --   Pokud je [homogenous] nastaven na true, ve stromà mohou bòt jen uzly typu [item_type].
-    --   Pokud je [unique_key] nastaven na true, ve stromà nemohou bòt uzly se stejnòm kl°áem.
-    --   Pokud je [avl] nastaven na true, strom bude se bude vyvaëovat.
+    --   Pokud je [homogenous] nastaven na true, ve stromƒõ mohou b√Ωt jen uzly typu [item_type].
+    --   Pokud je [unique_key] nastaven na true, ve stromƒõ nemohou b√Ωt uzly se stejn√Ωm kl√≠ƒçem.
+    --   Pokud je [avl] nastaven na true, strom bude se bude vyva≈æovat.
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokud je jië strom definov†n
+      -- pokud je ji≈æ strom definov√°n
       if this.root<>nil then
-        -- inicializace neprobàhne
+        -- inicializace neprobƒõhne
         execute(event_error);
         raise tree_error;
         end if;
@@ -74,13 +74,13 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static has_node_rec (
-        i_current_node : in p_binary_tree_node;  -- aktu†ln° uzel
-        node           : in p_binary_tree_node)  -- hledanò uzel
+        i_current_node : in p_binary_tree_node;  -- aktu√°ln√≠ uzel
+        node           : in p_binary_tree_node)  -- hledan√Ω uzel
         return t_logical =                       -- T-uzel nalezen
-    -- Vrac° [true], pokud je [node] prvkem stromu.
+    -- Vrac√≠ [true], pokud je [node] prvkem stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- hledanò uzel mus° bòt definovanò
+      -- hledan√Ω uzel mus√≠ b√Ωt definovan√Ω
       if i_current_node=nil then
         result:=false;
         return;
@@ -88,40 +88,40 @@ class private c_binary_tree =
 
       -- jsou si oba uzly rovny?
       if i_current_node=node then
-        -- ano, vr†tit True
+        -- ano, vr√°tit True
         result:=true;
         return;
         end if;
 
-      -- porovnat kl°áe uzlñ
+      -- porovnat kl√≠ƒçe uzl≈Ø
       case compare(i_current_node,node)
-        -- je aktu†ln° uzel vàt®° neë hledanò uzel?
+        -- je aktu√°ln√≠ uzel vƒõt≈°√≠ ne≈æ hledan√Ω uzel?
         when cn_bigger do
             -- jdi doleva
             result:=has_node_rec(i_current_node^.left,node);
 
-        -- je aktu†ln° uzel men®° neë hledanò uzel?
+        -- je aktu√°ln√≠ uzel men≈°√≠ ne≈æ hledan√Ω uzel?
         when cn_smaller do
             -- jdi doprava
             result:=has_node_rec(i_current_node^.right,node);
 
-        -- kl°áe jsou si rovny, ale zat°m nen° nalezen hledanò uzel
+        -- kl√≠ƒçe jsou si rovny, ale zat√≠m nen√≠ nalezen hledan√Ω uzel
         when cn_equal do
-            -- jedn† se o avl strom s moënost° m°t v°ce stejnòch kl°áñ?
+            -- jedn√° se o avl strom s mo≈ænost√≠ m√≠t v√≠ce stejn√Ωch kl√≠ƒç≈Ø?
             if avl and not unique_key then
-              -- ano, prohledat celò podstrom, nej©°ve pravò, pokud uzel nebude nalezen, prohledat levò
+              -- ano, prohledat cel√Ω podstrom, nej≈ô√≠ve prav√Ω, pokud uzel nebude nalezen, prohledat lev√Ω
               result:=has_node_rec(i_current_node^.right,node);
               if not result then
                 result:=has_node_rec(i_current_node^.left,node);
                 end if;
               return;
 
-            -- pokud to nen° alv, mohou bòt ve stromà uzly se stejnòmi kl°ái?
+            -- pokud to nen√≠ alv, mohou b√Ωt ve stromƒõ uzly se stejn√Ωmi kl√≠ƒçi?
             elsif not unique_key then
-              -- ano, j°t doprava
+              -- ano, j√≠t doprava
               result:=has_node_rec(i_current_node^.right,node);
 
-            -- hledanò uzel nebyl nalezen
+            -- hledan√Ω uzel nebyl nalezen
             else
               result:=false;
               return;
@@ -133,10 +133,10 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static has_node =
-    -- Vrac° [true], pokud je [node] prvkem stromu.
+    -- Vrac√≠ [true], pokud je [node] prvkem stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- hledanò uzel mus° bòt definovanò
+      -- hledan√Ω uzel mus√≠ b√Ωt definovan√Ω
       if node=nil then
         return;
         end if;
@@ -149,10 +149,10 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static get_root =
-    -- Vr†t° ko©enovò uzel. Pokud uzel nen° definov†n, vrac° NIL.
+    -- Vr√°t√≠ ko≈ôenov√Ω uzel. Pokud uzel nen√≠ definov√°n, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     begin
-      -- vr†t° root node
+      -- vr√°t√≠ root node
       result:=root;
       end get_root;
 
@@ -160,12 +160,12 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static node_weight (
-        node       : p_binary_tree_node)         -- zkoumanò uzel
-        return t_unsigned =                      -- v†ha uzlu
-    -- Vr†t° v†hu uzlu stromu.
+        node       : p_binary_tree_node)         -- zkouman√Ω uzel
+        return t_unsigned =                      -- v√°ha uzlu
+    -- Vr√°t√≠ v√°hu uzlu stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokud uzel existuje, vr†tit jeho v†hu, pokud uzel neexistuje vr†tit 0
+      -- pokud uzel existuje, vr√°tit jeho v√°hu, pokud uzel neexistuje vr√°tit 0
       if node=nil
         then result:=0
         else result:=node^.weight;
@@ -176,7 +176,7 @@ class private c_binary_tree =
     
     ------------------------------------------------------------------------------------------------
     static ll_rot (
-        node       : in out p_binary_tree_node) =       -- kritickò uzel
+        node       : in out p_binary_tree_node) =       -- kritick√Ω uzel
     -- LL rotace.
     ------------------------------------------------------------------------------------------------
     var 
@@ -186,20 +186,20 @@ class private c_binary_tree =
       nodeup          : p_binary_tree_node;      -- node^.up
 
     begin
-      -- inicializovat promànnÇ
+      -- inicializovat promƒõnn√©
       plnode:=node^.left;
       pxrnode:=plnode^.right;
       weightleftright:=node_weight(pxrnode);
 
-      -- rotace uzlñ
+      -- rotace uzl≈Ø
       node^.left:=pxrnode;
       plnode^.right:=node;
 
-      -- nastavit v†hy
+      -- nastavit v√°hy
       node^.weight:=1+weightleftright;
       plnode^.weight:=1+node^.weight;
 
-      -- nastavit zpàtnÇ ukazatele
+      -- nastavit zpƒõtn√© ukazatele
       plnode^.up:=node^.up;
       nodeup:=node^.up;
       node^.up:=plnode;
@@ -207,22 +207,22 @@ class private c_binary_tree =
         pxrnode^.up:=node;
         end if;
 
-      -- byl [root] kritickòm uzlem?
+      -- byl [root] kritick√Ωm uzlem?
       if node=root 
-        -- ano, nastavit novò root
+        -- ano, nastavit nov√Ω root
         then 
           root:=plnode;
 
-        -- ne, nav†zat p©edka bòvalÇho kritickÇho uzlu na [plnode]
+        -- ne, nav√°zat p≈ôedka b√Ωval√©ho kritick√©ho uzlu na [plnode]
         else
-          -- byl kritickò uzel na p©edka nav†z†n zleva? navaë uzel zleva, jinak zprava 
+          -- byl kritick√Ω uzel na p≈ôedka nav√°z√°n zleva? nava≈æ uzel zleva, jinak zprava 
           if nodeup^.left=node
             then nodeup^.left:=plnode;
             else nodeup^.right:=plnode;
             end if;
           end if;
       
-      -- nastavit novò orotovanò uzel
+      -- nastavit nov√Ω orotovan√Ω uzel
       node:=plnode;
       end ll_rot;
 
@@ -230,7 +230,7 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static rr_rot (
-        node       : in out p_binary_tree_node) =       -- kritickò uzel
+        node       : in out p_binary_tree_node) =       -- kritick√Ω uzel
     -- RR rotace.
     ------------------------------------------------------------------------------------------------
     var 
@@ -240,20 +240,20 @@ class private c_binary_tree =
       nodeup          : p_binary_tree_node;             -- node^.up
 
     begin
-      -- inicializovat promànnÇ
+      -- inicializovat promƒõnn√©
       prnode:=node^.right;
       pxlnode:=prnode^.left;
       weightrightleft:=node_weight(pxlnode);
 
-      -- rotace uzlñ
+      -- rotace uzl≈Ø
       node^.right:=pxlnode;
       prnode^.left:=node;
 
-      -- nastavit v†hy
+      -- nastavit v√°hy
       node^.weight:=1+weightrightleft;
       prnode^.weight:=1+node^.weight;
 
-      -- nastavit zpàtnÇ ukazatele
+      -- nastavit zpƒõtn√© ukazatele
       prnode^.up:=node^.up;
       nodeup:=node^.up;
       node^.up:=prnode;
@@ -261,22 +261,22 @@ class private c_binary_tree =
         pxlnode^.up:=node;
         end if;
 
-      -- byl [root] kritickòm uzlem?
+      -- byl [root] kritick√Ωm uzlem?
       if node=root 
-        -- ano, nastavit novò root
+        -- ano, nastavit nov√Ω root
         then 
           root:=prnode;
 
-        -- ne, nav†zat p©edka bòvalÇho kritickÇho uzlu na [prnode]
+        -- ne, nav√°zat p≈ôedka b√Ωval√©ho kritick√©ho uzlu na [prnode]
         else
-          -- byl kritickò uzel na p©edka nav†z†n zleva? navaë uzel zleva, jinak zprava 
+          -- byl kritick√Ω uzel na p≈ôedka nav√°z√°n zleva? nava≈æ uzel zleva, jinak zprava 
           if nodeup^.left=node
             then nodeup^.left:=prnode;  
             else nodeup^.right:=prnode; 
             end if;
           end if;
 
-      -- nastavit novò orotovanò uzel
+      -- nastavit nov√Ω orotovan√Ω uzel
       node:=prnode;
       end rr_rot;
 
@@ -284,7 +284,7 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static dlr_rot (
-        node       : in out p_binary_tree_node) =       -- kritickò uzel
+        node       : in out p_binary_tree_node) =       -- kritick√Ω uzel
     -- dlr rotace.
     ------------------------------------------------------------------------------------------------
     var
@@ -294,12 +294,12 @@ class private c_binary_tree =
       nodeup          : p_binary_tree_node;             -- node^.up
 
     begin
-      -- inicializovat promànnÇ
+      -- inicializovat promƒõnn√©
       plnode:=node^.left;
       pxrnode:=plnode^.right;
       weightleftright:=node_weight(pxrnode);
 
-      -- nastavit zpàtnÇ ukazatele
+      -- nastavit zpƒõtn√© ukazatele
       pxrnode^.up:=node^.up;
       plnode^.up:=pxrnode;
       nodeup:=node^.up;
@@ -311,33 +311,33 @@ class private c_binary_tree =
         pxrnode^.right^.up:=node;
         end if;
 
-      -- rotace uzlñ
+      -- rotace uzl≈Ø
       plnode^.right := pxrnode^.left;
       node^.left := pxrnode^.right;
       pxrnode^.left := plnode;
       pxrnode^.right := node;
 
-      -- nastavit v†hy
+      -- nastavit v√°hy
       node^.weight := weightleftright;
       plnode^.weight := node^.weight;
       pxrnode^.weight := node_weight(plnode);
 
-      -- byl [root] kritickòm uzlem?
+      -- byl [root] kritick√Ωm uzlem?
       if node=root 
-        -- ano, nastavit novò root
+        -- ano, nastavit nov√Ω root
         then 
           root:=pxrnode;
 
-        -- ne, nav†zat p©edka bòvalÇho kritickÇho uzlu na [pxrnode]
+        -- ne, nav√°zat p≈ôedka b√Ωval√©ho kritick√©ho uzlu na [pxrnode]
         else
-          -- byl kritickò uzel na p©edka nav†z†n zleva? navaë uzel zleva, jinak zprava 
+          -- byl kritick√Ω uzel na p≈ôedka nav√°z√°n zleva? nava≈æ uzel zleva, jinak zprava 
           if nodeup^.left=node 
             then nodeup^.left:=pxrnode;  
             else nodeup^.right:=pxrnode; 
             end if;
           end if;
 
-      -- nastavit novò orotovanò uzel
+      -- nastavit nov√Ω orotovan√Ω uzel
       node:=pxrnode;
       end dlr_rot;
 
@@ -345,7 +345,7 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static drl_rot (
-        node       : in out p_binary_tree_node) =       -- kritickò uzel
+        node       : in out p_binary_tree_node) =       -- kritick√Ω uzel
     -- DRL rotace.
     ------------------------------------------------------------------------------------------------
     var
@@ -355,12 +355,12 @@ class private c_binary_tree =
       nodeup          : p_binary_tree_node;             -- node^.up
 
     begin
-      -- inicializovat promànnÇ
+      -- inicializovat promƒõnn√©
       prnode:=node^.right;
       noderightleft:=prnode^.left;
       weightrightleft:=node_weight(noderightleft);
 
-      -- nastavit zpàtnÇ ukazatele
+      -- nastavit zpƒõtn√© ukazatele
       noderightleft^.up:=node^.up;
       prnode^.up:=noderightleft;
       nodeup:=node^.up;
@@ -372,33 +372,33 @@ class private c_binary_tree =
         noderightleft^.left^.up:=node;
         end if;
 
-      -- rotace uzlñ
+      -- rotace uzl≈Ø
       prnode^.left:=noderightleft^.right;
       node^.right:=noderightleft^.left;
       noderightleft^.right:=prnode;
       noderightleft^.left:=node;
 
-      -- nastavit v†hy
+      -- nastavit v√°hy
       node^.weight:=weightrightleft;
       prnode^.weight:=node^.weight;
       noderightleft^.weight:=node_weight(prnode);
 
-      -- byl [root] kritickòm uzlem?
+      -- byl [root] kritick√Ωm uzlem?
       if node=root 
-        -- ano, nastavit novò root
+        -- ano, nastavit nov√Ω root
         then 
           root:=noderightleft;
 
-        -- ne, nav†zat p©edka bòvalÇho kritickÇho uzlu na [noderightleft]
+        -- ne, nav√°zat p≈ôedka b√Ωval√©ho kritick√©ho uzlu na [noderightleft]
         else
-          -- byl kritickò uzel na p©edka nav†z†n zleva? navaë uzel zleva, jinak zprava 
+          -- byl kritick√Ω uzel na p≈ôedka nav√°z√°n zleva? nava≈æ uzel zleva, jinak zprava 
           if nodeup^.left=node 
             then nodeup^.left:=noderightleft;  
             else nodeup^.right:=noderightleft; 
             end if;
           end if;
 
-      -- nastavit novò orotovanò uzel
+      -- nastavit nov√Ω orotovan√Ω uzel
       node:=noderightleft;
       end drl_rot;
 
@@ -406,10 +406,10 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static make_avl (
-        i_current_node : in out p_binary_tree_node; -- potenci†ln° kritickò uzel
-        critical     : out t_logical) =          -- T-kritickò uzel vyv†ëen
-    -- Vytvo©° z uzlu, kterò je kritickò, uzel vyv†ëenò. Nevyv†ëenost mus° bòt prvn°ho stupnà (=|2|),
-    -- pokud je vàt®°, sn°ë° stupe§ nevyv†ëenosti uzlu. Pokud je men®°, nen° prov†dàna ë†dn† akce.
+        i_current_node : in out p_binary_tree_node; -- potenci√°ln√≠ kritick√Ω uzel
+        critical     : out t_logical) =          -- T-kritick√Ω uzel vyv√°≈æen
+    -- Vytvo≈ô√≠ z uzlu, kter√Ω je kritick√Ω, uzel vyv√°≈æen√Ω. Nevyv√°≈æenost mus√≠ b√Ωt prvn√≠ho stupnƒõ (=|2|),
+    -- pokud je vƒõt≈°√≠, sn√≠≈æ√≠ stupe≈à nevyv√°≈æenosti uzlu. Pokud je men≈°√≠, nen√≠ prov√°dƒõna ≈æ√°dn√° akce.
     ------------------------------------------------------------------------------------------------
     var
       plnode         : p_binary_tree_node;       -- i_current_node^.left
@@ -422,23 +422,23 @@ class private c_binary_tree =
       hrr            : t_unsigned;               -- right^.right^.weight
 
     begin
-      -- p©edpoklad nenalezen° kritickÇho uzlu
+      -- p≈ôedpoklad nenalezen√≠ kritick√©ho uzlu
       critical:=false;
 
-      -- uzel mus° existovat
+      -- uzel mus√≠ existovat
       if i_current_node=nil then
         return;
         end if;
 
-      -- inicializovat promànnÇ
+      -- inicializovat promƒõnn√©
       plnode:=i_current_node^.left;
       prnode:=i_current_node^.right;
       hl:=node_weight(plnode);
       hr:=node_weight(prnode);
 
-      -- je uzel kritickò a tàës° vlevo?
+      -- je uzel kritick√Ω a tƒõ≈æs√≠ vlevo?
       if hl>hr+1 then
-        -- ano, zjistit vò®ky n†sledovn°kñ levÇho uzlu
+        -- ano, zjistit v√Ω≈°ky n√°sledovn√≠k≈Ø lev√©ho uzlu
         if plnode<>nil 
           then
             hll:=node_weight(i_current_node^.left^.left);
@@ -448,7 +448,7 @@ class private c_binary_tree =
             hlr:=0;
             end if;
 
-        -- zjisit typ vyvaëov†n°
+        -- zjisit typ vyva≈æov√°n√≠
         if hll>=hlr
           then
             -- LL rorace
@@ -460,9 +460,9 @@ class private c_binary_tree =
             critical:=true;
             end if;
 
-      -- je uzel kritickò a tàës° vpravo?
+      -- je uzel kritick√Ω a tƒõ≈æs√≠ vpravo?
       elsif hl+1<hr then
-        -- ano, zjistit vò®ky n†sledovn°kñ pravÇho uzlu
+        -- ano, zjistit v√Ω≈°ky n√°sledovn√≠k≈Ø prav√©ho uzlu
         if prnode<>nil 
           then 
             hrr:=node_weight(i_current_node^.right^.right);
@@ -472,7 +472,7 @@ class private c_binary_tree =
             hrl:=0;
             end if;
 
-        -- zjisit typ vyvaëov†n°
+        -- zjisit typ vyva≈æov√°n√≠
         if hrr>=hrl
           then
             -- RR rorace
@@ -484,7 +484,7 @@ class private c_binary_tree =
             critical:=true;
             end if;
 
-      -- korekce vah, pokud se nemuselo vyvaëovat
+      -- korekce vah, pokud se nemuselo vyva≈æovat
       elsif hl>hr
         then i_current_node^.weight:=1+hl;
         else i_current_node^.weight:=1+hr;
@@ -495,20 +495,20 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static insert_left (
-        i_current_node : in p_binary_tree_node;           -- aktu†ln° uzel 
-        node         : in p_binary_tree_node) =         -- vkl†danò uzel
-    -- P©id† uzel [node] pod uzel [i_current_node] zleva, pokud je volnÇ m°sto.
+        i_current_node : in p_binary_tree_node;           -- aktu√°ln√≠ uzel 
+        node         : in p_binary_tree_node) =         -- vkl√°dan√Ω uzel
+    -- P≈ôid√° uzel [node] pod uzel [i_current_node] zleva, pokud je voln√© m√≠sto.
     ------------------------------------------------------------------------------------------------
     begin
       if i_current_node^.left=nil then
-        -- ano, vloë uzel doleva
+        -- ano, vlo≈æ uzel doleva
         node^.weight:=1;
         node^.left:=nil;
         node^.right:=nil;
         node^.up:=i_current_node;
         i_current_node^.left:=node;
 
-        -- zvò®it poáet uzlñ ve stromu o 1
+        -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu o 1
         succ count;
         end if;
       end insert_left;
@@ -517,21 +517,21 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static insert_right (
-        i_current_node : in p_binary_tree_node;           -- aktu†ln° uzel 
-        node         : in p_binary_tree_node) =         -- vkl†danò uzel
-    -- P©id† uzel [node] pod uzel [i_current_node] zprava, pokud je volnÇ m°sto.
+        i_current_node : in p_binary_tree_node;           -- aktu√°ln√≠ uzel 
+        node         : in p_binary_tree_node) =         -- vkl√°dan√Ω uzel
+    -- P≈ôid√° uzel [node] pod uzel [i_current_node] zprava, pokud je voln√© m√≠sto.
     ------------------------------------------------------------------------------------------------
     begin
-      -- je vpravo volnÇ m°sto?
+      -- je vpravo voln√© m√≠sto?
       if i_current_node^.right=nil then
-        -- ano, vloë uzel doprava
+        -- ano, vlo≈æ uzel doprava
         node^.weight:=1;
         node^.left:=nil;
         node^.right:=nil;
         node^.up:=i_current_node;
         i_current_node^.right:=node;
 
-        -- zvò®it poáet uzlñ ve stromu o 1
+        -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu o 1
         succ count;
         end if;
       end insert_right;
@@ -540,47 +540,47 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static insert_avl_rec (
-        i_current_node : in out p_binary_tree_node;       -- aktu†ln° uzel 
-        node         : in p_binary_tree_node;           -- vkl†danò uzel
-        critical     : in out t_logical) =       -- T-nalezen kritickò uzel
-    -- Vloë° uzel bez kontroly na neunik†tnost kl°áe i duplicitu uzlu do stromu.
+        i_current_node : in out p_binary_tree_node;       -- aktu√°ln√≠ uzel 
+        node         : in p_binary_tree_node;           -- vkl√°dan√Ω uzel
+        critical     : in out t_logical) =       -- T-nalezen kritick√Ω uzel
+    -- Vlo≈æ√≠ uzel bez kontroly na neunik√°tnost kl√≠ƒçe i duplicitu uzlu do stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- aktu†ln° uzel mus° bòt definov†n
+      -- aktu√°ln√≠ uzel mus√≠ b√Ωt definov√°n
       if i_current_node=nil then
         return;
         end if;
 
-      -- porovnat kl°áe obou uzlñ
+      -- porovnat kl√≠ƒçe obou uzl≈Ø
       case compare(node,i_current_node)
-        -- je hledanò kl°á uzlu men®° neë aktu†ln°?
+        -- je hledan√Ω kl√≠ƒç uzlu men≈°√≠ ne≈æ aktu√°ln√≠?
         when cn_smaller do 
-            -- pokud existuje levò n†sledn°k, jdi doleva, jinak vloë vlevo
+            -- pokud existuje lev√Ω n√°sledn√≠k, jdi doleva, jinak vlo≈æ vlevo
             if i_current_node^.left<>nil
               then insert_avl_rec(i_current_node^.left,node,critical);
               else insert_left(i_current_node,node);
               end if;
 
-        -- je hledanò kl°á uzlu vàt®° neë aktu†ln°?
+        -- je hledan√Ω kl√≠ƒç uzlu vƒõt≈°√≠ ne≈æ aktu√°ln√≠?
         when cn_bigger do
-            -- pokud existuje pravò n†sledn°k, jdi doprava, jinak vloë vravo
+            -- pokud existuje prav√Ω n√°sledn√≠k, jdi doprava, jinak vlo≈æ vravo
             if i_current_node^.right<>nil
               then insert_avl_rec(i_current_node^.right,node,critical);
               else insert_right(i_current_node,node);
               end if
 
-        -- kl°áe jsou si rovny
+        -- kl√≠ƒçe jsou si rovny
         when cn_equal do
-          -- pokud existuje pravò n†sledn°k, jdi doprava, jinak vloë doprava
+          -- pokud existuje prav√Ω n√°sledn√≠k, jdi doprava, jinak vlo≈æ doprava
           if i_current_node^.right<>nil 
             then insert_avl_rec(i_current_node^.right,node,critical)
             else insert_right(i_current_node,node);
             end if;
           end case;
 
-      -- m† se uzel vyvaëovat?
+      -- m√° se uzel vyva≈æovat?
       if avl and not critical then
-        -- vyv†ëit uzel
+        -- vyv√°≈æit uzel
         make_avl(i_current_node,critical);
         end if;
       end insert_avl_rec;
@@ -589,56 +589,56 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static insert_rec (
-        i_current_node : in out p_binary_tree_node;       -- aktu†ln° uzel 
-        node         : in p_binary_tree_node;           -- vkl†danò uzel
-        critical     : in out t_logical) =       -- T-nalezen kritickò uzel
-    -- P©id† uzel. Pokud se m† vloëit uzel se stejnòm kl°áem, jakò uë ve stromu existuje, 
-    -- novò uzel se vloë° doprava.
+        i_current_node : in out p_binary_tree_node;       -- aktu√°ln√≠ uzel 
+        node         : in p_binary_tree_node;           -- vkl√°dan√Ω uzel
+        critical     : in out t_logical) =       -- T-nalezen kritick√Ω uzel
+    -- P≈ôid√° uzel. Pokud se m√° vlo≈æit uzel se stejn√Ωm kl√≠ƒçem, jak√Ω u≈æ ve stromu existuje, 
+    -- nov√Ω uzel se vlo≈æ√≠ doprava.
     ------------------------------------------------------------------------------------------------
     begin
-      -- aktu†ln° uzel mus° bòt definov†n
+      -- aktu√°ln√≠ uzel mus√≠ b√Ωt definov√°n
       if i_current_node=nil then
         return;
         end if;
 
-      -- je ve stromà jië uzel obsaëen?
+      -- je ve stromƒõ ji≈æ uzel obsa≈æen?
       if i_current_node=node then
         -- ano, chyba
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- porovnat kl°áe obou uzlñ
+      -- porovnat kl√≠ƒçe obou uzl≈Ø
       case compare(node,i_current_node)
-        -- je hledanò kl°á uzlu men®° neë aktu†ln°?
+        -- je hledan√Ω kl√≠ƒç uzlu men≈°√≠ ne≈æ aktu√°ln√≠?
         when cn_smaller do 
-            -- pokud existuje levò n†sledn°k, jdi doleva, jinak vloë vlevo
+            -- pokud existuje lev√Ω n√°sledn√≠k, jdi doleva, jinak vlo≈æ vlevo
             if i_current_node^.left<>nil
               then insert_rec(i_current_node^.left,node,critical);
               else insert_left(i_current_node,node);
               end if;
 
-        -- je hledanò kl°á uzlu vàt®° neë aktu†ln°?
+        -- je hledan√Ω kl√≠ƒç uzlu vƒõt≈°√≠ ne≈æ aktu√°ln√≠?
         when cn_bigger do
-            -- pokud existuje pravò n†sledn°k, jdi doprava, jinak vloë vravo
+            -- pokud existuje prav√Ω n√°sledn√≠k, jdi doprava, jinak vlo≈æ vravo
             if i_current_node^.right<>nil
               then insert_rec(i_current_node^.right,node,critical);
               else insert_right(i_current_node,node);
               end if
 
-        -- kl°áe jsou si rovny
+        -- kl√≠ƒçe jsou si rovny
         when cn_equal do
-            -- ano, je povoleno vkl†dat uzly s duplicitn°mi kl°ái?
+            -- ano, je povoleno vkl√°dat uzly s duplicitn√≠mi kl√≠ƒçi?
             if not unique_key
-              -- ano, pokusit se j°t d†l
+              -- ano, pokusit se j√≠t d√°l
               then
                 -- jde o avl strom?
                 if avl 
-                  -- ano, budou se muset testovat obà vàtve na existenci [node]
+                  -- ano, budou se muset testovat obƒõ vƒõtve na existenci [node]
                   then
-                    -- je v podstromu duplicitn° uzel?
+                    -- je v podstromu duplicitn√≠ uzel?
                     if not has_node_rec(i_current_node,node)
-                      -- ne, vloë novò uzel
+                      -- ne, vlo≈æ nov√Ω uzel
                       then
                         insert_avl_rec(i_current_node,node,critical);
 
@@ -648,9 +648,9 @@ class private c_binary_tree =
                         raise tree_error;
                       end if;
 
-                  -- nejde o avl, ale mohou se vkl†dat uzly se stejnòmi kl°ái
+                  -- nejde o avl, ale mohou se vkl√°dat uzly se stejn√Ωmi kl√≠ƒçi
                   else
-                    -- pokud existuje pravò n†sledn°k, jdi doprava, jinak vloë doprava
+                    -- pokud existuje prav√Ω n√°sledn√≠k, jdi doprava, jinak vlo≈æ doprava
                     if i_current_node^.right<>nil 
                       then insert_rec(i_current_node^.right,node,critical)
                       else insert_right(i_current_node,node);
@@ -664,9 +664,9 @@ class private c_binary_tree =
               end if;
           end case;
 
-      -- m† se uzel vyvaëovat?
+      -- m√° se uzel vyva≈æovat?
       if avl and not critical then
-        -- vyv†ëit uzel
+        -- vyv√°≈æit uzel
         make_avl(i_current_node,critical);
         end if;
       end insert_rec;
@@ -675,38 +675,38 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     override insert =
-    -- P©id† uzel do stromu. Pokud se m† vloëit uzel se stejnòm kl°áem, jakò uë ve stromu
-    -- existuje, novò uzel se vloë° doprava.
+    -- P≈ôid√° uzel do stromu. Pokud se m√° vlo≈æit uzel se stejn√Ωm kl√≠ƒçem, jak√Ω u≈æ ve stromu
+    -- existuje, nov√Ω uzel se vlo≈æ√≠ doprava.
     ------------------------------------------------------------------------------------------------
     var
-      node         : p_binary_tree_node;                -- vkl†danò uzel
-      critical     : t_logical:=false;           -- T-nalezen kritickò uzel
+      node         : p_binary_tree_node;                -- vkl√°dan√Ω uzel
+      critical     : t_logical:=false;           -- T-nalezen kritick√Ω uzel
 
     begin
-      -- p©etypovat
+      -- p≈ôetypovat
       node:=p_binary_tree_node(item);
 
-      -- p©id†vanò uzel mus° existovat
+      -- p≈ôid√°van√Ω uzel mus√≠ existovat
       if node=nil then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- je ko©en definov†n?
+      -- je ko≈ôen definov√°n?
       if root=nil then
-        -- vloëit uzel
+        -- vlo≈æit uzel
         node^.weight:=1;
         node^.left:=nil;
         node^.right:=nil;
         node^.up:=nil;
         root:=node;
 
-        -- zvò®it poáet uzlñ ve stromu o 1
+        -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu o 1
         succ count;
         return;
         end if;
 
-      -- vloëit uzel
+      -- vlo≈æit uzel
       insert_rec(root,node,critical);
       end insert;
 
@@ -714,22 +714,22 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static merge_subtree_rec (
-        node       : p_binary_tree_node) =              -- ko©enovò uzel p©id†vanÇho stromu
-    -- Spoj° dva stromy do jednoho. Stom [tree] reprezentuje strom p©id†vanòch uzlñ do stromu
-    -- reprezentovanou instanc° tÇto t©°dy. Pokud uxistuj° dva uzly se stejnòm kl°áem, je uzel 
-    -- do stromu vloëen v z†vislosti na parametru [unique_key].
+        node       : p_binary_tree_node) =              -- ko≈ôenov√Ω uzel p≈ôid√°van√©ho stromu
+    -- Spoj√≠ dva stromy do jednoho. Stom [tree] reprezentuje strom p≈ôid√°van√Ωch uzl≈Ø do stromu
+    -- reprezentovanou instanc√≠ t√©to t≈ô√≠dy. Pokud uxistuj√≠ dva uzly se stejn√Ωm kl√≠ƒçem, je uzel 
+    -- do stromu vlo≈æen v z√°vislosti na parametru [unique_key].
     ------------------------------------------------------------------------------------------------
     begin
-      -- jestliëe ko©en p©id†vanÇho stromu nen° definov†n, ukonái rekurzi
+      -- jestli≈æe ko≈ôen p≈ôid√°van√©ho stromu nen√≠ definov√°n, ukonƒçi rekurzi
       if node=nil then
         return;
         end if;
 
-      -- proch†zet stromem
+      -- proch√°zet stromem
       merge_subtree_rec(node^.left);
       merge_subtree_rec(node^.right);
 
-      -- vloëit do stromu uzel [node]
+      -- vlo≈æit do stromu uzel [node]
       insert(node);
       end merge_subtree_rec;
 
@@ -737,15 +737,15 @@ class private c_binary_tree =
     
     ------------------------------------------------------------------------------------------------
     static merge_subtree =
-    -- Spoj° dva stromy do jednoho. Stom [tree] reprezentuje strom p©id†vanòch uzlñ do stromu
-    -- reprezentovanou instanc° tÇto t©°dy. Pokud uxistuj° dva uzly se stejnòm kl°áem, je uzel 
-    -- do stromu vloëen v z†vislosti na parametru [unique_key].
+    -- Spoj√≠ dva stromy do jednoho. Stom [tree] reprezentuje strom p≈ôid√°van√Ωch uzl≈Ø do stromu
+    -- reprezentovanou instanc√≠ t√©to t≈ô√≠dy. Pokud uxistuj√≠ dva uzly se stejn√Ωm kl√≠ƒçem, je uzel 
+    -- do stromu vlo≈æen v z√°vislosti na parametru [unique_key].
     ------------------------------------------------------------------------------------------------
     begin
       -- spojit stromy
       merge_subtree_rec(tree.root);
 
-      -- deinicializace p©ipojovanÇho stromu
+      -- deinicializace p≈ôipojovan√©ho stromu
       tree.root:=nil;
       tree.count:=0;
       end merge_subtree;
@@ -756,66 +756,66 @@ class private c_binary_tree =
     static bonded_remove_rec (
         i_current_node : in out p_binary_tree_node;
         node         : in p_binary_tree_node) =
-    -- Vyjme uzel, kterò m† pravÇho syna nebo oba syny.
+    -- Vyjme uzel, kter√Ω m√° prav√©ho syna nebo oba syny.
     ------------------------------------------------------------------------------------------------
     var
       li_current_node : p_binary_tree_node;               -- i_current_node
-      critical      : t_logical;                 -- nevyuëit† promànn†
+      critical      : t_logical;                 -- nevyu≈æit√° promƒõnn√°
 
     begin
-      -- nastavit lok†ln° [i_current_node]
+      -- nastavit lok√°ln√≠ [i_current_node]
       li_current_node:=i_current_node;
 
-      -- uzel mus° existovat
+      -- uzel mus√≠ existovat
       if li_current_node=nil then
         return;
         end if;
 
-      -- existuje pravò uzel?
+      -- existuje prav√Ω uzel?
       if li_current_node^.right<>nil 
-        -- ano, j°t doprava
+        -- ano, j√≠t doprava
         then
           bonded_remove_rec(li_current_node^.right,node);
 
         -- ne, vyjmout uzel
         else
           -- ano, odstranit uzel [node]
-          -- nav†zat levÇho syna nejpravàj®°ho uzlu na p©edposledn° proch†zenò uzel
+          -- nav√°zat lev√©ho syna nejpravƒõj≈°√≠ho uzlu na p≈ôedposledn√≠ proch√°zen√Ω uzel
           if li_current_node^.up^.left=li_current_node 
             then li_current_node^.up^.left:=li_current_node^.left;
             else li_current_node^.up^.right:=li_current_node^.left;
             end if;
 
-          -- z°skanò volnò uzel uloëit do stromu na m°sto ru®enÇho uzlu
+          -- z√≠skan√Ω voln√Ω uzel ulo≈æit do stromu na m√≠sto ru≈°en√©ho uzlu
           li_current_node^.left:=node^.left;
           li_current_node^.right:=node^.right;
           li_current_node^.up:=node^.up;
           li_current_node^.weight:=node^.weight;
 
-          -- pokud ru®enò uzel nem† p©edchñdce, zru®it ko©en
+          -- pokud ru≈°en√Ω uzel nem√° p≈ôedch≈Ødce, zru≈°it ko≈ôen
           if node^.up=nil then
             root:=li_current_node;
 
-          -- jinak p©edat vazbu p©edka na m°sto ru®enÇho uzlu
+          -- jinak p≈ôedat vazbu p≈ôedka na m√≠sto ru≈°en√©ho uzlu
           elsif node^.up^.left=node
             then node^.up^.left:=li_current_node;
             else node^.up^.right:=li_current_node;
             end if;
 
-          -- nastavenit zpàtnÇ vazby pravÇho uzlu uzkazuj°c° nyn° ®patnà na smazanò uzel
+          -- nastavenit zpƒõtn√© vazby prav√©ho uzlu uzkazuj√≠c√≠ nyn√≠ ≈°patnƒõ na smazan√Ω uzel
           if li_current_node^.right<>nil then
             li_current_node^.right^.up:=li_current_node;
             end if;
 
-          -- nastavit zpàtnÇ vazby levÇho uzlu uzkazuj°c° nyn° ®patnà na smazanò uzel
+          -- nastavit zpƒõtn√© vazby lev√©ho uzlu uzkazuj√≠c√≠ nyn√≠ ≈°patnƒõ na smazan√Ω uzel
           if li_current_node^.left<>nil then
             li_current_node^.left^.up:=li_current_node;
             end if;
           end if;
   
-      -- m† se uzel vyvaëovat?
+      -- m√° se uzel vyva≈æovat?
       if avl then
-        -- vyv†ëit uzel
+        -- vyv√°≈æit uzel
         make_avl(li_current_node,critical);
         end if;
       end bonded_remove_rec;
@@ -827,63 +827,63 @@ class private c_binary_tree =
     -- Vyjme uzel ze stromu.
     ------------------------------------------------------------------------------------------------
     var 
-      node         : p_binary_tree_node;                -- uzel pro vyjmut° ze stromu
-      critical     : t_logical;                  -- nevyuëit† promànn†
+      node         : p_binary_tree_node;                -- uzel pro vyjmut√≠ ze stromu
+      critical     : t_logical;                  -- nevyu≈æit√° promƒõnn√°
 
     begin
-      -- p©etypovat [item]
+      -- p≈ôetypovat [item]
       node:=p_binary_tree_node(item);
 
-      -- ru®enò uzel mus° bòt definovanò
+      -- ru≈°en√Ω uzel mus√≠ b√Ωt definovan√Ω
       if node=nil then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- pokud nen° uzel ve stromu nalezen, konec
+      -- pokud nen√≠ uzel ve stromu nalezen, konec
       if not has_node(node) then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- m† ru®enò uzel odkaz jen na pravÇho potomka nebo na ë†dnÇho?
+      -- m√° ru≈°en√Ω uzel odkaz jen na prav√©ho potomka nebo na ≈æ√°dn√©ho?
       if node^.left=nil 
         -- ano
         then
-          -- m† ru®enò uzel p©edka?
+          -- m√° ru≈°en√Ω uzel p≈ôedka?
           if node^.up=nil then
-            -- ne, nastavit novò ko©en
+            -- ne, nastavit nov√Ω ko≈ôen
             root:=node^.right;
 
-            -- pokud existovala prav† vàtev
+            -- pokud existovala prav√° vƒõtev
             if root<>nil then
-              -- nastavit p©edka novÇho ko©enu na nil
+              -- nastavit p≈ôedka nov√©ho ko≈ôenu na nil
               root^.up:=nil;
               end if;
 
-          -- ano, ko©en m† p©edka, tud°ë spoj°me p©edka s n†sledn°kem
+          -- ano, ko≈ôen m√° p≈ôedka, tud√≠≈æ spoj√≠me p≈ôedka s n√°sledn√≠kem
           elsif node^.up^.left=node 
             then node^.up^.left:=node^.right;
             else node^.up^.right:=node^.right;
             end if;
 
-        -- ne, m† odkaz na levÇho nebo na oba potomky
+        -- ne, m√° odkaz na lev√©ho nebo na oba potomky
         else
           -- odebere uzel
           bonded_remove_rec(node^.left,node);
           end if;
 
-      -- sn°ëit poáet uzlñ ve stromu o 1
+      -- sn√≠≈æit poƒçet uzl≈Ø ve stromu o 1
       pred count;
 
-      -- m† se vyvaëovat?
+      -- m√° se vyva≈æovat?
       if avl then
-        -- vyvaëovat uzly aë ke ko©eni
+        -- vyva≈æovat uzly a≈æ ke ko≈ôeni
         loop
-          -- j°t na p©edka
+          -- j√≠t na p≈ôedka
           node:=node^.up;
       
-          -- vyv†ëit uzel
+          -- vyv√°≈æit uzel
           make_avl(node,critical);
           until node=root or node=nil;
         end if;
@@ -893,20 +893,20 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static get_node_count (
-        node       : in p_binary_tree_node;         -- aktu†ln° uzel 
-        count      : in out t_unsigned) =        -- poáet uzlñ (pod)stromu
-    -- Spoá°t† poáet uzlñ v podstromu váetnà uzlu [node].
+        node       : in p_binary_tree_node;         -- aktu√°ln√≠ uzel 
+        count      : in out t_unsigned) =        -- poƒçet uzl≈Ø (pod)stromu
+    -- Spoƒç√≠t√° poƒçet uzl≈Ø v podstromu vƒçetnƒõ uzlu [node].
     ------------------------------------------------------------------------------------------------
     begin
-      -- jestliëe [node] nen° definov†n, ukonái rekurzi
+      -- jestli≈æe [node] nen√≠ definov√°n, ukonƒçi rekurzi
       if node=nil then 
         return;
         end if;
 
-      -- poáet uzlñ je o jeden vàt®°
+      -- poƒçet uzl≈Ø je o jeden vƒõt≈°√≠
       succ count;
 
-      -- proch†zet stromem 
+      -- proch√°zet stromem 
       get_node_count(node^.left,count);
       get_node_count(node^.right,count);
       end get_node_count;
@@ -915,70 +915,70 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static split_subtree =
-    -- Vyjme ze stromu podstrom váetnà uzlu [node] a vytvo©° a inicializuje novou instance 
-    -- tr°dy [c_binary_tree]. Pokud uzel nen° nalezen, vrac° pr†zdnò strom se stejnòmi parametry jako
-    -- m† instace tohoto stromu.
+    -- Vyjme ze stromu podstrom vƒçetnƒõ uzlu [node] a vytvo≈ô√≠ a inicializuje novou instance 
+    -- tr√≠dy [c_binary_tree]. Pokud uzel nen√≠ nalezen, vrac√≠ pr√°zdn√Ω strom se stejn√Ωmi parametry jako
+    -- m√° instace tohoto stromu.
     ------------------------------------------------------------------------------------------------
     var
-      lnode        : p_binary_tree_node;                -- ko©en novÇho stromu
+      lnode        : p_binary_tree_node;                -- ko≈ôen nov√©ho stromu
 
     begin
-      -- ko©en podstromu/stromu
+      -- ko≈ôen podstromu/stromu
       lnode:=node;
 
-      -- uzel mus° bòt ve stromà nalezen
+      -- uzel mus√≠ b√Ωt ve stromƒõ nalezen
       if not has_node(lnode) then
-        -- nen° nalezen, chyba
+        -- nen√≠ nalezen, chyba
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- je odpojovanò uzel rñznò od [root]?
+      -- je odpojovan√Ω uzel r≈Øzn√Ω od [root]?
       if lnode^.up<>nil 
-        -- ano, rñznò od ko©enu
+        -- ano, r≈Øzn√Ω od ko≈ôenu
         then
-          -- odpojit uzel z pñvodn°ho stromu
+          -- odpojit uzel z p≈Øvodn√≠ho stromu
           if lnode^.up^.left=lnode 
             then lnode^.up^.left:=nil
             else lnode^.up^.right:=nil
             end if;
 
-        -- ne, vymazat celò strom 
+        -- ne, vymazat cel√Ω strom 
         else
           root:=nil;
           end if;
 
-      -- nastavit p©edka novÇho ko©enu na nil
+      -- nastavit p≈ôedka nov√©ho ko≈ôenu na nil
       lnode^.up:=nil;
 
-      -- inicializovat novò strom
+      -- inicializovat nov√Ω strom
       subtree.init(this.item_type,this.avl,this.unique_key,this.homogenous);
 
-      -- m† se pñvodn° strom znovu ustanovit?
+      -- m√° se p≈Øvodn√≠ strom znovu ustanovit?
       if avl then
-        -- nastavit poáet uzlñ pñvodn°ho stromu
+        -- nastavit poƒçet uzl≈Ø p≈Øvodn√≠ho stromu
         count:=0;
 
-        -- vytvo©it pñvodn° strom na promànnou subtree pro vyvol†n° merge_subtree
+        -- vytvo≈ôit p≈Øvodn√≠ strom na promƒõnnou subtree pro vyvol√°n√≠ merge_subtree
         subtree.root:=root;
 
-        -- zru®it celò pñvodn° strom a zapamatovat si pñvodn° [root] pro znovuustanoven°
+        -- zru≈°it cel√Ω p≈Øvodn√≠ strom a zapamatovat si p≈Øvodn√≠ [root] pro znovuustanoven√≠
         root:=nil;
 
         -- znovupostavit strom
         merge_subtree(subtree);
         end if;
 
-      -- spoá°tat poáet uzlñ stromñ
+      -- spoƒç√≠tat poƒçet uzl≈Ø strom≈Ø
       subtree.count:=0;
       get_node_count(lnode,subtree.count);
 
-      -- pokud nebyl strom znovu sestaven p©es avl, spoá°tat poáet uzlñ v pñvodn°m stromu
+      -- pokud nebyl strom znovu sestaven p≈ôes avl, spoƒç√≠tat poƒçet uzl≈Ø v p≈Øvodn√≠m stromu
       if not avl then
         count-subtree.count;
         end if;
 
-      -- vytvo©it novò strom
+      -- vytvo≈ôit nov√Ω strom
       subtree.root:=lnode;
       end split_subtree;
 
@@ -986,13 +986,13 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     override delete =
-    -- Smaëe uzel ze stromu a uvoln° pamàt.
+    -- Sma≈æe uzel ze stromu a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     begin
       -- vyjmout uzel
       remove(item);
 
-      -- uvolnit uzel z pamàti
+      -- uvolnit uzel z pamƒõti
       discard item;
       end delete;
 
@@ -1000,22 +1000,22 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static delete_subtree =
-    -- Smaëe podstrom váetnà uzlu [node] ze stromu a uvoln° pamàt.
+    -- Sma≈æe podstrom vƒçetnƒõ uzlu [node] ze stromu a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     begin
-      -- jestliëe [node] nen° definov†n, ukonái rekurzi
+      -- jestli≈æe [node] nen√≠ definov√°n, ukonƒçi rekurzi
       if node=nil then 
         return;
         end if;
 
-      -- proch†zet stromem 
+      -- proch√°zet stromem 
       delete_subtree(node^.left);
       delete_subtree(node^.right);
 
       -- vyjmout uzel
       remove(node);
  
-      -- uvolnit uzel z pamàti
+      -- uvolnit uzel z pamƒõti
       discard node;
       end delete_subtree;
 
@@ -1023,21 +1023,21 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static delete_all_rec (
-        node       : in out p_binary_tree_node) =       -- ru®en† vàtev
-    -- Zru®° celou vàtev stromu a uvoln° jejich pamàü. Maz†n° je rychlej®°, je pouëita v metodà
-    -- delete_all. P©i smaz†n° vàtve nemus° jië bòt strom vyv†ëen.
+        node       : in out p_binary_tree_node) =       -- ru≈°en√° vƒõtev
+    -- Zru≈°√≠ celou vƒõtev stromu a uvoln√≠ jejich pamƒõ≈•. Maz√°n√≠ je rychlej≈°√≠, je pou≈æita v metodƒõ
+    -- delete_all. P≈ôi smaz√°n√≠ vƒõtve nemus√≠ ji≈æ b√Ωt strom vyv√°≈æen.
     ------------------------------------------------------------------------------------------------
     begin
-      -- jestliëe [node] nen° definov†n, ukonáit rekurzi
+      -- jestli≈æe [node] nen√≠ definov√°n, ukonƒçit rekurzi
       if node=nil then 
         return;
         end if;
 
-      -- proch†zet stromem 
+      -- proch√°zet stromem 
       delete_all_rec(node^.left);
       delete_all_rec(node^.right);
 
-      -- uvolnit uzel z pamàti
+      -- uvolnit uzel z pamƒõti
       discard node;
       end delete_all_rec;
 
@@ -1045,10 +1045,10 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     override delete_all =
-    -- Smaëe v®echny uzly ze stromu a uvoln° pamàt.
+    -- Sma≈æe v≈°echny uzly ze stromu a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     begin
-      -- smazat celò strom
+      -- smazat cel√Ω strom
       delete_all_rec(root);
       end delete_all;
 
@@ -1059,7 +1059,7 @@ class private c_binary_tree =
         tree       : p_binary_tree_node;
         node       : p_binary_tree_node)
         return p_binary_tree_node =
-    -- Vyhled† uzel, kterò je rovnò [node]
+    -- Vyhled√° uzel, kter√Ω je rovn√Ω [node]
     ------------------------------------------------------------------------------------------------
     begin
       -- inicializovat
@@ -1068,19 +1068,19 @@ class private c_binary_tree =
       -- uzel nebyl nalezen
       if tree=nil then return end if;
 
-      -- porovnat kl°áe uzlñ
+      -- porovnat kl√≠ƒçe uzl≈Ø
       case compare(tree,node)
-        -- je aktu†ln° uzel vàt®° neë hledanò uzel?
+        -- je aktu√°ln√≠ uzel vƒõt≈°√≠ ne≈æ hledan√Ω uzel?
         when cn_bigger do
             -- jdi doleva
             result:=find_rec(tree^.left,node);
 
-        -- je aktu†ln° uzel men®° neë hledanò uzel?
+        -- je aktu√°ln√≠ uzel men≈°√≠ ne≈æ hledan√Ω uzel?
         when cn_smaller do
             -- jdi doprava
             result:=find_rec(tree^.right,node);
 
-        -- kl°áe jsou si rovny, ale zat°m nen° nalezen hledanò uzel
+        -- kl√≠ƒçe jsou si rovny, ale zat√≠m nen√≠ nalezen hledan√Ω uzel
         when cn_equal do
             result:=tree;
         end case;
@@ -1089,7 +1089,7 @@ class private c_binary_tree =
 
     ------------------------------------------------------------------------------------------------
     static find =
-    -- Vyhled† uzel, kterò je rovnò [node]
+    -- Vyhled√° uzel, kter√Ω je rovn√Ω [node]
     ------------------------------------------------------------------------------------------------
     begin
       result:=find_rec(root,node);
@@ -1108,22 +1108,22 @@ class private c_binary_tree_iterator =
       supervised c_binary_tree_node;
 
     var 
-      direction    : t_tree_walking_direction;   -- ©°zen° iterace
+      direction    : t_tree_walking_direction;   -- ≈ô√≠zen√≠ iterace
       tree         : p_binary_tree;              -- subjekt iterace
-      current_node : p_binary_tree_node;         -- aktu†ln° uzel
+      current_node : p_binary_tree_node;         -- aktu√°ln√≠ uzel
 
 
     
     ------------------------------------------------------------------------------------------------
     static init =
-    -- Inicializuje iterator pouë°vanò pro prñchod stromem.
+    -- Inicializuje iterator pou≈æ√≠van√Ω pro pr≈Øchod stromem.
     ------------------------------------------------------------------------------------------------
     begin
-      -- inicializece ©°d°c°ch promànnòch
+      -- inicializece ≈ô√≠d√≠c√≠ch promƒõnn√Ωch
       this.direction:=direction;
       this.tree:=^tree;
 
-      -- resetov†n°
+      -- resetov√°n√≠
       reset;
       end init;
 
@@ -1134,37 +1134,37 @@ class private c_binary_tree_iterator =
     -- Resetuje iterator do stavu po inicializaci.
     ------------------------------------------------------------------------------------------------
     begin
-      -- doáasnÇ nastaven° [current_node]
+      -- doƒçasn√© nastaven√≠ [current_node]
       current_node:=tree^.get_root;
 
-      -- strom je pr†zdnò
+      -- strom je pr√°zdn√Ω
       if current_node=nil then return end if;
 
       case direction
         -- prefix
         when ttwd_prefix do 
-          -- nic nedàlat - ko©en je prvn°
+          -- nic nedƒõlat - ko≈ôen je prvn√≠
 
-        -- inverzn° prefix
+        -- inverzn√≠ prefix
         when ttwd_inv_prefix do 
-          -- nic nedàlat - ko©en je prvn°
+          -- nic nedƒõlat - ko≈ôen je prvn√≠
 
         -- postfix
         when ttwd_postfix do 
-          -- naj°t potomka
+          -- naj√≠t potomka
           loop
-            -- nejd©°ve zkusit levò podstrom, kdyë nen° zad†n, tak pravò
+            -- nejd≈ô√≠ve zkusit lev√Ω podstrom, kdy≈æ nen√≠ zad√°n, tak prav√Ω
             if current_node^.left<>nil then current_node:=current_node^.left;
             elsif current_node^.right<>nil then current_node:=current_node^.right;
             else break;
               end if;
             end loop;
 
-        -- inverzn° postfix
+        -- inverzn√≠ postfix
         when ttwd_inv_postfix do 
-          -- naj°t potomka
+          -- naj√≠t potomka
           loop
-            -- nejd©°ve zkusit pravò podstrom, kdyë nen° zad†n, tak levò
+            -- nejd≈ô√≠ve zkusit prav√Ω podstrom, kdy≈æ nen√≠ zad√°n, tak lev√Ω
             if current_node^.right<>nil then current_node:=current_node^.right;
             elsif current_node^.left<>nil then current_node:=current_node^.left;
             else break;
@@ -1173,14 +1173,14 @@ class private c_binary_tree_iterator =
 
         -- infix
         when ttwd_infix do
-          -- j°t co nejv°ce doleva
+          -- j√≠t co nejv√≠ce doleva
           while current_node^.left<>nil loop
             current_node:=current_node^.left;
             end loop;
 
-        -- inverzn° infix
+        -- inverzn√≠ infix
         when ttwd_inv_infix do
-          -- j°t co nejv°ce doprava
+          -- j√≠t co nejv√≠ce doprava
           while current_node^.right<>nil loop
             current_node:=current_node^.right;
             end loop;
@@ -1191,69 +1191,69 @@ class private c_binary_tree_iterator =
 
     ------------------------------------------------------------------------------------------------
     static find_next =
-    -- Do [current_node] uloë° dal®° proch†zenò uzel
-    -- P©edpokl†d† [current_node]<>nil
+    -- Do [current_node] ulo≈æ√≠ dal≈°√≠ proch√°zen√Ω uzel
+    -- P≈ôedpokl√°d√° [current_node]<>nil
     ------------------------------------------------------------------------------------------------
     begin
-      -- uráit smàr proch†zen°
+      -- urƒçit smƒõr proch√°zen√≠
       case direction
         -- prefix
         when ttwd_prefix do
-          -- pokud to jde doleva, j°t do levÇho podstromu
+          -- pokud to jde doleva, j√≠t do lev√©ho podstromu
           if current_node^.left<>nil then
             current_node:=current_node^.left;
 
-          -- pokud to jde doprava, j°t do pravÇho podstromu
+          -- pokud to jde doprava, j√≠t do prav√©ho podstromu
           elsif current_node^.right<>nil then
             current_node:=current_node^.right;
             
-          -- nejde to do podstromu, mus°me se vr†tit nahoru
+          -- nejde to do podstromu, mus√≠me se vr√°tit nahoru
           else
-            -- j°t nahoru tak dlouho, dokud se ned† odboáit doprava dolñ
+            -- j√≠t nahoru tak dlouho, dokud se ned√° odboƒçit doprava dol≈Ø
             while current_node<>nil loop
-              -- ®plh†me po levÇ vàtvi a prav† vàtev m† n†sledn°ky?
+              -- ≈°plh√°me po lev√© vƒõtvi a prav√° vƒõtev m√° n√°sledn√≠ky?
               if current_node^.up<>nil and then current_node^.up^.left=current_node and then current_node^.up^.right<>nil then
                 current_node:=current_node^.up^.right;
                 return;
                 end if;
 
-              -- j°t nahoru
+              -- j√≠t nahoru
               current_node:=current_node^.up;
               end loop;
             end if;
 
-        -- inverzn° prefix
+        -- inverzn√≠ prefix
         when ttwd_inv_prefix do
-          -- pokud to jde doprava, j°t do pravÇho podstromu
+          -- pokud to jde doprava, j√≠t do prav√©ho podstromu
           if current_node^.right<>nil then
             current_node:=current_node^.right;
 
-          -- pokud to jde doleva, j°t do levÇho podstromu
+          -- pokud to jde doleva, j√≠t do lev√©ho podstromu
           elsif current_node^.left<>nil then
             current_node:=current_node^.left;
 
-          -- nejde to do podstromu, mus°me se vr†tit nahoru
+          -- nejde to do podstromu, mus√≠me se vr√°tit nahoru
           else
-            -- j°t nahoru tak dlouho, dokud se ned† odboáit doleva dolñ
+            -- j√≠t nahoru tak dlouho, dokud se ned√° odboƒçit doleva dol≈Ø
             while current_node<>nil loop
-              -- ®plh†me po pravÇ vàtvi a lev† vàtev m† n†sledn°ky?
+              -- ≈°plh√°me po prav√© vƒõtvi a lev√° vƒõtev m√° n√°sledn√≠ky?
               if current_node^.up<>nil and then current_node^.up^.right=current_node and then current_node^.up^.left<>nil then
                 current_node:=current_node^.up^.left;
                 return;
                 end if;
 
-              -- j°t nahoru
+              -- j√≠t nahoru
               current_node:=current_node^.up;
               end loop;
             end if;
 
         -- postfix
         when ttwd_postfix do
-          -- pokud to jde, j°t doprava na stejnou £rove§ a pak co nejv°ce dolñ
+          -- pokud to jde, j√≠t doprava na stejnou √∫rove≈à a pak co nejv√≠ce dol≈Ø
           if current_node^.up<>nil and then current_node^.up^.left=current_node and then current_node^.up^.right<>nil then
             current_node:=current_node^.up^.right;
 
-            -- co nejv°ce dolñ
+            -- co nejv√≠ce dol≈Ø
             loop
               if current_node^.left<>nil then current_node:=current_node^.left;
               elsif current_node^.right<>nil then current_node:=current_node^.right;
@@ -1266,13 +1266,13 @@ class private c_binary_tree_iterator =
             current_node:=current_node^.up;
             end if;
 
-        -- inverzn° postfix
+        -- inverzn√≠ postfix
         when ttwd_inv_postfix do
-          -- pokud to jde, j°t doleva na stejnou £rove§ a pak co nejv°ce dolñ
+          -- pokud to jde, j√≠t doleva na stejnou √∫rove≈à a pak co nejv√≠ce dol≈Ø
           if current_node^.up<>nil and then current_node^.up^.right=current_node and then current_node^.up^.left<>nil then
             current_node:=current_node^.up^.left;
 
-            -- co nejv°ce dolñ
+            -- co nejv√≠ce dol≈Ø
             loop
               if current_node^.right<>nil then current_node:=current_node^.right;
               elsif current_node^.left<>nil then current_node:=current_node^.left;
@@ -1287,17 +1287,17 @@ class private c_binary_tree_iterator =
 
         -- infix
         when ttwd_infix do
-          -- kdyë to jde doprava, tak doprava
+          -- kdy≈æ to jde doprava, tak doprava
           if current_node^.right<>nil then
             current_node:=current_node^.right;
 
-            -- co nejv°ce doleva
+            -- co nejv√≠ce doleva
             while current_node^.left<>nil loop
               current_node:=current_node^.left;
               end loop;
 
           else
-            -- jinak nahoru, nejd©°ve o kolik to jde po pravÇ vàtvi - vracen° se, pak je®tà o jednu nahoru
+            -- jinak nahoru, nejd≈ô√≠ve o kolik to jde po prav√© vƒõtvi - vracen√≠ se, pak je≈°tƒõ o jednu nahoru
             while current_node^.up<>nil and then current_node^.up^.right=current_node loop
               current_node:=current_node^.up;
               end loop;
@@ -1306,19 +1306,19 @@ class private c_binary_tree_iterator =
             current_node:=current_node^.up;
             end if;
 
-        -- inverzn° infix
+        -- inverzn√≠ infix
         when ttwd_inv_infix do
-          -- kdyë to jde doleva, tak doleva
+          -- kdy≈æ to jde doleva, tak doleva
           if current_node^.left<>nil then
             current_node:=current_node^.left;
 
-            -- co nejv°ce doprava
+            -- co nejv√≠ce doprava
             while current_node^.right<>nil loop
               current_node:=current_node^.right;
               end loop;
 
           else
-            -- jinak nahoru, nejd©°ve o kolik to jde po levÇ vàtvi - vracen° se, pak je®tà o jednu nahoru
+            -- jinak nahoru, nejd≈ô√≠ve o kolik to jde po lev√© vƒõtvi - vracen√≠ se, pak je≈°tƒõ o jednu nahoru
             while current_node^.up<>nil and then current_node^.up^.left=current_node loop
               current_node:=current_node^.up;
               end loop;
@@ -1334,19 +1334,19 @@ class private c_binary_tree_iterator =
 
     ------------------------------------------------------------------------------------------------
     override get =
-    -- Vr†t° jeden uzel z koresponduj°c°ho stromu.
+    -- Vr√°t√≠ jeden uzel z koresponduj√≠c√≠ho stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- uzel, kterò m† iter†tor vr†tit, je v current_node
+      -- uzel, kter√Ω m√° iter√°tor vr√°tit, je v current_node
       item:=current_node;
 
-      -- vòsledn† hodnota - F, pokud je v [item] nil
+      -- v√Ωsledn√° hodnota - F, pokud je v [item] nil
       result:=item<>nil;
 
-      -- pokud nen° co proch†zet, konec
+      -- pokud nen√≠ co proch√°zet, konec
       if not result then return end if;
 
-      -- naj°t dal®° uzel
+      -- naj√≠t dal≈°√≠ uzel
       find_next;
       end get;
     
@@ -1363,7 +1363,7 @@ class private c_tree_node =
 
     ------------------------------------------------------------------------------------------------
     entry =
-    -- Inicializovat seznam potomkñ.
+    -- Inicializovat seznam potomk≈Ø.
     ------------------------------------------------------------------------------------------------
     begin
       down.init(item_type,true,false);
@@ -1375,7 +1375,7 @@ class private c_tree_node =
 
 ----------------------------------------------------------------------------------------------------
 class private c_tree =
--- N-n†rn° vyhled†vac° strom.
+-- N-n√°rn√≠ vyhled√°vac√≠ strom.
 ----------------------------------------------------------------------------------------------------
 
     with
@@ -1385,12 +1385,12 @@ class private c_tree =
     ------------------------------------------------------------------------------------------------
     static init =
     -- Inicializace stromu.
-    --   Pokud je [homogenous] nastaven na true, ve stromà mohou bòt jen uzly typu [item_type].
+    --   Pokud je [homogenous] nastaven na true, ve stromƒõ mohou b√Ωt jen uzly typu [item_type].
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokud je jië strom definov†n
+      -- pokud je ji≈æ strom definov√°n
       if this.root<>nil then
-        -- inicializace neprobàhne
+        -- inicializace neprobƒõhne
         execute(event_error);
         raise tree_error;
         end if;
@@ -1406,22 +1406,22 @@ class private c_tree =
     static get_node_count (
         node       : in p_tree_node)             -- podstrom
         return t_unsigned =
-    -- Spoá°t† poáet uzlñ v podstromà uráenÇm [node]
+    -- Spoƒç√≠t√° poƒçet uzl≈Ø v podstromƒõ urƒçen√©m [node]
     ------------------------------------------------------------------------------------------------
     var
       child        : p_tree_node;                -- uzel
 
     begin
-      -- zapoá°tat node
+      -- zapoƒç√≠tat node
       result:=1;
 
-      -- proj°t dàtskÇ uzly
+      -- proj√≠t dƒõtsk√© uzly
       child:=node^.down.get_first;
       while child<>nil loop
-        -- zapoá°tat podstromy [child]
+        -- zapoƒç√≠tat podstromy [child]
         result+get_node_count(child);
 
-        -- dal®° d°te
+        -- dal≈°√≠ d√≠te
         child:=node^.down.get_next(child);
         end loop;
       end get_node_count;
@@ -1430,33 +1430,33 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static has_node_rec (
-        current_node : in p_tree_node;           -- aktu†ln° uzel
-        node         : in p_tree_node)           -- hledanò uzel
+        current_node : in p_tree_node;           -- aktu√°ln√≠ uzel
+        node         : in p_tree_node)           -- hledan√Ω uzel
         return t_logical =                       -- T-uzel nalezen
-    -- Vrac° logickou hodnotu, zda je uzel nalezen ve stromu.
+    -- Vrac√≠ logickou hodnotu, zda je uzel nalezen ve stromu.
     ------------------------------------------------------------------------------------------------
     var 
       down_node   : p_tree_node;                 -- potomek
 
     begin
-      -- aktu†ln° uzel mus° bòt definovanò
+      -- aktu√°ln√≠ uzel mus√≠ b√Ωt definovan√Ω
       if current_node=nil then
         result:=false;
         return;
         end if;
 
-      -- pokud se uzly shoduj°, vr†tit true
+      -- pokud se uzly shoduj√≠, vr√°tit true
       if current_node=node then
         result:=true;
         return;
         end if;
 
-      -- zjistit prvn°ho potomka
+      -- zjistit prvn√≠ho potomka
       down_node:=p_tree_node(current_node^.down.get_first);
 
-      -- proch†zet potomky
+      -- proch√°zet potomky
       while down_node<>nil loop
-        -- proch†zet podstrom
+        -- proch√°zet podstrom
         result:=has_node_rec(down_node,node);
 
         -- pokud je uzel nalezen, konec
@@ -1464,7 +1464,7 @@ class private c_tree =
           break;
           end if;
         
-        -- jdi na dal®°ho potomka
+        -- jdi na dal≈°√≠ho potomka
         down_node:=current_node^.down.get_next(down_node);
         end loop;
       end has_node_rec;
@@ -1473,11 +1473,11 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static has_node =
-    -- Vrac° logickou hodnotu, zda je uzel nalezen ve stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
+    -- Vrac√≠ logickou hodnotu, zda je uzel nalezen ve stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokud [node] nen° definovanò, hl†s° chybu
+      -- pokud [node] nen√≠ definovan√Ω, hl√°s√≠ chybu
       if node=nil then
         execute(event_error);
         raise tree_error;
@@ -1491,11 +1491,11 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static get_root =
-    -- Vrac° ko©enovò uzel.
-    --   Pokud ko©en nen° definov†n, vrac° NIL.
+    -- Vrac√≠ ko≈ôenov√Ω uzel.
+    --   Pokud ko≈ôen nen√≠ definov√°n, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     begin
-      -- vr†t° root node
+      -- vr√°t√≠ root node
       result:=root;
       end get_root;
 
@@ -1503,10 +1503,10 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     override insert =
-    -- Vloë° se do stromu ko©en.
+    -- Vlo≈æ√≠ se do stromu ko≈ôen.
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokusit se do stromu vloëit uzel na m°sto ko©enu
+      -- pokusit se do stromu vlo≈æit uzel na m√≠sto ko≈ôenu
       insert_node(p_tree_node(item),nil,id_add);
       end insert;
 
@@ -1514,92 +1514,92 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static do_insert (
-        node         : in p_tree_node;           -- vkl†danò uzel
-        current_node : in p_tree_node;           -- aktu†ln° uzel
-        direction    : in t_insert_direction)    -- pozice vloëen°
+        node         : in p_tree_node;           -- vkl√°dan√Ω uzel
+        current_node : in p_tree_node;           -- aktu√°ln√≠ uzel
+        direction    : in t_insert_direction)    -- pozice vlo≈æen√≠
         return t_logical =
-    -- Vloë° uzel do stromu.
-    -- Intern° metoda, neprov†d° kontroly.
-    -- Vr†t°, zda vloëen° bylo £spà®nÇ
+    -- Vlo≈æ√≠ uzel do stromu.
+    -- Intern√≠ metoda, neprov√°d√≠ kontroly.
+    -- Vr√°t√≠, zda vlo≈æen√≠ bylo √∫spƒõ≈°n√©
     ------------------------------------------------------------------------------------------------
     begin
-      -- na zaá†tku p©edpokl†d†me chybu
+      -- na zaƒç√°tku p≈ôedpokl√°d√°me chybu
       result:=false;
 
-      -- dle smàru vloëen°:
+      -- dle smƒõru vlo≈æen√≠:
       case direction
-        -- vloë° jako posledn°ho souseda
+        -- vlo≈æ√≠ jako posledn√≠ho souseda
         when id_add do
-            -- pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+            -- pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
             if current_node=root 
               -- chyba
               then
                 execute(event_error);
                 raise tree_error;
               
-              -- vloëit uzel
+              -- vlo≈æit uzel
               else
                 current_node^.up^.down.insert_last(node);
                 node^.up:=current_node^.up;
                 end if;
 
-        -- vloë° jako prvn°ho souseda
+        -- vlo≈æ√≠ jako prvn√≠ho souseda
         when id_add_first do
-            -- pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+            -- pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
             if current_node=root 
               -- chyba
               then
                 execute(event_error);
                 raise tree_error;
               
-              -- vloëit uzel
+              -- vlo≈æit uzel
               else
                 current_node^.up^.down.insert_first(node);
                 node^.up:=current_node^.up;
                 end if;
 
-        -- vloë° jako posledn°ho potomka
+        -- vlo≈æ√≠ jako posledn√≠ho potomka
         when id_add_child do
             current_node^.down.insert_last(node);
             node^.up:=current_node;
 
-        -- vloë° jako prvn°ho potomka
+        -- vlo≈æ√≠ jako prvn√≠ho potomka
         when id_first_child do
             current_node^.down.insert_first(node);
             node^.up:=current_node;
 
-        -- vloë° hned p©ed referenán° uzel
+        -- vlo≈æ√≠ hned p≈ôed referenƒçn√≠ uzel
         when id_insert_before do
-            -- pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+            -- pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
             if current_node=root 
               -- chyba
               then
                 execute(event_error);
                 raise tree_error;
               
-              -- vloëit uzel
+              -- vlo≈æit uzel
               else
                 current_node^.up^.down.insert_before(current_node,node);
                 node^.up:=current_node^.up;
                 end if;
 
-        -- vloë° hned za referenán° uzel
+        -- vlo≈æ√≠ hned za referenƒçn√≠ uzel
         when id_insert_after do
-            -- pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+            -- pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
             if current_node=root 
               -- chyba
               then
                 execute(event_error);
                 raise tree_error;
               
-              -- vloëit uzel
+              -- vlo≈æit uzel
               else
                 current_node^.up^.down.insert_after(current_node,node);
                 node^.up:=current_node^.up;
                 end if;
         end case;
 
-      -- v®e probàhlo OK
+      -- v≈°e probƒõhlo OK
       result:=true;
       end do_insert;
 
@@ -1607,54 +1607,54 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static insert_node =
-    -- Vloë° uzel do stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud [node] je ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+    -- Vlo≈æ√≠ uzel do stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud [node] je ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
     ------------------------------------------------------------------------------------------------
     begin
-      -- pokud [node]=NIL, hl†s° chybu
+      -- pokud [node]=NIL, hl√°s√≠ chybu
       if node=nil then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- m† se novò uzel vloëit na m°sto ko©enu?
+      -- m√° se nov√Ω uzel vlo≈æit na m√≠sto ko≈ôenu?
       if current_node=nil then
-        -- ano, nastavit p©edky
+        -- ano, nastavit p≈ôedky
         node^.up:=nil;
 
-        -- pokud existuje [root], nastavit p©edka a vloëit bòvalò ko©en
+        -- pokud existuje [root], nastavit p≈ôedka a vlo≈æit b√Ωval√Ω ko≈ôen
         if root<>nil then
           root^.up:=node;
           node^.down.insert_last(root);
           end if;
 
-        -- nastavit novò ko©en
+        -- nastavit nov√Ω ko≈ôen
         root:=node;
 
-        -- zvò®it poáet uzlñ ve stromu
+        -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu
         count+get_node_count(node);
         return;
         end if;
 
-      -- pokud [current_node] nen° ve stromu nalezen, hl†s° chybu
+      -- pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu
       if not has_node(current_node) then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- pokud [node] je ve stromu nalezen, hl†s° chybu.
+      -- pokud [node] je ve stromu nalezen, hl√°s√≠ chybu.
       if has_node(node) then
         execute(event_error);
         raise tree_error;
         end if;
 
-    -- vlastn° vloëen°, pokud p©i nàm nastala chyba, konec
+    -- vlastn√≠ vlo≈æen√≠, pokud p≈ôi nƒõm nastala chyba, konec
     if not do_insert(node,current_node,direction) then return end if;
 
-    -- zvò®it poáet uzlñ ve stromu
+    -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu
     count+get_node_count(node);
     end insert_node;
 
@@ -1662,61 +1662,61 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static merge_subtree =
-    -- Spoj° dva stromy do jednoho. Stom [tree] reprezentuje strom p©id†vanòch uzlñ do stromu
-    -- reprezentovanou instanc° tÇto t©°dy.
-    --   Pokud p©ipojovanò strom je pr†zdnò, hl†s° chybu.
-    --   Pokud [current_node]=NIL, zkus° se vloëit ko©en, pokud je ko©en definov†n, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud libovonò uzel v [tree] je ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† novò strom vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu
+    -- Spoj√≠ dva stromy do jednoho. Stom [tree] reprezentuje strom p≈ôid√°van√Ωch uzl≈Ø do stromu
+    -- reprezentovanou instanc√≠ t√©to t≈ô√≠dy.
+    --   Pokud p≈ôipojovan√Ω strom je pr√°zdn√Ω, hl√°s√≠ chybu.
+    --   Pokud [current_node]=NIL, zkus√≠ se vlo≈æit ko≈ôen, pokud je ko≈ôen definov√°n, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud libovon√Ω uzel v [tree] je ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° nov√Ω strom vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu
     ------------------------------------------------------------------------------------------------
     var 
       node_found   : t_logical:=false;           -- T-uzel nalezen
 
     begin
-      -- pokud [tree.root]=NIL, hl†s° chybu
+      -- pokud [tree.root]=NIL, hl√°s√≠ chybu
       if tree.root=nil then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- pokud libovonò uzel v [tree] je ve stromu nalezen, hl†s° chybu
+      -- pokud libovon√Ω uzel v [tree] je ve stromu nalezen, hl√°s√≠ chybu
       if has_node(tree.root) or has_node_rec(tree.root,root) then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- pokud [current_node]=NIL, zkus° se vloëit ko©en, pokud je ko©en definov†n, hl†s° chybu
+      -- pokud [current_node]=NIL, zkus√≠ se vlo≈æit ko≈ôen, pokud je ko≈ôen definov√°n, hl√°s√≠ chybu
       if current_node=nil then
-        -- pokud je ko©en definov†n, hl†s° chybu
+        -- pokud je ko≈ôen definov√°n, hl√°s√≠ chybu
         if root<>nil then
           execute(event_error);
           raise tree_error;
           end if;
 
-        -- vloëit ko©en
+        -- vlo≈æit ko≈ôen
         root:=tree.root;
 
-        -- vypr†zdnit pñvodn° strom
+        -- vypr√°zdnit p≈Øvodn√≠ strom
         tree.root:=nil;
         tree.count:=0;
         return;
         end if;
 
-      -- pokud [current_node] nen° ve stromu nalezen, hl†s° chybu
+      -- pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu
       if not has_node(current_node) then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- vlastn° vloëen°, pokud p©i nàm nastala chyba, konec
+      -- vlastn√≠ vlo≈æen√≠, pokud p≈ôi nƒõm nastala chyba, konec
       if not do_insert(tree.root,current_node,direction) then return end if;
 
-      -- vypr†zdnit pñvodn° strom
+      -- vypr√°zdnit p≈Øvodn√≠ strom
       tree.root:=nil;
       tree.count:=0;
 
-      -- zvò®it poáet uzlñ ve stromu o tree^.count
+      -- zv√Ω≈°it poƒçet uzl≈Ø ve stromu o tree^.count
       count+tree.count;
       end merge_subtree;
 
@@ -1724,32 +1724,32 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static get_count_node (
-        current_node : in p_tree_node)           -- aktu†ln° uzel
+        current_node : in p_tree_node)           -- aktu√°ln√≠ uzel
         return t_unsigned =
-    -- Vr†t° poáet poduzlñ váetnà [current_node] ve stromu.
+    -- Vr√°t√≠ poƒçet poduzl≈Ø vƒçetnƒõ [current_node] ve stromu.
     ------------------------------------------------------------------------------------------------
     var
       down_node    : p_tree_node;                -- potomek
 
     begin
-      -- uzel mus° bòt definovanò
+      -- uzel mus√≠ b√Ωt definovan√Ω
       if current_node=nil then
         result:=0;
         return;
         end if;
       
-      -- uzel m† v†hu 1
+      -- uzel m√° v√°hu 1
       result:=1;
 
-      -- zjistit prvn°ho potomka
+      -- zjistit prvn√≠ho potomka
       down_node:=p_tree_node(current_node^.down.get_first);
 
-      -- proch†zet potomky
+      -- proch√°zet potomky
       while down_node<>nil loop
-        -- proch†zet podstrom
+        -- proch√°zet podstrom
         result+get_count_node(down_node);
 
-        -- jdi na dal®°ho potomka
+        -- jdi na dal≈°√≠ho potomka
         down_node:=current_node^.down.get_next(down_node);
         end loop;
       end get_count_node;
@@ -1758,24 +1758,24 @@ class private c_tree =
     
     ------------------------------------------------------------------------------------------------
     override remove =
-    -- Vyjme uzel ze stromu, pokud m† uzlem n†sledn°ky, vyjme se celò podstrom.
-    --   Pokud [item]=nil, hl†s° se chyba.
-    --   Pokud [item] nen° ve stromu nalezen, hl†s° se chyba.
+    -- Vyjme uzel ze stromu, pokud m√° uzlem n√°sledn√≠ky, vyjme se cel√Ω podstrom.
+    --   Pokud [item]=nil, hl√°s√≠ se chyba.
+    --   Pokud [item] nen√≠ ve stromu nalezen, hl√°s√≠ se chyba.
     ------------------------------------------------------------------------------------------------
     var 
-      node         : p_tree_node;                -- uzel pro vyjmut° ze stromu
+      node         : p_tree_node;                -- uzel pro vyjmut√≠ ze stromu
 
     begin
-      -- p©etypovat [item]
+      -- p≈ôetypovat [item]
       node:=p_tree_node(item);
 
-      -- ru®enò uzel mus° bòt definovanò
+      -- ru≈°en√Ω uzel mus√≠ b√Ωt definovan√Ω
       if node=nil then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- pokud [node] nen° ve stromu nalezen, hl†s° se chyba
+      -- pokud [node] nen√≠ ve stromu nalezen, hl√°s√≠ se chyba
       if not has_node(node) then
         execute(event_error);
         raise tree_error;
@@ -1788,7 +1788,7 @@ class private c_tree =
         return;
         end if;
 
-      -- korigovat poáet uzlñ ve stromu
+      -- korigovat poƒçet uzl≈Ø ve stromu
       count-get_count_node(node);
       
       -- vyjmout uzel
@@ -1799,26 +1799,26 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static split_subtree =
-    -- Vyjme ze stromu podstrom váetnà uzlu [node] a vytvo©° a inicializuje novou instance 
-    -- tr°dy [c_tree]. 
-    --   Pokud uzel nen° nalezen, hl†s° chybu.
+    -- Vyjme ze stromu podstrom vƒçetnƒõ uzlu [node] a vytvo≈ô√≠ a inicializuje novou instance 
+    -- tr√≠dy [c_tree]. 
+    --   Pokud uzel nen√≠ nalezen, hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     var
-      lnode        : p_tree_node;                -- ko©en novÇho stromu
+      lnode        : p_tree_node;                -- ko≈ôen nov√©ho stromu
 
     begin
-      -- ko©en podstromu/stromu
+      -- ko≈ôen podstromu/stromu
       lnode:=node;
 
-      -- pokud nen° [lnode] ve stromu nalezen, hl†s° chybu
+      -- pokud nen√≠ [lnode] ve stromu nalezen, hl√°s√≠ chybu
       if not has_node(lnode) then
         execute(event_error);
         return;
         end if;
 
-      -- m† se vyjmout ko©en?
+      -- m√° se vyjmout ko≈ôen?
       if lnode^.up=nil 
-        -- ano, zru®it [root]
+        -- ano, zru≈°it [root]
         then
           root:=nil;
 
@@ -1827,14 +1827,14 @@ class private c_tree =
           lnode^.up^.down.remove(node);
           end if;
 
-      -- nastavit p©edka odpojenÇho podstromu
+      -- nastavit p≈ôedka odpojen√©ho podstromu
       lnode^.up:=nil;
 
-      -- nastavit poáet uzlñ ve stromu
+      -- nastavit poƒçet uzl≈Ø ve stromu
       subtree.count:=get_count_node(lnode);
       count-subtree.count;
 
-      -- nastavit ko©en novÇho stromu
+      -- nastavit ko≈ôen nov√©ho stromu
       subtree.root:=lnode;
       end split_subtree;
 
@@ -1842,40 +1842,40 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     override delete =
-    -- Smaëe uzel ze stromu váetnà potomkñ a uvoln° pamàt.
+    -- Sma≈æe uzel ze stromu vƒçetnƒõ potomk≈Ø a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     var
       lnode        : p_tree_node;                -- [node]
       down_node    : p_tree_node;                -- potomek
 
     begin
-      -- lok†ln° node
+      -- lok√°ln√≠ node
       lnode:=item;
 
-      -- pokud [node] nen° definov†n, ukonái rekurzi
+      -- pokud [node] nen√≠ definov√°n, ukonƒçi rekurzi
       if lnode=nil then 
         return;
         end if;
 
-      -- zjistit prvn°ho potomka
+      -- zjistit prvn√≠ho potomka
       down_node:=p_tree_node(lnode^.down.get_first);
 
-      -- proch†zet potomky
+      -- proch√°zet potomky
       while down_node<>nil loop
-        -- proch†zet podstrom
+        -- proch√°zet podstrom
         delete(down_node);
 
-        -- jdi na dal®°ho potomka
+        -- jdi na dal≈°√≠ho potomka
         down_node:=lnode^.down.get_next(down_node);
         end loop;
 
       -- vyjmout uzel
       remove(lnode);
 
-      -- uvolnit uzel z pamàti
+      -- uvolnit uzel z pamƒõti
       discard lnode;
 
-      -- vynulov†n° uvolnànÇho ukazatele
+      -- vynulov√°n√≠ uvolnƒõn√©ho ukazatele
       item:=nil;
       end delete;
 
@@ -1883,10 +1883,10 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     override delete_all =
-    -- Smaëe v®echny uzly ze stromu a uvoln° pamàt.
+    -- Sma≈æe v≈°echny uzly ze stromu a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     begin
-      -- smazat celò strom
+      -- smazat cel√Ω strom
       delete(root);
       end delete_all;
 
@@ -1894,35 +1894,35 @@ class private c_tree =
 
     ------------------------------------------------------------------------------------------------
     static move_subtree =
-    -- P©esune podstrom z jednoho m°sta na jinÇ m°sto v tom samÇm stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
-    --   Pokud [node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† uzel vloëit vedle ko©enovÇho uzlu a m† potomky, hl†s° chybu.
-    --   Pokud [current_node] je poduzlem [node], hl†s° chybu.
-    --   Pokud se m† uzel podstromu vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu.
+    -- P≈ôesune podstrom z jednoho m√≠sta na jin√© m√≠sto v tom sam√©m stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
+    --   Pokud [node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° uzel vlo≈æit vedle ko≈ôenov√©ho uzlu a m√° potomky, hl√°s√≠ chybu.
+    --   Pokud [current_node] je poduzlem [node], hl√°s√≠ chybu.
+    --   Pokud se m√° uzel podstromu vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     var
-      sub          : p_tree;                     -- podstrom, pomocn† instance
+      sub          : p_tree;                     -- podstrom, pomocn√° instance
         
     begin
-      -- vytvo©it pomocnou instanci
+      -- vytvo≈ôit pomocnou instanci
       new sub;
 
-      -- [current_node] je obsaëeno v p©esouvanÇm podstromà [node] => chyba
+      -- [current_node] je obsa≈æeno v p≈ôesouvan√©m podstromƒõ [node] => chyba
       if has_node_rec(node,current_node) then
         execute(event_error);
         raise tree_error;
         end if;
 
-      -- rozdàlit na dva podstromy
+      -- rozdƒõlit na dva podstromy
       split_subtree(node,sub^);
 
-      -- doáasnò podstrom vloëit na poëadovanÇ m°sto
+      -- doƒçasn√Ω podstrom vlo≈æit na po≈æadovan√© m√≠sto
       merge_subtree(sub^,current_node,direction);
 
     leave
-      -- uvolnit doáasnò podstrom
+      -- uvolnit doƒçasn√Ω podstrom
       discard sub;
       end move_subtree;
 
@@ -1939,25 +1939,25 @@ class private c_tree_iterator =
       supervised c_tree_node;
 
     var 
-      direction    : t_tree_walking_direction;   -- ©°zen° iterace
+      direction    : t_tree_walking_direction;   -- ≈ô√≠zen√≠ iterace
       tree         : p_tree;                     -- subjekt iterace
-      current_node : p_tree_node;                -- aktu†ln° uzel
+      current_node : p_tree_node;                -- aktu√°ln√≠ uzel
 
     ------------------------------------------------------------------------------------------------
     static init =
-    -- Inicializuje iterator pouë°vanò pro prñchod stromem.
+    -- Inicializuje iterator pou≈æ√≠van√Ω pro pr≈Øchod stromem.
     ------------------------------------------------------------------------------------------------   
     begin
-      -- inicializece ©°d°c°ch promànnòch
+      -- inicializece ≈ô√≠d√≠c√≠ch promƒõnn√Ωch
       this.direction:=direction;
       this.tree:=^tree;
 
-      -- chybnò smàr proch†zen°
+      -- chybn√Ω smƒõr proch√°zen√≠
       if direction not in t_tree_walking_direction_set:[ttwd_prefix,ttwd_inv_prefix,ttwd_postfix,ttwd_inv_postfix] then
         raise tree_error;
         end if;
 
-      -- resetov†n°
+      -- resetov√°n√≠
       reset;
       end init;
 
@@ -1968,26 +1968,26 @@ class private c_tree_iterator =
     -- Resetuje iterator do stavu po inicializaci.
     ------------------------------------------------------------------------------------------------
     begin
-      -- doáasnÇ nastaven° [current_node]
+      -- doƒçasn√© nastaven√≠ [current_node]
       current_node:=tree^.get_root;
 
-      -- strom je pr†zdnò
+      -- strom je pr√°zdn√Ω
       if current_node=nil then return end if;
 
       case direction
         -- prefix
         when ttwd_prefix do 
-          -- nic nedàlat - ko©en je prvn°
+          -- nic nedƒõlat - ko≈ôen je prvn√≠
 
-        -- inverzn° prefix
+        -- inverzn√≠ prefix
         when ttwd_inv_prefix do 
-          -- nic nedàlat - ko©en je prvn°
+          -- nic nedƒõlat - ko≈ôen je prvn√≠
 
         -- postfix
         when ttwd_postfix do 
-          -- naj°t potomka
+          -- naj√≠t potomka
           loop
-            -- sej°t dolñ, p©i rozhodov†n° se vydat vëdy nejlevàj®° cestou
+            -- sej√≠t dol≈Ø, p≈ôi rozhodov√°n√≠ se vydat v≈ædy nejlevƒõj≈°√≠ cestou
             if current_node^.down.get_first<>nil then 
               current_node:=current_node^.down.get_first;
             else
@@ -1995,11 +1995,11 @@ class private c_tree_iterator =
               end if;
             end loop;
 
-        -- inverzn° postfix
+        -- inverzn√≠ postfix
         when ttwd_inv_postfix do 
-          -- naj°t potomka
+          -- naj√≠t potomka
           loop
-            -- sej°t dolñ, p©i rozhodov†n° se vydat vëdy nejpravàj®° cestou
+            -- sej√≠t dol≈Ø, p≈ôi rozhodov√°n√≠ se vydat v≈ædy nejpravƒõj≈°√≠ cestou
             if current_node^.down.get_last<>nil then 
               current_node:=current_node^.down.get_last;
             else
@@ -2012,63 +2012,63 @@ class private c_tree_iterator =
 
     ------------------------------------------------------------------------------------------------
     static find_next =
-    -- Do [current_node] uloë° dal®° proch†zenò uzel
-    -- P©edpokl†d† [current_node]<>nil
+    -- Do [current_node] ulo≈æ√≠ dal≈°√≠ proch√°zen√Ω uzel
+    -- P≈ôedpokl√°d√° [current_node]<>nil
     ------------------------------------------------------------------------------------------------
     begin
-      -- uráit smàr proch†zen°
+      -- urƒçit smƒõr proch√°zen√≠
       case direction
         -- prefix
         when ttwd_prefix do
-          -- pokud to jde, jdeme dolñ co nejv°ce doleva
+          -- pokud to jde, jdeme dol≈Ø co nejv√≠ce doleva
           if current_node^.down.get_first<>nil then
             current_node:=current_node^.down.get_first;
 
-          -- nejde to do podstromu, mus°me se vr†tit nahoru
+          -- nejde to do podstromu, mus√≠me se vr√°tit nahoru
           else
-            -- j°t nahoru tak dlouho, dokud se ned† odboáit doprava dolñ
+            -- j√≠t nahoru tak dlouho, dokud se ned√° odboƒçit doprava dol≈Ø
             while current_node<>nil loop
-              -- ®plh†me po levÇ vàtvi a prav† vàtev m† n†sledn°ky?
+              -- ≈°plh√°me po lev√© vƒõtvi a prav√° vƒõtev m√° n√°sledn√≠ky?
               if current_node^.up<>nil and then current_node^.up^.down.get_next(current_node)<>nil then
                 current_node:=current_node^.up^.down.get_next(current_node);
                 return;
                 end if;
 
-              -- j°t nahoru
+              -- j√≠t nahoru
               current_node:=current_node^.up;
               end loop;
             end if;
 
-        -- inverzn° prefix
+        -- inverzn√≠ prefix
         when ttwd_inv_prefix do
-          -- pokud to jde, jdeme dolñ co nejv°ce doprava
+          -- pokud to jde, jdeme dol≈Ø co nejv√≠ce doprava
           if current_node^.down.get_last<>nil then
             current_node:=current_node^.down.get_last;
 
-          -- nejde to do podstromu, mus°me se vr†tit nahoru
+          -- nejde to do podstromu, mus√≠me se vr√°tit nahoru
           else
-            -- j°t nahoru tak dlouho, dokud se ned† odboáit doleva dolñ
+            -- j√≠t nahoru tak dlouho, dokud se ned√° odboƒçit doleva dol≈Ø
             while current_node<>nil loop
-              -- ®plh†me po levÇ vàtvi a prav† vàtev m† p©edchñdce?
+              -- ≈°plh√°me po lev√© vƒõtvi a prav√° vƒõtev m√° p≈ôedch≈Ødce?
               if current_node^.up<>nil and then current_node^.up^.down.get_prev(current_node)<>nil then
                 current_node:=current_node^.up^.down.get_prev(current_node);
                 return;
                 end if;
 
-              -- j°t nahoru
+              -- j√≠t nahoru
               current_node:=current_node^.up;
               end loop;
             end if;
 
         -- postfix
         when ttwd_postfix do
-          -- pokud to jde, j°t doprava na stejnou £rove§ a pak co nejv°ce dolñ
+          -- pokud to jde, j√≠t doprava na stejnou √∫rove≈à a pak co nejv√≠ce dol≈Ø
           if current_node^.up<>nil and then current_node^.up^.down.get_next(current_node)<>nil then
             current_node:=current_node^.up^.down.get_next(current_node);
 
-            -- co nejv°ce dolñ
+            -- co nejv√≠ce dol≈Ø
             loop
-              -- sej°t dolñ, p©i rozhodov†n° se vydat vëdy nejlevàj®° cestou
+              -- sej√≠t dol≈Ø, p≈ôi rozhodov√°n√≠ se vydat v≈ædy nejlevƒõj≈°√≠ cestou
               if current_node^.down.get_first<>nil then 
                 current_node:=current_node^.down.get_first;
               else break;
@@ -2080,15 +2080,15 @@ class private c_tree_iterator =
             current_node:=current_node^.up;
             end if;
 
-        -- inverzn° postfix
+        -- inverzn√≠ postfix
         when ttwd_inv_postfix do
-          -- pokud to jde, j°t dolevana stejnou £rove§ a pak co nejv°ce dolñ
+          -- pokud to jde, j√≠t dolevana stejnou √∫rove≈à a pak co nejv√≠ce dol≈Ø
           if current_node^.up<>nil and then current_node^.up^.down.get_prev(current_node)<>nil then
             current_node:=current_node^.up^.down.get_prev(current_node);
 
-            -- co nejv°ce dolñ
+            -- co nejv√≠ce dol≈Ø
             loop
-              -- sej°t dolñ, p©i rozhodov†n° se vydat vëdy nejpravàj®° cestou
+              -- sej√≠t dol≈Ø, p≈ôi rozhodov√°n√≠ se vydat v≈ædy nejpravƒõj≈°√≠ cestou
               if current_node^.down.get_last<>nil then 
                 current_node:=current_node^.down.get_last;
               else break;
@@ -2106,19 +2106,19 @@ class private c_tree_iterator =
 
     ------------------------------------------------------------------------------------------------
     override get =
-    -- Vr†t° jeden uzel z koresponduj°c°ho stromu.
+    -- Vr√°t√≠ jeden uzel z koresponduj√≠c√≠ho stromu.
     ------------------------------------------------------------------------------------------------
     begin
-      -- uzel, kterò m† iter†tor vr†tit, je v current_node
+      -- uzel, kter√Ω m√° iter√°tor vr√°tit, je v current_node
       item:=current_node;
 
-      -- vòsledn† hodnota - F, pokud je v [item] nil
+      -- v√Ωsledn√° hodnota - F, pokud je v [item] nil
       result:=item<>nil;
 
-      -- pokud nen° co proch†zet, konec
+      -- pokud nen√≠ co proch√°zet, konec
       if not result then return end if;
 
-      -- naj°t dal®° uzel
+      -- naj√≠t dal≈°√≠ uzel
       find_next;
       end get;
  

@@ -1,14 +1,14 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private long_arithmetic =
 -- Long signed integer arithmetic operations.
 -- Advanced Multi-platform Library.
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 
--- á°slo je uloëeno ve tvaru LSB first
--- internà je znamÇnko uloëeno jako prvn° element pole. 
--- nejvy®®° bit posledn°ho bytu je znamÇnko, kde 0 znamen†
--- z†pornÇ á°slo, 0 je kladnÇ á°slo. Nap©°klad pro typ t_long_signed 32 bits:
+-- ƒç√≠slo je ulo≈æeno ve tvaru LSB first
+-- internƒõ je znam√©nko ulo≈æeno jako prvn√≠ element pole. 
+-- nejvy≈°≈°√≠ bit posledn√≠ho bytu je znam√©nko, kde 0 znamen√°
+-- z√°porn√© ƒç√≠slo, 0 je kladn√© ƒç√≠slo. Nap≈ô√≠klad pro typ t_long_signed 32 bits:
 --   5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 00000000
 --  -5 -> 00000101 00000000 00000000 00000000 00000000 00000000 00000000 10000000
 
@@ -28,7 +28,7 @@ type
 
 
 
--- z†kladn° pr†ce (alokace, uvolnàn°)
+-- z√°kladn√≠ pr√°ce (alokace, uvolnƒõn√≠)
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_bits_to_items =
@@ -44,7 +44,7 @@ procedure long_signed_bits_to_items =
 ----------------------------------------------------------------------------------------------------
 begin
   result:=(precision+t_long_signed:base:bits-1) div t_long_signed:base:bits
-         -- v prvn°m elementu á°sla je uloëeno znamÇnko
+         -- v prvn√≠m elementu ƒç√≠sla je ulo≈æeno znam√©nko
          +1;
   end long_signed_bits_to_items;
 
@@ -54,7 +54,7 @@ begin
 procedure long_unsigned_new =
 ----------------------------------------------------------------------------------------------------
 begin
-  -- velikost prostoru zaokrouhl°me nahoru na nejblië®° n†sobek velikosti slova
+  -- velikost prostoru zaokrouhl√≠me nahoru na nejbli≈æ≈°√≠ n√°sobek velikosti slova
   new number range long_unsigned_bits_to_items(precision);
   end long_unsigned_new;
 
@@ -64,38 +64,38 @@ begin
 procedure long_signed_new =
 ----------------------------------------------------------------------------------------------------
 begin
-  -- velikost prostoru zaokrouhl°me nahoru na nejblië®° n†sobek velikosti slova
+  -- velikost prostoru zaokrouhl√≠me nahoru na nejbli≈æ≈°√≠ n√°sobek velikosti slova
   new number range long_signed_bits_to_items(precision);
   end long_signed_new;
 
 
 
--- naáten° malÇho á°sla
+-- naƒçten√≠ mal√©ho ƒç√≠sla
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_load =
 ----------------------------------------------------------------------------------------------------
 var
-  wsize : t_unsigned;  -- dÇlka dlouhÇho á°sla v bytech
+  wsize : t_unsigned;  -- d√©lka dlouh√©ho ƒç√≠sla v bytech
 
 begin
-  -- zmà©it á°slo
+  -- zmƒõ≈ôit ƒç√≠slo
   wsize:=number:size;
   #syntax asm;
-      -- p©evz°t poëadovanou hodnotu
+      -- p≈ôevz√≠t po≈æadovanou hodnotu
       mov    eax,n
       mov    edi,number
 
-      -- zjistit z kolika slov se skl†d† dlouhÇ á°slo
+      -- zjistit z kolika slov se skl√°d√° dlouh√© ƒç√≠slo
       mov    ecx,wsize
       shr    ecx,<t_unsigned8>2
 
-      -- uloëit do c°lovÇho prostoru
+      -- ulo≈æit do c√≠lov√©ho prostoru
       cld
       stosd
       dec    ecx
 
-      -- zbytek dlouhÇho á°sla zaplnit nulami
+      -- zbytek dlouh√©ho ƒç√≠sla zaplnit nulami
       xor    eax,eax
       rep stosd
       #end asm;
@@ -107,50 +107,50 @@ begin
 procedure long_signed_load =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  nlen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve slovech 
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  nlen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve slovech 
 
 begin
-  -- zmà©it á°slo (poáet slov), aë bude p©ekladaá umàt atribut length, bude to jednodu®®°
+  -- zmƒõ≈ôit ƒç√≠slo (poƒçet slov), a≈æ bude p≈ôekladaƒç umƒõt atribut length, bude to jednodu≈°≈°√≠
   nlen:=t_mod_unsigned(number:size) shr 2;
   #syntax asm;
-      -- p©evz°t poëadovanou hodnotu
+      -- p≈ôevz√≠t po≈æadovanou hodnotu
       mov    eax,i
       mov    edi,number
 
       cld
 
-      -- zjistit znamÇnko
+      -- zjistit znam√©nko
       xor    ecx,ecx
       cmp    eax,1
       adc    ecx,0
       cmp    eax,$80000000
       adc    ecx,0
 
-      -- nez†porn† á°sla pokraáuj° d†l
+      -- nez√°porn√° ƒç√≠sla pokraƒçuj√≠ d√°l
       jnz    @2
 
-      -- á°slo je z†pornÇ, mus°me ho p©evÇst na jeho dvojkovò komplement
+      -- ƒç√≠slo je z√°porn√©, mus√≠me ho p≈ôev√©st na jeho dvojkov√Ω komplement
       neg    eax
 
-      -- v tÇto chv°li m†me v ECX znamÇnko (2="0", 1="+", 0="-")
+      -- v t√©to chv√≠li m√°me v ECX znam√©nko (2="0", 1="+", 0="-")
       -- normalizujeme ho do tvaru         (0="0", 1="+", 2="-")
-      -- a uloë°me
+      -- a ulo≈æ√≠me
   @2: xor    ecx,$10
       mov    [edi],ecx
       add    edi,4
 
-      -- zjistit velikost c°lovÇho á°sla
+      -- zjistit velikost c√≠lov√©ho ƒç√≠sla
       mov    ecx,nlen
 
-      -- uloëit absolutn° hodnotu á°sla do c°lovÇho prostoru
+      -- ulo≈æit absolutn√≠ hodnotu ƒç√≠sla do c√≠lov√©ho prostoru
       stosd
 
-      -- znamÇnko a absolutn° hodnota á°sla uë byly uloëeny
+      -- znam√©nko a absolutn√≠ hodnota ƒç√≠sla u≈æ byly ulo≈æeny
       sub    ecx,2
-    --jc     @INVALID_LONG_NUMBER             <- nemàlo by nastat, to m† za©°dit p©ekladaá
+    --jc     @INVALID_LONG_NUMBER             <- nemƒõlo by nastat, to m√° za≈ô√≠dit p≈ôekladaƒç
 
-      -- zbytek dlouhÇho á°sla zaplnit nulami
+      -- zbytek dlouh√©ho ƒç√≠sla zaplnit nulami
       xor    eax,eax
       rep    stosd
       #end asm;
@@ -162,36 +162,36 @@ end long_signed_load;
 procedure long_unsigned_assign =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  srclen           : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve slovech
-  dstlen           : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve slovech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  srclen           : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve slovech
+  dstlen           : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve slovech
 
 begin
-  -- zmà©it á°slo (poáet slov), aë bude p©ekladaá umàt atribut length, bude to jednodu®®°
+  -- zmƒõ≈ôit ƒç√≠slo (poƒçet slov), a≈æ bude p≈ôekladaƒç umƒõt atribut length, bude to jednodu≈°≈°√≠
   srclen:=t_mod_unsigned(src:size) shr 2;
   dstlen:=t_mod_unsigned(dst:size) shr 2;
   #syntax asm;
-      -- adresy operandñ
+      -- adresy operand≈Ø
       mov   esi,src
       mov   edi,dst
 
       cld
 
-      -- p©edpoklad: c°lovÇ á°slo je vàt®° neë zdroj
+      -- p≈ôedpoklad: c√≠lov√© ƒç√≠slo je vƒõt≈°√≠ ne≈æ zdroj
       mov   ecx,srclen
       mov   edx,dstlen
       sub   ecx,edx
       jae   @1
 
-      -- p©edpoklad se nevyplnil, c°lovÇ á°slo je krat®°
+      -- p≈ôedpoklad se nevyplnil, c√≠lov√© ƒç√≠slo je krat≈°√≠
       mov   ecx,dstlen
       xor   edx,edx
              
-      -- zkop°rovat
+      -- zkop√≠rovat
   @1: cld
       rep   movsd
 
-      -- zbytek c°le zaplnit nulami
+      -- zbytek c√≠le zaplnit nulami
       mov   ecx,edx
       xor   eax,eax
       rep   stosd
@@ -204,36 +204,36 @@ begin
 procedure long_signed_assign =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  srclen           : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve slovech
-  dstlen           : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve slovech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  srclen           : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve slovech
+  dstlen           : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve slovech
 
 begin
-  -- zmà©it á°slo (poáet slov), aë bude p©ekladaá umàt atribut length, bude to jednodu®®°
+  -- zmƒõ≈ôit ƒç√≠slo (poƒçet slov), a≈æ bude p≈ôekladaƒç umƒõt atribut length, bude to jednodu≈°≈°√≠
   srclen:=t_mod_unsigned(src:size) shr 2;
   dstlen:=t_mod_unsigned(dst:size) shr 2;
   #syntax asm;
-      -- adresy operandñ
+      -- adresy operand≈Ø
       mov   esi,src
       mov   edi,dst
 
       cld
 
-      -- p©edpoklad: c°lovÇ á°slo je vàt®° neë zdroj
+      -- p≈ôedpoklad: c√≠lov√© ƒç√≠slo je vƒõt≈°√≠ ne≈æ zdroj
       mov   ecx,srclen
       mov   edx,dstlen
       sub   ecx,edx
       jae   @1
 
-      -- p©edpoklad se nevyplnil, c°lovÇ á°slo je krat®°
+      -- p≈ôedpoklad se nevyplnil, c√≠lov√© ƒç√≠slo je krat≈°√≠
       mov   ecx,dstlen
       xor   edx,edx
              
-      -- zkop°rovat
+      -- zkop√≠rovat
   @1: cld
       rep   movsd
 
-      -- zbytek c°le zaplnit nulami
+      -- zbytek c√≠le zaplnit nulami
       mov   ecx,edx
       xor   eax,eax
       rep   stosd
@@ -255,7 +255,7 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_neg =
--- Provede p©i©azen° A:=-A
+-- Provede p≈ôi≈ôazen√≠ A:=-A
 ----------------------------------------------------------------------------------------------------
 begin
   case a[0]
@@ -267,9 +267,9 @@ begin
 
 
 
--- sá°t†n°, odeá°t†n°
--- jako prvn° jsou zde primitivn° (z†kladn° obecnÇ) neve©ejnÇ operace, pro pr†ci s unsigned á°sly
--- uloëenòmi jako array of t_unsigned. Nad tàmito operacemi je vystavàna ve©ejnà dostupn† nadstavba.
+-- sƒç√≠t√°n√≠, odeƒç√≠t√°n√≠
+-- jako prvn√≠ jsou zde primitivn√≠ (z√°kladn√≠ obecn√©) neve≈ôejn√© operace, pro pr√°ci s unsigned ƒç√≠sly
+-- ulo≈æen√Ωmi jako array of t_unsigned. Nad tƒõmito operacemi je vystavƒõna ve≈ôejnƒõ dostupn√° nadstavba.
 
 
 
@@ -277,78 +277,78 @@ begin
 procedure long_unsigned_add =
 ----------------------------------------------------------------------------------------------------
 var
-  alen             : t_unsigned;  -- dÇlka prvn°ho sá°tance ve wordech
-  blen             : t_unsigned;  -- dÇlka druhÇho sá°tance ve wordech
-  clen             : t_unsigned;  -- dÇlka souátu ve wordech
+  alen             : t_unsigned;  -- d√©lka prvn√≠ho sƒç√≠tance ve wordech
+  blen             : t_unsigned;  -- d√©lka druh√©ho sƒç√≠tance ve wordech
+  clen             : t_unsigned;  -- d√©lka souƒçtu ve wordech
 
 begin
-  -- zmà©it á°sla
-  alen:=1+a:last;     -- %%TODO na tomto m°stà :size vrac° totÇë jako :last. Proá?
+  -- zmƒõ≈ôit ƒç√≠sla
+  alen:=1+a:last;     -- %%TODO na tomto m√≠stƒõ :size vrac√≠ tot√©≈æ jako :last. Proƒç?
   blen:=1+b:last;
   clen:=1+c:last;
   #syntax asm;
-      -- prvn° á†st vòpoátu bude podle schematu [edi...]=[esi...]+[ebx...], v dÇlce ecx
-      -- druh† á†st vòpoátu bude podle schematu [edi...]=[esi...]+0,        v dÇlce ???
-      -- t©et° á†st vòpoátu bude podle schematu [edi...]=0,                 v dÇlce ???
+      -- prvn√≠ ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=[esi...]+[ebx...], v d√©lce ecx
+      -- druh√° ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=[esi...]+0,        v d√©lce ???
+      -- t≈ôet√≠ ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=0,                 v d√©lce ???
 
-      -- naáteme £daje o á°slech [esi,edx]=A a [ebx,ecx]=B
+      -- naƒçteme √∫daje o ƒç√≠slech [esi,edx]=A a [ebx,ecx]=B
       mov    esi,a
       mov    edx,alen
       mov    ebx,b
       mov    ecx,blen
 
-      -- Zamàn°me po©ad° operandñ A a B tak, aby [ebx,ecx] bylo krat®° z obou á°sel. V tÇto dÇlce
-      -- budeme prov†dàt plnohodnotnò souáet souáasnà vypoáteme dÇlku ve kterÇ budeme prov†dàt 
-      -- druhou á†st vòpoátu
+      -- Zamƒõn√≠me po≈ôad√≠ operand≈Ø A a B tak, aby [ebx,ecx] bylo krat≈°√≠ z obou ƒç√≠sel. V t√©to d√©lce
+      -- budeme prov√°dƒõt plnohodnotn√Ω souƒçet souƒçasnƒõ vypoƒçteme d√©lku ve kter√© budeme prov√°dƒõt 
+      -- druhou ƒç√°st v√Ωpoƒçtu
       cmp    ecx,edx
       jbe    @0
 
-      -- zd† se, ëe do®lo k p©eteán°, mus°me tedy zamànit poá†tky obou á°sel a taky pr†và vypoátenou
-      -- dÇlku druhÇho kroku vòpoátu
+      -- zd√° se, ≈æe do≈°lo k p≈ôeteƒçn√≠, mus√≠me tedy zamƒõnit poƒç√°tky obou ƒç√≠sel a taky pr√°vƒõ vypoƒçtenou
+      -- d√©lku druh√©ho kroku v√Ωpoƒçtu
       xchg   esi,ebx
       xchg   edx,ecx
 
-      -- nyn° m†me á°sla A a B naátena, p©iáemë v [ebx,ecx] je krat®° z nich a v [esi,edx] je del®°
-  @0: --     za chv°li budeme pot©ebovat 0
+      -- nyn√≠ m√°me ƒç√≠sla A a B naƒçtena, p≈ôiƒçem≈æ v [ebx,ecx] je krat≈°√≠ z nich a v [esi,edx] je del≈°√≠
+  @0: --     za chv√≠li budeme pot≈ôebovat 0
       xor    edi,edi
 
-      -- ECX je dÇlka krat®°ho sá°tance (kroku 1)
-      -- EDX je dÇlka del®°ho sá°tance
+      -- ECX je d√©lka krat≈°√≠ho sƒç√≠tance (kroku 1)
+      -- EDX je d√©lka del≈°√≠ho sƒç√≠tance
 
-      -- vypoáteme dÇlku kroku 3
+      -- vypoƒçteme d√©lku kroku 3
       mov    eax,clen
       sub    eax,edx
 
-      -- je-li del®° sá°tanec del®° neë C, nebudeme t©et° krok prov†dàt a sá°tanec zkr†t°me
+      -- je-li del≈°√≠ sƒç√≠tanec del≈°√≠ ne≈æ C, nebudeme t≈ôet√≠ krok prov√°dƒõt a sƒç√≠tanec zkr√°t√≠me
       cmovc  eax,edi
       cmovc  edx,clen
       push   eax
 
-      -- vypoá°t†me dÇlku kroku 2
+      -- vypoƒç√≠t√°me d√©lku kroku 2
       mov    eax,edx
       sub    eax,ecx
 
-      -- je-li krat®° sá°tanec p©°li® dlouhò, zkr†t°me ho
+      -- je-li krat≈°√≠ sƒç√≠tanec p≈ô√≠li≈° dlouh√Ω, zkr√°t√≠me ho
       cmovc  eax,edi
       cmovc  ecx,edx
       push   eax
 
   --------------------
-  -- vlastn° vòpoáet
+  -- vlastn√≠ v√Ωpoƒçet
   --------------------
       xor    edx,edx
       mov    edi,c
 
       cld
 
-  -- prvn° á†st vòpoátu C=A+B
+  -- prvn√≠ ƒç√°st v√Ωpoƒçtu C=A+B
   @1: lodsd
       adc    eax,[ebx+edx*4]
       inc    edx
       stosd
       loop   @1
 
-  -- druh† á†st vòpoátu, d†le uë budeme uvaëovat jen del®° z obou á°sel A a B
+  -- druh√° ƒç√°st v√Ωpoƒçtu, d√°le u≈æ budeme uva≈æovat jen del≈°√≠ z obou ƒç√≠sel A a B
       pop    ecx
       jecxz  @3
   @2: lodsd
@@ -356,15 +356,15 @@ begin
       stosd
       loop   @2
 
-  -- t©et° á†st vòpoátu
+  -- t≈ôet√≠ ƒç√°st v√Ωpoƒçtu
   @3: pop    ecx
       jecxz  @4
-  -- uloëit p©enos p©echoz°ch vòpoátñ...
+  -- ulo≈æit p≈ôenos p≈ôechoz√≠ch v√Ωpoƒçt≈Ø...
       mov    eax,0
       adc    eax,eax
       stosd
       sub    ecx,1
-  -- a vynulov†n° nevyuëitÇ á†sti vòsledku
+  -- a vynulov√°n√≠ nevyu≈æit√© ƒç√°sti v√Ωsledku
       xor    eax,eax
       rep    stosd
   @4: #end asm;
@@ -376,7 +376,7 @@ begin
 procedure long_signed_add =
 ----------------------------------------------------------------------------------------------------
 type
-  -- pracovn° pointer na absolutn° hodnotu dlouhÇho á°sla
+  -- pracovn√≠ pointer na absolutn√≠ hodnotu dlouh√©ho ƒç√≠sla
   tmpointer        = ^unchecked for machine_pointer use true;
   tupointer        = record
       ptr          : tmpointer;
@@ -403,37 +403,37 @@ begin
 
   case a[0]
     when long_signed_neutral do
-      -- A=0, vòsledkem souátu je B
+      -- A=0, v√Ωsledkem souƒçtu je B
       long_signed_assign(c,b);
 
     -- A>0
     when long_signed_positive do
       case b[0]
         when long_signed_neutral do
-          -- B=0, vòsledkem souátu je A
+          -- B=0, v√Ωsledkem souƒçtu je A
           long_signed_assign(c,a);
 
         when long_signed_positive do
-          -- A>0, B>0, vòsledkem souátu je A+B, vòsledek bude kladnò
+          -- A>0, B>0, v√Ωsledkem souƒçtu je A+B, v√Ωsledek bude kladn√Ω
           long_unsigned_add(unsigned_c^,unsigned_a^,unsigned_b^);
           #if #declared kamil; #and then; kamil then;
           #end if;
         when others do
-          -- A>0, B<0, vòsledkem souátu je A-ABS(B), znamÇnko vòsledku mus°me zjistit
+          -- A>0, B<0, v√Ωsledkem souƒçtu je A-ABS(B), znam√©nko v√Ωsledku mus√≠me zjistit
         end case;
 
     -- A<0
     when others do
       case b[0]
         when long_signed_neutral do
-          -- B=0, vòsledkem souátu je A
+          -- B=0, v√Ωsledkem souƒçtu je A
           long_signed_assign(c,b);
 
         when long_signed_positive do
-          -- A<0, B>0, vòsledkem souátu je B-ABS(A), znamÇnko vòsledku mus°me zjistit
+          -- A<0, B>0, v√Ωsledkem souƒçtu je B-ABS(A), znam√©nko v√Ωsledku mus√≠me zjistit
 
         when others do
-          -- A<0, B<0, vòsledkem souátu je -(ABS(A)+ABS(B)), vòsledek bude z†pornò
+          -- A<0, B<0, v√Ωsledkem souƒçtu je -(ABS(A)+ABS(B)), v√Ωsledek bude z√°porn√Ω
         end case;
     end case;
   end long_signed_add;
@@ -444,24 +444,24 @@ begin
 procedure long_unsigned_add_assign =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
-  blen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
+  blen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it obà á°sla
+  -- zmƒõ≈ôit obƒõ ƒç√≠sla
   alen:=t_mod_unsigned(a:size) shr 2;
   blen:=t_mod_unsigned(b:size) shr 2;
   #syntax asm;
-      -- sá°tat budeme v dÇlce krat®°ho z obou operandñ
+      -- sƒç√≠tat budeme v d√©lce krat≈°√≠ho z obou operand≈Ø
       mov   ecx,alen
       cmp   ecx,blen
       cmova ecx,blen
 
-      -- m†-li krat®° á°slo nulovou dÇlku, nen° co sá°tat
-      -- jcxz  @1        TOHLE ALE NESMã NASTAT, ÄãSLA 0 BIT¶ DLOUHè NEPODPORUJEME
+      -- m√°-li krat≈°√≠ ƒç√≠slo nulovou d√©lku, nen√≠ co sƒç√≠tat
+      -- jcxz  @1        TOHLE ALE NESM√ç NASTAT, ƒå√çSLA 0 BIT≈Æ DLOUH√Å NEPODPORUJEME
 
-      -- vlastn° souáet
+      -- vlastn√≠ souƒçet
       clc
       mov   edi,a
       mov   esi,b
@@ -470,18 +470,18 @@ begin
       inc   edi
       loop  @2
 
-      -- jestliëe z posledn°ho bloku nen° ë†dnò p©enos, mñëeme rovnou konáit
+      -- jestli≈æe z posledn√≠ho bloku nen√≠ ≈æ√°dn√Ω p≈ôenos, m≈Ø≈æeme rovnou konƒçit
       jnc   @1
 
-      -- pokud skonáilo A (B je del®°), mñëeme konáit vòpoáet, pokud skonáilo B (a pokraáuje) mus°me
-      -- je®tà zapracovat p©enos z posledn°ho provedenÇho kroku
+      -- pokud skonƒçilo A (B je del≈°√≠), m≈Ø≈æeme konƒçit v√Ωpoƒçet, pokud skonƒçilo B (a pokraƒçuje) mus√≠me
+      -- je≈°tƒõ zapracovat p≈ôenos z posledn√≠ho proveden√©ho kroku
       mov   ecx,alen
       sub   ecx,blen
       jc    @1
 
-      -- postupnà p©enos propagujeme do vy®®°ch ©†dñ, konáit mñëeme:
-      --   1. kdyë v posledn°m kroku nenastal p©enos
-      --   2. kdyë jsme se dostali za hranice á°sla A
+      -- postupnƒõ p≈ôenos propagujeme do vy≈°≈°√≠ch ≈ô√°d≈Ø, konƒçit m≈Ø≈æeme:
+      --   1. kdy≈æ v posledn√≠m kroku nenastal p≈ôenos
+      --   2. kdy≈æ jsme se dostali za hranice ƒç√≠sla A
       mov   eax,1
   @3: add   [edi],eax
       jnc   @1
@@ -495,39 +495,39 @@ begin
 procedure long_signed_add_assign =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
-  blen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
+  blen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it obà á°sla
+  -- zmƒõ≈ôit obƒõ ƒç√≠sla
   alen:=t_mod_unsigned(a:size) shr 2;
   blen:=t_mod_unsigned(b:size) shr 2;
 
 --  if long_signed_positive(a)=long_signed_positive(b) then
-    -- obà á°sla maj° stejnÇ znamÇnko, provedeme souáet a znamÇnko zñstane zachov†no
+    -- obƒõ ƒç√≠sla maj√≠ stejn√© znam√©nko, provedeme souƒçet a znam√©nko z≈Østane zachov√°no
     -- [   5 +  7  ->   12  ]
     -- [ (-5)+(-7) -> (-12) ]
 --  elsif abs a>abs b then
-    -- á°sla maj° rozd°ln† znamÇnka, vypoáteme (A-B), znamÇnko p©evezmeme z á°sla A
+    -- ƒç√≠sla maj√≠ rozd√≠ln√° znam√©nka, vypoƒçteme (A-B), znam√©nko p≈ôevezmeme z ƒç√≠sla A
     -- [ (-7)+( 5) -> (-2) ]
     -- [ ( 7)+(-5) -> ( 2) ]
 --  else
-    -- á°sla maj° rozd°ln† znamÇnka, vypoáteme (B-A), znamÇnko p©evezmeme z á°sla B
+    -- ƒç√≠sla maj√≠ rozd√≠ln√° znam√©nka, vypoƒçteme (B-A), znam√©nko p≈ôevezmeme z ƒç√≠sla B
     -- [ (-5)+( 7) -> ( 2) ]
     -- [ ( 5)+(-7) -> (-2) ]
 --    end if;
 
   #syntax asm;
-      -- sá°tat budeme v dÇlce krat®°ho z obou operandñ
+      -- sƒç√≠tat budeme v d√©lce krat≈°√≠ho z obou operand≈Ø
       mov   ecx,alen
       cmp   ecx,blen
       cmova ecx,blen
 
-      -- m†-li krat®° á°slo nulovou dÇlku, nen° co sá°tat
-      -- jcxz  @1        TOHLE ALE NESMã NASTAT, ÄãSLA 0 BIT¶ DLOUHè NEPODPORUJEME
+      -- m√°-li krat≈°√≠ ƒç√≠slo nulovou d√©lku, nen√≠ co sƒç√≠tat
+      -- jcxz  @1        TOHLE ALE NESM√ç NASTAT, ƒå√çSLA 0 BIT≈Æ DLOUH√Å NEPODPORUJEME
 
-      -- vlastn° souáet
+      -- vlastn√≠ souƒçet
       cld
       clc
       mov   edi,a
@@ -541,11 +541,11 @@ begin
       stosd
       loop  @3
 
-      -- schov†me si posledn° p©enos
+      -- schov√°me si posledn√≠ p≈ôenos
       sahf
 
-      -- pokud skonáilo A, mñëeme konáit vòpoáet, pokud skonáilo B a m†me p©enos z posledn°ho 
-      -- souátu, mus°me ho taky zapracovat
+      -- pokud skonƒçilo A, m≈Ø≈æeme konƒçit v√Ωpoƒçet, pokud skonƒçilo B a m√°me p≈ôenos z posledn√≠ho 
+      -- souƒçtu, mus√≠me ho taky zapracovat
       cmp   ecx,alen
       jnc   @1
 
@@ -567,35 +567,35 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_add_n =
---%%TODO(KAMIL) O®et©it pr†ci se znamÇnky !!!                                                                    
+--%%TODO(KAMIL) O≈°et≈ôit pr√°ci se znam√©nky !!!                                                                    
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it á°slo
+  -- zmƒõ≈ôit ƒç√≠slo
   alen:=t_mod_unsigned(a:size) shr 2;
 
  #syntax asm;
-      -- p©evz°t poëadovanou hodnotu
+      -- p≈ôevz√≠t po≈æadovanou hodnotu
       mov    eax,I
       mov    edi,A
 
-      -- zjistit z kolika slov se skl†d† dlouhÇ á°slo
+      -- zjistit z kolika slov se skl√°d√° dlouh√© ƒç√≠slo
       mov    ecx,alen
 
-      -- p©iá°st  malÇ á°slo
+      -- p≈ôiƒç√≠st  mal√© ƒç√≠slo
       add    [edi],eax
 
-      -- nen°-li p©enos, konec
+      -- nen√≠-li p≈ôenos, konec
       jnc    @0
 
-      -- odeá°st zpracovanÇ slovo od dÇlky
+      -- odeƒç√≠st zpracovan√© slovo od d√©lky
       sub    ecx,4
       jz     @0
 
-      -- zapoá°tat p©enos do vy®®°ch ©†dñ
+      -- zapoƒç√≠tat p≈ôenos do vy≈°≈°√≠ch ≈ô√°d≈Ø
       mov    eax,1
   @1: add    [edi],eax
       add    edi,4
@@ -609,31 +609,31 @@ begin
 procedure long_unsigned_sub_n =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it á°slo
+  -- zmƒõ≈ôit ƒç√≠slo
   alen:=t_mod_unsigned(a:size) shr 2;
   #syntax asm;
-      -- p©evz°t poëadovanou hodnotu
+      -- p≈ôevz√≠t po≈æadovanou hodnotu
       mov    eax,N
       mov    edi,A
 
-      -- zjistit z kolika slov se skl†d† dlouhÇ á°slo
+      -- zjistit z kolika slov se skl√°d√° dlouh√© ƒç√≠slo
       mov    ecx,alen
 
-      -- p©iá°st  malÇ á°slo
+      -- p≈ôiƒç√≠st  mal√© ƒç√≠slo
       sub    [edi],eax
 
-      -- nen°-li p©enos, konec
+      -- nen√≠-li p≈ôenos, konec
       jnb    @0
 
-      -- odeá°st zpracovanÇ slovo od dÇlky
+      -- odeƒç√≠st zpracovan√© slovo od d√©lky
       sub    ecx,4
       jz     @0
 
-      -- zapoá°tat p©enos do vy®®°ch ©†dñ
+      -- zapoƒç√≠tat p≈ôenos do vy≈°≈°√≠ch ≈ô√°d≈Ø
       mov    eax,1
   @1: add    [edi],eax
       add    edi,4
@@ -645,34 +645,34 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_sub_n =
--- O®et©it pr†ci se znamÇnky !!!                                                                   
+-- O≈°et≈ôit pr√°ci se znam√©nky !!!                                                                   
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it á°slo
+  -- zmƒõ≈ôit ƒç√≠slo
   alen:=t_mod_unsigned(a:size) shr 2;
   #syntax asm;
-      -- p©evz°t poëadovanou hodnotu
+      -- p≈ôevz√≠t po≈æadovanou hodnotu
       mov    eax,I
       mov    edi,A
 
-      -- zjistit z kolika slov se skl†d† dlouhÇ á°slo
+      -- zjistit z kolika slov se skl√°d√° dlouh√© ƒç√≠slo
       mov    ecx,alen
 
-      -- p©iá°st  malÇ á°slo
+      -- p≈ôiƒç√≠st  mal√© ƒç√≠slo
       sub    [edi],eax
 
-      -- nen°-li p©enos, konec
+      -- nen√≠-li p≈ôenos, konec
       jnb    @0
 
-      -- odeá°st zpracovanÇ slovo od dÇlky
+      -- odeƒç√≠st zpracovan√© slovo od d√©lky
       sub    ecx,4
       jz     @0
 
-      -- zapoá°tat p©enos do vy®®°ch ©†dñ
+      -- zapoƒç√≠tat p≈ôenos do vy≈°≈°√≠ch ≈ô√°d≈Ø
       mov    eax,1
   @1: add    [edi],eax
       add    edi,4
@@ -686,79 +686,79 @@ begin
 procedure long_unsigned_sub =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
-  blen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
-  clen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
+  blen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
+  clen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it á°sla
+  -- zmƒõ≈ôit ƒç√≠sla
   alen:=t_mod_unsigned(a:size) shr 2;
   blen:=t_mod_unsigned(b:size) shr 2;
   clen:=t_mod_unsigned(c:size) shr 2;
   #syntax asm;
-      -- prvn° á†st vòpoátu bude podle schematu [edi...]=[esi...]+[ebx...], v dÇlce ecx
-      -- druh† á†st vòpoátu bude podle schematu [edi...]=[esi...]+0,        v dÇlce ???
-      -- t©et° á†st vòpoátu bude podle schematu [edi...]=0,                 v dÇlce ???
+      -- prvn√≠ ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=[esi...]+[ebx...], v d√©lce ecx
+      -- druh√° ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=[esi...]+0,        v d√©lce ???
+      -- t≈ôet√≠ ƒç√°st v√Ωpoƒçtu bude podle schematu [edi...]=0,                 v d√©lce ???
 
-      -- naáteme £daje o á°slech [esi,edx]=A a [ebx,ecx]=B
+      -- naƒçteme √∫daje o ƒç√≠slech [esi,edx]=A a [ebx,ecx]=B
       mov    esi,a
       mov    edx,alen
       mov    ebx,b
       mov    ecx,blen
 
-      -- Zamàn°me po©ad° operandñ A a B tak, aby [ebx,ecx] bylo krat®° z obou á°sel. V tÇto dÇlce
-      -- budeme prov†dàt plnohodnotnò souáet souáasnà vypoáteme dÇlku ve kterÇ budeme prov†dàt 
-      -- druhou á†st vòpoátu
+      -- Zamƒõn√≠me po≈ôad√≠ operand≈Ø A a B tak, aby [ebx,ecx] bylo krat≈°√≠ z obou ƒç√≠sel. V t√©to d√©lce
+      -- budeme prov√°dƒõt plnohodnotn√Ω souƒçet souƒçasnƒõ vypoƒçteme d√©lku ve kter√© budeme prov√°dƒõt 
+      -- druhou ƒç√°st v√Ωpoƒçtu
       cmp    ecx,edx
       jbe    @0
 
-      -- zd† se, ëe do®lo k p©eteán°, mus°me tedy zamànit poá†tky obou á°sel a taky pr†và vypoátenou
-      -- dÇlku druhÇho kroku vòpoátu
+      -- zd√° se, ≈æe do≈°lo k p≈ôeteƒçn√≠, mus√≠me tedy zamƒõnit poƒç√°tky obou ƒç√≠sel a taky pr√°vƒõ vypoƒçtenou
+      -- d√©lku druh√©ho kroku v√Ωpoƒçtu
       xchg   esi,ebx
       xchg   edx,ecx
 
-      -- nyn° m†me á°sla A a B naátena, p©iáemë v [ebx,ecx] je krat®° z nich a v [esi,edx] je del®°
-  @0: --     za chv°li budeme pot©ebovat 0
+      -- nyn√≠ m√°me ƒç√≠sla A a B naƒçtena, p≈ôiƒçem≈æ v [ebx,ecx] je krat≈°√≠ z nich a v [esi,edx] je del≈°√≠
+  @0: --     za chv√≠li budeme pot≈ôebovat 0
       xor    edi,edi
 
-      -- ECX je dÇlka krat®°ho sá°tance (kroku 1)
-      -- EDX je dÇlka del®°ho sá°tance
+      -- ECX je d√©lka krat≈°√≠ho sƒç√≠tance (kroku 1)
+      -- EDX je d√©lka del≈°√≠ho sƒç√≠tance
 
-      -- vypoáteme dÇlku kroku 3
+      -- vypoƒçteme d√©lku kroku 3
       mov    eax,clen
       sub    eax,edx
 
-      -- je-li del®° sá°tanec del®° neë C, nebudeme t©et° krok prov†dàt a sá°tanec zkr†t°me
+      -- je-li del≈°√≠ sƒç√≠tanec del≈°√≠ ne≈æ C, nebudeme t≈ôet√≠ krok prov√°dƒõt a sƒç√≠tanec zkr√°t√≠me
       cmovc  eax,edi
       cmovc  edx,clen
       push   eax
 
-      -- vypoá°t†me dÇlku kroku 2
+      -- vypoƒç√≠t√°me d√©lku kroku 2
       mov    eax,edx
       sub    eax,ecx
 
-      -- je-li krat®° sá°tanec p©°li® dlouhò, zkr†t°me ho
+      -- je-li krat≈°√≠ sƒç√≠tanec p≈ô√≠li≈° dlouh√Ω, zkr√°t√≠me ho
       cmovc  eax,edi
       cmovc  ecx,edx
       push   eax
 
   --------------------
-  -- vlastn° vòpoáet
+  -- vlastn√≠ v√Ωpoƒçet
   --------------------
       xor    edx,edx
       mov    edi,c
 
       cld
 
-  -- prvn° á†st vòpoátu C=A+B
+  -- prvn√≠ ƒç√°st v√Ωpoƒçtu C=A+B
   @1: lodsd
       sbb    eax,[ebx+edx*4]
       inc    edx
       stosd
       loop   @1
 
-  -- druh† á†st vòpoátu, d†le uë budeme uvaëovat jen del®° z obou á°sel A a B
+  -- druh√° ƒç√°st v√Ωpoƒçtu, d√°le u≈æ budeme uva≈æovat jen del≈°√≠ z obou ƒç√≠sel A a B
       pop    ecx
       jecxz  @3
   @2: lodsd
@@ -766,15 +766,15 @@ begin
       stosd
       loop   @2
 
-  -- t©et° á†st vòpoátu
+  -- t≈ôet√≠ ƒç√°st v√Ωpoƒçtu
   @3: pop    ecx
       jecxz  @4
-  -- uloëit p©enos p©echoz°ch vòpoátñ...
+  -- ulo≈æit p≈ôenos p≈ôechoz√≠ch v√Ωpoƒçt≈Ø...
       mov    eax,0
       sbb    eax,eax
       stosd
       sub    ecx,1
-  -- a vynulov†n° nevyuëitÇ á†sti vòsledku
+  -- a vynulov√°n√≠ nevyu≈æit√© ƒç√°sti v√Ωsledku
       xor    eax,eax
       rep    stosd
   @4: #end asm;
@@ -788,7 +788,7 @@ procedure long_signed_sub =
 begin
   case a[0]
     when long_signed_neutral do
-      -- A=0, vòsledkem rozd°lu je -B
+      -- A=0, v√Ωsledkem rozd√≠lu je -B
       long_signed_assign(c,b);
       long_signed_neg(c);
 
@@ -796,14 +796,14 @@ begin
     when long_signed_positive do
       case b[0]
         when long_signed_neutral do
-          -- B=0, vòsledkem rozd°lu je A
+          -- B=0, v√Ωsledkem rozd√≠lu je A
           long_signed_assign(c,a);
 
         when long_signed_positive do
-          -- A>0, B>0, vòsledkem rozd°lu je A-B, znamÇnko vòsledku mus°me zjistit
+          -- A>0, B>0, v√Ωsledkem rozd√≠lu je A-B, znam√©nko v√Ωsledku mus√≠me zjistit
 
         when others do
-          -- A>0, B<0, vòsledkem rozd°lu je A+ABS(B), vòsledek bude kladnò
+          -- A>0, B<0, v√Ωsledkem rozd√≠lu je A+ABS(B), v√Ωsledek bude kladn√Ω
 
         end case;
 
@@ -811,14 +811,14 @@ begin
     when others do
       case b[0]
         when long_signed_neutral do
-          -- B=0, vòsledkem rozd°lu je A
+          -- B=0, v√Ωsledkem rozd√≠lu je A
           long_signed_assign(c,b);
 
         when long_signed_positive do
-          -- A<0, B>0, vòsledkem rozd°lu je -(ABS(A)+ABS(B)), vòsledek bude z†pornò
+          -- A<0, B>0, v√Ωsledkem rozd√≠lu je -(ABS(A)+ABS(B)), v√Ωsledek bude z√°porn√Ω
 
         when others do
-          -- A<0, B<0, vòsledkem rozd°lu je           B-ABS(A), znamÇnko vòsledku mus°me zjistit
+          -- A<0, B<0, v√Ωsledkem rozd√≠lu je           B-ABS(A), znam√©nko v√Ωsledku mus√≠me zjistit
 
         end case;
     end case;
@@ -852,19 +852,19 @@ var
   blimit           : t_signed;
 
 begin
-  -- 1. inicializace vòsledku
+  -- 1. inicializace v√Ωsledku
   long_unsigned_load(c,0);
 
-  -- maxim†ln° dÇlka prvn°ho operandu, kterou m† smysl se zabòvat
+  -- maxim√°ln√≠ d√©lka prvn√≠ho operandu, kterou m√° smysl se zab√Ωvat
   if a:size<c:size then
     alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1;
   else
     alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1;
     end if;
 
-  -- provÇst vlastn° vòpoáet
+  -- prov√©st vlastn√≠ v√Ωpoƒçet
   for i in 0..alimit loop
-    -- maxim†ln° dÇlka druhÇho operandu, kterou m† smysl se zabòvat
+    -- maxim√°ln√≠ d√©lka druh√©ho operandu, kterou m√° smysl se zab√Ωvat
     if t_signed(b:size) < t_signed(c:size)-i then
       blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1;
     else
@@ -872,8 +872,8 @@ begin
       end if;
 
     for j in 0..i loop
-      -- p©iá°st malò souáin
-      -- %%X a co propagace p©enosu?
+      -- p≈ôiƒç√≠st mal√Ω souƒçin
+      -- %%X a co propagace p≈ôenosu?
       c[t_unsigned(i+j)]+(a[t_unsigned(i)]*b[t_unsigned(j)]);
       end loop;
     end loop;
@@ -889,33 +889,33 @@ var
   blimit           : t_signed;
 
 begin
-  -- 1. inicializace vòsledku
+  -- 1. inicializace v√Ωsledku
   long_signed_load(c,0);
 
-  -- znamÇnko vòsledku
+  -- znam√©nko v√Ωsledku
   if a[0]=long_signed_neutral or b[0]=long_signed_neutral then
-    -- jeden z operandñ je nulovò vòsledek bude nula
+    -- jeden z operand≈Ø je nulov√Ω v√Ωsledek bude nula
     return;
 
   elsif a[0]=b[0] then
-    -- oba operandy maj° stejnÇ znamÇnko, vòsledek bude kladnò
+    -- oba operandy maj√≠ stejn√© znam√©nko, v√Ωsledek bude kladn√Ω
     c[0]:=long_signed_positive;
 
   else
-    -- oba operandy maj° rozd°lnÇ znamÇnko, vòsledek bude z†pornò
+    -- oba operandy maj√≠ rozd√≠ln√© znam√©nko, v√Ωsledek bude z√°porn√Ω
     c[0]:=long_signed_negative;
     end if;
 
-  -- maxim†ln° dÇlka prvn°ho operandu, kterou m† smysl se zabòvat
+  -- maxim√°ln√≠ d√©lka prvn√≠ho operandu, kterou m√° smysl se zab√Ωvat
   if a:size<c:size then
     alimit:=t_signed(t_mod_unsigned(a:size) shr 2)-1-1;
   else
     alimit:=t_signed(t_mod_unsigned(c:size) shr 2)-1-1;
     end if;
 
-  -- provÇst vlastn° vòpoáet
+  -- prov√©st vlastn√≠ v√Ωpoƒçet
   for i in 0..alimit loop
-    -- maxim†ln° dÇlka druhÇho operandu, kterou m† smysl se zabòvat
+    -- maxim√°ln√≠ d√©lka druh√©ho operandu, kterou m√° smysl se zab√Ωvat
     if t_signed(b:size) < t_signed(c:size)-i then
       blimit:=t_signed(t_mod_unsigned(b:size) shr 2)-1-1;
     else
@@ -923,8 +923,8 @@ begin
       end if;
 
     for j in 0..i loop
-      -- p©iá°st malò souáin
-      -- %%X a co propagace p©enosu?
+      -- p≈ôiƒç√≠st mal√Ω souƒçin
+      -- %%X a co propagace p≈ôenosu?
       c[t_unsigned(i+j+1)]+(a[t_unsigned(i)+1]*b[t_unsigned(j)+1]);
       end loop;
     end loop;
@@ -945,13 +945,13 @@ procedure long_signed_div =
 ----------------------------------------------------------------------------------------------------
 begin
   if b[0]=long_signed_neutral then
-    -- dàlen° nulou
+    -- dƒõlen√≠ nulou
   elsif a[0]=long_signed_neutral then
-    -- nulovò áitatel, nulovò vòsledek
+    -- nulov√Ω ƒçitatel, nulov√Ω v√Ωsledek
   elsif a[0]=b[0] then
-    -- áitatel a jmenovatel maj° stejnÇ znamÇnko, vòsledek bude kladnò
+    -- ƒçitatel a jmenovatel maj√≠ stejn√© znam√©nko, v√Ωsledek bude kladn√Ω
   else
-    -- áitatel a jmenovatel maj° rozd°lnÇ znamÇnko, vòsledek bude z†pornò
+    -- ƒçitatel a jmenovatel maj√≠ rozd√≠ln√© znam√©nko, v√Ωsledek bude z√°porn√Ω
     end if;
   end long_signed_div;
 
@@ -1043,60 +1043,60 @@ procedure long_unsigned_cmp (
     return t_cmp_result =
 ----------------------------------------------------------------------------------------------------
 var
-  -- %%X Aë bude intern° assembler umàt pracovat s dynamickòmi atributy promànnòch, bude tato promànn† zbyteán†
-  alen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
-  blen             : t_mod_unsigned;             -- dÇlka dlouhÇho á°sla ve wordech
+  -- %%X A≈æ bude intern√≠ assembler umƒõt pracovat s dynamick√Ωmi atributy promƒõnn√Ωch, bude tato promƒõnn√° zbyteƒçn√°
+  alen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
+  blen             : t_mod_unsigned;             -- d√©lka dlouh√©ho ƒç√≠sla ve wordech
 
 begin
-  -- zmà©it obà á°sla
+  -- zmƒõ≈ôit obƒõ ƒç√≠sla
   alen:=t_mod_unsigned(a:size) shr 2;
   blen:=t_mod_unsigned(b:size) shr 2;
 
   #syntax asm;
-      -- p©evz°t a velikosti adresy obou operandñ
+      -- p≈ôevz√≠t a velikosti adresy obou operand≈Ø
       mov   esi,a
       mov   edi,b
       mov   ecx,alen
       mov   edx,blen
 
-      -- p©edpoklad: A (ESI,ECX) je krat®°
+      -- p≈ôedpoklad: A (ESI,ECX) je krat≈°√≠
       sub   edx,ecx
       jnc   @1
 
-      -- p©edpoklad se nevyplnil, zamàn°me oba operandy a t°m se p©edpoklad spln°
+      -- p≈ôedpoklad se nevyplnil, zamƒõn√≠me oba operandy a t√≠m se p≈ôedpoklad spln√≠
       neg   edx
       xchg  esi,edi
       xchg  ecx,edx
 
-      -- nyn° je v (ESI,ECX dÇlka krat®°ho z porovn†vanòch á°sel), v EDI je zaá†tek del®°ho, resp. 
-      -- nekrat®°ho á°sla a v EDX je absolutn° hodnota rozd°lu dÇlek porovn†vanòch á°sel
+      -- nyn√≠ je v (ESI,ECX d√©lka krat≈°√≠ho z porovn√°van√Ωch ƒç√≠sel), v EDI je zaƒç√°tek del≈°√≠ho, resp. 
+      -- nekrat≈°√≠ho ƒç√≠sla a v EDX je absolutn√≠ hodnota rozd√≠lu d√©lek porovn√°van√Ωch ƒç√≠sel
 
-      -- porovn†n° v dÇlce krat®°ho z nich
+      -- porovn√°n√≠ v d√©lce krat≈°√≠ho z nich
   @1: repe  cmpsd
 
-      -- nalezen rozd°l je®tà p©ed koncem spoleánÇ á†sti
+      -- nalezen rozd√≠l je≈°tƒõ p≈ôed koncem spoleƒçn√© ƒç√°sti
       jne   @2
 
-      -- poá†tek obou á°sel je shodnò, zbòv† ovà©it nulovost zbytku del®°ho z porovn†vanòch á°sel
+      -- poƒç√°tek obou ƒç√≠sel je shodn√Ω, zb√Ωv√° ovƒõ≈ôit nulovost zbytku del≈°√≠ho z porovn√°van√Ωch ƒç√≠sel
       mov   ecx,edx
 
-      -- pokud jsou obà á°sla stejnà dlouh†, mñëeme rovnou skonáit
+      -- pokud jsou obƒõ ƒç√≠sla stejnƒõ dlouh√°, m≈Ø≈æeme rovnou skonƒçit
       jcxz  @2
 
       xor   eax,eax
       repe  scasd
 
-      -- pokud jsme na®li nenulu, je to rozd°l
+      -- pokud jsme na≈°li nenulu, je to rozd√≠l
       jne   @2
 
-      -- pokud jsme se dostali aë sem, jsou porovn†van† á°sla shodn†
+      -- pokud jsme se dostali a≈æ sem, jsou porovn√°van√° ƒç√≠sla shodn√°
 --      mov   eax,l_true
       jmp   @0
 
-  @2: -- á°sla nejsou stejn†
+  @2: -- ƒç√≠sla nejsou stejn√°
 --      mov   eax,l_false
 
-      -- uloëit vòsledek
+      -- ulo≈æit v√Ωsledek
   @0: mov   result,al
       #end asm;
   end long_unsigned_cmp;

@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+ï»¿----------------------------------------------------------------------------------------------------
 module private input =
 -- Input operations routines.
 -- Flex Standard Library
@@ -84,7 +84,7 @@ class private c_input_queue =
           input_event:=queue_data[i];
           
           -- remove retruned event from the queue
-          -- %% ©ezy pole ale tady stejnˆ nebude string ale list
+          -- %% Å™ezy pole ale tady stejnÄ› nebude string ale list
           -- queue_data:=queue_data[0..i-1] & queue_data[i+1..queue_data:length]
           for j in queue_data:range loop
             if j<i then queue_data[j]:=queue_data[j];
@@ -161,7 +161,7 @@ class private c_input_queue =
         if queue_data[i]^.event_type in event_filter then
           -- remove from queue
           -- remove retruned event from the queue
-          -- %%TODO ©ezy pole ale tady stejnˆ nebude string ale list
+          -- %%TODO Å™ezy pole ale tady stejnÄ› nebude string ale list
           -- queue_data:=queue_data[0..i-1] & queue_data[i+1..queue_data:length]
           for j in queue_data:range loop
             if j<i then queue_data[j]:=queue_data[j];
@@ -183,7 +183,7 @@ class private c_input_queue =
     ------------------------------------------------------------------------------------------------
     begin
       -- stdin:=getstdhandle(std_input_handle);
-      -- %% tady bych mˆl nastartovat thread kter˜ bude cp t ud losti do fronty
+      -- %% tady bych mÄ›l nastartovat thread kterÃ½ bude cpÃ¡t udÃ¡losti do fronty
       end entry; 
   
     end c_input_queue;

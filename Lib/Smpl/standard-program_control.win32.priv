@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private program_control =
 -- Flex Standard Library
 -- General program execution control.
@@ -46,7 +46,7 @@ begin
   get_command_line(full_cmd_line);
 
   -- there will be at least one command line parameter
-  new cmd_line range {%%TODO(ADJUST) p©edàlat!}30;
+  new cmd_line range {%%TODO(ADJUST) p≈ôedƒõlat!}30;
 
   -- split into separate parameters
   first_parameter:=true;
@@ -68,7 +68,7 @@ begin
         end if;
 
       -- prepare a new parameter
-      new parameter range {%%TODO(ADJUST) p©edàlat!}100;
+      new parameter range {%%TODO(ADJUST) p≈ôedƒõlat!}100;
 
       -- and skip all white space
       skip_whitespace:=true;
@@ -155,7 +155,7 @@ begin
   i:=0;
   loop; 
     -- get environment strings element and increment i by size of it
-    -- %%TO CHECK tohle p©etypov†n° se mi moc nel°b° 
+    -- %%TO CHECK tohle p≈ôetypov√°n√≠ se mi moc nel√≠b√≠ 
     from_system_string(windows.windef.winnt.pwstr(windows.windef.lpvoid(^(windows.windef.winnt.pwstr(penv_strings)^[i]))),tmp_str);
     i+tmp_str^:length;
     i+1;

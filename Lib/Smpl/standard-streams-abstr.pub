@@ -1,4 +1,4 @@
-
+Ôªø
 -- ultimatni predek
 class abstract c_abstract_stream;         type p_abstract_stream         = ^class c_abstract_stream;
 
@@ -19,11 +19,11 @@ class abstract c_stream_writer_filter;    type p_stream_writer_filter    = ^clas
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_abstract_stream =
--- Abstraktn° proud.
+-- Abstraktn√≠ proud.
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual abstract close;
-  -- zav©e stream, uvoln° zdroj, blokuje volaj°c°ho
+  -- zav≈ôe stream, uvoln√≠ zdroj, blokuje volaj√≠c√≠ho
   ------------------------------------------------------------------------------------------------
   virtual get_flow(
     bytes          : out t_offset);
@@ -64,12 +64,12 @@ var
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_input_stream = extend c_abstract_stream;
--- Abstraktn° proud ke áten°.
+-- Abstraktn√≠ proud ke ƒçten√≠.
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual abstract read_packet(
       data       : out t_data_packet);
-  -- zap°®e packet, blokuje volaj°c°ho do dokonceni nacteni
+  -- zap√≠≈°e packet, blokuje volaj√≠c√≠ho do dokonceni nacteni
   ------------------------------------------------------------------------------------------------
   virtual abstract is_eod return t_logical;
   -- zjisti jetli jeste muzou prijit nejake data
@@ -80,12 +80,12 @@ class public abstract c_input_stream = extend c_abstract_stream;
 
 ----------------------------------------------------------------------------------------------------
 class public abstract c_output_stream = extend c_abstract_stream;
--- abstraktn° proud k z†pisu
+-- abstraktn√≠ proud k z√°pisu
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   virtual abstract write_packet(
       data       : in t_data_packet);
-  -- zap°®e packet, blokuje volaj°c°ho do dokonceni zapsani
+  -- zap√≠≈°e packet, blokuje volaj√≠c√≠ho do dokonceni zapsani
   ------------------------------------------------------------------------------------------------
   virtual flush;
   -- nedestruktivne vyprazdni vsechny buffery, blokuje volajiciho
@@ -136,12 +136,12 @@ class public abstract c_stream_reader =
 --%%TODO protected
   ------------------------------------------------------------------------------------------------
   virtual init_reader (
-      source     : in p_input_stream);     -- odkaz na vstupn° stream
+      source     : in p_input_stream);     -- odkaz na vstupn√≠ stream
   --nastavi podrizeny stream
   ------------------------------------------------------------------------------------------------
 
   var
-    _source        : p_input_stream;             -- odkaz na vstupn° stream
+    _source        : p_input_stream;             -- odkaz na vstupn√≠ stream
     _isinicialized : t_logical;
 
   end c_stream_reader;
@@ -185,10 +185,10 @@ class public abstract c_stream_writer =
 --%%TODO protected
   ------------------------------------------------------------------------------------------------
   virtual init_writer(
-      target     : in p_output_stream);        -- odkaz na vòstupn° stream
+      target     : in p_output_stream);        -- odkaz na v√Ωstupn√≠ stream
   ------------------------------------------------------------------------------------------------
   var
-    _target        : p_output_stream;            -- odkaz na vòstupn° stream
+    _target        : p_output_stream;            -- odkaz na v√Ωstupn√≠ stream
     _isinicialized : t_logical;
 
   end c_stream_writer;

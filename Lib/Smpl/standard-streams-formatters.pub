@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 class public abstract c_stream_generic_writer = extend c_stream_writer;
 -- pomocna implementace formateru zapisovaciho streamu
 -- vhodna jako predek pro skutecny formater
@@ -6,49 +6,49 @@ class public abstract c_stream_generic_writer = extend c_stream_writer;
 protected
   ------------------------------------------------------------------------------------------------
   static write_byte(
-      data       : in t_data_byte);            -- zapisovanò byte
+      data       : in t_data_byte);            -- zapisovan√Ω byte
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_unsigned32 (
-      data         : in t_unsigned32);           -- zapisovanò unsigned
+      data         : in t_unsigned32);           -- zapisovan√Ω unsigned
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_char32 (
-      data         : in t_char32);               -- zapisovanò znak
+      data         : in t_char32);               -- zapisovan√Ω znak
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_unchecked (
-      data         : in unchecked;               -- zapisovan† data
-      size         : in t_unsigned32);           -- velikost dat, kter† se maj° zapsat
+      data         : in unchecked;               -- zapisovan√° data
+      size         : in t_unsigned32);           -- velikost dat, kter√° se maj√≠ zapsat
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_heap (
-      data         : in unchecked;               -- zapisovan† data, alokovana na heapu, uvolni prijemce
-      size         : in t_unsigned32);           -- velikost dat, kter† se maj° zapsat
+      data         : in unchecked;               -- zapisovan√° data, alokovana na heapu, uvolni prijemce
+      size         : in t_unsigned32);           -- velikost dat, kter√° se maj√≠ zapsat
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_array(
-      data         : in ref t_data_array);       -- zapisovanÇ pole
+      data         : in ref t_data_array);       -- zapisovan√© pole
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_string(
-      data         : in ref t_data_string);      -- zapisovanò ©etàzec
+      data         : in ref t_data_string);      -- zapisovan√Ω ≈ôetƒõzec
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_text(
-      data         : in ref t_char32ustr);       -- zapisovanò ©etàzec
+      data         : in ref t_char32ustr);       -- zapisovan√Ω ≈ôetƒõzec
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_text_part(
-      data         : in ref t_char32ustr;        -- zapisovanò ©etàzec
+      data         : in ref t_char32ustr;        -- zapisovan√Ω ≈ôetƒõzec
       count        : t_unsigned);                -- pocet znaku ktere se maji zapsat
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
@@ -64,7 +64,7 @@ class public abstract c_stream_generic_reader = extend c_stream_reader;
 ----------------------------------------------------------------------------------------------------
 protected
   static read_byte (
-      data       : out t_data_byte)            -- naátenò byte
+      data       : out t_data_byte)            -- naƒçten√Ω byte
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
@@ -78,44 +78,44 @@ protected
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_char32 (
-      data       : out t_char32)          -- naátenò ©etàzec
+      data       : out t_char32)          -- naƒçten√Ω ≈ôetƒõzec
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_unchecked (
-      data       : out unchecked;              -- p©eáten† data
-      size       : in t_offset)                -- velikost dat, kter† se maj° p©eá°st
+      data       : out unchecked;              -- p≈ôeƒçten√° data
+      size       : in t_offset)                -- velikost dat, kter√° se maj√≠ p≈ôeƒç√≠st
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_unchecked_out (
-      data       : out unchecked;              -- p©eáten† data
-      size       : in out t_offset)            -- velikost dat, kter† se maj° p©eá°st, prectena velikost
+      data       : out unchecked;              -- p≈ôeƒçten√° data
+      size       : in out t_offset)            -- velikost dat, kter√° se maj√≠ p≈ôeƒç√≠st, prectena velikost
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_array (
-      data       : out t_data_array)           -- naátenÇ pole
+      data       : out t_data_array)           -- naƒçten√© pole
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - invalid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_string (
-      data       : out t_data_string)          -- naátenò ©etàzec
+      data       : out t_data_string)          -- naƒçten√Ω ≈ôetƒõzec
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   static read_text (
-      data       : out t_char32ustr)          -- naátenò ©etàzec
+      data       : out t_char32ustr)          -- naƒçten√Ω ≈ôetƒõzec
       return t_logical;
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- returns eod - false  - valid data
@@ -132,13 +132,13 @@ class public c_stream_binary_writer = extend c_stream_generic_writer;
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   static write_unchecked (
-      data       : in unchecked);                -- zapisovan† data
+      data       : in unchecked);                -- zapisovan√° data
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
   static write_unchecked_part (
-      data       : in unchecked;                 -- zapisovan† data
-      size       : in t_unsigned32);             -- velikost dat, kter† se maj° zapsat
+      data       : in unchecked;                 -- zapisovan√° data
+      size       : in t_unsigned32);             -- velikost dat, kter√° se maj√≠ zapsat
   -- zapise data, blokuje volajiciho do dokonceni zapisu
   -- muze vyhodit vyjimku stream_other_side kdyz druha strana prestane cist
   ------------------------------------------------------------------------------------------------
@@ -152,8 +152,8 @@ class public c_stream_binary_reader = extend c_stream_generic_reader;
 ----------------------------------------------------------------------------------------------------
   ------------------------------------------------------------------------------------------------
   static read_unchecked (
-      data       : out unchecked;              -- p©eáten† data
-      size       : in t_unsigned32);           -- velikost dat, kter† se maj° p©eá°st
+      data       : out unchecked;              -- p≈ôeƒçten√° data
+      size       : in t_unsigned32);           -- velikost dat, kter√° se maj√≠ p≈ôeƒç√≠st
   -- cte data, blokuje volajiciho do precteni dat nebo do endo of data
   -- muze vyvolat vyjimku stream_end_of_data kdyz jsou data kratsi nez pozadovana data
   ------------------------------------------------------------------------------------------------

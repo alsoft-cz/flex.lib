@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public unicode =
 -- Support for 16bit UNICODE character coding.
 -- Flex Standard Library
@@ -57,8 +57,8 @@ procedure unicode_char_to_lower (
 -- 
 -- Examples:
 --   unicode_char_to_lower(".") = "."
---   unicode_char_to_lower("†") = "†"
---   unicode_char_to_lower("Ä") = "á"
+--   unicode_char_to_lower("√°") = "√°"
+--   unicode_char_to_lower("ƒå") = "ƒç"
 ----------------------------------------------------------------------------------------------------
 procedure unicode_char_to_upper (
     c          : in t_char16)                    -- character to convert
@@ -69,8 +69,8 @@ procedure unicode_char_to_upper (
 -- 
 -- Examples:
 --   unicode_char_to_upper(".") = "."
---   unicode_char_to_upper("á") = "Ä"
---   unicode_char_to_upper("è") = "è"
+--   unicode_char_to_upper("ƒç") = "ƒå"
+--   unicode_char_to_upper("√Å") = "√Å"
 ----------------------------------------------------------------------------------------------------
 procedure unicode_get_char_category (
     c          : in t_char16)                    -- character 
@@ -92,7 +92,7 @@ procedure unicode_char_to_tittle (
 -- Examples:
 --   unicode_char_to_upper(".") = "."
 --   unicode_char_to_upper("ff") = "Ff"
---   unicode_char_to_upper("è") = "è"
+--   unicode_char_to_upper("√Å") = "√Å"
 ----------------------------------------------------------------------------------------------------
 
 

@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private dictionary =
 -- Dictionary implementation
 -- Flex Standard Library
@@ -8,18 +8,18 @@ module private dictionary =
 with
   standard.classes;
 
--- dop©ednÇ deklarace
+-- dop≈ôedn√© deklarace
 class c_dictionary_tree_node;     type p_dictionary_tree_node     = ^class c_dictionary_tree_node;
 class c_string_dictionary_key;    type p_string_dictionary_key    = ^class c_string_dictionary_key;
 class c_string_dictionary_value;  type p_string_dictionary_value  = ^class c_string_dictionary_value;
 
 ----------------------------------------------------------------------------------------------------
 class c_dictionary_tree_node = extend c_binary_tree_node;
--- Uzel stromu, reprezentuje uspa©†danou dvojici [kl°á,hodnota]
+-- Uzel stromu, reprezentuje uspa≈ô√°danou dvojici [kl√≠ƒç,hodnota]
 ----------------------------------------------------------------------------------------------------
 
     var
-      key           : p_dictionary_key;          -- kl°á
+      key           : p_dictionary_key;          -- kl√≠ƒç
       value         : p_dictionary_value;        -- hodnota
 
     ------------------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ class c_dictionary_tree_node = extend c_binary_tree_node;
       this.key:=key;
       this.value:=value;
 
-      -- kontrola, zda je definov†n kl°á
+      -- kontrola, zda je definov√°n kl√≠ƒç
       if key=nil then
         raise dictionary_error;
         end if;
@@ -44,10 +44,10 @@ class c_dictionary_tree_node = extend c_binary_tree_node;
     ------------------------------------------------------------------------------------------------
     static discard_fields (
         what       : in t_dictionary_delete_mode) =
-    -- uvoln° pamàt drëenòch objektñ
+    -- uvoln√≠ pamƒõt dr≈æen√Ωch objekt≈Ø
     ------------------------------------------------------------------------------------------------
     begin
-      -- uvolnit kl°á
+      -- uvolnit kl√≠ƒç
       if key<>nil and (what=ddm_both or what=ddm_key) then
         discard key;
         end if;
@@ -64,7 +64,7 @@ class c_dictionary_tree_node = extend c_binary_tree_node;
 
 ----------------------------------------------------------------------------------------------------
 class private c_dictionary_value =
--- Hodnota uloëen† ve slovn°ku.
+-- Hodnota ulo≈æen√° ve slovn√≠ku.
 ----------------------------------------------------------------------------------------------------
 
     end c_dictionary_value;
@@ -73,7 +73,7 @@ class private c_dictionary_value =
 
 ----------------------------------------------------------------------------------------------------
 class private c_dictionary_key =
--- Obecnò p©edek pro kl°á do slovn°ku
+-- Obecn√Ω p≈ôedek pro kl√≠ƒç do slovn√≠ku
 ----------------------------------------------------------------------------------------------------
 
     end c_dictionary_key;
@@ -82,15 +82,15 @@ class private c_dictionary_key =
 
 ----------------------------------------------------------------------------------------------------
 class c_dictionary_tree = extend c_binary_tree;
--- Specializace bin†rn°ho vyhled†vac°ho stromu pro pouëit° ve slovn°ku
+-- Specializace bin√°rn√≠ho vyhled√°vac√≠ho stromu pro pou≈æit√≠ ve slovn√≠ku
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     override compare =
-    -- Vr†t° vòsledek porovn†n° dvou uzlñ.
+    -- Vr√°t√≠ v√Ωsledek porovn√°n√≠ dvou uzl≈Ø.
     ------------------------------------------------------------------------------------------------
     begin
-      -- zjistit vòsledek
+      -- zjistit v√Ωsledek
       case p_dictionary_tree_node(node_a)^.key^.compare(p_dictionary_tree_node(node_b)^.key)
         when kct_bigger  do result:=cn_bigger;
         when kct_smaller do result:=cn_smaller;
@@ -104,29 +104,29 @@ class c_dictionary_tree = extend c_binary_tree;
 
 ----------------------------------------------------------------------------------------------------
 class private c_dictionary =
--- Slovn°k - t©°da, kter† uchov†v† seznam dvojic kl°á-hodnota 
--- a pro kaëdò kl°á um° efektivnà naj°t hodnotu
+-- Slovn√≠k - t≈ô√≠da, kter√° uchov√°v√° seznam dvojic kl√≠ƒç-hodnota 
+-- a pro ka≈æd√Ω kl√≠ƒç um√≠ efektivnƒõ naj√≠t hodnotu
 ----------------------------------------------------------------------------------------------------
 
     var
-      tree         : c_dictionary_tree;          -- bin†rn° vyhled†vac° strom
+      tree         : c_dictionary_tree;          -- bin√°rn√≠ vyhled√°vac√≠ strom
 
     ------------------------------------------------------------------------------------------------
     static delete_all =
-    -- Vymaëe v®echny poloëky slovn°ku
+    -- Vyma≈æe v≈°echny polo≈æky slovn√≠ku
     ------------------------------------------------------------------------------------------------
     var
-      iterator     : c_binary_tree_iterator;     -- iter†tor
+      iterator     : c_binary_tree_iterator;     -- iter√°tor
       item         : p_item;                     -- uzel stromu
 
     begin
-      -- zru®it v®echny kl°áe a hodnoty
+      -- zru≈°it v≈°echny kl√≠ƒçe a hodnoty
       iterator.init(tree,ttwd_inv_infix); 
       while iterator.get(item) loop
         p_dictionary_tree_node(item)^.discard_fields(what);
         end loop;
 
-      -- zru®it uzly stromu
+      -- zru≈°it uzly stromu
       tree.delete_all;
       end delete_all;
 
@@ -134,10 +134,10 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static remove_all =
-    -- Vyáist° slovn°k
+    -- Vyƒçist√≠ slovn√≠k
     ------------------------------------------------------------------------------------------------
     begin
-      -- zru®it uzly stromu
+      -- zru≈°it uzly stromu
       tree.delete_all;
       end remove_all;
 
@@ -145,23 +145,23 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static insert_row =
-    -- P©id† do slovn°ku dvojici [key,item]
-    -- Pokud uë [key] ve slovn°ku existuje, vyvol† vòjimku [dictionary_error]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,item]
+    -- Pokud u≈æ [key] ve slovn√≠ku existuje, vyvol√° v√Ωjimku [dictionary_error]
     ------------------------------------------------------------------------------------------------
     var
-      node         : p_dictionary_tree_node;     -- vkl†danò uzel stromu
+      node         : p_dictionary_tree_node;     -- vkl√°dan√Ω uzel stromu
 
     begin
-      -- pokud uë kl°á ve stromà existuje, skonáit na vòjimku
+      -- pokud u≈æ kl√≠ƒç ve stromƒõ existuje, skonƒçit na v√Ωjimku
       if find_row(key)<>nil then
         raise dictionary_error;
         end if;
 
-      -- vyvo©it a inicializovat uzel
+      -- vyvo≈ôit a inicializovat uzel
       new node;
       node^.init(key,value);
 
-      -- vloëit uzel
+      -- vlo≈æit uzel
       tree.insert(node);
       end insert_row;
 
@@ -169,22 +169,22 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static delete_row =
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku, kl°á i jeho hodnotu uvoln° z pamàti.
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku, kl√≠ƒç i jeho hodnotu uvoln√≠ z pamƒõti.
     ------------------------------------------------------------------------------------------------
     var
-      tmp_item     : aliased c_dictionary_tree_node; -- pomocnò uzel stromu
-      node         : p_dictionary_tree_node;         -- mazanò uzel
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocn√Ω uzel stromu
+      node         : p_dictionary_tree_node;         -- mazan√Ω uzel
 
     begin
-      -- inicializovat pomocnò uzel stromu
+      -- inicializovat pomocn√Ω uzel stromu
       tmp_item.init(key,nil);
 
-      -- naj°t vymaz†vanò uzel
+      -- naj√≠t vymaz√°van√Ω uzel
       node:=tree.find(^tmp_item);
 
-      -- provÇst vòmaz
+      -- prov√©st v√Ωmaz
       if node<>nil then 
-        -- uvolnit kl°á a hodnotu
+        -- uvolnit kl√≠ƒç a hodnotu
         node^.discard_fields(what);
 
         -- vymazat uzel stromu
@@ -196,10 +196,10 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static remove_row =
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku, kl°á a jeho hodnotu neuvoln° z pamàti.
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku, kl√≠ƒç a jeho hodnotu neuvoln√≠ z pamƒõti.
     ------------------------------------------------------------------------------------------------
     begin
-      -- provÇst vòmaz
+      -- prov√©st v√Ωmaz
       delete_row(key,ddm_none);
       end remove_row;
 
@@ -207,20 +207,20 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static find_row =
-    -- Najde hodnotu kl°áe ve slovn°ku.
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku.
     ------------------------------------------------------------------------------------------------
     var
-      tmp_item     : aliased c_dictionary_tree_node; -- pomocnò uzel stromu
-      tmp_res      : p_dictionary_tree_node;     -- vòsledek
+      tmp_item     : aliased c_dictionary_tree_node; -- pomocn√Ω uzel stromu
+      tmp_res      : p_dictionary_tree_node;     -- v√Ωsledek
 
     begin
-      -- inicializovat pomocnò uzel stromu
+      -- inicializovat pomocn√Ω uzel stromu
       tmp_item.init(key,nil);
 
-      -- naj°t vòslednou hodnotu
+      -- naj√≠t v√Ωslednou hodnotu
       tmp_res:=tree.find(^tmp_item);
 
-      -- pokud byl nalezen spr†vnò uzel, zj°stit vòsledek
+      -- pokud byl nalezen spr√°vn√Ω uzel, zj√≠stit v√Ωsledek
       if tmp_res<>nil then 
         result:=tmp_res^.value;
         end if;
@@ -241,10 +241,10 @@ class private c_dictionary =
 
     ------------------------------------------------------------------------------------------------
     exit =
-    -- uvolnàn° pamàti
+    -- uvolnƒõn√≠ pamƒõti
     ------------------------------------------------------------------------------------------------
     begin
-      -- smaëe uzlu stromu
+      -- sma≈æe uzlu stromu
       tree.delete_all;
       end exit;
 
@@ -254,19 +254,19 @@ class private c_dictionary =
 
 ----------------------------------------------------------------------------------------------------
 class c_string_dictionary_key = extend c_dictionary_key;
--- ûetàzcovò kl°á do slovn°ku
+-- ≈òetƒõzcov√Ω kl√≠ƒç do slovn√≠ku
 ----------------------------------------------------------------------------------------------------
 
     var
-      value        : p_char32ustr;               -- hodnota kl°áe
+      value        : p_char32ustr;               -- hodnota kl√≠ƒçe
 
     ------------------------------------------------------------------------------------------------
     static init (
-        val        : in t_char32ustr) =          -- hodnota kl°áe
+        val        : in t_char32ustr) =          -- hodnota kl√≠ƒçe
     -- inicializace
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it a inicializovat
+      -- vytvo≈ôit a inicializovat
       new this.value range val:length;
       this.value^:=val;
       end init;
@@ -278,19 +278,19 @@ class c_string_dictionary_key = extend c_dictionary_key;
     -- returns 1 if [other]>[this], -1 of [other]<[this], 0 if [this] is [other]
     ------------------------------------------------------------------------------------------------
     begin
-      -- porovn†n° ©etàzcñ
+      -- porovn√°n√≠ ≈ôetƒõzc≈Ø
       if p_string_dictionary_key(other)^.value^<value^ then 
         result:=kct_smaller;
         return;
         end if;
 
-      -- porovn†n° ©etàzcñ
+      -- porovn√°n√≠ ≈ôetƒõzc≈Ø
       if p_string_dictionary_key(other)^.value^>value^ then 
         result:=kct_bigger;
         return;
         end if;
 
-      -- ©etàzce jsou si rovny
+      -- ≈ôetƒõzce jsou si rovny
       result:=kct_equal;
       end compare;
 
@@ -298,7 +298,7 @@ class c_string_dictionary_key = extend c_dictionary_key;
 
     ------------------------------------------------------------------------------------------------
     exit =
-    -- uvolnàn° pamàti
+    -- uvolnƒõn√≠ pamƒõti
     ------------------------------------------------------------------------------------------------
     begin
       -- uvolnit
@@ -311,46 +311,46 @@ class c_string_dictionary_key = extend c_dictionary_key;
 
 ----------------------------------------------------------------------------------------------------
 class private c_string_dictionary =
--- Slovn°k s ©etàzcovòmi kl°ái
+-- Slovn√≠k s ≈ôetƒõzcov√Ωmi kl√≠ƒçi
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static insert_value =
-    -- P©id† do slovn°ku dvojici [key,value]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,value]
     ------------------------------------------------------------------------------------------------
     var
-      sk           : p_string_dictionary_key;    -- pomocnò z†znam pro kl°á
+      sk           : p_string_dictionary_key;    -- pomocn√Ω z√°znam pro kl√≠ƒç
 
     begin
-      -- vytvo©it kl°á
+      -- vytvo≈ôit kl√≠ƒç
       new sk;
       sk^.init(key);
 
-      -- vloëit
+      -- vlo≈æit
       insert_row(sk,value);
 
-      -- vloëen°m p©ejde zopovàdnost za zru®en° kl°áe na slovn°k, proto ë†dnÇ discard
+      -- vlo≈æen√≠m p≈ôejde zopovƒõdnost za zru≈°en√≠ kl√≠ƒçe na slovn√≠k, proto ≈æ√°dn√© discard
       end insert_value;
 
 
 
     ------------------------------------------------------------------------------------------------
     static delete_value =
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku
     ------------------------------------------------------------------------------------------------
     var
-      sk           : p_string_dictionary_key;    -- pomocnò z†znam pro kl°á
+      sk           : p_string_dictionary_key;    -- pomocn√Ω z√°znam pro kl√≠ƒç
 
     begin
-      -- vytvo©it kl°á
+      -- vytvo≈ôit kl√≠ƒç
       new sk;
       sk^.init(key);
 
-      -- vymazat kl°á a jeho hodnotu
+      -- vymazat kl√≠ƒç a jeho hodnotu
       delete_row(sk,what);
 
     leave
-      -- uvolnit pamàt
+      -- uvolnit pamƒõt
       discard sk;
       end delete_value;
 
@@ -358,21 +358,21 @@ class private c_string_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static find_value =
-    -- Najde hodnotu kl°áe ve slovn°ku
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku
     ------------------------------------------------------------------------------------------------
     var
-      sk           : p_string_dictionary_key;    -- pomocnò z†znam pro kl°á
+      sk           : p_string_dictionary_key;    -- pomocn√Ω z√°znam pro kl√≠ƒç
 
     begin
-      -- vytvo©it kl°á
+      -- vytvo≈ôit kl√≠ƒç
       new sk;
       sk^.init(key);
 
-      -- naj°t hodnotu p©°slu®nou ke kl°ái
+      -- naj√≠t hodnotu p≈ô√≠slu≈°nou ke kl√≠ƒçi
       result:=find_row(sk);
 
     leave
-      -- uvolnit pamàt
+      -- uvolnit pamƒõt
       discard sk;
       end find_value;
 
@@ -382,7 +382,7 @@ class private c_string_dictionary =
     exit =
     ------------------------------------------------------------------------------------------------
     begin
-      -- uvolnit kl°áe
+      -- uvolnit kl√≠ƒçe
       delete_all(ddm_key);
       end exit;
 
@@ -392,19 +392,19 @@ class private c_string_dictionary =
 
 ----------------------------------------------------------------------------------------------------
 class c_string_dictionary_value = extend c_dictionary_value;
--- Kontejner na hodnotu kl°áe.
+-- Kontejner na hodnotu kl√≠ƒçe.
 ----------------------------------------------------------------------------------------------------
 
     var
-      value        : p_char32ustr;               -- vlastn° hodnota
+      value        : p_char32ustr;               -- vlastn√≠ hodnota
 
     ------------------------------------------------------------------------------------------------
     static init (
-        val        : in t_char32ustr) =          -- hodnota kl°áe
+        val        : in t_char32ustr) =          -- hodnota kl√≠ƒçe
     -- inicializace
     ------------------------------------------------------------------------------------------------
     begin
-      -- vytvo©it dynamickò ©etàzec
+      -- vytvo≈ôit dynamick√Ω ≈ôetƒõzec
       new this.value range val:length;
 
       -- inicializovat obsah
@@ -415,10 +415,10 @@ class c_string_dictionary_value = extend c_dictionary_value;
 
     ------------------------------------------------------------------------------------------------
     exit =
-    -- Uvolnàn°
+    -- Uvolnƒõn√≠
     ------------------------------------------------------------------------------------------------
     begin
-      -- uvolnit vlastn° kl°á
+      -- uvolnit vlastn√≠ kl√≠ƒç
       discard value;
       end exit;
 
@@ -428,24 +428,24 @@ class c_string_dictionary_value = extend c_dictionary_value;
 
 ----------------------------------------------------------------------------------------------------
 class private c_string_string_dictionary =
--- Slovn°k s ©etàzcovòmi kl°ái a ©etàzcovòmi hodnotami
+-- Slovn√≠k s ≈ôetƒõzcov√Ωmi kl√≠ƒçi a ≈ôetƒõzcov√Ωmi hodnotami
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static insert =
-    -- P©id† do slovn°ku dvojici [key,item]
+    -- P≈ôid√° do slovn√≠ku dvojici [key,item]
     ------------------------------------------------------------------------------------------------
     var
       val          : p_string_dictionary_value;  -- hodnota
 
     begin
-      -- vytvo©it pomocnou instanci
+      -- vytvo≈ôit pomocnou instanci
       new val;
   
       -- inicializovat hodnotu
       val^.init(value);
 
-      -- vloëit hodnotu
+      -- vlo≈æit hodnotu
       insert_value(key,val);
       end insert;
 
@@ -453,16 +453,16 @@ class private c_string_string_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static find =
-    -- Najde hodnotu kl°áe ve slovn°ku
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku
     ------------------------------------------------------------------------------------------------
     var
-      res          : p_string_dictionary_value;  -- vòslen† hodnota
+      res          : p_string_dictionary_value;  -- v√Ωslen√° hodnota
 
     begin
-      -- zjistit hodnotu kl°áe
+      -- zjistit hodnotu kl√≠ƒçe
       res:=find_value(key);
 
-      -- kl°á se povedlo nalÇzt => p©ekop°rovat vòslednou hodnotu
+      -- kl√≠ƒç se povedlo nal√©zt => p≈ôekop√≠rovat v√Ωslednou hodnotu
       if res<>nil then 
         result:=res^.value^;
         end if;
@@ -472,21 +472,21 @@ class private c_string_string_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static search =
-    -- Najde hodnotu kl°áe ve slovn°ku, vr†t°, zda byl kl°á nalezen
+    -- Najde hodnotu kl√≠ƒçe ve slovn√≠ku, vr√°t√≠, zda byl kl√≠ƒç nalezen
     ------------------------------------------------------------------------------------------------
     var
-      res          : p_string_dictionary_value;  -- vòslen† hodnota
+      res          : p_string_dictionary_value;  -- v√Ωslen√° hodnota
 
     begin
-      -- zjistit hodnotu kl°áe
+      -- zjistit hodnotu kl√≠ƒçe
       res:=find_value(key);
 
-      -- kl°á se nepovedlo nalÇzt => ozn†mit
+      -- kl√≠ƒç se nepovedlo nal√©zt => ozn√°mit
       if res=nil then 
         result:=false;
 
       else
-        -- ozn†mit, ëe se kl°á povedlo nalÇzt a vr†tit jeho hodnotu
+        -- ozn√°mit, ≈æe se kl√≠ƒç povedlo nal√©zt a vr√°tit jeho hodnotu
         value:=res^.value^;
         result:=true;
         end if;
@@ -496,10 +496,10 @@ class private c_string_string_dictionary =
 
     ------------------------------------------------------------------------------------------------
     static delete =
-    -- Vymaëe kl°á a jeho hodnotu ze slovn°ku
+    -- Vyma≈æe kl√≠ƒç a jeho hodnotu ze slovn√≠ku
     ------------------------------------------------------------------------------------------------
     begin
-      -- provÇst vòmaz
+      -- prov√©st v√Ωmaz
       delete_value(key,ddm_both);
       end delete;
 
@@ -509,7 +509,7 @@ class private c_string_string_dictionary =
     exit =
     ------------------------------------------------------------------------------------------------
     begin
-      -- uvolnit v®e
+      -- uvolnit v≈°e
       delete_all(ddm_both);
       end exit;
 

@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public structures =
 -- Common utility declarations reused in different parts of the SMPL.
 -- Flex Standard Library
@@ -12,14 +12,14 @@ type
      tlwd_backward;                              -- from the last item to the first
      end enum;
 
-  -- ©°zen° po©ad° uzlñ p©i proch†zen° stromem
+  -- ≈ô√≠zen√≠ po≈ôad√≠ uzl≈Ø p≈ôi proch√°zen√≠ stromem
   t_tree_walking_direction = enum
-      ttwd_prefix;                               -- uzel -> levò -> pravò
-      ttwd_inv_prefix;                           -- uzel -> pravò -> levò
-      ttwd_postfix;                              -- levò -> pravò -> uzel
-      ttwd_inv_postfix;                          -- pravò -> levò -> uzel
-      ttwd_infix;                                -- levò -> uzel -> pravò, jen pro bin†rn° strom
-      ttwd_inv_infix;                            -- pravò -> uzel -> levò, jen pro bin†rn° strom
+      ttwd_prefix;                               -- uzel -> lev√Ω -> prav√Ω
+      ttwd_inv_prefix;                           -- uzel -> prav√Ω -> lev√Ω
+      ttwd_postfix;                              -- lev√Ω -> prav√Ω -> uzel
+      ttwd_inv_postfix;                          -- prav√Ω -> lev√Ω -> uzel
+      ttwd_infix;                                -- lev√Ω -> uzel -> prav√Ω, jen pro bin√°rn√≠ strom
+      ttwd_inv_infix;                            -- prav√Ω -> uzel -> lev√Ω, jen pro bin√°rn√≠ strom
       end enum;
   t_tree_walking_direction_set = set of t_tree_walking_direction;
 
@@ -29,6 +29,6 @@ type
 
 message
   list_error       : exception;                  -- raised when an error occurs during manipulation with the list
-  tree_error       : exception;                  -- chyba p©i pr†ci se stromy
+  tree_error       : exception;                  -- chyba p≈ôi pr√°ci se stromy
 
 end structures;

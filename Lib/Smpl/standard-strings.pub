@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public strings =
 -- Character strings' manipulation.
 -- Flex Standard Library
@@ -175,7 +175,7 @@ procedure str_separate (
 --
 -- Result:
 {
---   Tenhle podprogram bude uráità muset nàjak vy©e®it velikost vr†cenÇho pole
+--   Tenhle podprogram bude urƒçitƒõ muset nƒõjak vy≈ôe≈°it velikost vr√°cen√©ho pole
 }
 --   This subprogram always succeeds.
 ----------------------------------------------------------------------------------------------------

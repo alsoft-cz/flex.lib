@@ -1,4 +1,4 @@
----------------------------------------------------------------------------------------------------
+Ôªø---------------------------------------------------------------------------------------------------
 module public files =
 -- Files.
 -- Flex Standard Library
@@ -410,7 +410,7 @@ class public c_drive = extend c_filesystem_object;
     static unmount; 
     -- Unmounts the drive. On system which does not support unmounting it simulates the unmount and 
     -- then the drive will behave as unmounted for our application.
-    -- %%TODO to je ale nàjakò divnò
+    -- %%TODO to je ale nƒõjak√Ω divn√Ω
     ------------------------------------------------------------------------------------------------
 
     end c_drive;

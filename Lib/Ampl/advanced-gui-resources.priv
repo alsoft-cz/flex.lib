@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module private resources =
 -- GUI system resources wraper.
 -- Advanced Multi-platform Library.
@@ -62,8 +62,8 @@ class private c_resource_manager =
       fonts        : c_resource_list;
 
     ------------------------------------------------------------------------------------------------
-    -- %% TODO aë budou tagy tak se v®echny resourcy budou vytv†©e p©es tenhle jeden create_resource
-    -- moën†
+    -- %% TODO a≈æ budou tagy tak se v≈°echny resourcy budou vytv√°≈ôe p≈ôes tenhle jeden create_resource
+    -- mo≈æn√°
     --static create_resource =
     -- Creates resource and inserts it into appropriate list of resources .
     ------------------------------------------------------------------------------------------------

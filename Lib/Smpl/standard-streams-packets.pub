@@ -1,5 +1,5 @@
-type
-  -- typ pro unchecked data v datovòch proudech a uloëi®t°ch
+Ôªøtype
+  -- typ pro unchecked data v datov√Ωch proudech a ulo≈æi≈°t√≠ch
   t_data_byte      = protected mod unsigned 8;
   t_data_string    = string of aliased t_data_byte;
   t_data_array     = array of aliased t_data_byte;

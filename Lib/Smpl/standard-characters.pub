@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public characters =
 -- Character manipulation for different code page standards (ASCII, UNICODE, ISO 10646)
 -- Flex Standard Library                                   
@@ -284,20 +284,20 @@ class public abstract c_text_writer =
   virtual abstract close;
   ------------------------------------------------------------------------------------------------
   virtual abstract write_char(
-      text         : in t_char32);             -- zapisovanò znak
+      text         : in t_char32);             -- zapisovan√Ω znak
   -- zapisuje text
   ------------------------------------------------------------------------------------------------
   virtual abstract write(
-      text         : in t_char32ustr);         -- zapisovanò text
+      text         : in t_char32ustr);         -- zapisovan√Ω text
   -- zapisuje text
   ------------------------------------------------------------------------------------------------
   virtual abstract write_first(
-      text         : in t_char32ustr;          -- zapisovanò text
+      text         : in t_char32ustr;          -- zapisovan√Ω text
       count        : in t_unsigned);
   -- zapisuje text, prvnich count znaku
   ------------------------------------------------------------------------------------------------
   virtual abstract write_line(
-      text         : in t_char32ustr);         -- zapisovanò text
+      text         : in t_char32ustr);         -- zapisovan√Ω text
   -- zapisuje text
   ------------------------------------------------------------------------------------------------
   static write_fill(
@@ -317,7 +317,7 @@ class public abstract c_text_reader =
   virtual abstract close;
   ------------------------------------------------------------------------------------------------
   virtual abstract read_char(
-      text         : out t_char32)               -- átenò znak
+      text         : out t_char32)               -- ƒçten√Ω znak
       return t_logical;
   -- cte znak
   -- returns eod - false  - valid data
@@ -325,7 +325,7 @@ class public abstract c_text_reader =
   ------------------------------------------------------------------------------------------------
   { %%TODO
   virtual abstract read_array(
-      text         : out t_char32uarray;               -- átenò znaky
+      text         : out t_char32uarray;               -- ƒçten√Ω znaky
       size         : in out t_unsigned);
       return t_logical;
   -- cte znaky
@@ -334,14 +334,14 @@ class public abstract c_text_reader =
   }
   ------------------------------------------------------------------------------------------------
   virtual abstract read(
-      text         : out t_char32ustr)           -- naátenò ©etàzec
+      text         : out t_char32ustr)           -- naƒçten√Ω ≈ôetƒõzec
       return t_logical;
   -- cte text
   -- returns eod - false  - valid data
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   virtual abstract read_first(
-      text         : out t_char32ustr;           -- naátenò ©etàzec
+      text         : out t_char32ustr;           -- naƒçten√Ω ≈ôetƒõzec
       count        : in t_unsigned)
       return t_logical;
   -- cte text
@@ -349,7 +349,7 @@ class public abstract c_text_reader =
   --               true   - valid data, end of data
   ------------------------------------------------------------------------------------------------
   virtual abstract read_line(
-      text         : out t_char32ustr)           -- naátenò ©etàzec
+      text         : out t_char32ustr)           -- naƒçten√Ω ≈ôetƒõzec
       return t_logical;
   -- cte radek do konce (LF)
   -- zahazuje znaky CR a LF

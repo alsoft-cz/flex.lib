@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public state_machine =
 -- A universal state machine.
 -- Flex Standard Library
@@ -26,7 +26,7 @@ class public c_state = extend c_trigger_container;
 -- A single state of the state machine.
 ----------------------------------------------------------------------------------------------------
 -- A state of a state machine is identified by an instance of the [c_state] class (or any of its
--- descendants). Informace o moënòch p©echodech jsou ale drëeny KA.
+-- descendants). Informace o mo≈æn√Ωch p≈ôechodech jsou ale dr≈æeny KA.
 --   A state is entered when it becomes the current state within a state machine and it is left,
 -- when another state becomes the current state. When a state is entered, [event_enter_state] is 
 -- signaled. Similarly, when a state is left, [event_leave_state] is signaled.
@@ -39,10 +39,10 @@ class public c_state = extend c_trigger_container;
   {%%TODO(SUPERVISED) supervised}
     ------------------------------------------------------------------------------------------------
     virtual leave_state;
-    -- Vol† uëivatelskou sekvenci p©°kazñ spojenou s vòstupem ze stavu.
+    -- Vol√° u≈æivatelskou sekvenci p≈ô√≠kaz≈Ø spojenou s v√Ωstupem ze stavu.
     ------------------------------------------------------------------------------------------------
     virtual enter_state;
-    -- Vol† uëivatelskou sekvenci p©°kazñ spojenou se vstupem do stavu.
+    -- Vol√° u≈æivatelskou sekvenci p≈ô√≠kaz≈Ø spojenou se vstupem do stavu.
     ------------------------------------------------------------------------------------------------
 
     end c_state;
@@ -127,9 +127,9 @@ class public c_state_machine = extend c_trigger_container;
 
     ------------------------------------------------------------------------------------------------
     static add_transition (
-        from_state : in p_state;                 -- poá†tek p©echodu
-        to_state   : in p_state;                 -- konec p©echodu
-        check      : in p_transition_check);     -- zda je p©echod vykonavatelnò
+        from_state : in p_state;                 -- poƒç√°tek p≈ôechodu
+        to_state   : in p_state;                 -- konec p≈ôechodu
+        check      : in p_transition_check);     -- zda je p≈ôechod vykonavateln√Ω
     -- Defines a new transition from [from_state] to another state [to_state].
     -- The transition can be performed only when then transition allowance check [check] returns 
     -- True, otherwise it is forbidden to perform the transition.
@@ -137,8 +137,8 @@ class public c_state_machine = extend c_trigger_container;
     -- transition allowance check), [event_error] is signaled.
     ------------------------------------------------------------------------------------------------
     static remove_transition (
-        from_state : in p_state;                 -- poá†tek p©echodu
-        to_state   : in p_state);                -- konec p©echodu
+        from_state : in p_state;                 -- poƒç√°tek p≈ôechodu
+        to_state   : in p_state);                -- konec p≈ôechodu
     -- Removes a transition from [from_state] to another state [to_state].
     -- The transition have had to be defined via the [add_transition] method before, otherwise
     -- [event_error] is signaled.
@@ -150,8 +150,8 @@ class public c_state_machine = extend c_trigger_container;
     ------------------------------------------------------------------------------------------------
     static remove_state (
         state      : in p_state);                -- state to be removed from the state machine
-    -- Smaëe stav z KA a v®echny p©echody, kterÇ jsou s n°m spojeny. Pokud se m† smazat aktivn° stav
-    -- KA [current_state], je signalizov†n [event_error].
+    -- Sma≈æe stav z KA a v≈°echny p≈ôechody, kter√© jsou s n√≠m spojeny. Pokud se m√° smazat aktivn√≠ stav
+    -- KA [current_state], je signalizov√°n [event_error].
     -- The state have had to be added to the state machine via the [add_state] method before, 
     -- otherwise [event_error] is signaled.
     ------------------------------------------------------------------------------------------------
@@ -219,12 +219,12 @@ class public c_state_machine = extend c_trigger_container;
       -- state description
       t_state      = record
           state       : p_state;                 -- source state of this transition
-          transitions : ^string of t_transition; -- seznam p©echodñ z tohoto stavu
+          transitions : ^string of t_transition; -- seznam p≈ôechod≈Ø z tohoto stavu
           end record;
 
     var
       -- list of all states of this state machine
-      states       : ^string of t_state;         -- seznam stavñ v KA
+      states       : ^string of t_state;         -- seznam stav≈Ø v KA
 
     ------------------------------------------------------------------------------------------------
     static check_state (
@@ -235,29 +235,29 @@ class public c_state_machine = extend c_trigger_container;
     static find_state (
         state      : in p_state)                 -- stav v KA
         return t_unsigned;
-    -- Vrac° index stavu v ©etàzci stavñ. Pokud ë†dnò stav v KA neexistuje - nebyl nalezen, metoda 
-    -- vr†t° hodnotu 0.
+    -- Vrac√≠ index stavu v ≈ôetƒõzci stav≈Ø. Pokud ≈æ√°dn√Ω stav v KA neexistuje - nebyl nalezen, metoda 
+    -- vr√°t√≠ hodnotu 0.
     ------------------------------------------------------------------------------------------------
     static find_transition (
-        i_from_state : in t_unsigned;            -- index na poá†tek p©echodu
-        to_state     : in p_state)               -- konec p©echodu
+        i_from_state : in t_unsigned;            -- index na poƒç√°tek p≈ôechodu
+        to_state     : in p_state)               -- konec p≈ôechodu
         return t_unsigned;
-    -- Vr†t° index p©echodu, kterò je uráen pozic° p©echodu ve stavu, kde p©echod zaá°n† a stavem,
-    -- do kterÇho se m† p©echod dostat. Pokud p©echod nen° nalezen nebo pokud nen° nalezen stav,
-    -- z kterÇho nebo do kterÇho by màl p©echod konáit, vrac° se hodnota 0 - p©echod nenalezen.
+    -- Vr√°t√≠ index p≈ôechodu, kter√Ω je urƒçen pozic√≠ p≈ôechodu ve stavu, kde p≈ôechod zaƒç√≠n√° a stavem,
+    -- do kter√©ho se m√° p≈ôechod dostat. Pokud p≈ôechod nen√≠ nalezen nebo pokud nen√≠ nalezen stav,
+    -- z kter√©ho nebo do kter√©ho by mƒõl p≈ôechod konƒçit, vrac√≠ se hodnota 0 - p≈ôechod nenalezen.
     ------------------------------------------------------------------------------------------------
     static enter_state;
-    -- Vol† ud†losti spojenÇ se vstupem do stavu.
+    -- Vol√° ud√°losti spojen√© se vstupem do stavu.
     ------------------------------------------------------------------------------------------------
     static leave_state;
-    -- Vol† ud†losti spojenÇ s vòstupem ze stavu.
+    -- Vol√° ud√°losti spojen√© s v√Ωstupem ze stavu.
     ------------------------------------------------------------------------------------------------
     static find_transition_to_perform (
         i_state    : in t_unsigned)              -- index stavu
         return t_unsigned;
-    -- Vrac° index p©echodu, jenë se mñëe vykonat. Pokud ë†dnò p©echod nen° nalezen nebo pokud 
-    -- existuje v°c neë dva p©echody, jimië se lze dostat dal®°ho stavu, 
-    -- vrac° se hodnota 0 - p©echod nenalezen.
+    -- Vrac√≠ index p≈ôechodu, jen≈æ se m≈Ø≈æe vykonat. Pokud ≈æ√°dn√Ω p≈ôechod nen√≠ nalezen nebo pokud 
+    -- existuje v√≠c ne≈æ dva p≈ôechody, jimi≈æ se lze dostat dal≈°√≠ho stavu, 
+    -- vrac√≠ se hodnota 0 - p≈ôechod nenalezen.
     ------------------------------------------------------------------------------------------------
 
     end c_state_machine;

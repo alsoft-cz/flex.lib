@@ -1,4 +1,4 @@
-
+Ôªø
 ----------------------------------------------------------------------------------------------------
 module unix =
 -- Unix System Call Library (Linux, FreeBSD, OpenBSD, NetBSD)
@@ -2401,7 +2401,7 @@ const
 -- CONFORMING TO
 -- NOTES
 
--- p©ed†v†n° parametrñ:
+-- p≈ôed√°v√°n√≠ parametr≈Ø:
 -- syscall1(edx)
 -- syscall3(ebx,ecx,edx)
 
@@ -2458,16 +2458,16 @@ begin
       mov   eax,nr_sys_fork                    -- kernel syscall "create a new process"
       int   $80                                -- call to kernel
   #end asm;
-  -- standardn° obsluha chyby po vol†n° sluëby j†dra
+  -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
   #syntax asm;
   cmp  eax,$fffff001       -- nastala chyba?
   jc   @1                  -- ne, nenastala
   -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-  mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+  mov  error,eax           -- p≈ôedat k√≥d chyby ven
   jmp  @0
-  -- nen° chyba
-@1: mov  pid,eax             -- vpo©†dku
+  -- nen√≠ chyba
+@1: mov  pid,eax             -- vpo≈ô√°dku
   mov  error,err_ok        -- bez chyby
 @0: #end asm;
   end sys_fork;
@@ -2486,18 +2486,18 @@ begin
     mov  edx,mode
     mov  ecx,flags
     mov  ebx,fname
-    mov  eax,nr_sys_open     -- systÇmov† sluëba "open"
+    mov  eax,nr_sys_open     -- syst√©mov√° slu≈æba "open"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  error,eax           -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
+    -- nen√≠ chyba
 @1: mov  xresult,eax
     mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
@@ -2517,18 +2517,18 @@ var
 begin
     #syntax asm;
     mov  ebx,d
-    mov  eax,nr_sys_close    -- systÇmov† sluëba "close"
+    mov  eax,nr_sys_close    -- syst√©mov√° slu≈æba "close"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra (jen k¢d chyby)
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra (jen k√≥d chyby)
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  error,eax           -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
+    -- nen√≠ chyba
 @1: mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
     error:=xerror;
@@ -2545,22 +2545,22 @@ var
 
 begin
     #syntax asm;
-    mov  edx,nbytes          -- poëadovanò poáet bytñ
+    mov  edx,nbytes          -- po≈æadovan√Ω poƒçet byt≈Ø
     mov  ecx,buf             -- buffer na data
     mov  ebx,d               -- deskriptor souboru
-    mov  eax,nr_sys_read     -- systÇmov† sluëba "read"
+    mov  eax,nr_sys_read     -- syst√©mov√° slu≈æba "read"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  error,eax           -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
-@1: mov  xresult,eax         -- vpo©†dku
+    -- nen√≠ chyba
+@1: mov  xresult,eax         -- vpo≈ô√°dku
     mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
     result:=xresult;
@@ -2578,22 +2578,22 @@ var
 
 begin
     #syntax asm;
-    mov  edx,whence          -- vòznam £daje OFS
-    mov  ecx,ofs             -- nov† poloha p©°®t°ho áten°/z†pisu
+    mov  edx,whence          -- v√Ωznam √∫daje OFS
+    mov  ecx,ofs             -- nov√° poloha p≈ô√≠≈°t√≠ho ƒçten√≠/z√°pisu
     mov  ebx,d               -- deskriptor souboru
-    mov  eax,nr_sys_lseek    -- systÇmov† sluëba "lseek"
+    mov  eax,nr_sys_lseek    -- syst√©mov√° slu≈æba "lseek"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  error,eax           -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
-@1: mov  xresult,eax         -- vpo©†dku
+    -- nen√≠ chyba
+@1: mov  xresult,eax         -- vpo≈ô√°dku
     mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
     result:=xresult;
@@ -2615,18 +2615,18 @@ begin
     mov  edx,nbytes          -- number of bytes to write
     mov  ecx,buf             -- buffer s daty
     mov  ebx,d               -- file/object descriptor
-    mov  eax,nr_sys_write    -- systÇmov† sluëba "write"
+    mov  eax,nr_sys_write    -- syst√©mov√° slu≈æba "write"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  xerror,eax          -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  xerror,eax          -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
+    -- nen√≠ chyba
 @1: mov  xresult,eax
     mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
@@ -2661,7 +2661,7 @@ type
     #end if;
   #end if;
     offset : tsys_off;
-    end record for alignment use 4; { %%X: Ovà©it velikost z†znamu }
+    end record for alignment use 4; { %%X: Ovƒõ≈ôit velikost z√°znamu }
 var
   mmap_arg_struct : tmmap_arg_struct;
   xerror       : tsys_int;       { <--- %%FLEX: zaplata!, nefunguje mov [???],eax }
@@ -2680,18 +2680,18 @@ begin
     mmap_arg_struct.offset:=off;
     #syntax asm;
     lea  ebx,mmap_arg_struct
-    mov  eax,nr_sys_mmap     -- systÇmov† sluëba "mmap"
+    mov  eax,nr_sys_mmap     -- syst√©mov√° slu≈æba "mmap"
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  xerror,eax          -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  xerror,eax          -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
+    -- nen√≠ chyba
 @1: mov  xresult,eax
     mov  xerror,err_ok       -- bez chyby
 @0: #end asm;
@@ -2710,19 +2710,19 @@ begin
   ----------------------------------------------------------------------------
   begin
     #syntax asm;
-    mov  eax,sys_acct        -- systÇmov† sluëba "acct"
-    mov  edx,filename        -- adresa, kde je uloëeno jmÇno souboru
+    mov  eax,sys_acct        -- syst√©mov√° slu≈æba "acct"
+    mov  edx,filename        -- adresa, kde je ulo≈æeno jm√©no souboru
     int  $80                 -- volat kernel
     #end asm;
-    -- standardn° obsluha chyby po vol†n° sluëby j†dra (jen k¢d chyby)
+    -- standardn√≠ obsluha chyby po vol√°n√≠ slu≈æby j√°dra (jen k√≥d chyby)
     #syntax asm;
     cmp  eax,$fffff001       -- nastala chyba?
     jc   @1                  -- ne, nenastala
     -- chyba
-@2: neg  eax                 -- normalizovat k¢d chyby
-    mov  error,eax           -- p©edat k¢d chyby ven
+@2: neg  eax                 -- normalizovat k√≥d chyby
+    mov  error,eax           -- p≈ôedat k√≥d chyby ven
     jmp  @0
-    -- nen° chyba
+    -- nen√≠ chyba
 @1: mov  error,err_ok        -- bez chyby
 @0: #end asm;
     end sys_acct;}

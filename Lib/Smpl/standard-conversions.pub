@@ -1,17 +1,17 @@
-----------------------------------------------------------------------------------------------------
+ï»¿----------------------------------------------------------------------------------------------------
 module public conversions =
 -- Miscellaneous conversion routines.
 -- Flex Standard Library
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
--- Vytvoøil 2003-04-15 Aleš
+-- VytvoÂ°il 2003-04-15 AleÃœ
 ----------------------------------------------------------------------------------------------------
 -- %%TODO Change return value to unconstrained string
 --
--- unsigned_to_string_primitive a signed_to_string_primitive pøedìlat na neomezenou délku èísla,
--- zveøejnit všechny funkce *_primitive.
+-- unsigned_to_string_primitive a signed_to_string_primitive pÂ°edâˆlat na neomezenou dÎ˜lku Î¦Ï†sla,
+-- zveÂ°ejnit vÃœechny funkce *_primitive.
 --
--- dodìlat rùzné varianty formátování.
+-- dodâˆlat râˆ™znÎ˜ varianty formÃŸtovÃŸnÏ†.
 ----------------------------------------------------------------------------------------------------
 
 with standard.strings;
@@ -20,7 +20,7 @@ message
   conversion_error extend numeric_error;         -- exception
 
 type
-  t_radix          = t_unsigned range 2..36;     -- základ èíselné soustavy 
+  t_radix          = t_unsigned range 2..36;     -- zÃŸklad Î¦Ï†selnÎ˜ soustavy 
 
   t_conversion_result = enum 
       tcres_ok;                                  -- no error                            
@@ -35,55 +35,55 @@ type
       end enum;
 
   t_oversize_mode  = enum
-      tom_error;                               -- vyhlásí se vıjimka
-      tom_full;                                -- èíslo se zobrazí na plnı poèet platnıch míst
-      tom_asterisk;                            -- zobrazí se pole hvìzdièek
+      tom_error;                               -- vyhlÃŸsÏ† se vÂ²jimka
+      tom_full;                                -- Î¦Ï†slo se zobrazÏ† na plnÂ² poÎ¦et platnÂ²ch mÏ†st
+      tom_asterisk;                            -- zobrazÏ† se pole hvâˆzdiÎ¦ek
       end enum;
 
   t_float_conversion = enum
-      tfc_sci;                                   -- exponenciální formát
-      tfc_fix;                                   -- pevnı poèet desetinnıch míst
-      tfc_eng;                                   -- exponenciální formát s exponentem dìlitelnım 3
-      tfc_prefix;                                -- s pøipojením prefixu fyzikální jednotky (m, k, G, ...)
+      tfc_sci;                                   -- exponenciÃŸlnÏ† formÃŸt
+      tfc_fix;                                   -- pevnÂ² poÎ¦et desetinnÂ²ch mÏ†st
+      tfc_eng;                                   -- exponenciÃŸlnÏ† formÃŸt s exponentem dâˆlitelnÂ²m 3
+      tfc_prefix;                                -- s pÂ°ipojenÏ†m prefixu fyzikÃŸlnÏ† jednotky (m, k, G, ...)
       end enum;
 
-  -- formátovací záznam pro celá èísla %%CZ
+  -- formÃŸtovacÏ† zÃŸznam pro celÃŸ Î¦Ï†sla %%CZ
   t_integer_format  = record
-      width        : t_unsigned := 0;            -- poèet míst pro zarovnání èísla       
-                                                 -- 0 urèuje automatickı formát
-      sign         : t_sign_mode := tsm_empty;   -- zpùsob zacházení s kladnım znaménkem
-      aligned      : t_logical := false;         -- True = znaménko (je-li uvedeno) je zcela vlevo
-                                                 -- False = znaménko je tìsnì pøed první èíslicí
-      fill         : t_char32 := " ";            -- vıplòovı znak 
-      oversize     : t_oversize_mode := tom_full;-- zpùsob zobrazení èísla, které se nevejde
-      radix        : t_radix := 10;              -- základ èísla
+      width        : t_unsigned := 0;            -- poÎ¦et mÏ†st pro zarovnÃŸnÏ† Î¦Ï†sla       
+                                                 -- 0 urÎ¦uje automatickÂ² formÃŸt
+      sign         : t_sign_mode := tsm_empty;   -- zpâˆ™sob zachÃŸzenÏ† s kladnÂ²m znamÎ˜nkem
+      aligned      : t_logical := false;         -- True = znamÎ˜nko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znamÎ˜nko je tâˆsnâˆ pÂ°ed prvnÏ† Î¦Ï†slicÏ†
+      fill         : t_char32 := " ";            -- vÂ²plâ‰¥ovÂ² znak 
+      oversize     : t_oversize_mode := tom_full;-- zpâˆ™sob zobrazenÏ† Î¦Ï†sla, kterÎ˜ se nevejde
+      radix        : t_radix := 10;              -- zÃŸklad Î¦Ï†sla
       end record;
 
-  --  záznam pro zpracování celého èísla %%CZ
+  --  zÃŸznam pro zpracovÃŸnÏ† celÎ˜ho Î¦Ï†sla %%CZ
   t_integer_parse  = record
-      radix        : t_radix := 10;              -- základ èísla
+      radix        : t_radix := 10;              -- zÃŸklad Î¦Ï†sla
       end record;
 
-  -- formátovací záznam pro floating-point èísla %%CZ
+  -- formÃŸtovacÏ† zÃŸznam pro floating-point Î¦Ï†sla %%CZ
   t_float_format   = record
-      width        : t_unsigned := 0;            -- poèet míst pro zarovnání èísla       
-      decimals     : t_unsigned := 0;            -- poèet desetinnıch míst
-      sign         : t_sign_mode :=tsm_empty;    -- zpùsob zacházení s kladnım znaménkem
-      aligned      : t_logical := false;         -- True = znaménko (je-li uvedeno) je zcela vlevo
-                                                 -- False = znaménko je tìsnì pøed první èíslicí
-      oversize     : t_oversize_mode := tom_error;   -- zpùsob zobrazení èísla, které se nevejde
+      width        : t_unsigned := 0;            -- poÎ¦et mÏ†st pro zarovnÃŸnÏ† Î¦Ï†sla       
+      decimals     : t_unsigned := 0;            -- poÎ¦et desetinnÂ²ch mÏ†st
+      sign         : t_sign_mode :=tsm_empty;    -- zpâˆ™sob zachÃŸzenÏ† s kladnÂ²m znamÎ˜nkem
+      aligned      : t_logical := false;         -- True = znamÎ˜nko (je-li uvedeno) je zcela vlevo
+                                                 -- False = znamÎ˜nko je tâˆsnâˆ pÂ°ed prvnÏ† Î¦Ï†slicÏ†
+      oversize     : t_oversize_mode := tom_error;   -- zpâˆ™sob zobrazenÏ† Î¦Ï†sla, kterÎ˜ se nevejde
       conversion   : t_float_conversion := tfc_sci;  -- typ formatovani
       end record;
 
-  -- záznam pro zpracování floating-point èísla %%CZ
+  -- zÃŸznam pro zpracovÃŸnÏ† floating-point Î¦Ï†sla %%CZ
   t_float_parse    = record
-      min          : t_extended;                 -- zatím nic
-      max          : t_extended;                 -- zatím nic
+      min          : t_extended;                 -- zatÏ†m nic
+      max          : t_extended;                 -- zatÏ†m nic
       end record;
 
 
 const
-  -- %%TODO konstanty zrušit a default hodnoty parametù pøedìlat na :value
+  -- %%TODO konstanty zruÃœit a default hodnoty parametâˆ™ pÂ°edâˆlat na :value
   c_integer_format_default : t_integer_format = [for radix use 10];
   c_float_format_default   : t_float_format= [];
   c_integer_parse_default : t_integer_parse = [for radix use 10];
@@ -94,38 +94,38 @@ const
 ----------------------------------------------------------------------------------------------------
 procedure unsigned_to_string (
     num            : in t_unsigned;              -- number to convert
-    format         : in t_integer_format := c_integer_format_default)  -- poadovanı formát èísla %%CZ
+    format         : in t_integer_format := c_integer_format_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
     return t_char32str;                          -- it's string representation
 ----------------------------------------------------------------------------------------------------
 procedure signed_to_string (
     num            : in t_signed;                -- number to convert
-    format         : in t_integer_format := c_integer_format_default)  -- poadovanı formát èísla %%CZ
+    format         : in t_integer_format := c_integer_format_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
     return t_char32str;                          -- it's string representation
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string (
-    num            : in t_extended;              -- èíslo které pøevést %%CZ
-    format         : in t_float_format := c_float_format_default)      -- poadovanı formát èísla %%CZ
-    return t_char32str;                          -- øetìzcová reprezentace
--- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 a + 10e18-1.
+    num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st %%CZ
+    format         : in t_float_format := c_float_format_default)      -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
+    return t_char32str;                          -- Â°etâˆzcovÃŸ reprezentace
+-- PÂ°evede zaokrouhlenou hodnotu NUM na Â°etâˆzec v rozsahu 0 aÅ˜ + 10e18-1.
 ----------------------------------------------------------------------------------------------------
 procedure string_to_unsigned (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_integer_parse := c_integer_parse_default)  -- poadovanı formát èísla %%CZ
+    parse          : in t_integer_parse := c_integer_parse_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
     return t_unsigned;
 ------------------------------------------------------------------------------
 procedure string_to_signed (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_integer_parse := c_integer_parse_default)  -- poadovanı formát èísla %%CZ
+    parse          : in t_integer_parse := c_integer_parse_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
     return t_signed;
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float (
     s              : in t_char32ustr;            -- string represetation of a value
-    parse          : in t_float_parse := c_float_parse_default)      -- poadovanı formát èísla %%CZ
+    parse          : in t_float_parse := c_float_parse_default)      -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
     return t_extended;
--- Pøevede celé èíslo v rozsahu 0 a + 10e18-1 na float point.
--- Øetìzec str 
---   - musí mít délku v rozsahu 1 a 18 znakù,
---   - nesmí obsahovat jiné znaky ne "0" az "9".
+-- PÂ°evede celÎ˜ Î¦Ï†slo v rozsahu 0 aÅ˜ + 10e18-1 na float point.
+-- â•ªetâˆzec str 
+--   - musÏ† mÏ†t dÎ˜lku v rozsahu 1 aÅ˜ 18 znakâˆ™,
+--   - nesmÏ† obsahovat jinÎ˜ znaky neÅ˜ "0" az "9".
 ----------------------------------------------------------------------------------------------------
 
 
@@ -169,20 +169,20 @@ procedure string_to_signed_primitive (
 -- representation. 
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float_primitive (
-    int            : in t_char32str;             -- celá èást mantisy 
-    frac           : in t_char32str;             -- desetinná èást mantisy
-    sign           : in t_logical;               -- znaménko èísla (TRUE = záporné)
+    int            : in t_char32str;             -- celÃŸ Î¦ÃŸst mantisy 
+    frac           : in t_char32str;             -- desetinnÃŸ Î¦ÃŸst mantisy
+    sign           : in t_logical;               -- znamÎ˜nko Î¦Ï†sla (TRUE = zÃŸpornÎ˜)
     exp            : in t_signed;                -- exponent 
-    num            : out t_extended);            -- pøevedené èíslo
--- Pøevede øetìzec na float point.
+    num            : out t_extended);            -- pÂ°evedenÎ˜ Î¦Ï†slo
+-- PÂ°evede Â°etâˆzec na float point.
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string_primitive (
-    num            : in t_extended;              -- èíslo které pøevést
-    int            : out t_char32str;            -- celá èást mantisy 
-    frac           : out t_char32str;            -- desetinná èást mantisy
-    sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
+    num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st
+    int            : out t_char32str;            -- celÃŸ Î¦ÃŸst mantisy 
+    frac           : out t_char32str;            -- desetinnÃŸ Î¦ÃŸst mantisy
+    sign           : out t_logical;              -- znamÎ˜nko Î¦Ï†sla (TRUE = zÃŸpornÎ˜)
     exp            : out t_signed);              -- exponent 
--- Pøevede NUM na øetìzec.
+-- PÂ°evede NUM na Â°etâˆzec.
 ----------------------------------------------------------------------------------------------------
 
 
@@ -198,7 +198,7 @@ procedure float_to_string_primitive (
 
 
 
--- stará verze
+-- starÃŸ verze
 
 -- ----------------------------------------------------------------------------------------------------
 -- procedure signed_to_string (

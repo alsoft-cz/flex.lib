@@ -1,13 +1,13 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public long_arithmetic =
 -- Long signed integer arithmetic operations.
 -- Advanced Multi-platform Library.
 -- Copyright (C) 1999-2003 A && L soft
 ----------------------------------------------------------------------------------------------------
 -- To do:
---   -- vy©e®it pr†ci s dynamickòmi atributy z inline assembleru. V souáasnÇ dobà je nutno pouë°vat
---      lok†ln° promnànnÇ
---   -- utajit strukturu [t_long_signed] a [t_long_unsigned]. Zat°m to nejde kñli chybà v p©ekladaái
+--   -- vy≈ôe≈°it pr√°ci s dynamick√Ωmi atributy z inline assembleru. V souƒçasn√© dobƒõ je nutno pou≈æ√≠vat
+--      lok√°ln√≠ promnƒõnn√©
+--   -- utajit strukturu [t_long_signed] a [t_long_unsigned]. Zat√≠m to nejde k≈Øli chybƒõ v p≈ôekladaƒçi
 ----------------------------------------------------------------------------------------------------
 
 with
@@ -64,7 +64,7 @@ procedure long_signed_new (
 
 
 
--- naáten° malÇho á°sla a un†rn° operace s velkòm á°slem
+-- naƒçten√≠ mal√©ho ƒç√≠sla a un√°rn√≠ operace s velk√Ωm ƒç√≠slem
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_load (
@@ -80,133 +80,133 @@ procedure long_signed_load (
 procedure long_unsigned_assign (
     dst            : out t_long_unsigned;
     src            : in  t_long_unsigned);
--- Provede p©i©azen° DEST:=SRC
+-- Provede p≈ôi≈ôazen√≠ DEST:=SRC
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_assign (
     dst            : out t_long_signed;
     src            : in  t_long_signed);
--- Provede p©i©azen° DEST:=SRC
+-- Provede p≈ôi≈ôazen√≠ DEST:=SRC
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_abs (
     A              : in out t_long_signed);
--- Provede p©i©azen° A:=ABS(A)
+-- Provede p≈ôi≈ôazen√≠ A:=ABS(A)
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_neg (
     A              : in out t_long_signed);
--- Provede p©i©azen° A:=-A
+-- Provede p≈ôi≈ôazen√≠ A:=-A
 ----------------------------------------------------------------------------------------------------
 
 
 
--- sá°t†n°, odeá°t†n°
+-- sƒç√≠t√°n√≠, odeƒç√≠t√°n√≠
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_add_assign (
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte A:=A+B; Souáet se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A+B; Souƒçet se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_add_assign (
     A              : in out t_long_signed;
     B              : in t_long_signed);
--- Vypoáte A:=A+B; Souáet se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A+B; Souƒçet se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_add (
     C              : out t_long_unsigned;
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte C:=A+B; Souáet se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A+B; Souƒçet se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_add (
     C              : out t_long_signed;
     A              : in t_long_signed;
     B              : in t_long_signed);
--- Vypoáte C:=A+B; Souáet se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A+B; Souƒçet se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_add_n (
     A              : in out t_long_unsigned;
     N              : in t_unsigned);
--- Vypoáte A:=A+N, kde N je malÇ á°slo; Souáet se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A+N, kde N je mal√© ƒç√≠slo; Souƒçet se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_add_n (
     A              : in out t_long_signed;
     I              : in t_signed);
--- Vypoáte A:=A+N, kde N je malÇ á°slo; Souáet se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A+N, kde N je mal√© ƒç√≠slo; Souƒçet se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_sub_assign (
     A              : in out t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte A:=A-B; Rozd°l se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A-B; Rozd√≠l se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_sub_assign (
     A              : in out t_long_signed;
     B              : in t_long_signed);
--- Vypoáte A:=A-B; Rozd°l se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A-B; Rozd√≠l se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_sub (
     C              : out t_long_unsigned;
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte C:=A-B; Rozd°l se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A-B; Rozd√≠l se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_sub (
     C              : out t_long_signed;
     A              : in t_long_signed;
     B              : in t_long_signed);
--- Vypoáte C:=A-B; Rozd°l se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A-B; Rozd√≠l se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_sub_n (
     A              : in out t_long_unsigned;
     N              : in t_unsigned);
--- Vypoáte A:=A-N, kde N je malÇ á°slo; Rodz°l se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A-N, kde N je mal√© ƒç√≠slo; Rodz√≠l se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_sub_n (
     A              : in out t_long_signed;
     I              : in t_signed);
--- Vypoáte A:=A-N, kde N je malÇ á°slo; Rozd°l se prov†d° modulo "a:bits"
+-- Vypoƒçte A:=A-N, kde N je mal√© ƒç√≠slo; Rozd√≠l se prov√°d√≠ modulo "a:bits"
 ----------------------------------------------------------------------------------------------------
 
--- n†soben°, dàlen°, modulo
+-- n√°soben√≠, dƒõlen√≠, modulo
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_mul (
     C              : out t_long_unsigned;
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte C:=A*B; Souáin se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A*B; Souƒçin se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_mul (
     C              : out t_long_signed;
     A              : in t_long_signed;
     B              : in t_long_signed);
--- Vypoáte C:=A*B; Souáin se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A*B; Souƒçin se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_div (
     C              : out t_long_unsigned;
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte C:=A/B; Pod°l se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A/B; Pod√≠l se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_div (
     C              : out t_long_signed;
     A              : in t_long_signed;
     B              : in t_long_signed);
--- Vypoáte C:=A/B; Pod°l se prov†d° modulo "c:bits"
+-- Vypoƒçte C:=A/B; Pod√≠l se prov√°d√≠ modulo "c:bits"
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_mod (
     C              : out t_long_unsigned;
     A              : in t_long_unsigned;
     B              : in t_long_unsigned);
--- Vypoáte C:=A mod B, resp. C := a - (a div b) * b.
+-- Vypoƒçte C:=A mod B, resp. C := a - (a div b) * b.
 ----------------------------------------------------------------------------------------------------
 procedure long_signed_mod (
     C              : out t_long_signed;
     A              : in t_long_signed;
     B              : in t_long_signed);
--- Vypoáte C:=A mod B; resp. C := a - (a div b) * b.
+-- Vypoƒçte C:=A mod B; resp. C := a - (a div b) * b.
 ----------------------------------------------------------------------------------------------------
 
--- zji®üov†n° vlastnost° á°sla (sudost, lichost, znamÇnko)
+-- zji≈°≈•ov√°n√≠ vlastnost√≠ ƒç√≠sla (sudost, lichost, znam√©nko)
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_is_odd (
@@ -235,7 +235,7 @@ procedure long_signed_is_neutral (
 -- Returns [true] when A=0
 ----------------------------------------------------------------------------------------------------
 
--- porovn†v†n° á°sel
+-- porovn√°v√°n√≠ ƒç√≠sel
 
 ----------------------------------------------------------------------------------------------------
 procedure long_unsigned_eq (
@@ -300,7 +300,7 @@ procedure long_signed_ge (
 ----------------------------------------------------------------------------------------------------
 
 
-{ Chyba p©i p©ekladu
+{ Chyba p≈ôi p≈ôekladu
 protected
 
 type

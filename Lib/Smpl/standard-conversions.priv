@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+ï»¿----------------------------------------------------------------------------------------------------
 module private conversions =
 -- Miscellaneous conversion routines.
 -- Flex Standard Library
@@ -8,7 +8,7 @@ module private conversions =
 
 
 const
-  -- konstanty pro pøevod 
+  -- konstanty pro pÂ°evod 
   fp_p_0       : t_extended = [$00,$00,$00,$00,$00,$00,$00,$00,$00,$00]; --  0
   fp_p_1       : t_extended = [$00,$00,$00,$00,$00,$00,$00,$80,$FF,$3F]; --  1
   fp_p_01      : t_extended = [$CD,$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]; --  0.1
@@ -16,7 +16,7 @@ const
   fp_p_1e17    : t_extended = [$00,$00,$00,$C5,$2E,$BC,$A2,$B1,$37,$40]; --  1e17
 
 type
-  -- mocninnı rozvoj pøevádìného èísla
+  -- mocninnÂ² rozvoj pÂ°evÃŸdâˆnÎ˜ho Î¦Ï†sla
   t_expansion      = array 0..12 of record
     exp            : t_signed;                   -- exponent 2^i
     pos            : t_extended;                 -- koeficient 10^(2^i)
@@ -24,10 +24,10 @@ type
     end record;
 
 var
-  -- Mantisa je správnì zaokrouhlená, v komentáøi je uvedena pùvodní hodnota
-  -- pøed zaokrouhlením + jeden další byte mantisy.
-  -- Pozor, nìkteré hodnoty NEG vypoètené pøímo procesorem se o 1 bit liší
-  -- (nejsou zaokrouhlené, jen odøíznuté).
+  -- Mantisa je sprÃŸvnâˆ zaokrouhlenÃŸ, v komentÃŸÂ°i je uvedena pâˆ™vodnÏ† hodnota
+  -- pÂ°ed zaokrouhlenÏ†m + jeden dalÃœÏ† byte mantisy.
+  -- Pozor, nâˆkterÎ˜ hodnoty NEG vypoÎ¦tenÎ˜ pÂ°Ï†mo procesorem se o 1 bit liÃœÏ†
+  -- (nejsou zaokrouhlenÎ˜, jen odÂ°Ï†znutÎ˜).
   expansion   : const t_expansion := [
     [ 0001, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$A0,$02,$40], [{$CC,}$CD{CC},$CC,$CC,$CC,$CC,$CC,$CC,$CC,$FB,$3F]],
     [ 0002, [{$00,}$00{00},$00,$00,$00,$00,$00,$00,$C8,$05,$40], [{$3D,}$0A{0A},$D7,$A3,$70,$3D,$0A,$D7,$A3,$F8,$3F]],
@@ -61,20 +61,20 @@ procedure addx (
 ----------------------------------------------------------------------------------------------------
 begin
   #syntax asm; 
-        mov     ecx,lbin       -- délka binárního èísla
-        jecxz   @0             -- nulová, nic neprovádìt
-        mov     al,<1>n        -- pøièítaná konstanta
-        mov     edi,bin        -- index pole nastavit na zaèátek
-        clc                    -- ádnı pøenos z minulého kroku
-        add     [edi],al       -- pøièíst jeden byte
-        mov     al,0           -- za chvíli tam budu potøebovat nulu
+        mov     ecx,lbin       -- dÎ˜lka binÃŸrnÏ†ho Î¦Ï†sla
+        jecxz   @0             -- nulovÃŸ, nic neprovÃŸdâˆt
+        mov     al,<1>n        -- pÂ°iÎ¦Ï†tanÃŸ konstanta
+        mov     edi,bin        -- index pole nastavit na zaÎ¦ÃŸtek
+        clc                    -- Å˜ÃŸdnÂ² pÂ°enos z minulÎ˜ho kroku
+        add     [edi],al       -- pÂ°iÎ¦Ï†st jeden byte
+        mov     al,0           -- za chvÏ†li tam budu potÂ°ebovat nulu
         jmp     @2             
-@1:     adc     [edi],al       -- pøièíst pøenos
-@2:     jnc     @0             -- nenastal pøenos, konèíme s pøièítáním
-        inc     edi            -- index pole nastavit na další byte
+@1:     adc     [edi],al       -- pÂ°iÎ¦Ï†st pÂ°enos
+@2:     jnc     @0             -- nenastal pÂ°enos, konÎ¦Ï†me s pÂ°iÎ¦Ï†tÃŸnÏ†m
+        inc     edi            -- index pole nastavit na dalÃœÏ† byte
         loop    @1
-        mov     edi,overflow   -- adresa promìnné pro pøeteèení
-        mov     <1>[edi],1     -- nastal pøenos, vrátit chybu (jen 1 byte, pøedpokládám, e je promìnná vynulovaná)
+        mov     edi,overflow   -- adresa promâˆnnÎ˜ pro pÂ°eteÎ¦enÏ†
+        mov     <1>[edi],1     -- nastal pÂ°enos, vrÃŸtit chybu (jen 1 byte, pÂ°edpoklÃŸdÃŸm, Å˜e je promâˆnnÃŸ vynulovanÃŸ)
 @0:     
   #end asm;  
   end addx;
@@ -94,22 +94,22 @@ procedure mulx (
 ----------------------------------------------------------------------------------------------------
 begin
   #syntax asm; 
-        mov     ecx,lbin       -- délka binárního èísla
-        jecxz   @0             -- nulová, nic neprovádìt
+        mov     ecx,lbin       -- dÎ˜lka binÃŸrnÏ†ho Î¦Ï†sla
+        jecxz   @0             -- nulovÃŸ, nic neprovÃŸdâˆt
         mov     dl,<1>n        -- koeficient
-        mov     edi,bin        -- index pole nastavit na zaèátek
-        mov     bx,0           -- pøenos z minulého kroku je pro zaèátek nulovı
-@1:     mov     al,[edi]       -- èinitel
-        mul     dl             -- vynásobit koeficientem
-        add     ax,bx          -- pøenos z minulého kroku
+        mov     edi,bin        -- index pole nastavit na zaÎ¦ÃŸtek
+        mov     bx,0           -- pÂ°enos z minulÎ˜ho kroku je pro zaÎ¦ÃŸtek nulovÂ²
+@1:     mov     al,[edi]       -- Î¦initel
+        mul     dl             -- vynÃŸsobit koeficientem
+        add     ax,bx          -- pÂ°enos z minulÎ˜ho kroku
         mov     [edi],al
         mov     bl,ah
-        inc     edi            -- index pole nastavit na další byte
+        inc     edi            -- index pole nastavit na dalÃœÏ† byte
         loop    @1
-        cmp     bl,0           -- poslední pøenos je nulovı, je to OK
+        cmp     bl,0           -- poslednÏ† pÂ°enos je nulovÂ², je to OK
         jz      @0
-        mov     edi,overflow   -- adresa promìnné pro pøeteèení
-        mov     <1>[edi],1     -- nastal pøenos, vrátit chybu (jen 1 byte, pøedpokládám, e je promìnná vynulovaná)
+        mov     edi,overflow   -- adresa promâˆnnÎ˜ pro pÂ°eteÎ¦enÏ†
+        mov     <1>[edi],1     -- nastal pÂ°enos, vrÃŸtit chybu (jen 1 byte, pÂ°edpoklÃŸdÃŸm, Å˜e je promâˆnnÃŸ vynulovanÃŸ)
 @0:     
   #end asm;  
   end mulx;
@@ -128,23 +128,23 @@ procedure divx (
 ----------------------------------------------------------------------------------------------------
 begin
   #syntax asm; 
-        mov     ebx,0          -- pøenos z minulého kroku je pro zaèátek nulovı
-        mov     ecx,lbin       -- délka binárního èísla
-        jecxz   @0             -- nulová, nic neprovádìt
-        mov     dl,<1>n        -- dìlitel
+        mov     ebx,0          -- pÂ°enos z minulÎ˜ho kroku je pro zaÎ¦ÃŸtek nulovÂ²
+        mov     ecx,lbin       -- dÎ˜lka binÃŸrnÏ†ho Î¦Ï†sla
+        jecxz   @0             -- nulovÃŸ, nic neprovÃŸdâˆt
+        mov     dl,<1>n        -- dâˆlitel
         mov     edi,bin        -- index pole... 
-        add     edi,ecx        -- ...nastavit tìsnì za konec
-        dec     edi            -- ...a teï pøesnì na konec
-@1:     mov     al,[edi]       -- dìlenec
-        mov     ah,0           -- vyšší slabika je nulová
-        add     ax,bx          -- pøenos z minulého kroku
-        div     dl             -- vydìlit
-        mov     [edi],al       -- vısledek uloit
-        mov     bh,ah          -- poznamenat si pøenost
-        dec     edi            -- index pole nastavit na pøedchozí byte
+        add     edi,ecx        -- ...nastavit tâˆsnâˆ za konec
+        dec     edi            -- ...a teâˆ© pÂ°esnâˆ na konec
+@1:     mov     al,[edi]       -- dâˆlenec
+        mov     ah,0           -- vyÃœÃœÏ† slabika je nulovÃŸ
+        add     ax,bx          -- pÂ°enos z minulÎ˜ho kroku
+        div     dl             -- vydâˆlit
+        mov     [edi],al       -- vÂ²sledek uloÅ˜it
+        mov     bh,ah          -- poznamenat si pÂ°enost
+        dec     edi            -- index pole nastavit na pÂ°edchozÏ† byte
         loop    @1
 @0:     mov     edi,remainder  -- adresa zbytku
-        mov     [edi],bh       -- pøedat zbytek (jen 1 byte, pøedpokládám, e je promìnná vynulovaná)
+        mov     [edi],bh       -- pÂ°edat zbytek (jen 1 byte, pÂ°edpoklÃŸdÃŸm, Å˜e je promâˆnnÃŸ vynulovanÃŸ)
   #end asm;  
   end divx;
 
@@ -161,12 +161,12 @@ procedure is_zero (
 ----------------------------------------------------------------------------------------------------
 begin
   #syntax asm; 
-        mov     ecx,lbin       -- délka binárního èísla
-        jecxz   @0             -- nulová, nic neprovádìt
+        mov     ecx,lbin       -- dÎ˜lka binÃŸrnÏ†ho Î¦Ï†sla
+        jecxz   @0             -- nulovÃŸ, nic neprovÃŸdâˆt
 @1:     cmp     <1>[edi],0     -- je to nula ?        
-        jnz     @2             -- není!
+        jnz     @2             -- nenÏ†!
         loop    @1
-        jmp     @0             -- všechno bylo nulové, konèíme
+        jmp     @0             -- vÃœechno bylo nulovÎ˜, konÎ¦Ï†me
 @2:     mov     result,1       -- je to nula
 @0:     
   #end asm;  
@@ -367,7 +367,7 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure fp_evaluate_exception =
--- Vyhodnotí stavovı registr floating-point a vyvolá vıjimku
+-- VyhodnotÏ† stavovÂ² registr floating-point a vyvolÃŸ vÂ²jimku
 ----------------------------------------------------------------------------------------------------
 var
   fp_sw            : mod unsigned 16;
@@ -392,13 +392,13 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure mantissa_to_BCD (
-    num            : in t_extended;              -- èíslo které pøevést
-    BCD            : out t_BCDmantissa) =        -- znaková reprezentace
--- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 a + 10e18-1.
+    num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st
+    BCD            : out t_BCDmantissa) =        -- znakovÃŸ reprezentace
+-- PÂ°evede zaokrouhlenou hodnotu NUM na Â°etâˆzec v rozsahu 0 aÅ˜ + 10e18-1.
 ----------------------------------------------------------------------------------------------------
 var
-  z                : mod unsigned 8;                -- zpracovávanı nibble (BCD èíslice)
-  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formátu
+  z                : mod unsigned 8;                -- zpracovÃŸvanÂ² nibble (BCD Î¦Ï†slice)
+  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formÃŸtu
   FP               : t_extended;
   x                : t_unsigned;                 -- index znaku v BCD
 
@@ -406,7 +406,7 @@ begin
 
   FP:=num;
 
-  -- pøevést float na packed BCD
+  -- pÂ°evÎ˜st float na packed BCD
   #syntax asm; 
     -- nacist cislo FP 
     lea     eax,FP
@@ -428,15 +428,15 @@ begin
     raise fp_invalid_operand;
     end if;
  
-  -- numerická èást
+  -- numerickÃŸ Î¦ÃŸst
   x:=BCD:first;
   for i in reverse pBCD:first..pBCD:last-1 loop
-    -- z bytu vybrat první èíslici
+    -- z bytu vybrat prvnÏ† Î¦Ï†slici
     z:=((pBCD[i] and 2$11110000) shr 4);
     BCD[x]:=t_char32("0":ord+z);
     x+1;
 
-    -- z bytu vybrat druhou èíslici
+    -- z bytu vybrat druhou Î¦Ï†slici
     z:=(pBCD[i] and 2$00001111);
     BCD[x]:=t_char32("0":ord+z);
     x+1;
@@ -450,43 +450,43 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure BCD_to_mantissa (
-    BCD            : in t_BCDmantissa;           -- znaková reprezentace   
-    num            : out t_extended) =           -- numerická reprezentace
--- Pøevede celé èíslo v rozsahu 0 a + 10e18-1 na float point.
--- Øetìzec str 
---   - musí mít délku v rozsahu 1 a 18 znakù,
---   - nesmí obsahovat jiné znaky ne "0" az "9".
+    BCD            : in t_BCDmantissa;           -- znakovÃŸ reprezentace   
+    num            : out t_extended) =           -- numerickÃŸ reprezentace
+-- PÂ°evede celÎ˜ Î¦Ï†slo v rozsahu 0 aÅ˜ + 10e18-1 na float point.
+-- â•ªetâˆzec str 
+--   - musÏ† mÏ†t dÎ˜lku v rozsahu 1 aÅ˜ 18 znakâˆ™,
+--   - nesmÏ† obsahovat jinÎ˜ znaky neÅ˜ "0" az "9".
 ----------------------------------------------------------------------------------------------------
 var
-  x                : t_unsigned;                     -- poøadí nibblu 
-  z                : mod unsigned 8;                 -- zpracovávanı nibble (BCD èíslice)
-  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formátu
+  x                : t_unsigned;                     -- poÂ°adÏ† nibblu 
+  z                : mod unsigned 8;                 -- zpracovÃŸvanÂ² nibble (BCD Î¦Ï†slice)
+  pBCD             : array 0..9 of mod unsigned 8;   -- mantisa v packed BCD formÃŸtu
   FP               : t_extended;
 
 begin
 
   x:=0;
   for i in reverse BCD:range loop
-    -- nenumerickı znak
+    -- nenumerickÂ² znak
     if BCD[i]<"0" or BCD[i]>"9" then
       raise fp_invalid_operand;
       end if;
 
-    -- pøevést na nibble
+    -- pÂ°evÎ˜st na nibble
     z:=z:type(BCD[i]:ord-"0":ord);
 
-    -- pøidat nibble to packed BCD
+    -- pÂ°idat nibble to packed BCD
     if x mod 2 = 0
-      -- pøidat sudı nibble
+      -- pÂ°idat sudÂ² nibble
       then pBCD[x div 2] or (z and 2$00001111);
-      -- pøidat lichı nibble
+      -- pÂ°idat lichÂ² nibble
       else pBCD[x div 2] or ((z and 2$00001111) shl 4);
       end if;
 
     x+1;
     end loop;
 
-  -- pøevést packed BCD na float
+  -- pÂ°evÎ˜st packed BCD na float
   #syntax asm; 
     -- nacist cislo BCD
     lea     eax,pBCD
@@ -507,32 +507,32 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure BCD_to_float (
-    -- dekadická reprezentace
-    sign           : in t_logical;               -- znaménko èísla (true = záporné)  
-    BCD            : in t_BCDmantissa;           -- znaková reprezentace   
+    -- dekadickÃŸ reprezentace
+    sign           : in t_logical;               -- znamÎ˜nko Î¦Ï†sla (true = zÃŸpornÎ˜)  
+    BCD            : in t_BCDmantissa;           -- znakovÃŸ reprezentace   
     exp            : in t_signed;                -- exponent 
-    -- float point èíslo
-    num            : out t_extended) =           -- numerická reprezentace
--- Pøevede øetìzec na NUM.
--- %%TODO Pouívá instrukci fbstp která omezuje pøesnost pøevodu --> èasem pøedìlat
+    -- float point Î¦Ï†slo
+    num            : out t_extended) =           -- numerickÃŸ reprezentace
+-- PÂ°evede Â°etâˆzec na NUM.
+-- %%TODO PouÅ˜Ï†vÃŸ instrukci fbstp kterÃŸ omezuje pÂ°esnost pÂ°evodu --> Î¦asem pÂ°edâˆlat
 ----------------------------------------------------------------------------------------------------
 var
-  wexp             : t_signed;                   -- pracovní hodnota exponentu   
-  i                : t_unsigned;                 -- index do tabulky mocninného rozvoje
+  wexp             : t_signed;                   -- pracovnÏ† hodnota exponentu   
+  i                : t_unsigned;                 -- index do tabulky mocninnÎ˜ho rozvoje
 
 begin
-  -- mantisu pøevést na float point
+  -- mantisu pÂ°evÎ˜st na float point
   BCD_to_mantissa(BCD,num);
 
-  -- Mantisa je uvedena na 18 míst, take jsem získal èíslo 1e17 krát vìtší,
-  -- musíme tudí korigovat exponent. A ještì je tu korekce o jednièku, protoe
-  -- exponent sniuju na nulu (líp se to programuje) a ne na jednièku, jak by se 
-  -- dalo èekat. Tedy celkem se musí odeèíst 18.
+  -- Mantisa je uvedena na 18 mÏ†st, takÅ˜e jsem zÏ†skal Î¦Ï†slo 1e17 krÃŸt vâˆtÃœÏ†,
+  -- musÏ†me tudÏ†Å˜ korigovat exponent. A jeÃœtâˆ je tu korekce o jedniÎ¦ku, protoÅ˜e
+  -- exponent sniÅ˜uju na nulu (lÏ†p se to programuje) a ne na jedniÎ¦ku, jak by se 
+  -- dalo Î¦ekat. Tedy celkem se musÏ† odeÎ¦Ï†st 18.
   wexp:=exp-18;
 
 
   if wexp>=0
-    -- vynásobit koeficientem podle exponentu (pro nezáporné exponenty)
+    -- vynÃŸsobit koeficientem podle exponentu (pro nezÃŸpornÎ˜ exponenty)
     then
       i:=expansion:last;
       while wexp>0 loop
@@ -544,7 +544,7 @@ begin
         i-1;
         end loop;
 
-    -- vynásobit koeficientem podle exponentu (pro záporné exponenty)
+    -- vynÃŸsobit koeficientem podle exponentu (pro zÃŸpornÎ˜ exponenty)
     else
       i:=expansion:last;
       -wexp;
@@ -558,7 +558,7 @@ begin
         end loop;
       end if;
 
-  -- aplikovat znaménko
+  -- aplikovat znamÎ˜nko
   if sign then -num end if;
   end BCD_to_float;
 
@@ -567,26 +567,26 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure float_to_BCD (
-    -- float point èíslo
-    num            : in t_extended;              -- èíslo které pøevést
-    -- dekadická reprezentace
-    sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
-    BCD            : out t_BCDmantissa;          -- znaková reprezentace   
+    -- float point Î¦Ï†slo
+    num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st
+    -- dekadickÃŸ reprezentace
+    sign           : out t_logical;              -- znamÎ˜nko Î¦Ï†sla (TRUE = zÃŸpornÎ˜)
+    BCD            : out t_BCDmantissa;          -- znakovÃŸ reprezentace   
     exp            : out t_signed) =             -- exponent 
--- Pøevede NUM na øetìzec. 
--- %%TODO Pouívá instrukci fbstp která omezuje pøesnost pøevodu --> èasem pøedìlat
+-- PÂ°evede NUM na Â°etâˆzec. 
+-- %%TODO PouÅ˜Ï†vÃŸ instrukci fbstp kterÃŸ omezuje pÂ°esnost pÂ°evodu --> Î¦asem pÂ°edâˆlat
 ----------------------------------------------------------------------------------------------------
 var
-  wnum             : t_extended;                 -- pracovní kopie èísla
-  wexp             : t_signed;                   -- pracovní exponent
+  wnum             : t_extended;                 -- pracovnÏ† kopie Î¦Ï†sla
+  wexp             : t_signed;                   -- pracovnÏ† exponent
   i                : t_unsigned;
 
 
 begin
-  -- èíslo se bude prùbìnì modifikovat
+  -- Î¦Ï†slo se bude prâˆ™bâˆÅ˜nâˆ modifikovat
   wnum:=num;
 
-  -- zjistit znaménko a odstranit jej z èísla
+  -- zjistit znamÎ˜nko a odstranit jej z Î¦Ï†sla
   sign:=wnum>=fp_p_0;
   abs wnum;
 
@@ -594,7 +594,7 @@ begin
   if wnum<>fp_p_0 then
  
 
-    -- pøíliš velká èísla normalizovat do intervalu <1, 10)
+    -- pÂ°Ï†liÃœ velkÃŸ Î¦Ï†sla normalizovat do intervalu <1, 10)
     i:=expansion:last;
     while wnum>=fp_p_10  loop
       if wnum>=expansion[i].pos then
@@ -606,7 +606,7 @@ begin
       end loop;
  
   
-    -- pøíliš malá èísla normalizovat do intervalu (0.1, 1> 
+    -- pÂ°Ï†liÃœ malÃŸ Î¦Ï†sla normalizovat do intervalu (0.1, 1> 
     i:=expansion:last;
     while wnum<=fp_p_01 loop
       if wnum<=expansion[i].neg then
@@ -617,7 +617,7 @@ begin
       i-1;
       end loop;
   
-    -- všechno normalizovat do intervalu <1, 10) 
+    -- vÃœechno normalizovat do intervalu <1, 10) 
     if wnum<fp_p_1 then
       wnum*fp_p_10;
       wexp-1;
@@ -626,18 +626,18 @@ begin
     end if;
 
 
-  -- Nyní je kadé èíslo (wnum) normalizované do intervalu <1, 10)
-  -- nebo je nulové.
-  -- Exponent (wexp) je správnì pøepoèten.
+  -- NynÏ† je kaÅ˜dÎ˜ Î¦Ï†slo (wnum) normalizovanÎ˜ do intervalu <1, 10)
+  -- nebo je nulovÎ˜.
+  -- Exponent (wexp) je sprÃŸvnâˆ pÂ°epoÎ¦ten.
 
-  -- vynásobit 1e17, aby mantisa byla co nejtìsnìji pod hranicí
-  -- maximálního pøeveditelného celého èísla
+  -- vynÃŸsobit 1e17, aby mantisa byla co nejtâˆsnâˆji pod hranicÏ†
+  -- maximÃŸlnÏ†ho pÂ°eveditelnÎ˜ho celÎ˜ho Î¦Ï†sla
   wnum*fp_p_1e17; 
 
-  -- pøevést mantisu na øetìzec
+  -- pÂ°evÎ˜st mantisu na Â°etâˆzec
   mantissa_to_BCD(wnum,BCD);
 
-  -- pøedat exponent ven
+  -- pÂ°edat exponent ven
   exp:=wexp;
   end float_to_BCD;
 
@@ -646,22 +646,22 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float_primitive =
---  int            : in t_char32str;             -- celá èást mantisy 
---  frac           : in t_char32str;             -- desetinná èást mantisy
---  sign           : in t_logical;               -- znaménko èísla (TRUE = záporné)
+--  int            : in t_char32str;             -- celÃŸ Î¦ÃŸst mantisy 
+--  frac           : in t_char32str;             -- desetinnÃŸ Î¦ÃŸst mantisy
+--  sign           : in t_logical;               -- znamÎ˜nko Î¦Ï†sla (TRUE = zÃŸpornÎ˜)
 --  exp            : in t_signed;                -- exponent 
---  num            : out t_extended) =           -- pøevedené èíslo
--- Pøevede øetìzec na float point.
+--  num            : out t_extended) =           -- pÂ°evedenÎ˜ Î¦Ï†slo
+-- PÂ°evede Â°etâˆzec na float point.
 ----------------------------------------------------------------------------------------------------
 var
-  BCD              : t_BCDmantissa;              -- znaková reprezentace   
-  wstr             : t_char32str;                -- zpracovávanı øetìzec
+  BCD              : t_BCDmantissa;              -- znakovÃŸ reprezentace   
+  wstr             : t_char32str;                -- zpracovÃŸvanÂ² Â°etâˆzec
 
 begin
-  -- slouèit celou a desetinnou èást 
+  -- slouÎ¦it celou a desetinnou Î¦ÃŸst 
   wstr:=int & frac;
 
-  -- string pøevést na BCD
+  -- string pÂ°evÎ˜st na BCD
   for i in BCD:range loop
     if i<wstr:length{%%TODO :last}
       then BCD[i]:=wstr[i+wstr:first]
@@ -669,8 +669,8 @@ begin
       end if;
     end loop;
 
-  -- ze získanıch sloek teï sestavit èíslo
-  -- exponent se zvyšuje o délku celé èásti
+  -- ze zÏ†skanÂ²ch sloÅ˜ek teâˆ© sestavit Î¦Ï†slo
+  -- exponent se zvyÃœuje o dÎ˜lku celÎ˜ Î¦ÃŸsti
   BCD_to_float(sign,BCD,exp+t_signed(int:length),num);
   end string_to_float_primitive;
 
@@ -679,23 +679,23 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string_primitive =
---  num            : in t_extended;              -- èíslo které pøevést
---  int            : out t_char32str;            -- celá èást mantisy 
---  frac           : out t_char32str;            -- desetinná èást mantisy
---  sign           : out t_logical;              -- znaménko èísla (TRUE = záporné)
+--  num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st
+--  int            : out t_char32str;            -- celÃŸ Î¦ÃŸst mantisy 
+--  frac           : out t_char32str;            -- desetinnÃŸ Î¦ÃŸst mantisy
+--  sign           : out t_logical;              -- znamÎ˜nko Î¦Ï†sla (TRUE = zÃŸpornÎ˜)
 --  exp            : out t_signed) =             -- exponent 
--- Pøevede NUM na øetìzec.
+-- PÂ°evede NUM na Â°etâˆzec.
 ----------------------------------------------------------------------------------------------------
 var
-  BCD              : t_BCDmantissa;              -- znaková reprezentace mantisy
+  BCD              : t_BCDmantissa;              -- znakovÃŸ reprezentace mantisy
 
 begin
   float_to_BCD(num,sign,BCD,exp);
 
-  -- mantisa je vypoètena na 18 cifer v rozsahu <1,10), podle toho také 
-  -- bude vypadat rozdìlení na celou a desetinnou èást
-  int:='';           -- %%TODO divné, to pøiøazení znak --> øetìzec by mìlo fungovat
-  int & BCD[0];      -- takhle to musím ošklivì obcházet
+  -- mantisa je vypoÎ¦tena na 18 cifer v rozsahu <1,10), podle toho takÎ˜ 
+  -- bude vypadat rozdâˆlenÏ† na celou a desetinnou Î¦ÃŸst
+  int:='';           -- %%TODO divnÎ˜, to pÂ°iÂ°azenÏ† znak --> Â°etâˆzec by mâˆlo fungovat
+  int & BCD[0];      -- takhle to musÏ†m oÃœklivâˆ obchÃŸzet
   frac:='';               
   for i in 1..17 loop
     frac & BCD[i];
@@ -709,14 +709,14 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure unsigned_to_string =
 --  num            : in t_unsigned;              -- number to convert
---  format         : in t_integer_format := t_integer_default)  -- poadovanı formát èísla %%CZ
+--  format         : in t_integer_format := t_integer_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
 --  return t_char32str =                         -- it's string representation
 ----------------------------------------------------------------------------------------------------
 var
   s                : t_char32str;
   code             : t_conversion_result;        -- conversion result
-  w_before         : t_signed;                   -- poèet vıplòovıch znakù pøed znaménkem
-  w_after          : t_signed;                   -- poèet vıplòovıch znakù za znaménkem
+  w_before         : t_signed;                   -- poÎ¦et vÂ²plâ‰¥ovÂ²ch znakâˆ™ pÂ°ed znamÎ˜nkem
+  w_after          : t_signed;                   -- poÎ¦et vÂ²plâ‰¥ovÂ²ch znakâˆ™ za znamÎ˜nkem
   
 begin
   unsigned_to_string_primitive(num,format.radix,s,code);
@@ -725,13 +725,13 @@ begin
     raise conversion_error;
     end if;
 
-  -- formátování se provede pouze pokud není poadován automatickı formát 
+  -- formÃŸtovÃŸnÏ† se provede pouze pokud nenÏ† poÅ˜adovÃŸn automatickÂ² formÃŸt 
   if format.width>0 then
 
-    -- kolik vıplòovıch znakù se musí pouít 
+    -- kolik vÂ²plâ‰¥ovÂ²ch znakâˆ™ se musÏ† pouÅ˜Ï†t 
     w_before:=t_signed(format.width)-t_signed(s:length);
 
-    -- ještì se musí vejít znaménko
+    -- jeÃœtâˆ se musÏ† vejÏ†t znamÎ˜nko
     if format.sign<>tsm_empty then 
       w_before-1 
       end if;
@@ -751,30 +751,30 @@ begin
         end case;
       end if;
 
-    -- nebudou vıplòové znaky náhodou za znaménkem?
+    -- nebudou vÂ²plâ‰¥ovÎ˜ znaky nÃŸhodou za znamÎ˜nkem?
     if format.aligned then 
       w_after:=w_before;
       w_before:=0;
       end if;
 
-    -- pøidat vıplò pøed znaménkem
+    -- pÂ°idat vÂ²plâ‰¥ pÂ°ed znamÎ˜nkem
     for i in 1..w_before loop 
       s:=format.fill & s;
       end loop;
 
     end if;
 
-  -- pøidat znaménko
+  -- pÂ°idat znamÎ˜nko
   case format.sign 
     when tsm_empty do ;
     when tsm_plus  do s:='+' & s;      
     when tsm_space do s:=' ' & s;
     end case;
 
-  -- formátování se provede pouze pokud není poadován automatickı formát 
+  -- formÃŸtovÃŸnÏ† se provede pouze pokud nenÏ† poÅ˜adovÃŸn automatickÂ² formÃŸt 
   if format.width>0 then
 
-    -- pøidat vıplò za znaménkem
+    -- pÂ°idat vÂ²plâ‰¥ za znamÎ˜nkem
     for i in 1..w_after loop 
       s:=format.fill & s;
       end loop;
@@ -792,15 +792,15 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure signed_to_string =
 --  num            : in t_signed;                -- number to convert
---  format         : in t_integer_format := t_integer_default)  -- poadovanı formát èísla %%CZ
+--  format         : in t_integer_format := t_integer_default)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
 --  return t_char32str =                         -- it's string representation
 ----------------------------------------------------------------------------------------------------
 var
   s                : t_char32str;
   code             : t_conversion_result;        -- conversion result
   sign             : t_logical;                  -- True = negative
-  w_before         : t_signed;                   -- poèet vıplòovıch znakù pøed znaménkem
-  w_after          : t_signed;                   -- poèet vıplòovıch znakù za znaménkem
+  w_before         : t_signed;                   -- poÎ¦et vÂ²plâ‰¥ovÂ²ch znakâˆ™ pÂ°ed znamÎ˜nkem
+  w_after          : t_signed;                   -- poÎ¦et vÂ²plâ‰¥ovÂ²ch znakâˆ™ za znamÎ˜nkem
   
 begin
   signed_to_string_primitive(num,format.radix,s,sign,code);
@@ -809,13 +809,13 @@ begin
     raise conversion_error;
     end if;
 
-  -- formátování se provede pouze pokud není poadován automatickı formát 
+  -- formÃŸtovÃŸnÏ† se provede pouze pokud nenÏ† poÅ˜adovÃŸn automatickÂ² formÃŸt 
   if format.width>0 then
 
-    -- kolik vıplòovıch znakù se musí pouít 
+    -- kolik vÂ²plâ‰¥ovÂ²ch znakâˆ™ se musÏ† pouÅ˜Ï†t 
     w_before:=t_signed(format.width)-t_signed(s:length);
 
-    -- ještì se musí vejít znaménko
+    -- jeÃœtâˆ se musÏ† vejÏ†t znamÎ˜nko
     if sign or format.sign<>tsm_empty then 
       w_before-1 
       end if;
@@ -835,20 +835,20 @@ begin
         end case;
       end if;
 
-    -- nebudou vıplòové znaky náhodou za znaménkem?
+    -- nebudou vÂ²plâ‰¥ovÎ˜ znaky nÃŸhodou za znamÎ˜nkem?
     if format.aligned then 
       w_after:=w_before;
       w_before:=0;
       end if;
 
-    -- pøidat vıplò pøed znaménkem
+    -- pÂ°idat vÂ²plâ‰¥ pÂ°ed znamÎ˜nkem
     for i in 1..w_before loop 
       s:=format.fill & s;
       end loop;
 
     end if;
 
-  -- pøidat znaménko
+  -- pÂ°idat znamÎ˜nko
   result:=s;
   if sign
     then 
@@ -861,10 +861,10 @@ begin
         end case;
     end if;
 
-  -- formátování se provede pouze pokud není poadován automatickı formát 
+  -- formÃŸtovÃŸnÏ† se provede pouze pokud nenÏ† poÅ˜adovÃŸn automatickÂ² formÃŸt 
   if format.width>0 then
 
-    -- pøidat vıplò za znaménkem
+    -- pÂ°idat vÂ²plâ‰¥ za znamÎ˜nkem
     for i in 1..w_after loop 
       s:=format.fill & s;
       end loop;
@@ -881,22 +881,22 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure string_to_unsigned =
 --  s              : in t_char32ustr;            -- string represetation of a value
---  parse          : in t_integer_parse := t_integer_parse:value)  -- poadovanı formát èísla %%CZ
+--  parse          : in t_integer_parse := t_integer_parse:value)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
 --  return t_unsigned;
 ------------------------------------------------------------------------------
 var
-  wstr             : t_char32str;                -- zpracovávanı øetìzec
-  num              : t_unsigned;                 -- pøevedené èíslo
+  wstr             : t_char32str;                -- zpracovÃŸvanÂ² Â°etâˆzec
+  num              : t_unsigned;                 -- pÂ°evedenÎ˜ Î¦Ï†slo
   code             : t_conversion_result;
 
 begin
-  -- oddìlit mezery zleva a zprava
+  -- oddâˆlit mezery zleva a zprava
   wstr:=str_trim(s," ",[se_left,se_right]);
 
-  -- zbylo vùbec nìco?
+  -- zbylo vâˆ™bec nâˆco?
   if wstr:length=0 then raise conversion_error end if;
 
-  -- pøevést 
+  -- pÂ°evÎ˜st 
   string_to_unsigned_primitive(wstr,parse.radix,num,code);
 
   if code<>tcres_ok then
@@ -912,34 +912,34 @@ begin
 ------------------------------------------------------------------------------
 procedure string_to_signed =
 --  s              : in t_char32ustr;            -- string represetation of a value
---  parse          : in t_integer_parse := t_integer_parse:value)  -- poadovanı formát èísla %%CZ
+--  parse          : in t_integer_parse := t_integer_parse:value)  -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
 --  return t_signed;
 ----------------------------------------------------------------------------------------------------
 var
-  wstr             : t_char32str;                -- zpracovávanı øetìzec
-  sign             : t_logical;                  -- TRUE = èíslo je záporné
-  num              : t_signed;                   -- pøevedené èíslo
+  wstr             : t_char32str;                -- zpracovÃŸvanÂ² Â°etâˆzec
+  sign             : t_logical;                  -- TRUE = Î¦Ï†slo je zÃŸpornÎ˜
+  num              : t_signed;                   -- pÂ°evedenÎ˜ Î¦Ï†slo
   code             : t_conversion_result;
 
 begin
-  -- oddìlit mezery zleva a zprava
+  -- oddâˆlit mezery zleva a zprava
   wstr:=str_trim(s," ",[se_left,se_right]);
 
 
-  -- zbylo vùbec nìco?
+  -- zbylo vâˆ™bec nâˆco?
   if wstr:length=0 then raise conversion_error end if;
 
 
-  -- pøevést znaménko na pøíznak sign
-  -- znaménko minus
+  -- pÂ°evÎ˜st znamÎ˜nko na pÂ°Ï†znak sign
+  -- znamÎ˜nko minus
   if wstr[1]="-" then
     sign:=true;
     wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
-  -- znaménko plus
+  -- znamÎ˜nko plus
   elsif wstr[1]="+" then
     sign:=false;
     wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
-  -- ádné znaménko
+  -- Å˜ÃŸdnÎ˜ znamÎ˜nko
   elsif wstr[1]>="0" and wstr[1]<="9"  then
     sign:=false
   -- chyba
@@ -948,7 +948,7 @@ begin
     end if;
 
 
-  -- pøevést 
+  -- pÂ°evÎ˜st 
   string_to_signed_primitive(wstr,parse.radix,sign,num,code);
 
   if code<>tcres_ok then
@@ -966,45 +966,45 @@ begin
 ----------------------------------------------------------------------------------------------------
 procedure string_to_float =
 --  s              : in t_char32ustr)            -- string represetation of a value
---  parse          : in t_float_parse := t_float_parse:value)      -- poadovanı formát èísla %%CZ
+--  parse          : in t_float_parse := t_float_parse:value)      -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
 --  return t_extended;
--- Pøevede celé èíslo v rozsahu 0 a + 10e18-1 na float point.
--- Øetìzec str 
---   - musí mít délku v rozsahu 1 a 18 znakù,
---   - nesmí obsahovat jiné znaky ne "0" az "9".
+-- PÂ°evede celÎ˜ Î¦Ï†slo v rozsahu 0 aÅ˜ + 10e18-1 na float point.
+-- â•ªetâˆzec str 
+--   - musÏ† mÏ†t dÎ˜lku v rozsahu 1 aÅ˜ 18 znakâˆ™,
+--   - nesmÏ† obsahovat jinÎ˜ znaky neÅ˜ "0" az "9".
 ----------------------------------------------------------------------------------------------------
 var
-  wstr             : t_char32str;                -- zpracovávanı øetìzec
-  sign             : t_logical;                  -- TRUE = èíslo je záporné
-  point            : t_unsigned;                 -- poloha desetinné teèky
+  wstr             : t_char32str;                -- zpracovÃŸvanÂ² Â°etâˆzec
+  sign             : t_logical;                  -- TRUE = Î¦Ï†slo je zÃŸpornÎ˜
+  point            : t_unsigned;                 -- poloha desetinnÎ˜ teÎ¦ky
   pexp             : t_unsigned;                 -- poloha exponentu
-  wexp             : t_char32str;                -- exponent øetìzcovì
-  exp              : t_signed;                   -- exponent pøevednı na èíslo
-  num              : t_extended;                 -- pøevedené èíslo
-  x                : t_signed;                   -- chyba v konverzi %%TODO pøijde pøedìlat na vıjimku
-  int              : t_char32str;                -- celá èást mantisy 
-  frac             : t_char32str;                -- desetinná èást mantisy
+  wexp             : t_char32str;                -- exponent Â°etâˆzcovâˆ
+  exp              : t_signed;                   -- exponent pÂ°evednÂ² na Î¦Ï†slo
+  num              : t_extended;                 -- pÂ°evedenÎ˜ Î¦Ï†slo
+  x                : t_signed;                   -- chyba v konverzi %%TODO pÂ°ijde pÂ°edâˆlat na vÂ²jimku
+  int              : t_char32str;                -- celÃŸ Î¦ÃŸst mantisy 
+  frac             : t_char32str;                -- desetinnÃŸ Î¦ÃŸst mantisy
   code             : t_conversion_result;
 
 begin
-  -- oddìlit mezery zleva a zprava
+  -- oddâˆlit mezery zleva a zprava
   wstr:=str_trim(s," ",[se_left,se_right]);
 
 
-  -- zbylo vùbec nìco?
+  -- zbylo vâˆ™bec nâˆco?
   if wstr:length=0 then raise conversion_error end if;
 
 
-  -- pøevést znaménko na pøíznak sign
-  -- znaménko minus
+  -- pÂ°evÎ˜st znamÎ˜nko na pÂ°Ï†znak sign
+  -- znamÎ˜nko minus
   if wstr[1]="-" then
     sign:=true;
     wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
-  -- znaménko plus
+  -- znamÎ˜nko plus
   elsif wstr[1]="+" then
     sign:=false;
     wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
-  -- ádné znaménko
+  -- Å˜ÃŸdnÎ˜ znamÎ˜nko
   elsif wstr[1]>="0" and wstr[1]<="9"  then
     sign:=false
   -- chyba
@@ -1013,17 +1013,17 @@ begin
     end if;
 
 
-  -- odstranit nevıznamné nuly zleva
+  -- odstranit nevÂ²znamnÎ˜ nuly zleva
   while wstr:length>0 and wstr[1]="0" loop
     wstr:=str_copy(wstr,2,wstr:length{%%TODO :last});
     end loop;
   
 
-  -- zbylo vùbec nìco?
+  -- zbylo vâˆ™bec nâˆco?
   if wstr:length=0 then raise conversion_error end if;
   
 
-  -- najít a oddìlit exponent 
+  -- najÏ†t a oddâˆlit exponent 
   pexp:=wstr:first;
   while pexp<=wstr:length{%%TODO :last} and wstr[pexp]<>"e" and wstr[pexp]<>"E" loop
     pexp+1
@@ -1034,7 +1034,7 @@ begin
     end if;
 
 
-  -- exponent pøevést na èíslo
+  -- exponent pÂ°evÎ˜st na Î¦Ï†slo
   if wexp:length=0 
     then 
       exp:=0
@@ -1043,8 +1043,8 @@ begin
       end if;
 
 
-  -- najít a oddìlit desetinnou teèku
-  -- není-li teèka nalezena, bude o jednu vyšší ne délka celé èásti, co je pomìrnì logické
+  -- najÏ†t a oddâˆlit desetinnou teÎ¦ku
+  -- nenÏ†-li teÎ¦ka nalezena, bude o jednu vyÃœÃœÏ† neÅ˜ dÎ˜lka celÎ˜ Î¦ÃŸsti, coÅ˜ je pomâˆrnâˆ logickÎ˜
   point:=wstr:first;
   while point<=wstr:length{%%TODO :last} and wstr[point]<>"." loop
     point+1
@@ -1052,10 +1052,10 @@ begin
   frac:=str_copy(wstr,point+1,wstr:length{%%TODO :last});
   int:=str_copy(wstr,1,point-1);
 
-  -- ze získanıch sloek teï sestavit èíslo
+  -- ze zÏ†skanÂ²ch sloÅ˜ek teâˆ© sestavit Î¦Ï†slo
   string_to_float_primitive(int,frac,sign,exp,num);
 
-  -- pøedat vısledek
+  -- pÂ°edat vÂ²sledek
   result:=num;
   
   end string_to_float;
@@ -1065,26 +1065,26 @@ begin
 
 ----------------------------------------------------------------------------------------------------
 procedure float_to_string =
---  num            : in t_extended;              -- èíslo které pøevést %%CZ
---  format         : in t_float_format := t_float_format:value)      -- poadovanı formát èísla %%CZ
---  return t_char32str =                         -- øetìzcová reprezentace
--- Pøevede zaokrouhlenou hodnotu NUM na øetìzec v rozsahu 0 a + 10e18-1.
+--  num            : in t_extended;              -- Î¦Ï†slo kterÎ˜ pÂ°evÎ˜st %%CZ
+--  format         : in t_float_format := t_float_format:value)      -- poÅ˜adovanÂ² formÃŸt Î¦Ï†sla %%CZ
+--  return t_char32str =                         -- Â°etâˆzcovÃŸ reprezentace
+-- PÂ°evede zaokrouhlenou hodnotu NUM na Â°etâˆzec v rozsahu 0 aÅ˜ + 10e18-1.
 ----------------------------------------------------------------------------------------------------
 var
-  sign             : t_logical;                  -- znaménko èísla (True = záporné)
-  csign            : t_char32;                   -- znaménko èísla znakovì
-  int              : t_char32str;                -- celá èást mantisy 
-  frac             : t_char32str;                -- desetinná èást mantisy
+  sign             : t_logical;                  -- znamÎ˜nko Î¦Ï†sla (True = zÃŸpornÎ˜)
+  csign            : t_char32;                   -- znamÎ˜nko Î¦Ï†sla znakovâˆ
+  int              : t_char32str;                -- celÃŸ Î¦ÃŸst mantisy 
+  frac             : t_char32str;                -- desetinnÃŸ Î¦ÃŸst mantisy
   exp              : t_signed;                   -- exponent
-  BCD              : t_BCDmantissa;              -- znaková reprezentace mantisy
+  BCD              : t_BCDmantissa;              -- znakovÃŸ reprezentace mantisy
 
 begin
   float_to_string_primitive(num,int,frac,sign,exp);
   
-  -- pøevést znaméko
+  -- pÂ°evÎ˜st znamÎ˜ko
   if sign then csign:="+" else csign:="-" end if;
 
-  -- sestavit z jednotlivıch èástí
+  -- sestavit z jednotlivÂ²ch Î¦ÃŸstÏ†
   result:=csign & int & '.' & frac & 'E' & signed_to_string(exp,[for width use 5, 
                                                                  for sign use tsm_plus, 
                                                                  for aligned use false,
@@ -1092,7 +1092,7 @@ begin
                                                                  for oversize use tom_error,
                                                                  for radix use 10]);
 
-  {%%TODO a bude udìlané pøiøazování implicitní hodnotyu podle typu, pøijde for radix use vyøadit}
+  {%%TODO aÅ˜ bude udâˆlanÎ˜ pÂ°iÂ°azovÃŸnÏ† implicitnÏ† hodnotyu podle typu, pÂ°ijde for radix use vyÂ°adit}
   end float_to_string;
 
 

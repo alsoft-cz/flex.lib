@@ -1,4 +1,4 @@
-----------------------------------------------------------------------------------------------------
+Ôªø----------------------------------------------------------------------------------------------------
 module public trees =
 -- Data structures - binary trees.
 -- Flex Standard Library
@@ -19,21 +19,21 @@ class c_tree_iterator;             type p_tree_iterator        = ^class c_tree_i
 
 
 type
-  -- vòsledek operace porovn†n° dvou uzlñ
+  -- v√Ωsledek operace porovn√°n√≠ dvou uzl≈Ø
   t_compare_node = enum
       cn_equal;                                  -- uzly si jsou rovny
-      cn_bigger;                                 -- uzel je vàt®°
-      cn_smaller;                                -- uzel je men®°
+      cn_bigger;                                 -- uzel je vƒõt≈°√≠
+      cn_smaller;                                -- uzel je men≈°√≠
       end enum for size use 4;
 
-  -- vòsledek operace porovn†n° dvou uzlñ
+  -- v√Ωsledek operace porovn√°n√≠ dvou uzl≈Ø
   t_insert_direction = enum
-      id_add;                                    -- vloë° jako posledn°ho souseda
-      id_add_first;                              -- vloë° jako prvn°ho souseda
-      id_add_child;                              -- vloë° jako posledn°ho potomka
-      id_first_child;                            -- vloë° jako prvn°ho potomka
-      id_insert_before;                          -- vloë° hned p©ed referenán° uzel
-      id_insert_after;                           -- vloë° hned za referenán° uzel
+      id_add;                                    -- vlo≈æ√≠ jako posledn√≠ho souseda
+      id_add_first;                              -- vlo≈æ√≠ jako prvn√≠ho souseda
+      id_add_child;                              -- vlo≈æ√≠ jako posledn√≠ho potomka
+      id_first_child;                            -- vlo≈æ√≠ jako prvn√≠ho potomka
+      id_insert_before;                          -- vlo≈æ√≠ hned p≈ôed referenƒçn√≠ uzel
+      id_insert_after;                           -- vlo≈æ√≠ hned za referenƒçn√≠ uzel
       end enum;
 
 
@@ -45,10 +45,10 @@ class public abstract c_binary_tree_node = extend c_item;
   supervised
 
     var
-      left         : p_binary_tree_node:=nil;    -- levò uzel
-      right        : p_binary_tree_node:=nil;    -- pravò uzel
-      weight       : t_unsigned:=1;              -- v†ha uzlu
-      up           : p_binary_tree_node:=nil;    -- p©edek
+      left         : p_binary_tree_node:=nil;    -- lev√Ω uzel
+      right        : p_binary_tree_node:=nil;    -- prav√Ω uzel
+      weight       : t_unsigned:=1;              -- v√°ha uzlu
+      up           : p_binary_tree_node:=nil;    -- p≈ôedek
 
     end c_binary_tree_node;
 
@@ -56,63 +56,63 @@ class public abstract c_binary_tree_node = extend c_item;
 
 ----------------------------------------------------------------------------------------------------
 class public c_binary_tree = extend c_container;
--- Vyhled†vac° strom s podporou AVL. 
+-- Vyhled√°vac√≠ strom s podporou AVL. 
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static init (
-        item_type  : in t_tag;                   -- typ uzlñ
-        avl        : in t_logical:=false;        -- T-vyvaëovat
-        unique_key : in t_logical:=true;         -- T-kaëdò kl°á unik†tn°
-        homogenous : in t_logical:=true);        -- T-stejnò typ uzlñ
+        item_type  : in t_tag;                   -- typ uzl≈Ø
+        avl        : in t_logical:=false;        -- T-vyva≈æovat
+        unique_key : in t_logical:=true;         -- T-ka≈æd√Ω kl√≠ƒç unik√°tn√≠
+        homogenous : in t_logical:=true);        -- T-stejn√Ω typ uzl≈Ø
     -- Inicializace stromu.
-    --   Pokud je [avl] nastaven na true, strom bude se bude vyvaëovat.
-    --   Pokud je [unique_key] nastaven na true, ve stromà nemohou bòt uzly se stejnòm kl°áem.
-    --   Pokud je [homogenous] nastaven na true, ve stromà mohou bòt jen uzly typu [item_type].
+    --   Pokud je [avl] nastaven na true, strom bude se bude vyva≈æovat.
+    --   Pokud je [unique_key] nastaven na true, ve stromƒõ nemohou b√Ωt uzly se stejn√Ωm kl√≠ƒçem.
+    --   Pokud je [homogenous] nastaven na true, ve stromƒõ mohou b√Ωt jen uzly typu [item_type].
     ------------------------------------------------------------------------------------------------
     static has_node (
-        node       : in p_binary_tree_node)             -- hledanò uzel
+        node       : in p_binary_tree_node)             -- hledan√Ω uzel
         return t_logical;                        -- T-uzel nalezen
-    -- Vrac° [true], pokud je [node] prvkem stromu.
+    -- Vrac√≠ [true], pokud je [node] prvkem stromu.
     ------------------------------------------------------------------------------------------------
     static get_root return p_binary_tree_node;
-    -- Vr†t° ko©enovò uzel. Pokud uzel nen° definov†n, vrac° NIL.
+    -- Vr√°t√≠ ko≈ôenov√Ω uzel. Pokud uzel nen√≠ definov√°n, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static merge_subtree (
-        tree       : in out c_binary_tree);             -- p©id†vanÇ uzly stromu
-    -- Spoj° dva stromy do jednoho. Stom [tree] reprezentuje strom p©id†vanòch uzlñ do stromu
-    -- reprezentovanou instanc° tÇto t©°dy. Pokud existuj° dva uzly se stejnòm kl°áem, je uzel 
-    -- do stromu vloëen v z†vislosti na parametru [unique_key].
+        tree       : in out c_binary_tree);             -- p≈ôid√°van√© uzly stromu
+    -- Spoj√≠ dva stromy do jednoho. Stom [tree] reprezentuje strom p≈ôid√°van√Ωch uzl≈Ø do stromu
+    -- reprezentovanou instanc√≠ t√©to t≈ô√≠dy. Pokud existuj√≠ dva uzly se stejn√Ωm kl√≠ƒçem, je uzel 
+    -- do stromu vlo≈æen v z√°vislosti na parametru [unique_key].
     ------------------------------------------------------------------------------------------------
     static split_subtree (
-        node       : in out p_binary_tree_node;  -- ru®en† vàtev
-        subtree    : out c_binary_tree);         -- novò strom
-    -- Vyjme ze stromu podstrom váetnà uzlu [node] a vytvo©° a inicializuje novou instance 
-    -- tr°dy [c_tree]. Pokud uzel nen° nalezen, vrac° pr†zdnò strom se stejnòmi parametry jako
-    -- m† instace tohoto stromu.
+        node       : in out p_binary_tree_node;  -- ru≈°en√° vƒõtev
+        subtree    : out c_binary_tree);         -- nov√Ω strom
+    -- Vyjme ze stromu podstrom vƒçetnƒõ uzlu [node] a vytvo≈ô√≠ a inicializuje novou instance 
+    -- tr√≠dy [c_tree]. Pokud uzel nen√≠ nalezen, vrac√≠ pr√°zdn√Ω strom se stejn√Ωmi parametry jako
+    -- m√° instace tohoto stromu.
     ------------------------------------------------------------------------------------------------
     static delete_subtree (  
-        node       : in out p_binary_tree_node); -- ru®enò uzel váetnà jeho n†sledn°kñ
-    -- Smaëe podstrom váetnà uzlu [node] ze stromu a uvoln° pamàt.
+        node       : in out p_binary_tree_node); -- ru≈°en√Ω uzel vƒçetnƒõ jeho n√°sledn√≠k≈Ø
+    -- Sma≈æe podstrom vƒçetnƒõ uzlu [node] ze stromu a uvoln√≠ pamƒõt.
     ------------------------------------------------------------------------------------------------
     static find (
-        node       : in p_binary_tree_node)      -- pomocnò uzel stromu, m† vyplnànÇ kl°áovÇ poloëky
-                                                 -- aby byl plnohodnotnòm parametrem procedury [compare]
+        node       : in p_binary_tree_node)      -- pomocn√Ω uzel stromu, m√° vyplnƒõn√© kl√≠ƒçov√© polo≈æky
+                                                 -- aby byl plnohodnotn√Ωm parametrem procedury [compare]
         return p_binary_tree_node;               -- nil, pokud uzel nebyl nalezen
-    -- Vyhled† uzel, kterò je rovnò [node]
+    -- Vyhled√° uzel, kter√Ω je rovn√Ω [node]
     ------------------------------------------------------------------------------------------------
 
   protected
 
     var
-      root         : p_binary_tree_node:=nil;           -- ko©enovò uzel stromu
+      root         : p_binary_tree_node:=nil;           -- ko≈ôenov√Ω uzel stromu
 
     ------------------------------------------------------------------------------------------------
     virtual abstract compare (
-        node_a     : in p_binary_tree_node;             -- uzel 1 pro porovn†n° kl°áñ
-        node_b     : in p_binary_tree_node)             -- uzel 2 pro porovn†n° kl°áñ
-        return t_compare_node;                   -- vòsledek porovn†n° uzlñ
-    -- Vr†t° vòsledek porovn†n° dvou uzlñ.
+        node_a     : in p_binary_tree_node;             -- uzel 1 pro porovn√°n√≠ kl√≠ƒç≈Ø
+        node_b     : in p_binary_tree_node)             -- uzel 2 pro porovn√°n√≠ kl√≠ƒç≈Ø
+        return t_compare_node;                   -- v√Ωsledek porovn√°n√≠ uzl≈Ø
+    -- Vr√°t√≠ v√Ωsledek porovn√°n√≠ dvou uzl≈Ø.
     ------------------------------------------------------------------------------------------------
 
     end c_binary_tree;
@@ -126,10 +126,10 @@ class public c_binary_tree_iterator = extend c_iterator;
 
     ------------------------------------------------------------------------------------------------
     static init (
-        tree       : in class c_binary_tree;     -- strom, j°më se bude proch†zet
-        direction  : in t_tree_walking_direction -- ©°zen° smàru proch†zen° stromem
+        tree       : in class c_binary_tree;     -- strom, j√≠m≈æ se bude proch√°zet
+        direction  : in t_tree_walking_direction -- ≈ô√≠zen√≠ smƒõru proch√°zen√≠ stromem
                    := ttwd_prefix);
-    -- Inicializuje iterator pouë°vanò pro prñchod stromem.
+    -- Inicializuje iterator pou≈æ√≠van√Ω pro pr≈Øchod stromem.
     ------------------------------------------------------------------------------------------------   
 
     end c_binary_tree_iterator;
@@ -144,8 +144,8 @@ class public c_tree_node = extend c_list_item;
   supervised
 
     var
-      up           : p_tree_node:=nil;           -- p©edek
-      down         : c_list;                     -- n†sledn°ci
+      up           : p_tree_node:=nil;           -- p≈ôedek
+      down         : c_list;                     -- n√°sledn√≠ci
 
     end c_tree_node;
 
@@ -153,72 +153,72 @@ class public c_tree_node = extend c_list_item;
 
 ----------------------------------------------------------------------------------------------------
 class public c_tree = extend c_container;
--- N-n†rn° strom.
+-- N-n√°rn√≠ strom.
 ----------------------------------------------------------------------------------------------------
 
     ------------------------------------------------------------------------------------------------
     static init (
-        item_type  : in t_tag;                   -- typ uzlñ
-        homogenous : in t_logical:=true);        -- T-stejnò typ uzlñ
+        item_type  : in t_tag;                   -- typ uzl≈Ø
+        homogenous : in t_logical:=true);        -- T-stejn√Ω typ uzl≈Ø
     -- Inicializace stromu.
-    --   Pokud je [homogenous] nastaven na true, ve stromà mohou bòt jen uzly typu [item_type].
+    --   Pokud je [homogenous] nastaven na true, ve stromƒõ mohou b√Ωt jen uzly typu [item_type].
     ------------------------------------------------------------------------------------------------
     static has_node (
-        node       : in p_tree_node)             -- hledanò uzel
+        node       : in p_tree_node)             -- hledan√Ω uzel
         return t_logical;                        -- T-uzel nalezen
-    -- Vrac° logickou hodnotu, zda je uzel nalezen ve stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
+    -- Vrac√≠ logickou hodnotu, zda je uzel nalezen ve stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     static get_root return p_tree_node;
-    -- Vrac° ko©enovò uzel.
-    --   Pokud ko©en nen° definov†n, vrac° NIL.
+    -- Vrac√≠ ko≈ôenov√Ω uzel.
+    --   Pokud ko≈ôen nen√≠ definov√°n, vrac√≠ NIL.
     ------------------------------------------------------------------------------------------------
     static insert_node (
-        node         : in p_tree_node;           -- vkl†danò uzel
-        current_node : in p_tree_node;           -- aktu†ln° uzel
-        direction    : in t_insert_direction);   -- pozice vloëen°
-    -- Vloë° uzel do stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† uzel vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu.
-    --   Pokud [node] je ve stromu nalezen, hl†s° chybu.
+        node         : in p_tree_node;           -- vkl√°dan√Ω uzel
+        current_node : in p_tree_node;           -- aktu√°ln√≠ uzel
+        direction    : in t_insert_direction);   -- pozice vlo≈æen√≠
+    -- Vlo≈æ√≠ uzel do stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° uzel vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu.
+    --   Pokud [node] je ve stromu nalezen, hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     static merge_subtree (
-        tree         : in out c_tree;            -- p©id†vanÇ uzly stromu
-        current_node : in p_tree_node:=nil;      -- aktu†ln° uzel
-        direction    : in t_insert_direction);   -- pozice vloëen°
-    -- Spoj° dva stromy do jednoho. Stom [tree] reprezentuje strom p©id†vanòch uzlñ do stromu
-    -- reprezentovanou instanc° tÇto t©°dy. Po proveden° tÇto operace bude [tree] pr†zdnò.
-    --   Pokud p©ipojovanò strom je pr†zdnò, hl†s° chybu.
-    --   Pokud [current_node]=NIL, zkus° se vloëit ko©en, pokud je ko©en definov†n, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud libovonò uzel v [tree] je ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† novò strom vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu.
+        tree         : in out c_tree;            -- p≈ôid√°van√© uzly stromu
+        current_node : in p_tree_node:=nil;      -- aktu√°ln√≠ uzel
+        direction    : in t_insert_direction);   -- pozice vlo≈æen√≠
+    -- Spoj√≠ dva stromy do jednoho. Stom [tree] reprezentuje strom p≈ôid√°van√Ωch uzl≈Ø do stromu
+    -- reprezentovanou instanc√≠ t√©to t≈ô√≠dy. Po proveden√≠ t√©to operace bude [tree] pr√°zdn√Ω.
+    --   Pokud p≈ôipojovan√Ω strom je pr√°zdn√Ω, hl√°s√≠ chybu.
+    --   Pokud [current_node]=NIL, zkus√≠ se vlo≈æit ko≈ôen, pokud je ko≈ôen definov√°n, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud libovon√Ω uzel v [tree] je ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° nov√Ω strom vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     static split_subtree (
-        node       : in p_tree_node;             -- ru®en† vàtev
-        subtree    : out c_tree);                -- novò strom
-    -- Vyjme ze stromu podstrom váetnà uzlu [node] a vytvo©° a inicializuje novou instanci
-    -- t©°dy [c_tree].
-    --   Pokud uzel nen° nalezen, hl†s° chybu.
+        node       : in p_tree_node;             -- ru≈°en√° vƒõtev
+        subtree    : out c_tree);                -- nov√Ω strom
+    -- Vyjme ze stromu podstrom vƒçetnƒõ uzlu [node] a vytvo≈ô√≠ a inicializuje novou instanci
+    -- t≈ô√≠dy [c_tree].
+    --   Pokud uzel nen√≠ nalezen, hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
     static move_subtree (
-        node         : in p_tree_node;           -- p©esouvaj°c° se podstrom
-        current_node : in p_tree_node;           -- aktu†ln° uzel pro vloëen°
-        direction    : in t_insert_direction);   -- pozice vloëen°
-    -- P©esune podstrom z jednoho m°sta na jinÇ m°sto v tom samÇm stromu.
-    --   Pokud [node]=NIL, hl†s° chybu.
-    --   Pokud [node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud [current_node] nen° ve stromu nalezen, hl†s° chybu.
-    --   Pokud se m† uzel vloëit vedle ko©enovÇho uzlu a m† potomky, hl†s° chybu.
-    --   Pokud [current_node] je poduzlem [node], hl†s° chybu.
-    --   Pokud se m† uzel podstromu vloëit jako sousedn° uzel, ale [current_node]=[root], hl†s° chybu.
+        node         : in p_tree_node;           -- p≈ôesouvaj√≠c√≠ se podstrom
+        current_node : in p_tree_node;           -- aktu√°ln√≠ uzel pro vlo≈æen√≠
+        direction    : in t_insert_direction);   -- pozice vlo≈æen√≠
+    -- P≈ôesune podstrom z jednoho m√≠sta na jin√© m√≠sto v tom sam√©m stromu.
+    --   Pokud [node]=NIL, hl√°s√≠ chybu.
+    --   Pokud [node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud [current_node] nen√≠ ve stromu nalezen, hl√°s√≠ chybu.
+    --   Pokud se m√° uzel vlo≈æit vedle ko≈ôenov√©ho uzlu a m√° potomky, hl√°s√≠ chybu.
+    --   Pokud [current_node] je poduzlem [node], hl√°s√≠ chybu.
+    --   Pokud se m√° uzel podstromu vlo≈æit jako sousedn√≠ uzel, ale [current_node]=[root], hl√°s√≠ chybu.
     ------------------------------------------------------------------------------------------------
 
   protected
 
     var
-      root         : p_tree_node:=nil;           -- ko©enovò uzel stromu
+      root         : p_tree_node:=nil;           -- ko≈ôenov√Ω uzel stromu
 
     end c_tree;
 
@@ -231,11 +231,11 @@ class public c_tree_iterator = extend c_iterator;
 
     ------------------------------------------------------------------------------------------------
     static init (
-        tree       : in class c_tree;            -- strom, j°më se bude proch†zet
-        direction  : in t_tree_walking_direction -- ©°zen° smàru proch†zen° stromem
+        tree       : in class c_tree;            -- strom, j√≠m≈æ se bude proch√°zet
+        direction  : in t_tree_walking_direction -- ≈ô√≠zen√≠ smƒõru proch√°zen√≠ stromem
                    := ttwd_prefix);
-    -- Inicializuje iterator pouë°vanò pro prñchod stromem.
-    -- P©i pouëit° nespr†vnÇho smàru iterov†n° je vyvol†na vòjimka [tree_error]
+    -- Inicializuje iterator pou≈æ√≠van√Ω pro pr≈Øchod stromem.
+    -- P≈ôi pou≈æit√≠ nespr√°vn√©ho smƒõru iterov√°n√≠ je vyvol√°na v√Ωjimka [tree_error]
     ------------------------------------------------------------------------------------------------   
 
     end c_tree_iterator;
